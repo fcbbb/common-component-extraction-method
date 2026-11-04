@@ -1,0 +1,81 @@
+{
+  "instance_id": "sdv-dev__rdt-741",
+  "repo": "sdv-dev/RDT",
+  "base_commit": "aa1fa23ee09b4849712add3d35fca3d3f09e9988",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 13,
+  "selected_component_ids": [
+    "component-005",
+    "component-009",
+    "component-013"
+  ],
+  "selected_component_count": 3,
+  "direct_passed": true,
+  "component_passed": true,
+  "direct_evaluation": {
+    "instance_id": "sdv-dev__rdt-741",
+    "image": "docker.io/swerebenchv2/sdv-dev-rdt:741-aa1fa23",
+    "image_id": "sha256:9029ce1483a0da82f76e64509d61ad669d44a01a29931c305ab58a5d06598f94",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 0,
+    "error": null,
+    "F2P_passed": 5,
+    "F2P_failed": 0,
+    "F2P_total": 5,
+    "P2P_passed": 32,
+    "P2P_total": 32,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "component_evaluation": {
+    "instance_id": "sdv-dev__rdt-741",
+    "image": "docker.io/swerebenchv2/sdv-dev-rdt:741-aa1fa23",
+    "image_id": "sha256:9029ce1483a0da82f76e64509d61ad669d44a01a29931c305ab58a5d06598f94",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 0,
+    "error": null,
+    "F2P_passed": 5,
+    "F2P_failed": 0,
+    "F2P_total": 5,
+    "P2P_passed": 32,
+    "P2P_total": 32,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "direct_result": {
+    "instance_id": "sdv-dev__rdt-741",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T04:45:13.930137+00:00",
+    "started_at": "2026-10-22T04:42:25.183215+00:00",
+    "elapsed_seconds": 161.80317358499997,
+    "component_usage": [],
+    "model_calls": 22,
+    "reported_cost_usd": 0.010866497999999999,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "sdv-dev__rdt-741",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T03:28:09.273133+00:00",
+    "started_at": "2026-10-25T03:26:06.074997+00:00",
+    "elapsed_seconds": 131.40034826399642,
+    "component_usage": [
+      "component-009 / clip_to_bounds"
+    ],
+    "model_calls": 15,
+    "reported_cost_usd": 0.009683369999999998,
+    "error": null
+  }
+}

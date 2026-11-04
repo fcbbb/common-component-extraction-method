@@ -1,0 +1,49 @@
+### Structured protocol contract
+
+This remains a task-blind repository extraction. Do not infer a future issue,
+patch, failing test, or task-specific obligation.
+
+For every published component, add a required `protocol_contract` object:
+
+```json
+{
+  "capability_family": "normalizer|dispatcher|registry|serializer|visitor|factory|cache-key|validation|lifecycle|other source-backed family",
+  "semantic_domain": "the repository objects, values, nodes, resources, or states governed by the capability",
+  "extension_trigger": "a source-grounded description of what kind of new variant or repository extension should cause a maintainer to inspect this protocol",
+  "covered_variants": ["existing source-backed sibling variants or registrations"],
+  "downstream_guarantee": "the stable behavior provided to downstream consumers",
+  "consumers": [
+    {
+      "file_id": "relative/path.py",
+      "unit_id": "class:Name|method:Name.method|function:name|module",
+      "role": "how this production boundary consumes or depends on the protocol"
+    }
+  ],
+  "reuse_interface": {
+    "mode": "stable_entrypoint|reference_pattern",
+    "value": "an exported entrypoint name, or a concise description of the source pattern to adapt"
+  },
+  "boundary": "what this protocol does not imply and which neighboring behavior remains outside it"
+}
+```
+
+Requirements:
+
+- Cite at least two independent, production source consumers. Registration
+  implementations count only when they demonstrate a real protocol role, not
+  when they merely repeat the same definition.
+- `extension_trigger` must be derived from current sibling variants,
+  registrations, consumers, or lifecycle roles visible in the repository. It
+  must not name a hypothetical future task change.
+- `downstream_guarantee` describes behavior already provided by the source; it
+  is not a recommendation or patch instruction.
+- Use `stable_entrypoint` only when `value` names one of the component's
+  declared entrypoints. Otherwise use `reference_pattern`.
+- Support the protocol-contract claims with the component's normal evidence
+  citations, including evidence from every consumer file.
+- Keep implementation details in the existing summary, relationships,
+  invariants, and variation points. The protocol contract should state the
+  reusable extension rule and its limits, not duplicate the entire summary.
+
+The existing focus/context publication boundary is unchanged. A protocol
+contract cannot make a context-only capability eligible for publication.

@@ -1,0 +1,54 @@
+### Output fields
+
+- status and reason: Decide reusable value as confirmed, rejected or
+  uncertain. Explain the concrete work the delivered component provides,
+  its usable boundary and any unresolved integration burden, with evidence.
+- artifact_review: Decide delivery fidelity (code, exported descriptions and
+  examples) as faithful, invalid, uncertain or not_checked, with a reason.
+  Assess the revised delivery when revision is supplied, otherwise the
+  original. Remaining known errors require invalid; unresolved claims
+  require uncertain. State any corrections in the review record.
+- revision: Use null when unchanged. Otherwise use
+  {"component_file": "revision/component.json", "reason": "source-backed corrections"}.
+  The file contains the full revised component metadata, with library.path
+  referencing the copied Python file inside /component-output. Revise only
+  descriptions, examples, entrypoint purpose text, library.path and code
+  docstrings; keep identity, source evidence and executable logic unchanged.
+- confirmed_members: Select supported members from component.json and copy
+  their file_id and unit_id exactly. Treat these strings as opaque identifiers.
+- evidence: file_id identifies the exact file being cited, relative to
+  /testbed. line_start and line_end are inclusive, one-based line numbers
+  in that file. Before submitting, inspect each cited span with line numbers
+  and verify that it contains the code supporting the claim. Use
+  component_bundle/common.py when citing the review copy.
+- limitations: Record source-supported boundaries or unresolved issues.
+- validation_dependencies: List repository-relative files read and directory
+  or file scopes searched, including searches with no results. Use '.' for a
+  repository-wide search; set complete to true only for an exhaustive record.
+- entrypoint_capabilities: Use [] when review does not pass. Otherwise use
+  a declared entrypoint name. method is one method name, or '' for a function
+  or constructor. Describe contract, example, scope and dependencies in their
+  fields. case_ids must reference cases that call this same entrypoint and
+  method; cases may use different arguments.
+  Mark availability as implemented, missing or unverified; case_ids must
+  reference cases for this same entrypoint.
+- smoke_test: If status is not confirmed or artifact_review.status is not
+  faithful, use not_run, explain why, and set cases to []; submit without
+  test files. For a component that passes both judgments, use ready when
+  supported paths have grounded cases, or no_cases with cases [] and a reason
+  when none can be grounded. Each prepared case needs a unique ASCII case_id
+  using letters, digits, '_' or '-',
+  a declared entrypoint, test_file relative to /component-output, and sources.
+  Case sources must cite original repository files with role test, fixture,
+  production_call or interface_contract.
+
+### Manifest format
+
+The alternatives joined by | indicate allowed values. Replace illustrative
+paths and identifiers with the actual values established during the review.
+The populated capability and case arrays below illustrate the passing
+branch; use the empty arrays specified above when that branch does not apply.
+
+Exported descriptions, integration steps and docstrings must remain source-grounded generic documentation. Correct descriptions which enumerate task-shaped absent features or name private target interfaces absent from the original source; preserve precise actual input/output and error boundaries. Do not create a task solution or change executable logic.
+
+A generic packaging name is not itself new task functionality. For a lifted method or source computation with existing variable inputs/context made explicit, verify its input/output mapping to the cited old operation and prepare source-grounded equivalence cases. Preserve constants and policies; do not accept new modes or task functionality disguised as packaging. Keep candidate executable logic and signatures unchanged during review revision.

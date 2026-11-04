@@ -1,0 +1,38 @@
+Validate candidate file groups for shared implementation patterns.
+
+Input JSON:
+{payload}
+
+For every candidate return exactly one object in the same order. Each object:
+{
+  "candidate_id": "c0",
+  "groups": [
+    {
+      "members": ["file_000.py", "file_004.py"],
+      "shared_concept": "short description of the shared pattern",
+      "shared_interface": [
+        {"name": "helper_name", "signature_guess": "helper_name(...)", "role": "one sentence"}
+      ],
+      "key_variations": ["..."]
+    }
+  ]
+}
+
+Rules:
+- A candidate is a mechanically-grouped set of files that may contain one
+  shared pattern, several, or none. Inspect subsets; if a candidate is mixed,
+  split it and return every valid subgroup instead of rejecting the whole
+  candidate. A group may contain only a subset of the candidate's members.
+- Return one group per shared pattern you find (usually 0 or 1).
+- A group is valid when its members are instances of the same kind of
+  component: they consistently follow one implementation pattern in
+  component shape, lifecycle, protocol, or conventions. Shared framework
+  conventions count as evidence; literal duplication is not required.
+- members of each group are unique file IDs from the candidate. A group may list
+  one file when at least two matched units there form the pattern. Groups must have
+  disjoint file membership; ungrouped units are treated as noise.
+- Reject (empty groups) only when the overlap has no describable pattern:
+  bare imports, license headers, comments, logging, or trivial glue with
+  nothing else in common.
+- The files within one candidate are listed in the "files" array; use those ids.
+- Output valid JSON only. Do not wrap it in markdown.

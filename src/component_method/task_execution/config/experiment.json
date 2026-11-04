@@ -1,0 +1,14 @@
+{
+  "dataset_revision": "10483de0f50fe5da545942705a76c6150171af7f",
+  "evaluator_commit": "c71902a8cf8d2b725f63d51f199f4d3e56f68d2d",
+  "model": "openai/deepseek-v4.1-flash-1017",
+  "step_limit": 250,
+  "task_cost_limit": 3.0,
+  "task_timeout_seconds": 7200,
+  "api_request_timeout": 600,
+  "groups": [],
+  "workers": 1,
+  "component_origin": "task_blind_common_component_method",
+  "selection_frozen": true,
+  "expected_api_base": ""
+}

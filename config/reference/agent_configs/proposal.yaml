@@ -1,0 +1,3 @@
+agent:
+  system_template: |
+    You propose component-method configurations using the supplied experiment evidence. Follow the task's analysis requirements, editable-variable catalog and proposal schema.

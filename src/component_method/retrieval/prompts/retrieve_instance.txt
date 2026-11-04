@@ -1,0 +1,242 @@
+Task ID: {{task_id}}
+
+Problem statement:
+{{problem_statement}}
+
+Task interface:
+{{interface}}
+
+The frozen component library is mounted at /component-library.
+A compact catalog covering every manifest component is mounted at
+/retrieval-tools/component_catalog.json. Read it before detailed component files.
+
+First write /component-output/coverage.json with this shape and run the coverage validator:
+
+{
+  "schema_version": 2,
+  "task_id": "{{task_id}}",
+  "change_model": {
+    "changed_entities": [
+      "a semantic entity whose behavior or representation changes"
+    ],
+    "introduced_or_changed_variants": [
+      "the concrete new type, value, format, state, declaration, or representation entering the repository"
+    ],
+    "change_kinds": [
+      "one or more allowed generic change kinds"
+    ],
+    "propagation_risks": [
+      "a plausible boundary affected by this kind of change, without claiming repository facts"
+    ]
+  },
+  "component_coverage": [
+    {
+      "bundle_id": "<catalog-bundle-id-a>",
+      "direct_assessment": {
+        "verdict": "match",
+        "matched_entities": [
+          "an exact changed entity or introduced variant from this file"
+        ],
+        "catalog_signals": [
+          "capability",
+          "semantic_domain"
+        ],
+        "reason": "how the component's stated reusable behavior includes this representation",
+        "entrypoint": "an exact published entrypoint name from the catalog",
+        "probe": "documented entrypoint <- exact introduced representation, even if it currently fails",
+        "can_invoke_with_variant": true
+      },
+      "relation": "direct",
+      "changed_entities": [
+        "an exact changed_entities value from this file"
+      ],
+      "catalog_signals": [
+        "semantic_domain",
+        "consumers"
+      ],
+      "path": "changed entity -> documented semantic domain -> documented consumer boundary"
+    },
+    {
+      "bundle_id": "<catalog-bundle-id-b>",
+      "direct_assessment": {
+        "verdict": "no_match",
+        "matched_entities": [],
+        "catalog_signals": [],
+        "reason": "why no documented entrypoint can receive or represent any changed entity",
+        "entrypoint": "the closest exact published entrypoint name from the catalog",
+        "probe": "closest entrypoint tested against the exact introduced representation; why invocation itself is outside its declared input domain",
+        "can_invoke_with_variant": false
+      },
+      "relation": "none",
+      "changed_entities": [],
+      "catalog_signals": [],
+      "path": "why no changed entity crosses this component's documented protocol boundary"
+    }
+  ]
+}
+
+The angle-bracketed bundle IDs and paths above are neutral schema placeholders. Replace every one
+with exact values from component_catalog.json; never submit a placeholder literally.
+component_coverage must cover every catalog bundle exactly once. direct_assessment must be completed
+before relation for every component. Allowed direct-assessment signals are capability,
+semantic_domain, and reuse_interface. verdict match requires matched_entities and catalog_signals
+plus an exact published entrypoint and concrete reachability probe, and forces relation direct. A
+probe shows an existing entrypoint
+receiving, storing, dispatching on, or serializing the exact introduced representation; it remains
+a match when that call currently fails, succeeds through an existing path, or chooses the wrong
+fallback. can_invoke_with_variant answers only whether the exact representation can be supplied to
+or held by the entrypoint before judging its outcome; true forces verdict match and relation direct.
+verdict no_match requires both
+lists to be empty and forbids relation direct, but it must still name the closest published
+entrypoint, set can_invoke_with_variant false, and test the strongest counterfactual probe against
+that entrypoint. Allowed relations
+are direct, protocol, and none. Allowed relation catalog_signals are
+capability, semantic_domain, extension_trigger, consumers, reuse_interface, and boundary, and every
+cited field must be non-empty in that component's catalog.
+Non-none entries require at least one exact changed entity and one catalog signal. None entries
+require empty changed_entities and catalog_signals. Do not make final selection judgments in this
+file. At most eight entries may use a non-none relation.
+
+After coverage validation succeeds, write /component-output/selection.json with this shape:
+
+{
+  "schema_version": 9,
+  "task_id": "{{task_id}}",
+  "coverage_sha256": "lowercase SHA256 of the exact validated coverage.json bytes",
+  "task_baseline": {
+    "explicit_information": [
+      "one concise fact already supplied by the task or interface"
+    ],
+    "obvious_scope": "the implementation area already named or immediately implied by the task"
+  },
+  "change_model": {
+    "changed_entities": [
+      "a semantic entity whose behavior or representation changes"
+    ],
+    "introduced_or_changed_variants": [
+      "the exact introduced variant copied from coverage.json"
+    ],
+    "change_kinds": [
+      "one or more allowed generic change kinds"
+    ],
+    "propagation_risks": [
+      "a plausible boundary affected by this kind of change, without claiming repository facts"
+    ]
+  },
+  "component_assessments": [
+    {
+      "bundle_id": "<catalog-bundle-id-a>",
+      "relation": "direct",
+      "decision": "shortlist",
+      "reason": "catalog-grounded reason for deep inspection or rejection"
+    }
+  ],
+  "shortlisted_bundle_ids": [
+    "<catalog-bundle-id-a>"
+  ],
+  "shortlist_reviews": [
+    {
+      "bundle_id": "<catalog-bundle-id-a>",
+      "decision": "select",
+      "coverage_verdict": "confirmed",
+      "duplicate_of": null,
+      "marginal_value": "what detailed inspection proves this component adds or why it should be omitted",
+      "boundary": "what the detailed component files show it does not provide",
+      "evidence": [
+        {
+          "path": "<catalog-relative-evidence-path>",
+          "line_start": 1,
+          "line_end": 3,
+          "excerpt": "exact non-empty text appearing within those lines"
+        }
+      ]
+    }
+  ],
+  "selected": [
+    {
+      "bundle_id": "<catalog-bundle-id-a>",
+      "delivery_mode": "reference_pattern",
+      "task_overlap": "why this component is related to the task baseline",
+      "incremental_contribution": "specific capability, protocol, invariant, or sibling case absent from the task",
+      "usage": "how to directly call the capability or how to adapt the reference pattern",
+      "boundary": "what this component does not provide or establish",
+      "evidence": [
+        {
+          "path": "<catalog-relative-evidence-path>",
+          "line_start": 1,
+          "line_end": 3,
+          "excerpt": "exact non-empty text appearing within those lines"
+        }
+      ]
+    }
+  ],
+  "propagation_checks": [
+    {
+      "carrier": "the role-independent value, type object, sentinel, format, state, or resource represented by the variants",
+      "changed_variants": [
+        "one or more exact introduced_or_changed_variants values from change_model"
+      ],
+      "bundle_ids": [
+        "<catalog-bundle-id-a>"
+      ],
+      "symbols": [
+        "every selected-source operation that accepts this semantic carrier, including siblings not named by the task"
+      ],
+      "argument_positions": [
+        "each applicable input, receiver, return, stored-field, or dispatch-key position"
+      ],
+      "invariant": "the shared behavior that must hold for this carrier in every listed symbol and argument position",
+      "evidence": [
+        {
+          "path": "<catalog-relative-evidence-path>",
+          "line_start": 1,
+          "line_end": 3,
+          "excerpt": "exact non-empty text appearing within those lines"
+        }
+      ]
+    }
+  ]
+}
+
+The angle-bracketed bundle IDs and paths in this schema are neutral placeholders. Replace every
+one with exact catalog and library values; never submit a placeholder literally.
+The selection change_model must exactly match coverage.json. Representation changes require at
+least one introduced_or_changed_variants entry. These entries describe the repository-visible
+variant itself, not merely the failing function's handling of it. Each component_assessments relation
+must equal the corresponding coverage relation. Non-none coverage entries must use decision
+shortlist; none entries must use decision reject. shortlisted_bundle_ids must contain exactly the
+non-none coverage IDs. Compute coverage_sha256 only after coverage validation succeeds.
+shortlist_reviews must cover every shortlisted component exactly once. Allowed coverage verdicts
+are confirmed, refuted, and duplicate. Confirmed requires decision select. Refuted and duplicate
+require decision omit. A duplicate review must name another shortlisted component in duplicate_of,
+and that target must be selected; duplicate_of is null otherwise. Every review requires exact
+evidence from that component's detailed files. The selected bundle IDs must exactly match confirmed
+review entries. A protocol path is not refuted merely because it is absent from the traceback.
+A component with published protocol_status confirmed cannot use the refuted verdict; it must be
+confirmed or duplicate. A genuine contradiction is a component-publication defect, not a retrieval
+rejection.
+
+During coverage, test direct capability and semantic-domain inclusion before consumer paths. If an
+introduced or changed representation belongs to the category explicitly covered by a component's
+capability or semantic_domain, relation must be direct even when the task traceback and named
+consumers do not mention that representation. Do not use whether the component needs modification
+as the coverage criterion.
+
+propagation_checks are a required implementation handoff, not another selection pass. Generalize
+each introduced variant into a role-independent carrier, then inspect the selected detailed source
+for every sibling operation that can receive that carrier and every applicable argument position.
+Do not limit a carrier to the task-named method. Each check must cite exact selected-component
+evidence, and the checks together must cover every introduced variant and every selected component.
+Write symbols and argument_positions as an executable test matrix, not as broad module names or
+questions for the Task Agent.
+
+Allowed change kinds are representation, validation, dispatch, serialization, identity,
+persistence, state, lifecycle, construction, interface, behavior, and other. The
+component_assessments list must cover every bundle ID from the catalog exactly once. Allowed
+relations are direct, protocol, and none. Allowed decisions are shortlist and reject. The
+shortlisted_bundle_ids list must exactly match the shortlist decisions and may contain at most
+eight IDs. Every selected bundle must first be shortlisted.
+
+Allowed delivery modes are direct_reuse and reference_pattern. Evidence paths are relative to
+/component-library. An empty selected list is valid when no component adds substantial information
+or reusable work beyond the task baseline. Do not propose a patch or modify the component library.

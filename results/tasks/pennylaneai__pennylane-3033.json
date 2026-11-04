@@ -1,0 +1,80 @@
+{
+  "instance_id": "pennylaneai__pennylane-3033",
+  "repo": "PennyLaneAI/pennylane",
+  "base_commit": "29acf0d15698802b19249d23178e5fcdf123f51b",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 26,
+  "selected_component_ids": [
+    "component-024"
+  ],
+  "selected_component_count": 1,
+  "direct_passed": false,
+  "component_passed": true,
+  "direct_evaluation": {
+    "instance_id": "pennylaneai__pennylane-3033",
+    "image": "docker.io/swerebenchv2/pennylaneai-pennylane:3033-29acf0d",
+    "image_id": "sha256:a8a2d03cccd80527a6a8824018a903911352a286fe8050e31d6fc9005a86fb20",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 12,
+    "F2P_failed": 2,
+    "F2P_total": 14,
+    "P2P_passed": 394,
+    "P2P_total": 394,
+    "missing_required": [
+      "tests/ops/functions/test_is_commuting.py::TestCommutingFunction::test_non_pauli_word_tensors_not_supported[pauli_word_10-pauli_word_20]",
+      "tests/ops/functions/test_is_commuting.py::TestCommutingFunction::test_non_pauli_word_tensors_not_supported[pauli_word_11-pauli_word_21]"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "component_evaluation": {
+    "instance_id": "pennylaneai__pennylane-3033",
+    "image": "docker.io/swerebenchv2/pennylaneai-pennylane:3033-29acf0d",
+    "image_id": "sha256:a8a2d03cccd80527a6a8824018a903911352a286fe8050e31d6fc9005a86fb20",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 14,
+    "F2P_failed": 0,
+    "F2P_total": 14,
+    "P2P_passed": 394,
+    "P2P_total": 394,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "direct_result": {
+    "instance_id": "pennylaneai__pennylane-3033",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T03:53:15.818750+00:00",
+    "started_at": "2026-10-22T03:47:29.861521+00:00",
+    "elapsed_seconds": 329.2669018840006,
+    "component_usage": [],
+    "model_calls": 16,
+    "reported_cost_usd": 0.02788488,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "pennylaneai__pennylane-3033",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T19:23:28.026202+00:00",
+    "started_at": "2026-10-25T19:06:15.242563+00:00",
+    "elapsed_seconds": 1136.4429624429904,
+    "component_usage": [],
+    "model_calls": 28,
+    "reported_cost_usd": 0.04800948,
+    "error": null
+  }
+}

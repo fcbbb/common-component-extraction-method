@@ -1,0 +1,79 @@
+{
+  "instance_id": "pennylaneai__pennylane-3057",
+  "repo": "PennyLaneAI/pennylane",
+  "base_commit": "f09e09a7bdb1b37ff5f1f9197ea6e8bbe135ead9",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_02",
+  "formal_rerun": true,
+  "component_count": 26,
+  "selected_component_ids": [
+    "component-016"
+  ],
+  "selected_component_count": 1,
+  "direct_passed": true,
+  "component_passed": true,
+  "direct_evaluation": {
+    "instance_id": "pennylaneai__pennylane-3057",
+    "image": "docker.io/swerebenchv2/pennylaneai-pennylane:3057-f09e09a",
+    "image_id": "sha256:17e58005c5447572fc92249d0879737c701c8bd05f907920a540d7512859c3c8",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 0,
+    "error": null,
+    "F2P_passed": 4,
+    "F2P_failed": 0,
+    "F2P_total": 4,
+    "P2P_passed": 27,
+    "P2P_total": 27,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "component_evaluation": {
+    "instance_id": "pennylaneai__pennylane-3057",
+    "image": "docker.io/swerebenchv2/pennylaneai-pennylane:3057-f09e09a",
+    "image_id": "sha256:17e58005c5447572fc92249d0879737c701c8bd05f907920a540d7512859c3c8",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 0,
+    "error": null,
+    "F2P_passed": 4,
+    "F2P_failed": 0,
+    "F2P_total": 4,
+    "P2P_passed": 27,
+    "P2P_total": 27,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "direct_result": {
+    "instance_id": "pennylaneai__pennylane-3057",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T04:17:32.117435+00:00",
+    "started_at": "2026-10-22T04:11:18.511216+00:00",
+    "elapsed_seconds": 356.0387013069994,
+    "component_usage": [],
+    "model_calls": 21,
+    "reported_cost_usd": 0.01684461,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "pennylaneai__pennylane-3057",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-26T01:04:23.773813+00:00",
+    "started_at": "2026-10-26T00:54:17.830095+00:00",
+    "elapsed_seconds": 617.1183070919942,
+    "component_usage": [
+      "component-016 / expand_matrix"
+    ],
+    "model_calls": 36,
+    "reported_cost_usd": 0.052845618,
+    "error": null
+  }
+}

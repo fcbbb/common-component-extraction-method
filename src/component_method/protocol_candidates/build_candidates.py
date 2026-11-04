@@ -1,0 +1,311 @@
+#!/usr/bin/env python3
+"""Validate the 50-task matrix and build frozen recall signals and V2 candidates."""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter
+import copy
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import time
+from typing import Any
+
+import hnswlib
+import numpy as np
+
+from component_method.workflow.batch_common import PROJECT, ROOT, config, select_tasks, sha256_file, write_json
+from component_method.signal_analysis.prepare_embeddings import eligible_files
+
+
+ANN_SEED = 20261024
+from component_method.signal_analysis import ast_signal, clone_signal, fusion  # noqa: E402
+from component_method.source_scan.unit_extraction import _unit_sources  # noqa: E402
+from component_method.protocol_candidates import protocol_recall  # noqa: E402
+
+
+def read_rows(path: Path) -> list[dict[str, Any]]:
+    with gzip.open(path, "rt", encoding="utf-8") as source:
+        return [json.loads(line) for line in source]
+
+
+def validate_matrix(embedding_dir: Path):
+    input_path = embedding_dir / "input_manifest.json"
+    result_path = embedding_dir / "embedding_result_manifest.json"
+    units_path = embedding_dir / "units.jsonl.gz"
+    matrix_path = embedding_dir / "unit_embeddings.npy"
+    input_manifest = json.loads(input_path.read_text(encoding="utf-8"))
+    result_manifest = json.loads(result_path.read_text(encoding="utf-8"))
+    checks = {
+        "input_manifest_sha256": sha256_file(input_path),
+        "units_file_sha256": sha256_file(units_path),
+        "embedding_file_sha256": sha256_file(matrix_path),
+    }
+    for key, actual in checks.items():
+        if result_manifest.get(key) != actual:
+            raise RuntimeError(f"{key} mismatch")
+    if result_manifest["unit_order_sha256"] != input_manifest["unit_order_sha256"]:
+        raise RuntimeError("unit order differs between manifests")
+    rows = read_rows(units_path)
+    matrix = np.load(matrix_path, mmap_mode="r")
+    if list(matrix.shape) != result_manifest["embedding_shape"] or len(rows) != matrix.shape[0]:
+        raise RuntimeError("matrix shape differs from frozen units")
+    return input_manifest, result_manifest, rows, matrix
+
+
+def collect_sources(task: dict[str, Any]) -> list[dict[str, str]]:
+    snapshot = PROJECT / task["repository_root"]
+    sources = []
+    for path, file_id in eligible_files(snapshot, task["source_subdir"]):
+        try:
+            source = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if source.strip():
+            sources.append({"file_id": file_id, "source_code": source})
+    return sources
+
+
+def validate_units(task: dict[str, Any], frozen_rows: list[dict[str, Any]]):
+    sources = collect_sources(task)
+    generated = _unit_sources(sources)
+    generated_hashes = {
+        (unit["file_id"], unit["unit_id"]): hashlib.sha256(
+            unit["source_code"].encode("utf-8")
+        ).hexdigest()
+        for unit in generated
+    }
+    frozen_hashes = {
+        (row["file_id"], row["unit_id"]): row["unit_sha256"] for row in frozen_rows
+    }
+    if generated_hashes != frozen_hashes:
+        missing = sorted(frozen_hashes.keys() - generated_hashes.keys())[:5]
+        extra = sorted(generated_hashes.keys() - frozen_hashes.keys())[:5]
+        changed = sorted(
+            key for key in generated_hashes.keys() & frozen_hashes.keys()
+            if generated_hashes[key] != frozen_hashes[key]
+        )[:5]
+        raise RuntimeError(
+            f"{task['instance_id']} units changed: missing={missing} extra={extra} changed={changed}"
+        )
+    units = [
+        {"file_id": row["file_id"], "unit_id": row["unit_id"], "source_code": row["source_code"]}
+        for row in frozen_rows
+    ]
+    return sources, units
+
+
+def cross_file_pairs(embeddings: np.ndarray, units: list[dict[str, str]], top_k: int):
+    count, dimension = embeddings.shape
+    if count < 2:
+        return [], {"method": "hnswlib", "query_k_max": count, "rounds": 0}
+    index = hnswlib.Index(space="cosine", dim=dimension)
+    index.init_index(max_elements=count, ef_construction=160, M=24, random_seed=ANN_SEED)
+    index.add_items(embeddings, np.arange(count))
+    selected_by_source: list[list[int] | None] = [None] * count
+    pending = np.arange(count)
+    query_k = min(count, max(top_k * 4 + 1, top_k + 1))
+    rounds = 0
+    while len(pending):
+        rounds += 1
+        index.set_ef(max(160, query_k * 2))
+        labels, _ = index.knn_query(embeddings[pending], k=query_k, num_threads=-1)
+        unresolved = []
+        for source, neighbors in zip(pending.tolist(), labels):
+            kept = []
+            source_file = units[source]["file_id"]
+            for raw_target in neighbors:
+                target = int(raw_target)
+                if target == source or units[target]["file_id"] == source_file:
+                    continue
+                kept.append(target)
+                if len(kept) == top_k:
+                    break
+            if len(kept) == top_k or query_k == count:
+                selected_by_source[source] = kept
+            else:
+                unresolved.append(source)
+        if not unresolved:
+            break
+        pending = np.asarray(unresolved, dtype=np.int64)
+        query_k = min(count, query_k * 2)
+    selected = set()
+    for source, targets in enumerate(selected_by_source):
+        if targets is None:
+            raise RuntimeError(f"Top-K left source {source} unresolved")
+        for target in targets:
+            selected.add((source, target) if source < target else (target, source))
+    pair_indices = sorted(selected)
+    pairs = []
+    for start in range(0, len(pair_indices), 10_000):
+        chunk = pair_indices[start:start + 10_000]
+        left = np.fromiter((item[0] for item in chunk), dtype=np.int64)
+        right = np.fromiter((item[1] for item in chunk), dtype=np.int64)
+        cosines = np.einsum("ij,ij->i", embeddings[left], embeddings[right])
+        for (a, b), cosine in zip(chunk, cosines.tolist()):
+            pairs.append(
+                {
+                    "file_a": units[a]["file_id"],
+                    "unit_a": units[a]["unit_id"],
+                    "file_b": units[b]["file_id"],
+                    "unit_b": units[b]["unit_id"],
+                    "cosine": round(float(cosine), 6),
+                }
+            )
+    pairs.sort(key=lambda item: item["cosine"], reverse=True)
+    return pairs, {
+        "method": "hnswlib_adaptive_cross_file",
+        "top_k": top_k,
+        "query_k_max": query_k,
+        "rounds": rounds,
+        "unit_count": count,
+        "pair_count": len(pairs),
+        "cross_file_only": True,
+        "ann_seed": ANN_SEED,
+    }
+
+
+def build_task(
+    task: dict[str, Any],
+    candidate_cfg: dict[str, Any],
+    input_manifest: dict[str, Any],
+    rows: list[dict[str, Any]],
+    matrix: np.ndarray,
+    *,
+    resume: bool,
+    reuse_frozen: bool,
+) -> None:
+    instance_id = task["instance_id"]
+    task_root = ROOT / "tasks" / instance_id
+    signal_root = task_root / "signals"
+    candidate_root = task_root / "candidates"
+    status_path = candidate_root / "status.json"
+    candidate_path = candidate_root / "protocol_candidates_v2.json"
+    if resume and status_path.is_file() and candidate_path.is_file():
+        status = json.loads(status_path.read_text(encoding="utf-8"))
+        if status.get("status") == "ok" and status.get("candidate_sha256") == sha256_file(candidate_path):
+            print(f"[candidate] reuse completed {instance_id}", flush=True)
+            return
+    started = time.monotonic()
+    info = input_manifest["repositories"][instance_id]
+    start, end = info["row_start"], info["row_end_exclusive"]
+    frozen_rows = rows[start:end]
+    if any(row["repo_key"] != instance_id for row in frozen_rows):
+        raise RuntimeError(f"row range contains another repository: {instance_id}")
+    sources, units = validate_units(task, frozen_rows)
+    write_json(signal_root / "semantic_input.json", {"files": sources})
+    write_json(
+        signal_root / "source_manifest.json",
+        {
+            "instance_id": instance_id,
+            "file_count": len(sources),
+            "files": [entry["file_id"] for entry in sources],
+            "source_manifest_sha256": info["source_manifest_sha256"],
+        },
+    )
+    print(f"[candidate] semantic {instance_id}", flush=True)
+    pairs, retrieval = cross_file_pairs(
+        np.asarray(matrix[start:end]), units, int(candidate_cfg["semantic_top_k"])
+    )
+    semantic = {
+        "signal": "semantic",
+        "model": input_manifest["model_id"],
+        "model_revision": input_manifest["model_revision"],
+        "max_seq_length": input_manifest["embedding_policy"]["max_seq_length"],
+        "units": [{"file_id": unit["file_id"], "unit_id": unit["unit_id"]} for unit in units],
+        "pairs": pairs,
+        "retrieval": retrieval,
+    }
+    write_json(signal_root / "semantic_topk.json", semantic)
+    print(f"[candidate] clone {instance_id}", flush=True)
+    clone = clone_signal.cluster_evidence(sources)
+    write_json(signal_root / "clone.json", clone)
+    print(f"[candidate] skeleton {instance_id}", flush=True)
+    skeleton = ast_signal.cluster_evidence(sources)
+    write_json(signal_root / "skeleton.json", skeleton)
+    strict = fusion.fuse_units(
+        [clone, skeleton, semantic], cfg=copy.deepcopy(candidate_cfg["strict_fusion"])
+    )
+    write_json(candidate_root / "strict_candidates.json", strict)
+    provenance: dict[str, Any]
+    if reuse_frozen and task.get("frozen_candidate"):
+        source = PROJECT / task["frozen_candidate"]
+        candidate_root.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, candidate_path)
+        protocol = json.loads(candidate_path.read_text(encoding="utf-8"))
+        provenance = {
+            "mode": "copied_frozen_v2_candidate",
+            "source": task["frozen_candidate"],
+            "source_sha256": sha256_file(source),
+        }
+    else:
+        print(f"[candidate] protocol expansion {instance_id}", flush=True)
+        protocol = protocol_recall.recall_candidates(
+            sources,
+            [clone, skeleton, semantic],
+            cfg=candidate_cfg["protocol_recall"],
+        )
+        write_json(candidate_path, protocol)
+        provenance = {
+            "mode": "generated_from_frozen_50_task_embedding",
+            "embedding_manifest": str(
+                (ROOT / "offline_embedding_50tasks_20261024" / "embedding_result_manifest.json").relative_to(PROJECT)
+            ),
+        }
+    file_counts = Counter(unit["file_id"] for unit in units)
+    write_json(
+        status_path,
+        {
+            "status": "ok",
+            "instance_id": instance_id,
+            "cohort": task["cohort"],
+            "file_count": len(sources),
+            "unit_count": len(units),
+            "max_units_per_file": max(file_counts.values()),
+            "semantic_pairs": len(pairs),
+            "clone_unit_pairs": len(clone.get("unit_pairs", [])),
+            "skeleton_unit_pairs": len(skeleton.get("unit_pairs", [])),
+            "strict_candidates": len(strict.get("candidates", [])),
+            "protocol_candidates": len(protocol.get("candidates", [])),
+            "selection_policy": protocol.get("stats", {}).get("selection_policy"),
+            "candidate_sha256": sha256_file(candidate_path),
+            "provenance": provenance,
+            "elapsed_seconds": round(time.monotonic() - started, 2),
+        },
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--task", action="append")
+    parser.add_argument("--include-reserve", action="store_true")
+    parser.add_argument(
+        "--embedding-dir",
+        type=Path,
+        default=PROJECT / "offline_artifacts" / "embeddings",
+    )
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--regenerate-frozen-candidates", action="store_true")
+    args = parser.parse_args()
+    cfg = config()
+    candidate_cfg = json.loads((PROJECT / cfg["candidate_config"]).read_text(encoding="utf-8"))
+    input_manifest, _, rows, matrix = validate_matrix(args.embedding_dir.resolve())
+    chosen = select_tasks(args.task, include_reserve=args.include_reserve)
+    for task in chosen:
+        build_task(
+            task,
+            candidate_cfg,
+            input_manifest,
+            rows,
+            matrix,
+            resume=args.resume,
+            reuse_frozen=not args.regenerate_frozen_candidates,
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

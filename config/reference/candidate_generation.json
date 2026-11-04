@@ -1,0 +1,57 @@
+{
+  "experiment": "protocol_recall_v2_coverage_candidate_compression",
+  "semantic_model": "codefuse-ai/C2LLM-0.5B",
+  "semantic_top_k": 50,
+  "semantic_min_cosine": -1.0,
+  "strict_fusion": {
+    "clone": {"min_shared": 40, "min_containment": 0.35, "min_runs": 1},
+    "skeleton": {"min_shared": 18, "min_containment": 0.55, "min_runs": 1},
+    "semantic": {"min_cosine": 0.88, "or_top_frac": 0.0},
+    "top_neighbors": 2,
+    "max_cluster": 6,
+    "unit_preference": "leaf"
+  },
+  "protocol_recall": {
+    "semantic_seed_min_cosine": 0.78,
+    "semantic_supported_min_cosine": 0.35,
+    "max_relation_frequency": 12,
+    "max_definition_references": 20,
+    "max_expanded_per_relation": 4,
+    "max_candidate_units": 20,
+    "max_candidate_files": 8,
+    "max_seed_edges": 4000,
+    "top_candidates": 40,
+    "candidate_pool_size": 40,
+    "selection_policy": "marginal_coverage_v2",
+    "candidate_overlap_jaccard": 0.5,
+    "coverage_role_weight": 8.0,
+    "coverage_relation_weight": 3.0,
+    "coverage_edge_weight": 1.0,
+    "coverage_unit_weight": 0.25
+  },
+  "tasks": [
+    {
+      "instance_id": "qiskit-community__ffsim-248",
+      "source_subdir": "python/ffsim"
+    },
+    {
+      "instance_id": "hikari-py__hikari-897",
+      "source_subdir": "hikari"
+    },
+    {
+      "instance_id": "cornellius-gp__gpytorch-296",
+      "source_subdir": "gpytorch"
+    },
+    {
+      "instance_id": "nipype__pydra-742",
+      "source_subdir": "pydra"
+    }
+  ],
+  "excluded_tasks": [
+    {
+      "instance_id": "getmoto__moto-6734",
+      "source_subdir": "moto",
+      "reason": "Repository size remains outside the active four-task comparison."
+    }
+  ]
+}

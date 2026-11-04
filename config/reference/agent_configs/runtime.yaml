@@ -1,0 +1,20 @@
+agent:
+  step_limit: 0
+  wall_time_limit_seconds: 0
+  cost_limit: 0
+  mode: yolo
+  confirm_exit: false
+  instance_template: |
+    {{task}}
+
+    {% if task_python_environment %}
+    Every shell tool automatically activates the task's testbed Python environment. Run python normally; the original repository is on its import path. Keep the supplied dependency versions and do not switch environments.
+    {% endif %}
+
+    Write your deliverables into the writable /component-output directory. Save metadata in manifest.json, component Python source in separate .py files referenced by library.path, and smoke tests in separate .py files referenced by test_file. Keep paths relative to /component-output. This file protocol also applies when older supplied prompt templates describe inline content or test_py fields.
+    Run python /component-tools/check_output.py --role $COMPONENT_OUTPUT_ROLE --output /component-output to check metadata, file references and Python syntax without executing component code or tests. Correct errors and check again.
+    To submit, run python /component-tools/check_output.py --role $COMPONENT_OUTPUT_ROLE --output /component-output --submit. It prints the completion marker only after the checks pass. Do not print the JSON or source code. The program also checks your files before accepting completion; failed checks are returned for correction. Files are collected directly and do not depend on tool output length. You may use /tmp for temporary work.
+environment:
+  cwd: /testbed
+  timeout: 120
+  env: {}

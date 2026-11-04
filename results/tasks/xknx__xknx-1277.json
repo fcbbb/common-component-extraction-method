@@ -1,0 +1,85 @@
+{
+  "instance_id": "xknx__xknx-1277",
+  "repo": "XKNX/xknx",
+  "base_commit": "6234e32c2a5448786bcd06f9c7a47c692a4eeac5",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 27,
+  "selected_component_ids": [
+    "component-026",
+    "component-021"
+  ],
+  "selected_component_count": 2,
+  "direct_passed": false,
+  "component_passed": false,
+  "direct_evaluation": {
+    "instance_id": "xknx__xknx-1277",
+    "image": "docker.io/swerebenchv2/xknx-xknx:1277-6234e32",
+    "image_id": "sha256:954b1f8d4bfca17561e23f76befab7d887c3be908285287a30c978c5e06742da",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 17,
+    "F2P_failed": 2,
+    "F2P_total": 19,
+    "P2P_passed": 97,
+    "P2P_total": 97,
+    "missing_required": [
+      "test/dpt_tests/dpt_color_test.py::TestDPTColorXYY::test_xyycolor_to_knx_from_dict[value0-raw0]",
+      "test/dpt_tests/dpt_color_test.py::TestDPTColorXYY::test_xyycolor_to_knx_from_dict[value1-raw1]"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "component_evaluation": {
+    "instance_id": "xknx__xknx-1277",
+    "image": "docker.io/swerebenchv2/xknx-xknx:1277-6234e32",
+    "image_id": "sha256:954b1f8d4bfca17561e23f76befab7d887c3be908285287a30c978c5e06742da",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 16,
+    "F2P_failed": 3,
+    "F2P_total": 19,
+    "P2P_passed": 97,
+    "P2P_total": 97,
+    "missing_required": [
+      "test/dpt_tests/dpt_color_test.py::TestDPTColorXYY::test_xyycolor_to_knx_from_dict[value0-raw0]",
+      "test/dpt_tests/dpt_color_test.py::TestDPTColorXYY::test_xyycolor_to_knx_from_dict[value1-raw1]",
+      "test/dpt_tests/dpt_color_test.py::TestDPTColorXYY::test_xyycolor_wrong_value_to_knx[value6]"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "direct_result": {
+    "instance_id": "xknx__xknx-1277",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T04:37:02.045798+00:00",
+    "started_at": "2026-10-22T04:25:34.108367+00:00",
+    "elapsed_seconds": 656.5734461470001,
+    "component_usage": [],
+    "model_calls": 44,
+    "reported_cost_usd": 0.052628004,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "xknx__xknx-1277",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T15:47:08.796128+00:00",
+    "started_at": "2026-10-25T15:41:09.167005+00:00",
+    "elapsed_seconds": 395.11398736800766,
+    "component_usage": [],
+    "model_calls": 56,
+    "reported_cost_usd": 0.03200894399999999,
+    "error": null
+  }
+}

@@ -1,0 +1,9 @@
+## Components
+
+A read-only component bundle is mounted at `{bundle_path}`. First read the complete `{bundle_path}/{index_file}`, which lists each component's name, purpose and directory. Choose relevant components yourself, then read their `README.md` and `component.py`.
+
+The original repository remains at /testbed. When calling a component, ensure /testbed is on Python's module search path and load the selected component.py by its full file path; expose it as common as in its smoke cases. Repository imports use the original absolute package paths. The component directory is not an original repository package: moving it does not preserve package-relative imports. Source data and resources belong to the original repository; check any file paths against that repository rather than relying on the component's storage directory.
+
+Match the task's operations, interface contracts and subproblems to useful components. Reference similar implementations as well as directly usable ones; adapt their calling conventions, processing structure and boundary handling to the target interface. Check the documented scope and dependencies against the visible repository. Briefly record which components informed the solution, what was borrowed and how it was adapted.
+
+Write the task solution directly into the original repository's target files. The program collects the Git patch from those files; do not submit implementations as JSON. Keep the supplied component bundle read-only. Check the syntax of modified Python files and run appropriate visible tests before finishing.

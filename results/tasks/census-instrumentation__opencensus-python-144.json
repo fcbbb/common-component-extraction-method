@@ -1,0 +1,88 @@
+{
+  "instance_id": "census-instrumentation__opencensus-python-144",
+  "repo": "census-instrumentation/opencensus-python",
+  "base_commit": "aba6a32ac9a81e346ba28a3a31f42f4f4a16df2d",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 12,
+  "selected_component_ids": [
+    "component-004",
+    "component-008"
+  ],
+  "selected_component_count": 2,
+  "direct_passed": false,
+  "component_passed": false,
+  "direct_evaluation": {
+    "instance_id": "census-instrumentation__opencensus-python-144",
+    "image": "docker.io/swerebenchv2/census-instrumentation-opencensus-python:144-aba6a32",
+    "image_id": "sha256:3fa8cb8a83b12a8f7c5d8f8026f564656f5d5897fce3ff9749ae5fe0ee7f8e56",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 9,
+    "F2P_failed": 4,
+    "F2P_total": 13,
+    "P2P_passed": 52,
+    "P2P_total": 52,
+    "missing_required": [
+      "tests/unit/trace/test_tracer.py::TestTracer::test_end_span_sampled",
+      "tests/unit/trace/tracers/test_context_tracer.py::TestContextTracer::test_end_span_active",
+      "tests/unit/trace/tracers/test_context_tracer.py::TestContextTracer::test_end_span_batch_export",
+      "tests/unit/trace/tracers/test_context_tracer.py::TestContextTracer::test_end_span_without_parent"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "component_evaluation": {
+    "instance_id": "census-instrumentation__opencensus-python-144",
+    "image": "docker.io/swerebenchv2/census-instrumentation-opencensus-python:144-aba6a32",
+    "image_id": "sha256:3fa8cb8a83b12a8f7c5d8f8026f564656f5d5897fce3ff9749ae5fe0ee7f8e56",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 9,
+    "F2P_failed": 4,
+    "F2P_total": 13,
+    "P2P_passed": 52,
+    "P2P_total": 52,
+    "missing_required": [
+      "tests/unit/trace/test_tracer.py::TestTracer::test_end_span_sampled",
+      "tests/unit/trace/tracers/test_context_tracer.py::TestContextTracer::test_end_span_active",
+      "tests/unit/trace/tracers/test_context_tracer.py::TestContextTracer::test_end_span_batch_export",
+      "tests/unit/trace/tracers/test_context_tracer.py::TestContextTracer::test_end_span_without_parent"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "direct_result": {
+    "instance_id": "census-instrumentation__opencensus-python-144",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T04:52:42.315703+00:00",
+    "started_at": "2026-10-22T04:41:38.427845+00:00",
+    "elapsed_seconds": 634.858131641,
+    "component_usage": [],
+    "model_calls": 43,
+    "reported_cost_usd": 0.05799688199999999,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "census-instrumentation__opencensus-python-144",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T03:14:04.804622+00:00",
+    "started_at": "2026-10-25T03:01:38.560537+00:00",
+    "elapsed_seconds": 788.1938246490026,
+    "component_usage": [],
+    "model_calls": 54,
+    "reported_cost_usd": 0.07513317599999998,
+    "error": null
+  }
+}

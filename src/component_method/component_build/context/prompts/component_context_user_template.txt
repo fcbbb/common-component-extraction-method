@@ -1,0 +1,22 @@
+Prepare historical implementation guidance for the following similarity-mined
+subcluster.
+
+Input JSON:
+{payload}
+
+Return exactly this JSON shape. The status means only that your draft is ready for private local validation:
+{
+  "status": "draft_ready",
+  "library": {
+    "path": "common.py",
+    "content": "..."
+  },
+  "rationale": "why this is a reusable historical pattern",
+  "agent_guidance": {
+    "summary": "short explanation of the reusable pattern",
+    "invariants": ["stable behavior shared by the source files"],
+    "variation_points": ["behavior that must be adapted per provider/backend"],
+    "pitfalls": ["specific ways blindly copying the pattern can fail"],
+    "recommended_use": ["concrete advice for a downstream implementation"]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "instance_id": "maniacallabs__bibliopixel-1105",
+  "repo": "ManiacalLabs/BiblioPixel",
+  "base_commit": "1fbf0a70ac2957e66bc03238a27f297bf6581347",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 33,
+  "selected_component_ids": [
+    "component-002",
+    "component-026",
+    "component-014",
+    "component-028"
+  ],
+  "selected_component_count": 4,
+  "direct_passed": false,
+  "component_passed": false,
+  "direct_evaluation": {
+    "instance_id": "maniacallabs__bibliopixel-1105",
+    "image": "docker.io/swerebenchv2/maniacallabs-bibliopixel:1105-1fbf0a7",
+    "image_id": "sha256:cd5af3cb4f34c9a8a6d8d99437c3b17569728f8507e4f49b757f4162275293c7",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 0,
+    "F2P_failed": 2,
+    "F2P_total": 2,
+    "P2P_passed": 0,
+    "P2P_total": 0,
+    "missing_required": [
+      "test/bibliopixel/drivers/dummy_test.py::DummyTest::test_dummy",
+      "test/bibliopixel/leak_test.py::TestLeaks::test_leaks"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "component_evaluation": {
+    "instance_id": "maniacallabs__bibliopixel-1105",
+    "image": "docker.io/swerebenchv2/maniacallabs-bibliopixel:1105-1fbf0a7",
+    "image_id": "sha256:cd5af3cb4f34c9a8a6d8d99437c3b17569728f8507e4f49b757f4162275293c7",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 0,
+    "F2P_failed": 2,
+    "F2P_total": 2,
+    "P2P_passed": 0,
+    "P2P_total": 0,
+    "missing_required": [
+      "test/bibliopixel/drivers/dummy_test.py::DummyTest::test_dummy",
+      "test/bibliopixel/leak_test.py::TestLeaks::test_leaks"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "direct_result": {
+    "instance_id": "maniacallabs__bibliopixel-1105",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T05:19:25.390057+00:00",
+    "started_at": "2026-10-22T04:58:27.796437+00:00",
+    "elapsed_seconds": 1204.7718215629993,
+    "component_usage": [],
+    "model_calls": 36,
+    "reported_cost_usd": 0.18791599200000003,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "maniacallabs__bibliopixel-1105",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T19:59:21.566731+00:00",
+    "started_at": "2026-10-25T19:02:26.281441+00:00",
+    "elapsed_seconds": 3756.360800147988,
+    "component_usage": [
+      "component-002 / stop, join, cleanup_drivers",
+      "component-028 / static_close_all"
+    ],
+    "model_calls": 89,
+    "reported_cost_usd": 0.17534772599999995,
+    "error": null
+  }
+}

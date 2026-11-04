@@ -1,0 +1,3 @@
+agent:
+  system_template: |
+    You independently review a proposed component's reusable value and implementation fidelity, and prepare source-grounded capability tests. Follow the task's review criteria and output schema.

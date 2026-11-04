@@ -1,0 +1,120 @@
+### Goal
+
+The base repository is the existing source available at /testbed.
+The task agent already works in this base repository. Use any supplied task description only to select relevant existing source capabilities.
+Search across repository features for existing operations and handling
+patterns that can supply parts of that added behavior. Collect useful
+contributions across the work, packaging independently usable operations
+as separate components.
+
+### What counts as a component
+
+A component packages an already-implemented operation or pattern that
+contributes to the newly requested behavior, together with its calling
+contracts and supporting implementation. It exposes one callable entrypoint
+or several cooperating entrypoints with clear inputs, outputs and boundaries.
+
+Let the useful operations and their dependencies determine the component's
+scope and packaging.
+
+### Selection criteria
+
+Any existing capability with a credible, source-backed prospect of improving
+the likelihood of completing the task correctly, or reducing implementation
+effort and time, is a useful candidate.
+
+Examples include:
+- Directly reusable code: an existing operation that can be called or combined
+  with new logic to perform part of the required work.
+- A similar reference implementation: existing code whose control flow,
+  data handling, validation or integration structure provides a concrete
+  pattern to study and adapt. Preserve its existing behavior in the delivery.
+
+Match each candidate's existing inputs, outputs and behavior to the specific
+operation it can contribute, and choose its boundary around that operation
+and its supporting dependencies.
+
+### Extraction boundary
+
+Preserve existing behavior. Include necessary supporting code and packaging
+for loading and calling the component in the supplied environment. Packaging
+may adjust imports and resource paths, but must not add task-requested
+behavior or implement the task's solution.
+
+Use only the visible base source. Do not consult reference patches, test
+patches or future implementations.
+
+### Packaging and dependencies
+
+Include each declared entrypoint's implementation. Preserve input/output
+semantics and errors. Use absolute imports for supporting repository code,
+retain installed third-party dependencies as imports, and preserve access to
+repository resources. State any repository or dependency prerequisites.
+Entrypoints must be top-level functions or classes.
+
+### Exported descriptions
+
+Describe the delivered components as existing repository capabilities in
+the code, metadata and examples you write. The private tasks guide selection
+only: do not include task identifiers, requested changes, solution plans or
+component-to-task mappings
+in exported artifacts. Existing source symbols are permitted.
+
+Write these fields in each component's manifest entry:
+- index_summary: A concise, complete overview of the component's capabilities
+  and key boundaries, usually one to three sentences. Describe the component
+  as a whole rather than listing helper functions.
+- summary: Describe the capability in detail: accepted inputs, returned
+  outputs, supported behavior and relevant boundaries. When several
+  operations cooperate, explain how they work together. Expand on
+  index_summary rather than copying it.
+- guidance: Explain how to call and combine the existing operations and
+  patterns, their prerequisites and source-supported boundaries. Include a
+  complete example from existing source or tests when useful, with imports
+  and concrete inputs. Use exact example values found in repository tests or
+  production callers; do not copy values or formats from the private task.
+  If an example would overlap the task-specific input, use a different
+  source-backed example or omit it.
+
+Record concrete source-supported limitations. Put source citations in
+members and evidence, rather than mixing them into usage explanations.
+
+When a component has multiple entrypoints or modes, describe each one's own
+operation and supported inputs and outputs in the component descriptions.
+Keep component-wide applicability separate from entrypoint-specific
+boundaries: a restriction of one entrypoint must not be presented as a
+restriction of the whole component or of another entrypoint. Name the affected
+entrypoint or mode when recording a limitation. In non-applicability
+statements, exclude a use only when none of the component's documented
+operations can contribute to it. Do not infer a narrower input boundary from
+one caller's use or an example when the source shows that an entrypoint accepts
+broader inputs.
+
+In the top-level reason, briefly explain how each selected component helps
+implement the requested additions or changes.
+
+### Source evidence
+
+Use these path meanings in the manifest:
+- members[].file_id: The original source file, relative to /testbed.
+- members[].unit_id: The symbol in that original source file.
+- evidence[].file_id: The original source file supporting the claim, relative
+  to /testbed. line_start and line_end are inclusive, one-based source lines.
+- library.path: The delivered component Python file, relative to
+  /component-output.
+- workspace_audit.checked_files: Inspected original source files, relative
+  to /testbed. Record inspection gaps in workspace_audit.gaps.
+
+Use relative POSIX paths without the corresponding root directory prefix.
+
+### Source-grounded generic delivery
+
+The delivery should be explainable from the selected base source even to an agent that has never seen the private task. Do not export task-specific interface names, requirements, solution sequences or component-to-task mappings, including statements phrased as negatives (for example, that an operation does not implement a particular new method). Record input/output contracts, actual prerequisites, and limits demonstrated by source guards, errors or existing callers. Avoid lists of unrelated absent features. Keep the private task relevance explanation only in the top-level reason.
+
+Each directory and module name in library.path must be a valid Python identifier; use underscores rather than hyphens. Give a complete example that imports the delivered module, using original source/test values. Do not implement requested behavior, add modes or change the old operation's semantics. Ship the selected operation's implementation; do not select an artifact solely for forwarding or re-exporting an operation from the original repository. Supporting repository dependencies may remain imports, and their delegation boundaries must be documented.
+
+### Callable operation boundaries
+
+Prioritize unchanged operations that a task can actually invoke. A copy of the target being repaired often supplies only reference context; prefer independently usable existing computations when they are present. Do not present the old target as a complete implementation of the requested change.
+
+A newly named generic packaging entrypoint need not already be a public repository API. It may expose an operation already computed by source, including an unbound method or a computation whose existing variable inputs/context are made explicit. Keep the source computation, constants, input/output meaning, guards, errors and necessary effects. Cite the old input/output data flow and declare the original context prerequisites. Do not parameterize fixed policies into new modes, add target-requested branches, or copy private target signatures. The new task agent must implement any new behavior or composition. A wrapper is useful only when the delivered artifact also owns the selected operation's implementation.

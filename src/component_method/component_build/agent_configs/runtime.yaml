@@ -1,0 +1,11 @@
+agent:
+  step_limit: 0
+  wall_time_limit_seconds: 0
+  cost_limit: 0
+  mode: yolo
+  confirm_exit: false
+  instance_template: "{{task}}"
+environment:
+  cwd: /testbed
+  timeout: 120
+  env: {}

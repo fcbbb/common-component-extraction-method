@@ -1,0 +1,187 @@
+{
+  "openai/deepseek-v4.1-flash": {
+    "litellm_provider": "openai",
+    "mode": "chat",
+    "cache_creation_input_token_cost": 0.0,
+    "cache_read_input_token_cost": 6e-09,
+    "input_cost_per_token": 3e-07,
+    "input_cost_per_token_cache_hit": 6e-09,
+    "off_peak_pricing": {
+      "cache_read_input_token_cost": 3e-09,
+      "input_cost_per_token": 1.5e-07,
+      "output_cost_per_token": 6e-07,
+      "windows": [
+        {
+          "hours_utc": [
+            "00:00-01:00",
+            "04:00-06:00",
+            "10:00-00:00"
+          ],
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "hours_utc": "00:00-00:00",
+          "weekdays": [
+            6,
+            7
+          ]
+        }
+      ]
+    },
+    "output_cost_per_token": 1.2e-06
+  },
+  "deepseek-v4.1-flash": {
+    "litellm_provider": "openai",
+    "mode": "chat",
+    "cache_creation_input_token_cost": 0.0,
+    "cache_read_input_token_cost": 6e-09,
+    "input_cost_per_token": 3e-07,
+    "input_cost_per_token_cache_hit": 6e-09,
+    "off_peak_pricing": {
+      "cache_read_input_token_cost": 3e-09,
+      "input_cost_per_token": 1.5e-07,
+      "output_cost_per_token": 6e-07,
+      "windows": [
+        {
+          "hours_utc": [
+            "00:00-01:00",
+            "04:00-06:00",
+            "10:00-00:00"
+          ],
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "hours_utc": "00:00-00:00",
+          "weekdays": [
+            6,
+            7
+          ]
+        }
+      ]
+    },
+    "output_cost_per_token": 1.2e-06
+  },
+  "openai/deepseek-flash": {
+    "litellm_provider": "openai",
+    "mode": "chat",
+    "cache_creation_input_token_cost": 0.0,
+    "cache_read_input_token_cost": 6e-09,
+    "input_cost_per_token": 3e-07,
+    "input_cost_per_token_cache_hit": 6e-09,
+    "off_peak_pricing": {
+      "cache_read_input_token_cost": 3e-09,
+      "input_cost_per_token": 1.5e-07,
+      "output_cost_per_token": 6e-07,
+      "windows": [
+        {
+          "hours_utc": [
+            "00:00-01:00",
+            "04:00-06:00",
+            "10:00-00:00"
+          ],
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "hours_utc": "00:00-00:00",
+          "weekdays": [
+            6,
+            7
+          ]
+        }
+      ]
+    },
+    "output_cost_per_token": 1.2e-06
+  },
+  "deepseek-flash": {
+    "litellm_provider": "openai",
+    "mode": "chat",
+    "cache_creation_input_token_cost": 0.0,
+    "cache_read_input_token_cost": 6e-09,
+    "input_cost_per_token": 3e-07,
+    "input_cost_per_token_cache_hit": 6e-09,
+    "off_peak_pricing": {
+      "cache_read_input_token_cost": 3e-09,
+      "input_cost_per_token": 1.5e-07,
+      "output_cost_per_token": 6e-07,
+      "windows": [
+        {
+          "hours_utc": [
+            "00:00-01:00",
+            "04:00-06:00",
+            "10:00-00:00"
+          ],
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "hours_utc": "00:00-00:00",
+          "weekdays": [
+            6,
+            7
+          ]
+        }
+      ]
+    },
+    "output_cost_per_token": 1.2e-06
+  },
+  "openai/deepseek-v4.1-flash-1017": {
+    "litellm_provider": "openai",
+    "mode": "chat",
+    "cache_creation_input_token_cost": 0.0,
+    "cache_read_input_token_cost": 6e-09,
+    "input_cost_per_token": 3e-07,
+    "input_cost_per_token_cache_hit": 6e-09,
+    "off_peak_pricing": {
+      "cache_read_input_token_cost": 3e-09,
+      "input_cost_per_token": 1.5e-07,
+      "output_cost_per_token": 6e-07,
+      "windows": [
+        {
+          "hours_utc": [
+            "00:00-01:00",
+            "04:00-06:00",
+            "10:00-00:00"
+          ],
+          "weekdays": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "hours_utc": "00:00-00:00",
+          "weekdays": [
+            6,
+            7
+          ]
+        }
+      ]
+    },
+    "output_cost_per_token": 1.2e-06
+  }
+}

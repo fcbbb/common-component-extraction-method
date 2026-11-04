@@ -1,0 +1,9 @@
+The extraction input separates source units into focus units and context units.
+
+Focus units are the original source-unit pairs that caused each recall candidate to be created. Context units were added later by relation expansion so that cross-file protocols, consumers, registries, and supporting implementations remain visible.
+
+Use all visible repository evidence, including context units and additional related source you inspect. However, every published component must contain at least one exact focus unit in its members. Do not publish a component centered only on context units.
+
+The input may contain several focus groups because overlapping candidates were packed into one extraction call. Preserve the groups as independent starting relationships. Do not force unrelated focus groups into one component, and do not publish duplicate components merely because the same context supports several groups.
+
+Focus status is only publication eligibility, not proof that a component exists. Continue applying the normal commonality gate and omit unsupported or repository-specific assets.

@@ -1,0 +1,96 @@
+{
+  "instance_id": "stingraysoftware__stingray-797",
+  "repo": "StingraySoftware/stingray",
+  "base_commit": "d47c95b42f1c1697b1a4207ff64e2970418756b9",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 22,
+  "selected_component_ids": [
+    "component-002",
+    "component-003",
+    "component-007",
+    "component-010"
+  ],
+  "selected_component_count": 4,
+  "direct_passed": false,
+  "component_passed": false,
+  "direct_evaluation": {
+    "instance_id": "stingraysoftware__stingray-797",
+    "image": "docker.io/swerebenchv2/stingraysoftware-stingray:797-d47c95b",
+    "image_id": "sha256:6af17c583a96d818960d2168edf26c152e7c0046a000666b658ea1671dfe6786",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 554,
+    "F2P_failed": 6,
+    "F2P_total": 560,
+    "P2P_passed": 0,
+    "P2P_total": 0,
+    "missing_required": [
+      "stingray/tests/test_crossspectrum.py::TestCrossspectrum::test_make_crossspectrum_diff_lc_counts_shape",
+      "stingray/tests/test_crossspectrum.py::TestCrossspectrum::test_make_crossspectrum_lc_and_evts",
+      "stingray/tests/test_fourier.py::test_avg_cs_from_events_warns",
+      "stingray/tests/test_fourier.py::test_avg_cs_imperfect_lc_size",
+      "stingray/tests/test_fourier.py::test_avg_pds_from_events_warns",
+      "stingray/tests/test_fourier.py::test_avg_pds_imperfect_lc_size"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "component_evaluation": {
+    "instance_id": "stingraysoftware__stingray-797",
+    "image": "docker.io/swerebenchv2/stingraysoftware-stingray:797-d47c95b",
+    "image_id": "sha256:6af17c583a96d818960d2168edf26c152e7c0046a000666b658ea1671dfe6786",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 554,
+    "F2P_failed": 6,
+    "F2P_total": 560,
+    "P2P_passed": 0,
+    "P2P_total": 0,
+    "missing_required": [
+      "stingray/tests/test_crossspectrum.py::TestCrossspectrum::test_make_crossspectrum_diff_lc_counts_shape",
+      "stingray/tests/test_crossspectrum.py::TestCrossspectrum::test_make_crossspectrum_lc_and_evts",
+      "stingray/tests/test_fourier.py::test_avg_cs_from_events_warns",
+      "stingray/tests/test_fourier.py::test_avg_cs_imperfect_lc_size",
+      "stingray/tests/test_fourier.py::test_avg_pds_from_events_warns",
+      "stingray/tests/test_fourier.py::test_avg_pds_imperfect_lc_size"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "direct_result": {
+    "instance_id": "stingraysoftware__stingray-797",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T04:19:50.564758+00:00",
+    "started_at": "2026-10-22T03:26:17.743994+00:00",
+    "elapsed_seconds": 3060.0200178680007,
+    "component_usage": [],
+    "model_calls": 95,
+    "reported_cost_usd": 0.19236970199999998,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "stingraysoftware__stingray-797",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T12:05:15.454403+00:00",
+    "started_at": "2026-10-25T10:35:18.620228+00:00",
+    "elapsed_seconds": 5891.4713481860235,
+    "component_usage": [
+      "component-002 / check_averaged_segment_size"
+    ],
+    "model_calls": 144,
+    "reported_cost_usd": 0.336953022,
+    "error": null
+  }
+}

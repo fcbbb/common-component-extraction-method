@@ -1,0 +1,25 @@
+{
+  "schema": "common-component-final-20tasks-summary-v1",
+  "task_count": 20,
+  "published_component_count": 486,
+  "selected_component_count": 63,
+  "direct_passed": 6,
+  "component_passed": 10,
+  "direct_pass_rate": 0.3,
+  "component_pass_rate": 0.5,
+  "fail_to_pass_gains": 4,
+  "pass_to_fail_regressions": 0,
+  "formal_reruns": {
+    "pennylaneai__pennylane-3057": "task_02",
+    "pybamm-team__pybamm-1014": "task_02"
+  },
+  "embedding_subset": {
+    "unit_count": 26572,
+    "embedding_shape": [
+      26572,
+      896
+    ],
+    "units_sha256": "3766838b72e046a558e5d221ff1e04b3893bce00ff3484ba76bc0fe8c084f47d",
+    "matrix_sha256": "b722d615ebe3eff7dfd8a66723f19bade0564b53117abec2a9ec1624874e0a5e"
+  }
+}

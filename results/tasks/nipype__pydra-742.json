@@ -1,0 +1,83 @@
+{
+  "instance_id": "nipype__pydra-742",
+  "repo": "nipype/pydra",
+  "base_commit": "e52e32b05816df9908b612fbc8425faed9ead86b",
+  "component_source_kind": "imported_pilot",
+  "final_component_attempt": "task_attempt_07",
+  "formal_rerun": false,
+  "component_count": 27,
+  "selected_component_ids": [
+    "component-024",
+    "component-005",
+    "component-001",
+    "component-007"
+  ],
+  "selected_component_count": 4,
+  "direct_passed": false,
+  "component_passed": true,
+  "direct_evaluation": {
+    "instance_id": "nipype__pydra-742",
+    "image": "docker.io/swerebenchv2/nipype-pydra:742-e52e32b",
+    "image_id": "sha256:d02a7462283487bd6034cd7143364219625e84594ed1796fff55d635cfb7e829",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 23,
+    "F2P_failed": 2,
+    "F2P_total": 25,
+    "P2P_passed": 138,
+    "P2P_total": 138,
+    "missing_required": [
+      "pydra/utils/tests/test_hash.py::test_bytes_special_form1a",
+      "pydra/utils/tests/test_hash.py::test_bytes_special_form3a"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "component_evaluation": {
+    "instance_id": "nipype__pydra-742",
+    "image": "docker.io/swerebenchv2/nipype-pydra:742-e52e32b",
+    "image_id": "sha256:d02a7462283487bd6034cd7143364219625e84594ed1796fff55d635cfb7e829",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 25,
+    "F2P_failed": 0,
+    "F2P_total": 25,
+    "P2P_passed": 138,
+    "P2P_total": 138,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "direct_result": {
+    "instance_id": "nipype__pydra-742",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T04:59:44.568609+00:00",
+    "started_at": "2026-10-22T04:53:28.602545+00:00",
+    "elapsed_seconds": 359.6436069889987,
+    "component_usage": [],
+    "model_calls": 51,
+    "reported_cost_usd": 0.023561693999999994,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "nipype__pydra-742",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-24T06:35:49.782521+00:00",
+    "started_at": "2026-10-24T06:31:54.224119+00:00",
+    "elapsed_seconds": 220.08226849199855,
+    "component_usage": [],
+    "model_calls": 35,
+    "reported_cost_usd": 0.023186285999999997,
+    "error": null
+  }
+}

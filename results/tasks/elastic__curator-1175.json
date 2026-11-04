@@ -1,0 +1,83 @@
+{
+  "instance_id": "elastic__curator-1175",
+  "repo": "elastic/curator",
+  "base_commit": "eeeee90c0644719ffd93078af6b9e34c1e80e7e7",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 30,
+  "selected_component_ids": [
+    "component-014",
+    "component-019",
+    "component-013",
+    "component-018",
+    "component-009"
+  ],
+  "selected_component_count": 5,
+  "direct_passed": true,
+  "component_passed": true,
+  "direct_evaluation": {
+    "instance_id": "elastic__curator-1175",
+    "image": "docker.io/swerebenchv2/elastic-curator:1175-eeeee90",
+    "image_id": "sha256:530ff02a3c69465590eb728480c85781cf5c0c3e94c1087c88c93c656384ce3e",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 3,
+    "F2P_failed": 0,
+    "F2P_total": 3,
+    "P2P_passed": 41,
+    "P2P_total": 41,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "component_evaluation": {
+    "instance_id": "elastic__curator-1175",
+    "image": "docker.io/swerebenchv2/elastic-curator:1175-eeeee90",
+    "image_id": "sha256:530ff02a3c69465590eb728480c85781cf5c0c3e94c1087c88c93c656384ce3e",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 3,
+    "F2P_failed": 0,
+    "F2P_total": 3,
+    "P2P_passed": 41,
+    "P2P_total": 41,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "direct_result": {
+    "instance_id": "elastic__curator-1175",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T03:43:14.057935+00:00",
+    "started_at": "2026-10-22T03:39:23.986576+00:00",
+    "elapsed_seconds": 217.72281352100072,
+    "component_usage": [],
+    "model_calls": 30,
+    "reported_cost_usd": 0.031812276,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "elastic__curator-1175",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T06:46:02.568158+00:00",
+    "started_at": "2026-10-25T06:43:43.473455+00:00",
+    "elapsed_seconds": 149.30667070898926,
+    "component_usage": [
+      "component-014 / resolve_period"
+    ],
+    "model_calls": 38,
+    "reported_cost_usd": 0.018284400000000006,
+    "error": null
+  }
+}

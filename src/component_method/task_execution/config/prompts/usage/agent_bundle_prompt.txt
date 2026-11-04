@@ -1,0 +1,13 @@
+## Components
+
+A read-only component bundle is available at `{bundle_path}`. Its `{index_file}` lists the available capabilities and links to each component's usage document and Python source. Inspect the index and the relevant component documentation and source before implementing the task.
+
+These components have been reviewed and execution-tested within their documented scope.
+
+Before coding, consider the requested behavior as separate operations and compare each operation, not just the whole feature, with the validated component entrypoints by inputs, outputs, and supported scope. If a delivered bundle entrypoint performs a needed sub-operation with compatible inputs and output, call that entrypoint from the production implementation using its documented import, and compose new logic around it, even when the overall feature requires additional implementation. Do not replace this call with an equivalent repository function or copied implementation. Skip an entrypoint only when its documented contract or supported scope does not fit the needed operation. If applicability is unclear from the documentation, inspect the source before deciding.
+
+Component source retains its extracted relative path. The original repository and the component bundle root are on Python's module search path, so the documented package imports are available. You may also load the linked Python source by its full path using importlib. Components may import original repository packages and installed dependencies. Follow the selected component's documented interface and supported scope, and preserve the task's public interface and behavior.
+
+Write the task solution in the original repository's target files. Keep the supplied component bundle read-only.
+
+In your final task-submission response, if you used a delivered component, include `{"component_usage": ["component identifier / entrypoint"]}` on a separate line outside the Bash block; otherwise omit it. Keep the existing final submission command in that same response, without an extra turn.

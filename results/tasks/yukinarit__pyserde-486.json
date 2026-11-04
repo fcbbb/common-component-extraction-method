@@ -1,0 +1,91 @@
+{
+  "instance_id": "yukinarit__pyserde-486",
+  "repo": "yukinarit/pyserde",
+  "base_commit": "a517254b18b2927348b94f59de095ce873abe101",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 12,
+  "selected_component_ids": [
+    "component-005",
+    "component-007",
+    "component-009",
+    "component-001",
+    "component-008"
+  ],
+  "selected_component_count": 5,
+  "direct_passed": false,
+  "component_passed": false,
+  "direct_evaluation": {
+    "instance_id": "yukinarit__pyserde-486",
+    "image": "docker.io/swerebenchv2/yukinarit-pyserde:486-a517254",
+    "image_id": "sha256:201eac90d62c3a322519f65118b4ed59cb14ceb68f2934c1c4c62d1966c86fec",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 2,
+    "F2P_failed": 0,
+    "F2P_total": 2,
+    "P2P_passed": 1584,
+    "P2P_total": 1591,
+    "missing_required": [
+      "tests/test_basics.py::test_single_element_tuples[to_dict-from_dict]",
+      "tests/test_basics.py::test_single_element_tuples[to_json-from_json]",
+      "tests/test_basics.py::test_single_element_tuples[to_msgpack-from_msgpack]",
+      "tests/test_basics.py::test_single_element_tuples[to_pickle-from_pickle]",
+      "tests/test_basics.py::test_single_element_tuples[to_toml-from_toml]",
+      "tests/test_basics.py::test_single_element_tuples[to_tuple-from_tuple]",
+      "tests/test_basics.py::test_single_element_tuples[to_yaml-from_yaml]"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "component_evaluation": {
+    "instance_id": "yukinarit__pyserde-486",
+    "image": "docker.io/swerebenchv2/yukinarit-pyserde:486-a517254",
+    "image_id": "sha256:201eac90d62c3a322519f65118b4ed59cb14ceb68f2934c1c4c62d1966c86fec",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 1,
+    "F2P_failed": 1,
+    "F2P_total": 2,
+    "P2P_passed": 1591,
+    "P2P_total": 1591,
+    "missing_required": [
+      "tests/test_basics.py::test_toml"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "direct_result": {
+    "instance_id": "yukinarit__pyserde-486",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T03:45:01.326088+00:00",
+    "started_at": "2026-10-22T03:20:06.940851+00:00",
+    "elapsed_seconds": 1420.7683045929998,
+    "component_usage": [],
+    "model_calls": 49,
+    "reported_cost_usd": 0.07471542,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "yukinarit__pyserde-486",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T01:09:12.301017+00:00",
+    "started_at": "2026-10-25T00:34:11.808150+00:00",
+    "elapsed_seconds": 2192.264147544003,
+    "component_usage": [],
+    "model_calls": 89,
+    "reported_cost_usd": 0.16968831,
+    "error": null
+  }
+}

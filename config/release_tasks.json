@@ -1,0 +1,125 @@
+{
+  "schema": "common-component-final-task-map-v1",
+  "tasks": [
+    {
+      "index": 1,
+      "instance_id": "qiskit-community__ffsim-248",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 2,
+      "instance_id": "hikari-py__hikari-897",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 3,
+      "instance_id": "yukinarit__pyserde-486",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 4,
+      "instance_id": "elastic__curator-1085",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 5,
+      "instance_id": "stingraysoftware__stingray-797",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 6,
+      "instance_id": "cornellius-gp__gpytorch-296",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 7,
+      "instance_id": "elastic__curator-1175",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 8,
+      "instance_id": "pennylaneai__pennylane-3033",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 9,
+      "instance_id": "neurodatawithoutborders__pynwb-557",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 10,
+      "instance_id": "stfc__psyclone-1850",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 11,
+      "instance_id": "pennylaneai__pennylane-3057",
+      "final_component_attempt": "task_02",
+      "formal_rerun": true
+    },
+    {
+      "index": 12,
+      "instance_id": "xknx__xknx-1277",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 13,
+      "instance_id": "pybamm-team__pybamm-1014",
+      "final_component_attempt": "task_02",
+      "formal_rerun": true
+    },
+    {
+      "index": 14,
+      "instance_id": "census-instrumentation__opencensus-python-144",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 15,
+      "instance_id": "sdv-dev__rdt-741",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 16,
+      "instance_id": "jelmer__dulwich-1171",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 17,
+      "instance_id": "nipype__pydra-742",
+      "final_component_attempt": "task_attempt_07",
+      "formal_rerun": false
+    },
+    {
+      "index": 18,
+      "instance_id": "tefra__xsdata-310",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 19,
+      "instance_id": "maniacallabs__bibliopixel-1105",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    },
+    {
+      "index": 20,
+      "instance_id": "duartegroup__autode-349",
+      "final_component_attempt": "task_01",
+      "formal_rerun": false
+    }
+  ]
+}

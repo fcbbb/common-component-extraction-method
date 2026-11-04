@@ -1,0 +1,2 @@
+Member identifier protocol:
+Treat each supplied file_id and unit_id as an opaque identifier. For confirmed_members, select supported entries from proposed_component.members and copy both identifier strings exactly, character for character. Do not add or remove function:, class:, or method: prefixes, rename a symbol, or invent a member. The schema example uses one real supplied member only to illustrate the output format; it does not pre-confirm that member. Members outside the supplied list remain forbidden.

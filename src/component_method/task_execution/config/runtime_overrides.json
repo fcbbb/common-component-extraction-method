@@ -1,0 +1,10 @@
+{
+  "purpose": "Future runs only; no experiments started.",
+  "applies_to": "Shared parser; optional component_usage result field and one appended prompt sentence.",
+  "files": {
+    "adapters/action_protocol.py": "b5c364fe2651147171476e02a9c7350b77ca2af44245076c52ad88c38ac3c538",
+    "adapters/component_usage.py": "bed374d888835dff0a31a41cbfcc78e4a9a97c873ef76f4f84656e3b1c16da0e",
+    "core/task.py": "e5c83092adb4148b863f0a627cdccd64ed06186b71419026b04e2427a68c6c98",
+    "config/prompts/usage/agent_bundle_prompt.txt": "617a303c14f5372b92d1471c4ab9ff57bf8d1b4dea811c2b0c0d73d503597a65"
+  }
+}

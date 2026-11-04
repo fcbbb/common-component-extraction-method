@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling>=1.24.2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "common-component-extraction-method"
+version = "1.0.0"
+description = "Task-blind common-component extraction, retrieval, and evaluation"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {file = "LICENSE"}
+dependencies = [
+  "docker>=5.0.3",
+  "filelock>=3.20.0",
+  "jinja2>=3.1.6",
+  "numpy>=1.26",
+  "openai>=2.6.1",
+  "pyyaml>=6.0.3",
+  "scipy>=1.16.3",
+  "tqdm>=4.67.1",
+]
+
+[project.optional-dependencies]
+embeddings = [
+  "hnswlib>=0.8",
+  "sentence-transformers>=5.4.1",
+  "torch>=2.6",
+  "transformers>=4.48",
+]
+agents = ["mini-swe-agent>=1.14,<2"]
+test = ["pytest>=8.4.2"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/component_method"]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q"
+testpaths = ["tests"]
+pythonpath = ["src", "."]

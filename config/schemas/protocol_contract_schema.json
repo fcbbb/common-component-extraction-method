@@ -1,0 +1,22 @@
+{
+  "required_fields": [
+    "capability_family",
+    "semantic_domain",
+    "extension_trigger",
+    "covered_variants",
+    "downstream_guarantee",
+    "consumers",
+    "reuse_interface",
+    "boundary"
+  ],
+  "consumer_required_fields": [
+    "file_id",
+    "unit_id",
+    "role"
+  ],
+  "minimum_consumer_count": 2,
+  "reuse_modes": [
+    "stable_entrypoint",
+    "reference_pattern"
+  ]
+}

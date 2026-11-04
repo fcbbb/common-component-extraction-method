@@ -1,0 +1,5 @@
+agent:
+  step_limit: 250
+  wall_time_limit_seconds: 0
+model:
+  litellm_model_registry: ${COMPONENT_METHOD_RELEASE_ROOT}/repository/src/component_method/task_execution/config/pricing.json

@@ -1,0 +1,84 @@
+{
+  "instance_id": "neurodatawithoutborders__pynwb-557",
+  "repo": "NeurodataWithoutBorders/pynwb",
+  "base_commit": "6d2cc9f8ed3ab1a67e2da2fb4fec77029aed2215",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_01",
+  "formal_rerun": false,
+  "component_count": 31,
+  "selected_component_ids": [
+    "component-021",
+    "component-023",
+    "component-022",
+    "component-017"
+  ],
+  "selected_component_count": 4,
+  "direct_passed": false,
+  "component_passed": false,
+  "direct_evaluation": {
+    "instance_id": "neurodatawithoutborders__pynwb-557",
+    "image": "docker.io/swerebenchv2/neurodatawithoutborders-pynwb:557-6d2cc9f",
+    "image_id": "sha256:e01cb6dc62789f15418ed349b5033e4df0cf2412c06650ac0406700c62f1e266",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 5,
+    "F2P_failed": 1,
+    "F2P_total": 6,
+    "P2P_passed": 20,
+    "P2P_total": 20,
+    "missing_required": [
+      "tests/unit/pynwb_tests/test_extension.py::TestCatchDupNS::test_catch_dup_name"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "component_evaluation": {
+    "instance_id": "neurodatawithoutborders__pynwb-557",
+    "image": "docker.io/swerebenchv2/neurodatawithoutborders-pynwb:557-6d2cc9f",
+    "image_id": "sha256:e01cb6dc62789f15418ed349b5033e4df0cf2412c06650ac0406700c62f1e266",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 1,
+    "error": null,
+    "F2P_passed": 5,
+    "F2P_failed": 1,
+    "F2P_total": 6,
+    "P2P_passed": 20,
+    "P2P_total": 20,
+    "missing_required": [
+      "tests/unit/pynwb_tests/test_extension.py::TestCatchDupNS::test_catch_dup_name"
+    ],
+    "extra_passed": [],
+    "passed_match": false,
+    "required_tests_passed": false
+  },
+  "direct_result": {
+    "instance_id": "neurodatawithoutborders__pynwb-557",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T04:35:31.193122+00:00",
+    "started_at": "2026-10-22T03:54:04.527975+00:00",
+    "elapsed_seconds": 2371.118394339999,
+    "component_usage": [],
+    "model_calls": 80,
+    "reported_cost_usd": 0.22730800200000004,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "neurodatawithoutborders__pynwb-557",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-25T13:04:41.847381+00:00",
+    "started_at": "2026-10-25T12:24:50.639195+00:00",
+    "elapsed_seconds": 2621.3928979390184,
+    "component_usage": [],
+    "model_calls": 136,
+    "reported_cost_usd": 0.16736023799999986,
+    "error": null
+  }
+}

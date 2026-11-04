@@ -1,0 +1,81 @@
+{
+  "instance_id": "pybamm-team__pybamm-1014",
+  "repo": "pybamm-team/PyBaMM",
+  "base_commit": "a45f180b8d55d00882c4f56d64c557cdf97e819e",
+  "component_source_kind": "frozen_batch",
+  "final_component_attempt": "task_02",
+  "formal_rerun": true,
+  "component_count": 21,
+  "selected_component_ids": [
+    "component-001",
+    "component-005",
+    "component-020"
+  ],
+  "selected_component_count": 3,
+  "direct_passed": true,
+  "component_passed": true,
+  "direct_evaluation": {
+    "instance_id": "pybamm-team__pybamm-1014",
+    "image": "docker.io/swerebenchv2/pybamm-team-pybamm:1014-a45f180",
+    "image_id": "sha256:63ff4f3c4556d5febc322cfdaf7e888be545f115687d832bffef713e7a7fddcc",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 0,
+    "error": null,
+    "F2P_passed": 7,
+    "F2P_failed": 0,
+    "F2P_total": 7,
+    "P2P_passed": 47,
+    "P2P_total": 47,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "component_evaluation": {
+    "instance_id": "pybamm-team__pybamm-1014",
+    "image": "docker.io/swerebenchv2/pybamm-team-pybamm:1014-a45f180",
+    "image_id": "sha256:63ff4f3c4556d5febc322cfdaf7e888be545f115687d832bffef713e7a7fddcc",
+    "network": "none",
+    "evaluated": true,
+    "exit_code": 0,
+    "error": null,
+    "F2P_passed": 7,
+    "F2P_failed": 0,
+    "F2P_total": 7,
+    "P2P_passed": 47,
+    "P2P_total": 47,
+    "missing_required": [],
+    "extra_passed": [],
+    "passed_match": true,
+    "required_tests_passed": true
+  },
+  "direct_result": {
+    "instance_id": "pybamm-team__pybamm-1014",
+    "arm": "direct",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-22T05:01:46.456345+00:00",
+    "started_at": "2026-10-22T04:36:13.383398+00:00",
+    "elapsed_seconds": 1466.2162745820006,
+    "component_usage": [],
+    "model_calls": 74,
+    "reported_cost_usd": 0.11925844799999999,
+    "error": null
+  },
+  "component_result": {
+    "instance_id": "pybamm-team__pybamm-1014",
+    "arm": "components",
+    "status": "Submitted",
+    "patch_available": true,
+    "finished_at": "2026-10-26T02:27:55.304861+00:00",
+    "started_at": "2026-10-26T00:54:16.894246+00:00",
+    "elapsed_seconds": 5777.086427925999,
+    "component_usage": [
+      "component-001 / replace_children, TreeCopier"
+    ],
+    "model_calls": 142,
+    "reported_cost_usd": 0.8485936859999996,
+    "error": null
+  }
+}

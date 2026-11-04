@@ -1,0 +1,65 @@
+{
+  "status": "confirmed|rejected|uncertain",
+  "reason": "reusable-value decision",
+  "confirmed_members": [
+    {
+      "file_id": "source/package/module.py",
+      "unit_id": "source_symbol"
+    }
+  ],
+  "evidence": [
+    {
+      "file_id": "source/package/module.py",
+      "line_start": 1,
+      "line_end": 2,
+      "claim": ""
+    }
+  ],
+  "limitations": [],
+  "validation_dependencies": {
+    "complete": true,
+    "files": [
+      "source/package/module.py"
+    ],
+    "search_scopes": []
+  },
+  "entrypoint_capabilities": [
+    {
+      "entrypoint": "name",
+      "method": "",
+      "availability": "implemented|missing|unverified",
+      "contract": "input/output and boundary behavior",
+      "example": "minimal source-grounded call",
+      "scope": "supported inputs and adaptation conditions",
+      "dependencies": [],
+      "reason": "",
+      "case_ids": [
+        "case-1"
+      ]
+    }
+  ],
+  "artifact_review": {
+    "status": "faithful|invalid|uncertain|not_checked",
+    "reason": ""
+  },
+  "revision": null,
+  "smoke_test": {
+    "status": "ready|no_cases|not_run",
+    "reason": "",
+    "cases": [
+      {
+        "case_id": "case-1",
+        "entrypoint": "name",
+        "test_file": "cases/case-1.py",
+        "sources": [
+          {
+            "file_id": "source/package/module.py",
+            "line_start": 1,
+            "line_end": 2,
+            "role": "interface_contract"
+          }
+        ]
+      }
+    ]
+  }
+}

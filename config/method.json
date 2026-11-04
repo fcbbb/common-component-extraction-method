@@ -1,0 +1,26 @@
+{
+  "schema": "common-component-method-release-v1",
+  "task_model": "openai/deepseek-v4.1-flash-1017",
+  "api_base_env": "OPENAI_API_BASE",
+  "api_key_env": "OPENAI_API_KEY",
+  "embedding": {
+    "model_id": "codefuse-ai/C2LLM-0.5B",
+    "model_revision": "bd6d0ddb29f0c9a3d0f14281aedc9f940bb8d67a",
+    "max_seq_length": 4096,
+    "batch_size": 4,
+    "chunk_size": 1024,
+    "normalization": "L2"
+  },
+  "pipeline": {
+    "agent_timeout_seconds": 7200,
+    "extraction_workers": 6,
+    "review_workers": 6,
+    "max_review_repair_rounds": 1,
+    "packet_config": {
+      "min_shared_units": 2,
+      "min_jaccard": 0.05,
+      "max_units": 60,
+      "max_files": 18
+    }
+  }
+}

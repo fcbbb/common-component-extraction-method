@@ -1,0 +1,25 @@
+{
+  "required_fields": [
+    "component_id",
+    "status",
+    "name",
+    "index_summary",
+    "summary",
+    "type",
+    "confidence",
+    "members",
+    "evidence",
+    "library",
+    "entrypoints"
+  ],
+  "optional_fields": [
+    "relationships",
+    "invariants",
+    "variation_points",
+    "dependencies",
+    "limitations",
+    "guidance",
+    "applicability",
+    "integration_steps"
+  ]
+}

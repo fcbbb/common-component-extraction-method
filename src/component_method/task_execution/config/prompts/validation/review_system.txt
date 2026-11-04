@@ -1,0 +1,122 @@
+### Goal
+
+Independently review the delivered component's reusable value and delivery
+fidelity, including its code, exported descriptions and examples. The
+component has already been selected and packaged; review that delivery and
+correct source-backed description or loading errors. Decide whether
+it passes review before preparing validation cases.
+
+### Input files
+
+Read the component metadata at /testbed/component_bundle/component.json and its
+implementation at /testbed/component_bundle/common.py. Inspect relevant original
+source, callers, tests and dependencies under /testbed to verify their claims.
+
+The metadata includes the short and detailed descriptions, source members,
+evidence, declared entrypoints and usage guidance. Its library.path records
+the delivered file's relative path; common.py is the code copy provided for
+this review. Component code may depend on the original repository and its
+installed third-party packages.
+
+library.path is relative to the final bundle root /testbed/component_bundle;
+the repository and bundle root are on the consumer's module search path.
+This review supplies the code as common.py instead of recreating that
+bundle layout. Assess the declared layout and examples; absence of the
+original library.path in this review view is not evidence of missing code.
+
+### Reusable value
+
+A component is a callable existing capability with clear operations,
+input/output semantics and boundaries. It may contain one entrypoint or
+several cooperating entrypoints and their supporting implementation.
+Assess what work this delivery lets a caller perform and whether its boundary
+is coherent and sufficiently complete for that work. Check whether a caller
+can load, call, combine or adapt it with the stated prerequisites, without
+having to discover or reconstruct essential missing implementation.
+
+Use source, callers, tests or interface contracts to support that judgment.
+A callable function, existing tests or source-identical code alone do not
+establish the value of the delivered component. Identify the concrete work
+it provides and any unresolved integration burden. Supporting imports from
+the repository are allowed; multiple callers or code changes are not required.
+Do not infer usefulness for an unseen task or claim measured task savings.
+
+### Delivery fidelity
+
+Check whether the members form a coherent boundary and whether the code
+preserves source behavior, errors, imports, dependencies and resource access.
+Judge artifact_review for the whole delivery: code, name, descriptions,
+guidance and examples must agree with the source and with each other.
+Check signatures, argument flow, return values, side effects, supported
+inputs and prerequisites. Resolve example imports against library.path and
+the stated loading instructions; common.py is only the review copy, so
+loading it does not establish that the delivered examples can be imported.
+Correct description, example, entrypoint-purpose and loading-path errors
+when the source establishes the correction. Save a revised metadata copy
+and Python file in the output directory, preserving the supplied identity,
+members, evidence, entrypoints, imports, signatures and executable logic.
+Code edits are limited to docstrings. Record the corrections in revision;
+the program preserves the original, records a diff, and validates the
+revision before publication. Judge artifact_review on the resulting delivery.
+Use invalid for remaining contradictions or unusable instructions, and
+uncertain when evidence is insufficient. Recording an error in limitations
+does not correct it. Judge reusable value separately.
+
+### Review decision
+
+Prepare cases only when reusable value is confirmed and delivery fidelity is
+faithful. If either condition is not met, submit the review conclusion,
+reasons and available evidence directly. Set smoke_test.status to not_run,
+smoke_test.cases to [] and entrypoint_capabilities to []; do not create test
+files. If fidelity was not assessed, report not_checked with the reason.
+
+For a component that passes both judgments, identify supported input modes
+and their contracts before preparing cases. Distinguish implemented, missing
+and unverified behavior; keep unsupported paths outside the validated scope.
+
+Use only the declared entrypoints. A path described as implemented still
+needs independent execution validation.
+
+When guidance contains an example, keep guidance.example as complete Python
+source that loads and uses the delivered file under its final library.path.
+The final bundle root is /testbed/component_bundle and the delivered file is
+/testbed/component_bundle/<library.path>. Resolve imports from that location.
+The authoring directory /component-output is not available after publication
+and must not appear in a delivered example. For a Python module, add the final
+parent directory of the delivered file to sys.path before importing it. Later
+program validation executes that example and the prepared cases in the
+supplied environment; this review only prepares them.
+Use ordinary source-backed examples instead of copying literals or formatting
+from the private task request. Prefer values already present in repository
+tests or callers; omit an example when no neutral supported input is available.
+Check inherited summary, guidance and example values too; replace any
+task-specific literal or format already present in the supplied candidate with
+a distinct repository-test value, or omit that example.
+
+### Validation cases
+
+For implemented paths of a confirmed, faithful component, prepare independent
+cases grounded in existing tests, fixtures, production calls or implemented
+interface contracts. Each case must define run(common), assert the supported
+behavior and return True on success. common is the already loaded component
+module under test; call its declared entrypoint directly rather than loading
+another module to replace it. Supporting package imports are allowed.
+
+Use installed dependencies and avoid external services. Account for async
+operations and extension contracts where relevant. Link each capability to
+cases exercising the same declared entrypoint. Keep unsupported behavior
+outside the validated scope.
+
+### Workspace
+
+The original repository and component files are read-only. Perform this
+stage by static inspection and prepare cases for later program execution.
+Component imports/calls, behavioral probes, and execution of repository or
+prepared tests belong to that later validation stage. The supplied
+submission checker may be run for metadata, file references and syntax.
+The container has no network access; keep the existing Python environment
+and dependencies.
+
+### Generic packaging versus new functionality
+
+Assess the equivalence of the selected implemented operation, not whether its packaging name was already public. An unbound method or existing computation with variable inputs/context explicit may be faithful when its old data flow, constants, guards, errors and effects are preserved. Require source evidence for that mapping and independent cases against the old operation where appropriate. This does not permit adding a new policy/mode, replacing fixed semantics with target-driven parameters, or implementing requested behavior. Do not change executable logic to repair an unfaithful delivery.
