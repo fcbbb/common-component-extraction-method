@@ -38,7 +38,7 @@ def _read_file(root: Path, relative: Any, *, python: bool = True) -> str:
         cursor = cursor / part
         if cursor.is_symlink():
             raise ValueError(f"symlink file references are not allowed: {relative}")
-    if not cursor.resolve().is_relative_to(root.resolve()) or not cursor.is_file():
+    if root.resolve() not in cursor.resolve().parents or not cursor.is_file():
         raise ValueError(f"output file does not exist: {relative}")
     content = cursor.read_text(encoding="utf-8")
     if not content.strip():
@@ -242,7 +242,7 @@ def _validate_mounted_review_citations(value: Any, source_root: Path) -> None:
         ):
             raise ValueError("review contains a malformed source citation")
         source_path = (source_root / file_id).resolve()
-        if not source_path.is_relative_to(source_root.resolve()) or not source_path.is_file():
+        if source_root.resolve() not in source_path.parents or not source_path.is_file():
             raise ValueError(f"review citation does not resolve inside /testbed: {file_id}")
         line_count = len(source_path.read_text(encoding="utf-8").splitlines())
         if end > line_count:

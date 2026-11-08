@@ -10,6 +10,11 @@ import pytest
 from component_method.component_build import submission
 
 
+class LegacyPath(type(Path())):
+    def is_relative_to(self, *args):
+        raise AttributeError("is_relative_to is unavailable before Python 3.9")
+
+
 def extraction(root):
     (root / "common.py").write_text("def make(value):\n    return value + 1\n")
     manifest = {"status": "ready", "components": [{
@@ -27,6 +32,12 @@ def test_extraction_collects_code_from_files_without_executing_it(tmp_path):
     result = submission.load_submission(tmp_path, "extraction")
     assert result["components"][0]["library"]["content"] == source
     assert json.loads((tmp_path / "manifest.json").read_text()) == original
+
+
+def test_file_checker_supports_legacy_container_pathlib(tmp_path):
+    extraction(tmp_path)
+    result = submission.load_submission(LegacyPath(tmp_path), "extraction")
+    assert result["components"][0]["library"]["content"].startswith("def make")
 
 
 def test_review_collects_each_test_from_its_own_file(tmp_path):
@@ -146,8 +157,13 @@ def test_protocol_review_v2_shape_is_checked_before_completion(tmp_path):
     assert submission.load_submission(tmp_path, "review")["status"] == "confirmed"
 
 
-def test_mounted_review_citations_reject_missing_files_and_line_overflow(tmp_path):
+@pytest.mark.parametrize("legacy_pathlib", [False, True])
+def test_mounted_review_citations_reject_missing_files_and_line_overflow(
+    tmp_path, legacy_pathlib,
+):
     source = tmp_path / "repo"
+    if legacy_pathlib:
+        source = LegacyPath(source)
     source.mkdir()
     (source / "module.py").write_text("first\nsecond\n")
     review = {
@@ -162,5 +178,12 @@ def test_mounted_review_citations_reject_missing_files_and_line_overflow(tmp_pat
         submission._validate_mounted_review_citations(review, source)
 
     review["evidence"][0].update({"file_id": "missing.py", "line_end": 1})
+    with pytest.raises(ValueError, match="does not resolve"):
+        submission._validate_mounted_review_citations(review, source)
+
+    outside = tmp_path / "outside.py"
+    outside.write_text("outside\n")
+    (source / "escape.py").symlink_to(outside)
+    review["evidence"][0]["file_id"] = "escape.py"
     with pytest.raises(ValueError, match="does not resolve"):
         submission._validate_mounted_review_citations(review, source)

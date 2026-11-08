@@ -1,22 +1,26 @@
-"""Run isolated MiniSWE tasks over read-only community or repository snapshots."""
+"""Run isolated component agents over read-only repository snapshots."""
 
 from __future__ import annotations
 
 import base64
-import importlib.util
 import hashlib
 import json
 import os
 import shlex
 import shutil
-import subprocess
-import sys
 import threading
 import uuid
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from component_method.agent_runtime import (
+    AgentRunRequest,
+    BackendSettings,
+    create_agent_backend,
+    selected_backend_name,
+)
 
 from ..workspace import COMPONENT_DIRECTORY, TASK_RUNTIME_ACTIVATION, prepare_component_mount
 from ..submission import CHECKER_PATH, OUTPUT_DIRECTORY, file_submission_instructions, load_submission
@@ -26,6 +30,7 @@ from ..context.support import write_json
 
 AGENT_CONFIG_DIR = Path(__file__).resolve().parents[1] / "agent_configs"
 AGENT_ROLES = ("extraction", "review", "repair", "proposal", "proposal_review")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 
 
 def agent_config_paths(role: str) -> tuple[Path, Path]:
@@ -35,21 +40,29 @@ def agent_config_paths(role: str) -> tuple[Path, Path]:
     return AGENT_CONFIG_DIR / "runtime.yaml", AGENT_CONFIG_DIR / f"{role}.yaml"
 
 
-def _agent_config_identity(default_config: Path, role: str) -> str:
-    digest = hashlib.sha256()
-    for path in (default_config, *agent_config_paths(role)):
-        digest.update(path.name.encode())
-        digest.update(path.read_bytes())
-    return digest.hexdigest()
-
-
 def default_agent_config_identities() -> dict[str, str] | None:
     """Read effective stage configs before deciding whether a bundle can be reused."""
-    spec = importlib.util.find_spec("minisweagent")
-    if not spec or not spec.submodule_search_locations:
+    try:
+        backend = create_agent_backend(
+            BackendSettings(
+                api_key="identity-only",
+                base_url="identity-only",
+                repository_root=REPOSITORY_ROOT,
+            )
+        )
+        backend.validate_runtime()
+    except (OSError, RuntimeError, ValueError):
         return None
-    default = Path(next(iter(spec.submodule_search_locations))) / "config" / "mini.yaml"
-    return {role: _agent_config_identity(default, role) for role in ("extraction", "review")}
+    runtime_identity = json.dumps(backend.runtime_identity(), sort_keys=True).encode()
+    identities = {}
+    for role in ("extraction", "review"):
+        digest = hashlib.sha256()
+        digest.update(runtime_identity)
+        for path in agent_config_paths(role):
+            digest.update(path.name.encode())
+            digest.update(path.read_bytes())
+        identities[role] = digest.hexdigest()
+    return identities
 
 
 def _task_visible_volumes(
@@ -73,8 +86,8 @@ def _task_visible_volumes(
     return volumes
 
 
-class MiniSweComponentRunner:
-    """Launch an isolated MiniSWE agent with an explicit stage-specific role."""
+class ComponentAgentRunner:
+    """Launch DSH with an explicit stage-specific role."""
 
     def __init__(
         self,
@@ -94,44 +107,55 @@ class MiniSweComponentRunner:
         self.repository_root = repository_root.resolve() if repository_root is not None else None
         if self.repository_root is not None and not self.repository_root.is_dir():
             raise FileNotFoundError(f"task repository does not exist: {self.repository_root}")
-
-        miniswe_spec = importlib.util.find_spec("minisweagent")
-        if not miniswe_spec or not miniswe_spec.submodule_search_locations:
-            raise RuntimeError(
-                "mini-swe-agent is not importable; run with "
-                "'uv run --with mini-swe-agent --with httpx[socks] ...'"
-            )
-        package_dir = Path(next(iter(miniswe_spec.submodule_search_locations)))
+        self.backend_name = selected_backend_name()
 
         try:
             import docker
             from component_method.task_execution.runtime_support import build_helpers
         except ImportError as exc:
-            raise RuntimeError(
-                "MiniSWE region exploration requires the packaged Docker dependencies"
-            ) from exc
+            raise RuntimeError("component exploration requires Docker dependencies") from exc
 
         self.gold = build_helpers
         self.docker_client = docker.from_env()
         self.image_id: str | None = None
         self.image_tag: str | None = None
         self._image_lock = threading.Lock()
-        self.default_config = package_dir / "config" / "mini.yaml"
-
-    def _config_arguments(self, role: str) -> list[str]:
-        paths = (self.default_config, *agent_config_paths(role))
-        return [argument for path in paths for argument in ("--config", str(path))]
+        self.backend = create_agent_backend(
+            BackendSettings(
+                api_key=self.api_key,
+                base_url=self.base_url,
+                repository_root=REPOSITORY_ROOT,
+                request_timeout_ms=self._request_timeout_ms(),
+                runtime_activation=self._runtime_activation(),
+            ),
+            name=self.backend_name,
+        )
 
     def agent_config_identity(self, role: str) -> str:
-        return _agent_config_identity(self.default_config, role)
+        digest = hashlib.sha256()
+        digest.update(json.dumps(self.backend.runtime_identity(), sort_keys=True).encode())
+        digest.update(self._runtime_activation().encode())
+        digest.update(str(self._request_timeout_ms()).encode())
+        for path in agent_config_paths(role):
+            digest.update(path.name.encode())
+            digest.update(path.read_bytes())
+        return digest.hexdigest()
 
-    def _agent_command(self, task: str, trajectory: Path, configs: list[str]) -> list[str]:
-        """Allow callers to adapt the launcher to their installed agent API."""
-        return [
-            sys.executable, "-m", "minisweagent.run.mini", "--model", self.model,
-            "--task", task, "--yolo", "--exit-immediately", "--environment-class",
-            self.gold.COMPONENT_AGENT_ENVIRONMENT_CLASS, "--output", str(trajectory), *configs,
-        ]
+    def _effective_system_prompt(self, role: str) -> str:
+        payload = yaml.safe_load(agent_config_paths(role)[1].read_text(encoding="utf-8"))
+        agent = payload.get("agent") if isinstance(payload, dict) else None
+        role_prompt = str(agent.get("system_template") or "") if isinstance(agent, dict) else ""
+        return (
+            role_prompt.strip()
+            + "\n\nUse only the controlled_bash tool. All commands run in the selected "
+            "isolated task container; do not attempt to access the host or external network."
+        )
+
+    def _runtime_activation(self) -> str:
+        return TASK_RUNTIME_ACTIVATION if self.runtime_image else ""
+
+    def _request_timeout_ms(self) -> int:
+        return 600_000
 
     def _ensure_image(self) -> None:
         with self._image_lock:
@@ -159,10 +183,9 @@ class MiniSweComponentRunner:
                 digest.update(hashlib.sha256(path.read_bytes()).digest())
         return digest.hexdigest()
 
-    def _configure_runtime(self, container: Any, output_dir: Path, child_env: dict[str, str]) -> None:
+    def _configure_runtime(self, container: Any, output_dir: Path) -> None:
         if not getattr(self, "runtime_image", None):
             return
-        child_env["COMPONENT_RUNTIME_ACTIVATION"] = TASK_RUNTIME_ACTIVATION
         probe = (
             "import importlib.metadata as m,json,sys; "
             "print(json.dumps({'executable':sys.executable,'prefix':sys.prefix,"
@@ -285,7 +308,6 @@ class MiniSweComponentRunner:
         component_workspace: Path | None = None,
     ) -> dict[str, Any]:
         """Run one tool-using agent against exactly the caller's read-only workspace."""
-        config_arguments = self._config_arguments(agent_role)
         config_identity = self.agent_config_identity(agent_role)
         workspace_root = workspace_root.expanduser().resolve()
         if not workspace_root.is_dir():
@@ -308,56 +330,26 @@ class MiniSweComponentRunner:
         previous_submission_dirs = sorted(
             path for path in (output_dir / "file_submissions").glob("*") if path.is_dir()
         )
-        resume_trajectory = None
+        resume_reference = None
         previous = None
         if trajectory_path.is_file() and not (output_dir / "agent_result.json").exists():
             previous = json.loads(trajectory_path.read_text(encoding="utf-8"))
-            if previous.get("messages") and previous.get("info", {}).get("exit_status") != "Submitted":
+            dsh_session = None
+            session_path = output_dir / "dsh_session.json"
+            if session_path.is_file():
+                session = json.loads(session_path.read_text(encoding="utf-8"))
+                candidate = session.get("session_id")
+                if isinstance(candidate, str) and candidate:
+                    dsh_session = candidate
+            has_history = bool(previous.get("messages")) or bool(previous.get("tool_calls"))
+            has_history = has_history or dsh_session is not None
+            if has_history and previous.get("info", {}).get("exit_status") != "Submitted":
                 if len(previous_submission_dirs) != 1:
                     raise RuntimeError("incomplete agent output has no unique submission directory")
-                resume_trajectory = trajectory_path
-        if (
-            resume_trajectory is not None
-            and previous.get("info", {}).get("exit_status") == "LimitsExceeded"
-            and any(
-                "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT" in message.get("content", "")
-                for message in previous.get("messages", [])[-20:]
-            )
-        ):
-            submission_directory = previous_submission_dirs[0]
-            result = load_submission(submission_directory, agent_role)
-            stats = previous.get("info", {}).get("model_stats", {})
-            write_json(
-                output_dir / "agent_status.json",
-                {
-                    "return_code": 0,
-                    "exit_status": "RecoveredValidatedFiles",
-                    "reported_cost_usd": float(stats.get("instance_cost") or 0),
-                    "api_calls": int(stats.get("api_calls") or 0),
-                    "model": self.model,
-                    "container_image_id": self.image_id,
-                    "container_network": "none",
-                    "workspace_mount": "read-only",
-                    "workspace_scope": safe_label,
-                    "agent_role": agent_role,
-                    "agent_config_identity": config_identity,
-                    "submission_transport": "files",
-                    "submission_directory": str(submission_directory),
-                    "submission_recovered": True,
-                },
-            )
-            write_json(output_dir / "agent_result.json", result)
-            return result
-        command = self._agent_command(task_argument, trajectory_path, config_arguments)
-        child_env = self.gold._minimal_agent_env(
-            run_dir=output_dir,
-            container_name=container_name,
-            api_key=self.api_key,
-            base_url=self.base_url,
-        )
-        child_env["COMPONENT_OUTPUT_ROLE"] = agent_role
-        if resume_trajectory is not None:
-            child_env["COMPONENT_RESUME_TRAJECTORY"] = str(resume_trajectory)
+                resume_reference = dsh_session
+                if resume_reference is None:
+                    raise RuntimeError("incomplete DSH output has no resumable session ID")
+        if resume_reference is not None:
             submission_directory = previous_submission_dirs[0]
         else:
             submission_directory = output_dir / "file_submissions" / uuid.uuid4().hex
@@ -383,7 +375,7 @@ class MiniSweComponentRunner:
             )
             container.start()
             self.gold._verify_isolated_container(container)
-            self._configure_runtime(container, output_dir, child_env)
+            self._configure_runtime(container, output_dir)
             if mount_task_file:
                 task_bytes = (output_dir / "agent_task.txt").read_bytes()
                 task_path = "/tmp/component_task.txt"
@@ -411,52 +403,54 @@ class MiniSweComponentRunner:
                             "could not write the long agent task in container /tmp: "
                             f"{output}"
                         )
-            log_path = output_dir / "agent.log"
-            log_mode = "a" if resume_trajectory is not None else "w"
-            with log_path.open(log_mode, encoding="utf-8") as log_file:
-                process = subprocess.Popen(
-                    command,
-                    cwd=self.gold.FEATUREBENCH_ROOT,
-                    env=child_env,
-                    stdout=log_file,
-                    stderr=subprocess.STDOUT,
-                    text=True,
+            backend_result = self.backend.run(
+                AgentRunRequest(
+                    run_id=safe_label,
+                    role=agent_role,
+                    model=self.model,
+                    system_prompt=self._effective_system_prompt(agent_role),
+                    task_prompt=task_argument,
+                    output_dir=output_dir,
+                    container_name=container_name,
+                    container_cwd="/testbed",
+                    command_timeout_seconds=120,
+                    total_timeout_seconds=self.timeout_seconds,
+                    step_limit=None,
+                    submission_mode="files",
+                    submission_role=agent_role,
+                    resume_session_id=(
+                        resume_reference
+                    ),
                 )
-                try:
-                    return_code = process.wait(timeout=self.timeout_seconds)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait()
-                    raise TimeoutError(
-                        f"MiniSWE agent exceeded {self.timeout_seconds} seconds"
-                    )
-
-            submission, exit_status, cost, api_calls = self.gold._extract_submission(
-                trajectory_path
             )
-            (output_dir / "submission.txt").write_text(submission, encoding="utf-8")
+            (output_dir / "submission.txt").write_text(
+                backend_result.final_output, encoding="utf-8"
+            )
             write_json(
                 output_dir / "agent_status.json",
                 {
-                    "return_code": return_code,
-                    "exit_status": exit_status,
-                    "reported_cost_usd": cost,
-                    "api_calls": api_calls,
+                    "return_code": 0 if backend_result.status == "Submitted" else None,
+                    "exit_status": backend_result.status,
+                    "reported_cost_usd": backend_result.reported_cost_usd,
+                    "api_calls": backend_result.model_calls,
                     "model": self.model,
                     "container_image_id": self.image_id,
                     "container_network": "none",
                     "workspace_mount": "read-only",
                     "workspace_scope": safe_label,
                     "agent_role": agent_role,
+                    "agent_backend": self.backend_name,
+                    "runtime_identity": self.backend.runtime_identity(),
                     "agent_config_identity": config_identity,
                     "submission_transport": "files",
                     "submission_directory": str(submission_directory),
                 },
             )
-            if return_code != 0 or exit_status != "Submitted":
+            if backend_result.status != "Submitted":
                 raise RuntimeError(
-                    "MiniSWE agent did not submit a result "
-                    f"(return_code={return_code}, exit_status={exit_status})"
+                    "agent backend did not submit a result "
+                    f"(backend={self.backend_name}, status={backend_result.status}, "
+                    f"error={backend_result.error})"
                 )
             result = load_submission(submission_directory, agent_role)
             write_json(output_dir / "agent_result.json", result)
@@ -501,15 +495,10 @@ class MiniSweComponentRunner:
         )
 
 
-# Preserve the existing regional caller interface.
-MiniSweRegionRunner = MiniSweComponentRunner
-
 OFFICIAL_IMAGE_ACTIVATION = "export PATH=/usr/local/bin:/usr/bin:/bin; export PYTHONPYCACHEPREFIX=/tmp/pycache"
-PACKAGE_ROOT = Path(__file__).resolve().parents[2]
-TASK_EXECUTION = PACKAGE_ROOT / "task_execution"
 
 
-class OfficialImageExtractionRunner(MiniSweComponentRunner):
+class OfficialImageExtractionRunner(ComponentAgentRunner):
     """使用任务镜像和发布配置运行组件抽取。"""
 
     def __init__(
@@ -518,25 +507,13 @@ class OfficialImageExtractionRunner(MiniSweComponentRunner):
         self.request_timeout = request_timeout
         super().__init__(**kwargs)
 
-    @property
-    def component_config(self) -> Path:
-        return TASK_EXECUTION / "config" / "component.yaml"
+    def _runtime_activation(self) -> str:
+        return OFFICIAL_IMAGE_ACTIVATION
 
-    @property
-    def pricing_config(self) -> Path:
-        return TASK_EXECUTION / "config" / "pricing.json"
+    def _request_timeout_ms(self) -> int:
+        return self.request_timeout * 1_000
 
-    @property
-    def model_adapter(self) -> Path:
-        return TASK_EXECUTION / "adapters" / "component_agent.py"
-
-    @property
-    def runtime_config(self) -> Path:
-        return PACKAGE_ROOT / "component_build" / "agent_configs" / "runtime.yaml"
-
-    def _configure_runtime(self, container, output_dir, child_env) -> None:
-        child_env["COMPONENT_RUNTIME_OFFICIAL_IMAGE_ACTIVATION"] = OFFICIAL_IMAGE_ACTIVATION
-        child_env["REQUEST_TIMEOUT"] = str(self.request_timeout)
+    def _configure_runtime(self, container, output_dir) -> None:
         probe = """import json,sys
 try:
  import importlib.metadata as m
@@ -566,62 +543,3 @@ print(json.dumps({'executable':sys.executable,'prefix':sys.prefix,'python_versio
         (output_dir / "runtime_environment.json").write_text(
             json.dumps(runtime, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
-
-    def _agent_command(self, task, trajectory, configs):
-        merged = {}
-
-        def merge(target, other):
-            for key, value in other.items():
-                if isinstance(value, dict) and isinstance(target.get(key), dict):
-                    merge(target[key], value)
-                else:
-                    target[key] = value
-
-        for index, argument in enumerate(configs):
-            if argument == "--config":
-                merge(merged, yaml.safe_load(Path(configs[index + 1]).read_text()))
-        official = yaml.safe_load(self.default_config.read_text())
-        snapshot = trajectory.parent / "prompt_input"
-        snapshot.mkdir(parents=True, exist_ok=True)
-        (snapshot / "user.txt").write_text(task, encoding="utf-8")
-        (snapshot / "system.txt").write_text(
-            official["agent"]["system_template"]
-            + "\n\n"
-            + merged["agent"]["system_template"],
-            encoding="utf-8",
-        )
-        return [
-            sys.executable,
-            str(self.model_adapter),
-            "--model",
-            self.model,
-            "--task",
-            task,
-            "--output",
-            str(trajectory),
-            "--input-snapshot",
-            str(snapshot),
-            *configs,
-        ]
-
-    def _config_arguments(self, role):
-        _, role_config = agent_config_paths(role)
-        paths = (self.default_config, self.runtime_config, role_config, self.component_config)
-        return [argument for path in paths for argument in ("--config", str(path))]
-
-    def agent_config_identity(self, role):
-        digest = hashlib.sha256()
-        digest.update(OFFICIAL_IMAGE_ACTIVATION.encode())
-        digest.update(str(self.request_timeout).encode())
-        for path in (
-            self.default_config,
-            self.runtime_config,
-            agent_config_paths(role)[1],
-            self.component_config,
-            self.model_adapter,
-            TASK_EXECUTION / "adapters" / "action_protocol.py",
-            self.pricing_config,
-        ):
-            digest.update(path.name.encode())
-            digest.update(path.read_bytes())
-        return digest.hexdigest()

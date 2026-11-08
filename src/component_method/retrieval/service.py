@@ -5,24 +5,29 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
 import shlex
 import time
-import traceback
 from typing import Any
+import uuid
+
+from component_method.agent_runtime import (
+    AgentRunRequest,
+    BackendSettings,
+    create_agent_backend,
+    selected_backend_name,
+)
 
 from .submission import validate_selection
 
 
 PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
 CHECKER_PATH = Path(__file__).resolve().parent / "submission.py"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 STANDARD_REPOSITORY_MASK_PATHS = ("/testbed", "/root/my_repo")
-COMPLETION_MARKERS = {
-    "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT",
-    "MINI_SWE_AGENT_FINAL_OUTPUT",
-}
 
 
 @dataclass(frozen=True)
@@ -35,6 +40,8 @@ class RetrievalRequest:
     image: str
     overwrite: bool = False
     command_timeout_seconds: int = 120
+    total_timeout_seconds: int = 7200
+    step_limit: int = 100
     memory_limit: str = "2g"
     repository_mask_paths: tuple[str, ...] = STANDARD_REPOSITORY_MASK_PATHS
 
@@ -57,13 +64,6 @@ def _file_hashes(root: Path) -> dict[str, str]:
 def _text(value: Any, *, limit: int = 500) -> str:
     normalized = " ".join(str(value or "").split())
     return normalized if len(normalized) <= limit else normalized[: limit - 1].rstrip() + "…"
-
-
-def _has_completion_marker(command_output: dict[str, object]) -> bool:
-    return any(
-        line.strip() in COMPLETION_MARKERS
-        for line in str(command_output.get("output", "")).splitlines()
-    )
 
 
 def build_component_catalog(library: Path) -> dict[str, Any]:
@@ -156,24 +156,203 @@ def render_retrieval_task(request: RetrievalRequest) -> str:
     )
 
 
+def _retrieval_system_prompt(task_id: str) -> str:
+    return (PROMPT_DIR / "retrieve_system.txt").read_text(encoding="utf-8").replace(
+        '"$TASK_ID"', shlex.quote(task_id)
+    )
+
+
+def _retrieval_checker_command(task_id: str) -> tuple[str, ...]:
+    return (
+        "python",
+        "/retrieval-tools/check_selection.py",
+        "--library",
+        "/component-library",
+        "--coverage",
+        "/component-output/coverage.json",
+        "--selection",
+        "/component-output/selection.json",
+        "--task-id",
+        task_id,
+        "--submit",
+    )
+
+
+def _model_route(model_config: dict[str, Any]) -> tuple[str, str, str]:
+    model = model_config.get("model_name")
+    model_kwargs = model_config.get("model_kwargs")
+    base_url = model_kwargs.get("api_base") if isinstance(model_kwargs, dict) else None
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not isinstance(model, str) or not model:
+        raise ValueError("retrieval model_config requires model_name")
+    if not isinstance(base_url, str) or not base_url:
+        raise ValueError("retrieval model_config requires model_kwargs.api_base")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is required")
+    return model, base_url, api_key
+
+
+def _run_dsh_retrieval(
+    request: RetrievalRequest,
+    *,
+    model_config: dict[str, Any],
+    library: Path,
+    output: Path,
+    submission_dir: Path,
+    selection_path: Path,
+    task: str,
+    catalog_path: Path,
+    mask_paths: tuple[str, ...],
+    backend_name: str,
+) -> dict[str, Any]:
+    import docker
+
+    if request.total_timeout_seconds < 1:
+        raise ValueError("retrieval total_timeout_seconds must be positive")
+    if request.step_limit < 1:
+        raise ValueError("retrieval step_limit must be positive")
+    model, base_url, api_key = _model_route(model_config)
+    safe_task = re.sub(r"[^A-Za-z0-9_-]+", "-", request.task_id)[:48]
+    container_name = f"component-retrieval-{safe_task}-{uuid.uuid4().hex[:10]}"
+    client = docker.from_env()
+    container = None
+    backend_result = None
+    validated = None
+    started = time.monotonic()
+    status = "EnvironmentError"
+    error = None
+    try:
+        tmpfs = {"/tmp": "rw,nosuid,nodev,size=512m,mode=1777"}
+        tmpfs.update({
+            path: "rw,nosuid,nodev,noexec,size=1m,mode=000"
+            for path in mask_paths
+        })
+        container = client.containers.create(
+            image=request.image,
+            entrypoint=[],
+            name=container_name,
+            command=["sleep", "infinity"],
+            working_dir="/component-library",
+            user="10001:10001",
+            volumes={
+                str(library): {"bind": "/component-library", "mode": "ro"},
+                str(submission_dir): {"bind": "/component-output", "mode": "rw"},
+                str(CHECKER_PATH): {
+                    "bind": "/retrieval-tools/check_selection.py",
+                    "mode": "ro",
+                },
+                str(catalog_path): {
+                    "bind": "/retrieval-tools/component_catalog.json",
+                    "mode": "ro",
+                },
+            },
+            network_mode="none",
+            read_only=True,
+            tmpfs=tmpfs,
+            cap_drop=["ALL"],
+            security_opt=["no-new-privileges:true"],
+            pids_limit=128,
+            mem_limit=request.memory_limit,
+            labels={"featurebench.component_retrieval.agent": safe_task},
+        )
+        container.start()
+        if mask_paths:
+            checks = " && ".join(
+                f"test ! -r {shlex.quote(path)}" for path in mask_paths
+            )
+            mask_check = container.exec_run(
+                ["/bin/bash", "-lc", checks],
+                user="10001:10001",
+                environment={"HOME": "/tmp", "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            if mask_check.exit_code != 0:
+                detail = mask_check.output
+                if isinstance(detail, bytes):
+                    detail = detail.decode("utf-8", errors="replace")
+                raise RuntimeError(f"task repository masking failed: {detail}")
+
+        backend = create_agent_backend(
+            BackendSettings(
+                api_key=api_key,
+                base_url=base_url,
+                repository_root=REPOSITORY_ROOT,
+            ),
+            name=backend_name,
+        )
+        _write_json(output / "state.json", {"status": "running", "model_calls": 0})
+        backend_result = backend.run(
+            AgentRunRequest(
+                run_id=safe_task,
+                role="retrieval",
+                model=model,
+                system_prompt=_retrieval_system_prompt(request.task_id),
+                task_prompt=task,
+                output_dir=output,
+                container_name=container_name,
+                container_cwd="/component-library",
+                command_timeout_seconds=request.command_timeout_seconds,
+                total_timeout_seconds=request.total_timeout_seconds,
+                step_limit=request.step_limit,
+                submission_mode="files",
+                submission_role="retrieval",
+                submission_checker_command=_retrieval_checker_command(request.task_id),
+            )
+        )
+        status = backend_result.status
+        error = backend_result.error
+        if status == "Submitted":
+            validated = validate_selection(
+                library,
+                selection_path,
+                expected_task_id=request.task_id,
+                coverage_path=submission_dir / "coverage.json",
+            )
+            _write_json(output / "result.json", validated)
+        else:
+            raise RuntimeError(
+                "retrieval agent did not submit a validated selection "
+                f"(status={status}, error={error})"
+            )
+    except Exception as exc:
+        if status in {"EnvironmentError", "Submitted"}:
+            status = type(exc).__name__
+        if error is None:
+            error = str(exc)
+        raise
+    finally:
+        if container is not None:
+            try:
+                container.remove(force=True)
+            except Exception:
+                pass
+        _write_json(
+            output / "metadata.json",
+            {
+                "status": status,
+                "elapsed_seconds": time.monotonic() - started,
+                "model_calls": backend_result.model_calls if backend_result else 0,
+                "input_tokens": backend_result.input_tokens if backend_result else None,
+                "output_tokens": backend_result.output_tokens if backend_result else None,
+                "reported_cost_usd": (
+                    backend_result.reported_cost_usd if backend_result else None
+                ),
+                "selection_validated": validated is not None,
+                "agent_backend": backend_name,
+                "session_id": backend_result.session_id if backend_result else None,
+                "error": error,
+            },
+        )
+        _write_json(output / "state.json", {"status": status})
+    return validated
+
+
 def run_retrieval_agent(
     request: RetrievalRequest,
     *,
     model_config: dict[str, Any],
-    agent_class: type | None = None,
 ) -> dict[str, Any]:
-    """Run retrieval with unlimited agent steps and validated file submission.
-
-    ``agent_class`` may supply a transport-compatible DefaultAgent subclass for
-    providers that emit non-Markdown shell envelopes. The retrieval behavior,
-    mounts, prompts, validation and exit contract remain common.
-    """
-    from minisweagent.agents.default import DefaultAgent, FormatError, Submitted
-    from minisweagent.environments.docker import DockerEnvironment
-    from minisweagent.models import get_model
-    from minisweagent.run.utils.save import save_traj
-
-    base_agent = agent_class or DefaultAgent
+    """Run retrieval with validated file submission and bounded DSH execution."""
+    backend_name = selected_backend_name()
     library = request.component_library.expanduser().resolve()
     output = request.output_dir.expanduser().resolve()
     if not library.is_dir():
@@ -207,166 +386,25 @@ def run_retrieval_agent(
             ).hexdigest(),
             "component_count": len(manifest["components"]),
             "component_catalog_sha256": hashlib.sha256(catalog_path.read_bytes()).hexdigest(),
-            "step_limit": 0,
+            "agent_backend": backend_name,
+            "step_limit": request.step_limit,
             "cost_limit": 0,
-            "total_runtime_limit": None,
+            "total_runtime_limit": request.total_timeout_seconds,
             "normal_exit": "validated coverage.json and selection.json plus completion marker",
             "task_repository_mounted": False,
             "repository_mask_paths": list(mask_paths),
         },
     )
 
-    class CheckedRetrievalAgent(base_agent):
-        def query(self) -> dict:
-            response = super().query()
-            _write_json(
-                output / "state.json",
-                {
-                    "status": "running",
-                    "model_calls": self.model.n_calls,
-                    "reported_cost_usd": self.model.cost,
-                },
-            )
-            save_traj(self, output / "checkpoint.traj.json", exit_status="Running", result="")
-            print(
-                f"retrieval model response {self.model.n_calls}; "
-                f"reference cost {self.model.cost:.6f}",
-                flush=True,
-            )
-            return response
-
-        def has_finished(self, command_output: dict[str, object]) -> None:
-            if not _has_completion_marker(command_output):
-                return
-            if command_output.get("returncode") != 0:
-                raise FormatError("The final validation command failed. Repair selection.json and retry.")
-            try:
-                selection = validate_selection(
-                    library,
-                    selection_path,
-                    expected_task_id=request.task_id,
-                )
-            except (OSError, ValueError, json.JSONDecodeError) as exc:
-                raise FormatError(f"Submission validation failed: {exc}") from exc
-            self.selection = selection
-            raise Submitted(json.dumps(selection, ensure_ascii=False))
-
-    mounts = [
-        "--rm",
-        "--network",
-        "none",
-        "--read-only",
-        "--tmpfs",
-        "/tmp:rw,nosuid,nodev,size=512m,mode=1777",
-        "--cap-drop",
-        "ALL",
-        "--security-opt",
-        "no-new-privileges:true",
-        "--pids-limit",
-        "128",
-        "--memory",
-        request.memory_limit,
-        "--user",
-        "10001:10001",
-        "--mount",
-        f"type=bind,source={library},target=/component-library,readonly",
-        "--mount",
-        f"type=bind,source={submission_dir},target=/component-output",
-        "--mount",
-        f"type=bind,source={CHECKER_PATH},target=/retrieval-tools/check_selection.py,readonly",
-        "--mount",
-        f"type=bind,source={catalog_path},target=/retrieval-tools/component_catalog.json,readonly",
-    ]
-    for path in mask_paths:
-        mounts.extend([
-            "--tmpfs",
-            f"{path}:rw,nosuid,nodev,noexec,size=1m,mode=000",
-        ])
-    environment = None
-    agent = None
-    status = "EnvironmentError"
-    result = ""
-    extra = None
-    started = time.monotonic()
-    interrupted = False
-    try:
-        environment = DockerEnvironment(
-            image=request.image,
-            cwd="/component-library",
-            env={
-                "HOME": "/tmp",
-                "TASK_ID": request.task_id,
-                "PYTHONDONTWRITEBYTECODE": "1",
-                "PAGER": "cat",
-            },
-            timeout=request.command_timeout_seconds,
-            container_timeout="infinity",
-            run_args=mounts,
-        )
-        if mask_paths:
-            checks = " && ".join(
-                f"test ! -r {shlex.quote(path)}" for path in mask_paths
-            )
-            mask_check = environment.execute(checks)
-            if mask_check.get("returncode") != 0:
-                raise RuntimeError(
-                    "task repository masking failed: " + str(mask_check.get("output", ""))
-                )
-        agent = CheckedRetrievalAgent(
-            get_model(config=model_config),
-            environment,
-            system_template=(PROMPT_DIR / "retrieve_system.txt").read_text(encoding="utf-8"),
-            instance_template="{{task}}",
-            action_observation_template="Observation: {{output}}",
-            timeout_template=(
-                "The command timed out and was killed. Use a bounded non-interactive command and continue."
-            ),
-            format_error_template="Return exactly one complete Bash command in one Bash code block.",
-            step_limit=0,
-            cost_limit=0,
-        )
-        agent.selection = None
-        _write_json(output / "state.json", {"status": "running", "model_calls": 0})
-        status, result = agent.run(task)
-    except KeyboardInterrupt:
-        interrupted = True
-        status = "StoppedByUser"
-        result = "Retrieval stopped by user."
-    except Exception as exc:
-        status = type(exc).__name__
-        result = str(exc)
-        extra = {"traceback": traceback.format_exc()}
-    finally:
-        if agent is not None:
-            save_traj(
-                agent,
-                output / "retrieval.traj.json",
-                exit_status=status,
-                result=result,
-                extra_info=extra,
-                instance_id=request.task_id,
-            )
-        if environment is not None:
-            environment.cleanup()
-
-    validated = getattr(agent, "selection", None) if agent is not None else None
-    if validated is not None:
-        _write_json(output / "result.json", validated)
-    _write_json(
-        output / "metadata.json",
-        {
-            "status": status,
-            "elapsed_seconds": time.monotonic() - started,
-            "model_calls": agent.model.n_calls if agent is not None else 0,
-            "reported_cost_usd": agent.model.cost if agent is not None else 0,
-            "selection_validated": validated is not None,
-            "error": None if status == "Submitted" else result,
-        },
+    return _run_dsh_retrieval(
+        request,
+        model_config=model_config,
+        library=library,
+        output=output,
+        submission_dir=submission_dir,
+        selection_path=selection_path,
+        task=task,
+        catalog_path=catalog_path,
+        mask_paths=mask_paths,
+        backend_name=backend_name,
     )
-    _write_json(output / "state.json", {"status": status})
-    if interrupted:
-        raise KeyboardInterrupt(result)
-    if status != "Submitted" or validated is None:
-        detail = extra["traceback"] if extra else result
-        raise RuntimeError(f"retrieval agent failed with {status}: {detail}")
-    return validated

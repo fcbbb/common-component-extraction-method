@@ -11,6 +11,12 @@ from pathlib import Path
 import subprocess
 import sys
 
+from component_method.agent_runtime import (
+    BackendSettings,
+    create_agent_backend,
+    selected_backend_name,
+)
+
 
 TOOLS = Path(__file__).resolve().parent
 REPOSITORY = TOOLS.parent
@@ -28,15 +34,15 @@ def main() -> int:
     parser.add_argument("--require-model-env", action="store_true")
     args = parser.parse_args()
     failures = []
+    agent_backend = selected_backend_name()
 
     if sys.version_info < (3, 12):
         failures.append(f"需要 Python 3.12，当前为 {sys.version.split()[0]}")
-    for package in (
+    packages = [
         "docker",
         "filelock",
         "hnswlib",
         "jinja2",
-        "minisweagent",
         "numpy",
         "openai",
         "scipy",
@@ -45,9 +51,22 @@ def main() -> int:
         "tqdm",
         "transformers",
         "yaml",
-    ):
+    ]
+    for package in packages:
         if importlib.util.find_spec(package) is None:
             failures.append(f"缺少 Python 包：{package}")
+    try:
+        backend = create_agent_backend(
+            BackendSettings(
+                api_key=os.environ.get("OPENAI_API_KEY", "preflight-only"),
+                base_url=os.environ.get("OPENAI_API_BASE", "preflight-only"),
+                repository_root=REPOSITORY,
+            ),
+            name=agent_backend,
+        )
+        backend.validate_runtime()
+    except (OSError, RuntimeError, ValueError) as error:
+        failures.append(f"{agent_backend} Agent runtime 不可用：{error}")
     if not (OFFLINE / "embeddings" / "unit_embeddings.npy").is_file():
         failures.append("缺少离线嵌入矩阵")
     tasks = [path.name for path in (OFFLINE / "tasks").iterdir() if path.is_dir()]
@@ -82,7 +101,7 @@ def main() -> int:
         for failure in failures:
             print(f"- {failure}")
         return 1
-    print("预检通过：发布包、Python 依赖和 Docker 均可用。")
+    print(f"预检通过：{agent_backend} Agent、发布包、Python 依赖和 Docker 均可用。")
     return 0
 
 

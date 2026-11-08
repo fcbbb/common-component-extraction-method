@@ -13,6 +13,7 @@ import sys
 import time
 from typing import Any
 
+from component_method.agent_runtime import selected_backend_name
 from component_method.workflow.batch_common import (
     PROJECT,
     ROOT,
@@ -41,7 +42,6 @@ PIPELINE_STAGES = (
 )
 
 BASELINE_ENV_PACKAGES = (
-    "mini-swe-agent",
     "openai",
     "docker",
     "httpx",
@@ -111,9 +111,11 @@ def pipeline_python(task: dict[str, Any], args: argparse.Namespace) -> Path:
 
 
 def environment_identity(python: Path) -> dict[str, Any]:
+    agent_backend = selected_backend_name()
+    packages = list(BASELINE_ENV_PACKAGES)
     script = (
         "import importlib.metadata as m,json,sys;"
-        f"names={list(BASELINE_ENV_PACKAGES)!r};"
+        f"names={packages!r};"
         "print(json.dumps({'executable':sys.executable,'version':sys.version,"
         "'packages':{name:m.version(name) for name in names}},sort_keys=True))"
     )
@@ -124,7 +126,14 @@ def environment_identity(python: Path) -> dict[str, Any]:
         capture_output=True,
         text=True,
     )
-    return json.loads(result.stdout)
+    identity = {**json.loads(result.stdout), "agent_backend": agent_backend}
+    from component_method.agent_runtime import BackendSettings, create_agent_backend
+
+    identity["agent_runtime"] = create_agent_backend(
+        BackendSettings(api_key="identity-only", base_url="identity-only"),
+        name=agent_backend,
+    ).runtime_identity()
+    return identity
 
 
 def run_stage(task: dict[str, Any], stage: str, args: argparse.Namespace) -> None:
@@ -175,6 +184,7 @@ def run_stage(task: dict[str, Any], stage: str, args: argparse.Namespace) -> Non
     cfg = config()
     env["MODEL_NAME"] = cfg["model"]
     env["OPENAI_API_BASE"] = cfg["api_base"]
+    env["AGENT_BACKEND"] = selected_backend_name(env)
     print(f"[pipeline] start {task['instance_id']} {stage}", flush=True)
     result = subprocess.run(command, cwd=PROJECT, env=env, check=False)
     if result.returncode:

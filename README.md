@@ -12,6 +12,7 @@
 | 共性组件方法 | 10 | 20 | 50% |
 
 20 个源码快照均形成了非空组件库，共发布 486 个组件，最终选择 63 个组件。完整实验说明见 `docs/final_report_20_tasks.md`，逐任务结果见 `results/per_task.csv`。
+Agent runtime 的 DeepSeek Harness 迁移设计见 `docs/dsh_migration_plan.md`。
 
 ## 仓库内容
 
@@ -36,15 +37,47 @@
 ```bash
 python -m venv .venv
 . .venv/bin/activate
-pip install -e '.[embeddings,agents,test]'
+python -m ensurepip --upgrade --default-pip
+python -m pip install \
+  --index-url https://download.pytorch.org/whl/cpu \
+  'torch>=2.6'
+python -m pip install -e '.[embeddings,test]'
 ```
 
-模型服务通过环境变量配置，仓库内不保存访问凭证：
+参考环境使用 CPU-only PyTorch。不要直接用裸 `pip install` 安装全部 extras，
+否则 Linux 默认软件源可能同时下载不需要的 CUDA 和 `nvidia-*` 运行库。
+
+DSH 后端固定使用 Node.js 24.9.0 和 `@deepseek-ai/dsh` 0.2.2-rc.1。
+在 WSL 中先加载 Linux 侧 NVM，再安装固定 lockfile 并构建受控工具：
 
 ```bash
-export OPENAI_API_KEY='...'
-export OPENAI_API_BASE='https://你的兼容接口地址/v1'
+nvm install 24.9.0
+nvm use 24.9.0
+cd dsh
+npm ci
+npm run build
+cd ..
 ```
+
+`command -v node` 和 `command -v npm` 应指向 WSL Linux 路径，不能位于
+`/mnt/`。Agent runtime 固定使用 DSH；`AGENT_BACKEND` 省略时默认为 `dsh`，
+当前内置注册项也只有 `dsh`。
+
+业务流水线通过 `agent_runtime.create_agent_backend()` 创建 Agent，而不直接依赖
+具体实现。后续增加其他 Agent 时，实现 `AgentBackend` 的 `validate_runtime()`、
+`run()` 和 `runtime_identity()`，再用 `register_agent_backend()` 注册名称即可；组件
+抽取、检索、任务执行、preflight 和 batch identity 不需要增加后端分支。
+
+模型服务通过环境变量配置。将 `.env.example` 复制为 Git 忽略的 `.env`，
+填写接口地址和密钥后加载到当前 shell：
+
+```bash
+cp .env.example .env
+# 编辑 .env，填写 OPENAI_API_BASE 和 OPENAI_API_KEY
+. ./.env
+```
+
+不要提交 `.env`，也不要把真实密钥写入其他仓库文件。
 
 冻结输入和完整任务证据位于本仓库同级的 `offline_artifacts/` 目录。
 

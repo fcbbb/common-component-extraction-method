@@ -27,7 +27,6 @@ embeddings = [
   "torch>=2.6",
   "transformers>=4.48",
 ]
-agents = ["mini-swe-agent>=1.14,<2"]
 test = ["pytest>=8.4.2"]
 
 [tool.hatch.build.targets.wheel]

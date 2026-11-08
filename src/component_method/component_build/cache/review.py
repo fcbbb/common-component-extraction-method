@@ -211,11 +211,22 @@ def _command_dependencies(command: str, repo: Path):
 def observed_dependencies(trajectory: Path, repo: Path):
     """Conservatively account for tool commands as well as the reviewer's manifest."""
     try:
-        messages = json.loads(trajectory.read_text())["messages"]
+        payload = json.loads(trajectory.read_text())
+        messages = payload["messages"]
     except (OSError, ValueError, KeyError, TypeError):
         return None
     scopes, files = set(), set()
     seen = False
+    normalized_actions = []
+    for call in payload.get("tool_calls") or []:
+        if not isinstance(call, dict):
+            scopes.add(".")
+            continue
+        action = call.get("input")
+        if isinstance(action, dict):
+            normalized_actions.append(action)
+        else:
+            scopes.add(".")
     for message in messages:
         if message.get("role") != "assistant":
             continue
@@ -226,23 +237,24 @@ def observed_dependencies(trajectory: Path, repo: Path):
                 actions.append(json.loads(call.get("function", {}).get("arguments", "{}")))
             except (ValueError, TypeError):
                 scopes.add(".")
-        for action in actions:
-            if not isinstance(action, dict):
-                scopes.add(".")
-                continue
-            command = action.get("command", "")
-            if not isinstance(command, str):
-                scopes.add(".")
-                continue
-            seen = True
-            if re.fullmatch(r"\s*cat\s+<<\s*(['\"])([A-Za-z0-9_]+)\1\nCOMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n.*\n\2\s*", command, re.DOTALL):
-                continue
-            try:
-                read, searched = _command_dependencies(command, repo)
-                files.update(read)
-                scopes.update(searched)
-            except (ValueError, OSError):
-                scopes.add(".")
+        normalized_actions.extend(actions)
+    for action in normalized_actions:
+        if not isinstance(action, dict):
+            scopes.add(".")
+            continue
+        command = action.get("command", "")
+        if not isinstance(command, str):
+            scopes.add(".")
+            continue
+        seen = True
+        if re.fullmatch(r"\s*cat\s+<<\s*(['\"])([A-Za-z0-9_]+)\1\nCOMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n.*\n\2\s*", command, re.DOTALL):
+            continue
+        try:
+            read, searched = _command_dependencies(command, repo)
+            files.update(read)
+            scopes.update(searched)
+        except (ValueError, OSError):
+            scopes.add(".")
     return {"files": sorted(files), "search_scopes": sorted(scopes)} if seen else None
 
 
@@ -256,7 +268,7 @@ def review_identity(payload, runner, experiment_dir):
                    "task_runtime_image": getattr(runner, "runtime_image", None),
                    "code": code_digest("component_build/validation/service.py", "component_build/cache/review.py",
                                        "component_build/workspace.py", "component_build/submission.py",
-                                       "component_build/extraction/runner.py", "task_execution/runtime_support/docker_environment.py",
+                                       "component_build/extraction/runner.py", "agent_runtime/dsh_headless.py",
                                        "component_build/agent_configs/runtime.yaml",
                                        "component_build/agent_configs/review.yaml")})
 

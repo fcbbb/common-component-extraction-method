@@ -8,7 +8,7 @@ import tempfile
 import uuid
 
 import docker
-from common import OUT, RUNTIME_ROOT, evaluation_adjustments, write
+from common import OUT, RUNTIME_ROOT, evaluation_adjustments, read, write
 
 
 EVALUATOR_SHA256 = "4768c0c3e2adf3540c2228f819f4b073e4665ada06fa00f2234a1f7620d69eda"

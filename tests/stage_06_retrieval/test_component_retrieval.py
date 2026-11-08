@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -13,12 +14,15 @@ from component_method.retrieval import (
     build_component_catalog,
     materialize_selected_bundle,
     render_retrieval_task,
+    run_retrieval_agent,
     validate_coverage,
     validate_selection,
 )
+from component_method.agent_runtime import AgentRunResult
 from component_method.retrieval.service import (
-    _has_completion_marker,
+    _retrieval_checker_command,
     _repository_mask_paths,
+    _retrieval_system_prompt,
 )
 from component_method.library_publish.agent_bundle import (
     validate_agent_bundle,
@@ -320,6 +324,141 @@ def test_retrieval_mask_paths_follow_library_repository():
         _repository_mask_paths({}, ("/testbed", "/root/my_repo"))
 
 
+def test_retrieval_checker_command_is_controller_owned():
+    assert _retrieval_checker_command("task-1") == (
+        "python",
+        "/retrieval-tools/check_selection.py",
+        "--library",
+        "/component-library",
+        "--coverage",
+        "/component-output/coverage.json",
+        "--selection",
+        "/component-output/selection.json",
+        "--task-id",
+        "task-1",
+        "--submit",
+    )
+
+
+def test_dsh_retrieval_system_prompt_embeds_shell_quoted_task_id():
+    prompt = _retrieval_system_prompt("task-1")
+    assert '"$TASK_ID"' not in prompt
+    assert "--task-id task-1" in prompt
+
+
+def test_dsh_retrieval_uses_masked_container_and_validated_checker(
+    tmp_path, monkeypatch
+):
+    import component_method.retrieval.service as service
+    import docker
+
+    library = component_library(tmp_path / "library", count=2)
+    output = tmp_path / "output"
+    captured = {}
+
+    class FakeContainer:
+        def start(self):
+            captured["started"] = True
+
+        def exec_run(self, command, **kwargs):
+            captured["mask_command"] = command
+            captured["mask_kwargs"] = kwargs
+            return SimpleNamespace(exit_code=0, output=b"")
+
+        def remove(self, *, force):
+            captured["removed"] = force
+
+    class FakeContainers:
+        def create(self, **kwargs):
+            captured["create"] = kwargs
+            return FakeContainer()
+
+    class FakeBackend:
+        def run(self, request):
+            captured["request"] = request
+            return AgentRunResult(
+                status="Submitted",
+                session_id="session-retrieval",
+                final_output="done",
+                messages=[],
+                tool_calls=[],
+                model_calls=2,
+                input_tokens=100,
+                output_tokens=20,
+                reported_cost_usd=None,
+                completion_validated=True,
+                error=None,
+            )
+
+    monkeypatch.setenv("AGENT_BACKEND", "dsh")
+    monkeypatch.setenv("OPENAI_API_KEY", "fixture-key")
+    monkeypatch.setattr(
+        docker,
+        "from_env",
+        lambda: SimpleNamespace(containers=FakeContainers()),
+    )
+    def create_backend(settings, **kwargs):
+        captured["backend_settings"] = settings
+        captured["backend_name"] = kwargs.get("name")
+        return FakeBackend()
+
+    monkeypatch.setattr(
+        service,
+        "create_agent_backend",
+        create_backend,
+    )
+    monkeypatch.setattr(
+        service,
+        "validate_selection",
+        lambda *args, **kwargs: {
+            "task_id": "task-1",
+            "selected": [],
+            "selected_bundle_ids": [],
+        },
+    )
+
+    result = run_retrieval_agent(
+        RetrievalRequest(
+            task_id="task-1",
+            problem_statement="Handle optional values.",
+            interface="method(value: T | None)",
+            component_library=library,
+            output_dir=output,
+            image="fixture-image",
+            total_timeout_seconds=321,
+            step_limit=17,
+        ),
+        model_config={
+            "model_name": "fixture-model",
+            "model_kwargs": {"api_base": "https://example.invalid/v1"},
+        },
+    )
+
+    request = captured["request"]
+    assert result["selected_bundle_ids"] == []
+    assert request.role == "retrieval"
+    assert request.container_cwd == "/component-library"
+    assert request.total_timeout_seconds == 321
+    assert request.step_limit == 17
+    assert request.submission_role == "retrieval"
+    assert request.submission_checker_command == _retrieval_checker_command("task-1")
+    assert captured["create"]["network_mode"] == "none"
+    assert captured["create"]["read_only"] is True
+    assert captured["create"]["volumes"][str(library.resolve())] == {
+        "bind": "/component-library",
+        "mode": "ro",
+    }
+    assert {"/testbed", "/root/my_repo", "/project"} <= set(
+        captured["create"]["tmpfs"]
+    )
+    assert captured["started"] is True
+    assert captured["removed"] is True
+    metadata = json.loads((output / "metadata.json").read_text())
+    assert metadata["agent_backend"] == "dsh"
+    assert metadata["selection_validated"] is True
+    assert metadata["model_calls"] == 2
+
+
 def test_retrieval_system_prompt_prioritizes_incremental_value():
     prompt = " ".join((
         Path(__file__).parents[2]
@@ -348,16 +487,6 @@ def test_retrieval_system_prompt_prioritizes_incremental_value():
     assert "zero to five" in prompt
     assert "There is no minimum quota" in prompt
     assert "not a question for the Task Agent" in prompt
-
-
-def test_retrieval_completion_marker_can_follow_coverage_output():
-    assert _has_completion_marker({
-        "output": (
-            "COVERAGE_VALID_CONTINUE_SELECTION\n"
-            "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n"
-        )
-    })
-    assert not _has_completion_marker({"output": "COVERAGE_VALID_CONTINUE_SELECTION\n"})
 
 
 def test_component_catalog_covers_manifest_with_protocol_metadata(tmp_path):

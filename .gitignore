@@ -1,5 +1,6 @@
 .venv/
 work/
+node_modules/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -7,6 +8,10 @@ __pycache__/
 .ruff_cache/
 dist/
 build/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
 *.egg-info/
 .env
 .env.*
+!.env.example

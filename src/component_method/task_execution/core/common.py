@@ -164,6 +164,7 @@ def input_identity():
         "config": hashes(CONFIG),
         "core": hashes(RUNTIME_ROOT / "core"),
         "adapters": hashes(RUNTIME_ROOT / "adapters"),
+        "model_runtime": hashes(Path(__file__).resolve().parents[2] / "model_runtime"),
     }
     return digest(files)
 

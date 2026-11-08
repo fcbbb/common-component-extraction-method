@@ -1,0 +1,152 @@
+# Component Method headless profile overlay.
+# All variable values are supplied by the Python controller in a minimal process
+# environment. The model sees only the controlled_bash tool registered below.
+
+- id: agent-default-model
+  config:
+    provider: component-method
+    model: !!js process.env.COMPONENT_DSH_MODEL
+
+- id: llm-pi-ai
+  config:
+    providers:
+      component-method:
+        displayName: Component Method Route
+        apiKeyEnv: OPENAI_API_KEY
+        api: openai-completions
+        baseURL: !!js process.env.OPENAI_BASE_URL
+        timeoutMs: !!js Number(process.env.COMPONENT_DSH_REQUEST_TIMEOUT_MS)
+        retryPolicy:
+          mode: normal
+          maxRetries: !!js Number(process.env.COMPONENT_DSH_MAX_RETRIES)
+        compat: !!js JSON.parse(process.env.COMPONENT_DSH_COMPAT_JSON || '{}')
+        models:
+          - id: !!js process.env.COMPONENT_DSH_MODEL
+            contextWindow: !!js Number(process.env.COMPONENT_DSH_CONTEXT_WINDOW)
+            maxTokens: !!js Number(process.env.COMPONENT_DSH_MAX_OUTPUT_TOKENS)
+            reasoningEfforts: false
+
+- id: llm-deepseek
+  disabled: true
+
+- id: llm-deepseek-account
+  disabled: true
+
+- id: session-title-llm
+  disabled: true
+
+- id: user-questions
+  disabled: true
+
+- id: system-prompt
+  config:
+    personaPrefix: !!js process.env.COMPONENT_DSH_SYSTEM_PROMPT
+
+- id: agent-instructions
+  disabled: true
+
+- id: tool-working-directory
+  disabled: true
+
+- id: bash-sandbox
+  disabled: true
+
+- id: pwsh-sandbox
+  disabled: true
+
+- id: approval
+  disabled: true
+
+- id: permission
+  disabled: true
+
+- id: shell-env
+  disabled: true
+
+- id: tool-bash
+  disabled: true
+
+- insert:
+    - id: component-method-controlled-bash
+      name: '@component-method/dsh-controlled-bash'
+
+- id: tool-pwsh
+  disabled: true
+
+- id: tool-jobs
+  disabled: true
+
+- id: tool-fs
+  disabled: true
+
+- id: tool-fs-search
+  disabled: true
+
+- id: skill
+  disabled: true
+
+- id: skill-filesystem
+  disabled: true
+
+- id: tool-skill
+  disabled: true
+
+- id: plan-mode
+  disabled: true
+
+- id: subagent
+  disabled: true
+
+- id: subagent-spawn-in-process
+  disabled: true
+
+- id: subagent-fork-in-process
+  disabled: true
+
+- id: tool-subagent-control
+  disabled: true
+
+- id: tool-subagent
+  disabled: true
+
+- id: tool-subagent-fork
+  disabled: true
+
+- id: ptc-runtime
+  disabled: true
+
+- id: workflow-ptc
+  disabled: true
+
+- id: tool-workflow
+  disabled: true
+
+- id: tool-todo
+  disabled: true
+
+- id: tool-goal
+  disabled: true
+
+- id: web
+  disabled: true
+
+- id: web-search-deepseek
+  disabled: true
+
+- id: web-deepseek-api
+  disabled: true
+
+- id: web-fetch-http
+  disabled: true
+
+- id: tool-web
+  disabled: true
+
+- id: mcp-resources
+  disabled: true
+
+- id: otel
+  disabled: true
+
+- id: session-telemetry-otel
+  disabled: true

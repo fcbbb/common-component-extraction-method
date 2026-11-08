@@ -13,7 +13,6 @@ from component_method.runtime_paths import offline_task_root, task_execution_roo
 
 config = load_json(ROOT / "config.json")
 
-from component_method.task_execution.adapters.action_protocol import CompatibleActionAgent
 from component_method.retrieval import (  # noqa: E402
     RetrievalRequest,
     run_retrieval_agent,
@@ -55,7 +54,6 @@ def main() -> None:
             },
             "litellm_model_registry": str(task_execution_root() / "config" / "pricing.json"),
         },
-        agent_class=CompatibleActionAgent,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

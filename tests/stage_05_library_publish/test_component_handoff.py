@@ -452,13 +452,24 @@ def test_shared_review_hits_across_snapshots_and_invalidates_dependencies_and_pr
     assert len(count) == 4
 
 
-def test_shared_review_invalidates_installed_default_agent_config(tmp_path):
-    from component_method.component_build.extraction.runner import MiniSweComponentRunner
+def test_shared_review_invalidates_dsh_role_config(tmp_path, monkeypatch):
+    from component_method.component_build.extraction import runner as runner_module
+    from component_method.component_build.extraction.runner import ComponentAgentRunner
+
     repo, payload, review, _ = cache_fixture(tmp_path)
-    runner = object.__new__(MiniSweComponentRunner)
+    runner = object.__new__(ComponentAgentRunner)
     runner.model, runner.base_url, runner.image_id = "fixture", "fixture", "fixture"
-    runner.default_config = tmp_path / "mini.yaml"
-    runner.default_config.write_text("agent:\n  observation_template: version-one\n")
+    runner.runtime_image = None
+    runner.backend = SimpleNamespace(runtime_identity=lambda: {"backend": "dsh-fixture"})
+    runtime_config = tmp_path / "runtime.yaml"
+    role_config = tmp_path / "review.yaml"
+    runtime_config.write_text("agent:\n  protocol: files\n")
+    role_config.write_text("agent:\n  system_template: version-one\n")
+    monkeypatch.setattr(
+        runner_module,
+        "agent_config_paths",
+        lambda role: (runtime_config, role_config),
+    )
     calls = []
 
     def review_operation():
@@ -469,7 +480,7 @@ def test_shared_review_invalidates_installed_default_agent_config(tmp_path):
         return cached_review(tmp_path / "cache", repo, payload, runner, None, review_operation)[1]["status"]
 
     assert run() == "miss" and run() == "hit"
-    runner.default_config.write_text("agent:\n  observation_template: version-two\n")
+    role_config.write_text("agent:\n  system_template: version-two\n")
     assert run() == "miss" and run() == "hit"
     assert len(calls) == 2
 
