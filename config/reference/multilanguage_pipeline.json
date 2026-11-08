@@ -1,0 +1,15 @@
+{
+  "repository": "owner/project",
+  "source_commit": "replace-with-frozen-source-commit",
+  "repository_root": "/absolute/path/to/frozen-source",
+  "source_subdir": ".",
+  "languages": [
+    {"id": "python"},
+    {"id": "cpp", "standard": "c++17", "compilation_database": "compile_commands.json"},
+    {"id": "java"}
+  ],
+  "model": "your-model-id",
+  "runtime_image": "sha256:replace-with-local-toolchain-image-id",
+  "agent_timeout_seconds": 1080,
+  "max_repairs": 1
+}

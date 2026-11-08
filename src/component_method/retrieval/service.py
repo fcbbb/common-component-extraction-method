@@ -96,6 +96,7 @@ def build_component_catalog(library: Path) -> dict[str, Any]:
             if isinstance(entry, dict) and entry.get("name")
         ]
         records.append({
+            **{key: component[key] for key in ("language", "backend_id", "backend_identity") if key in component},
             "bundle_id": component.get("bundle_id"),
             "component_id": audit.get("component_id"),
             "name": _text(audit.get("name") or component.get("bundle_id"), limit=180),

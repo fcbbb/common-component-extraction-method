@@ -23,13 +23,13 @@ from component_method.agent_runtime import (
 )
 from component_method.agent_runtime.status import AGENT_PROCESS_ERROR, SUBMITTED
 from component_method.library_publish.agent_bundle import agent_bundle_prompt
+from component_method.languages.task_environment import bundle_environment
+from component_method.languages.python.task_runtime import DIRECT_PYTHONPATH, COMPONENT_PYTHONPATH
 
 from component_usage import collect_component_usage
 
 
 COMPLETION_MARKER = "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
-DIRECT_PYTHONPATH = "/testbed"
-COMPONENT_PYTHONPATH = "/testbed:/testbed/component_bundle"
 TOOL_ENV = {
     "HOME": "/tmp",
     "LANG": "C.UTF-8",
@@ -160,7 +160,7 @@ def patch_checker_command(base_commit: str) -> tuple[str, ...]:
     return ("python", "-c", PATCH_CHECKER, base_commit)
 
 
-def task_prompt(problem_statement: str, *, components: bool) -> str:
+def task_prompt(problem_statement: str, *, components: bool, bundle: Path | None = None) -> str:
     prompt = f"""<pr_description>
 {problem_statement}
 </pr_description>
@@ -169,7 +169,10 @@ Implement the requested behavior in /testbed. Preserve behavior outside the requ
 are already installed, so do not download packages or access the network. Use focused scripts under
 /tmp when repository tests are unsuitable."""
     if components:
-        component_text = agent_bundle_prompt(task_config_directory())
+        manifest_path = bundle / "manifest.json" if bundle else None
+        artifact_bundle = manifest_path and manifest_path.is_file() and read(manifest_path).get("schema_version") == 8
+        component_text = (agent_bundle_prompt(task_config_directory(), bundle=bundle) if artifact_bundle
+                          else agent_bundle_prompt(task_config_directory()))
         component_text = component_text.replace(
             "In your final task-submission response, if you used a delivered component, include "
             '`{"component_usage": ["component identifier / entrypoint"]}` on a separate line '
@@ -186,10 +189,11 @@ are already installed, so do not download packages or access the network. Use fo
 class DshTaskEnvironment:
     """Expose the small execute contract used by the existing patch collector."""
 
-    def __init__(self, container: Any, image: str, pythonpath: str) -> None:
+    def __init__(self, container: Any, image: str, pythonpath: str, language_environment=None) -> None:
         self.container = container
         self.config = SimpleNamespace(image=image)
         self.pythonpath = pythonpath
+        self.language_environment = language_environment or {}
 
     def ensure_running(self) -> None:
         self.container.reload()
@@ -203,7 +207,7 @@ class DshTaskEnvironment:
         result = self.container.exec_run(
             ["/bin/bash", "-lc", wrapped],
             workdir=cwd or "/testbed",
-            environment={**TOOL_ENV, "PYTHONPATH": self.pythonpath},
+            environment={**TOOL_ENV, "PYTHONPATH": self.pythonpath, **self.language_environment},
             user="10001:10001",
             demux=False,
             tty=False,
@@ -306,8 +310,10 @@ def run_dsh_task(
     """Run one bounded DSH task attempt and return the stable result payload."""
     environment_values = model_env()
     pythonpath = COMPONENT_PYTHONPATH if bundle is not None else DIRECT_PYTHONPATH
+    language_environment = bundle_environment(bundle)
     runtime_activation = (
-        f"export PYTHONPATH={shlex.quote(pythonpath)}; export PIP_NO_INDEX=1; "
+        "; ".join(f"export {key}={shlex.quote(value)}" for key, value in language_environment.items())
+        + "; export PIP_NO_INDEX=1; "
         "unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy"
     )
     backend = backend or create_agent_backend(
@@ -342,14 +348,14 @@ def run_dsh_task(
         proof = network_probe(container)
         proof.update(container_id=container.id, container_name=container.name)
         write(out / "network_proof.json", proof)
-        environment = DshTaskEnvironment(container, image, pythonpath)
+        environment = DshTaskEnvironment(container, image, pythonpath, language_environment)
         backend_result = backend.run(
             AgentRunRequest(
                 run_id=f"{arm}-{task_id}",
                 role="task",
                 model=environment_values["MODEL_NAME"],
                 system_prompt=DSH_TASK_SYSTEM_PROMPT,
-                task_prompt=task_prompt(problem_statement, components=bundle is not None),
+                task_prompt=task_prompt(problem_statement, components=bundle is not None, bundle=bundle),
                 output_dir=out,
                 container_name=container.name,
                 container_cwd="/testbed",

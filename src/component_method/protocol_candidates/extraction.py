@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from component_method.component_build.extraction.service import ExtractionRequest
+from component_method.languages.contracts import contained_path
 
 
 @dataclass(frozen=True)
@@ -89,10 +90,15 @@ def pack_protocol_candidates(
             raise ValueError(f"duplicate protocol candidate_id: {candidate_id}")
         seen_ids.add(candidate_id)
         units = _candidate_units(candidate)
+        identity = {key: candidate[key] for key in ("language", "backend_id") if key in candidate}
+        if identity and len(identity) != 2:
+            raise ValueError("candidate language and backend_id must be declared together")
         files = {file_id for file_id, _ in units}
 
         best: tuple[tuple[float, int, int, int], int] | None = None
         for index, packet in enumerate(packets):
+            if {key: packet[key] for key in ("language", "backend_id") if key in packet} != identity:
+                continue
             packet_units: set[tuple[str, str]] = packet["_units"]
             shared = len(units & packet_units)
             merged_units = units | packet_units
@@ -111,6 +117,7 @@ def pack_protocol_candidates(
 
         if best is None:
             packets.append({
+                **identity,
                 "_units": set(units),
                 "_files": set(files),
                 "candidate_ids": [candidate_id],
@@ -130,12 +137,15 @@ def pack_protocol_candidates(
         files = packet.pop("_files")
         candidate_ids = packet["candidate_ids"]
         result.append({
+            **{key: packet[key] for key in ("language", "backend_id") if key in packet},
             "packet_id": _packet_id(candidate_ids, units),
             "candidate_ids": candidate_ids,
             "candidate_ranks": packet["candidate_ranks"],
             "primary_files": sorted(files),
             "primary_units": [
-                {"file_id": file_id, "unit_id": unit_id}
+                {"file_id": file_id, "unit_id": unit_id,
+                 **({"unit_key": unit_id, "language": packet["language"], "backend_id": packet["backend_id"]}
+                    if "language" in packet else {})}
                 for file_id, unit_id in sorted(units)
             ],
             "candidate_count": len(candidate_ids),
@@ -170,12 +180,26 @@ def protocol_packet_extraction_request(
         for item in primary_units
     ):
         raise ValueError("protocol packet primary_units must be source unit objects")
+    language_context = {key: packet[key] for key in ("language", "backend_id") if key in packet}
+    if language_context:
+        from component_method.languages.registry import default_registry
+
+        backend = default_registry().resolve({"language": packet["language"]}).single()
+        if hasattr(backend, "set_repository"):
+            backend.set_repository(repository_root)
+        language_context["source_units"] = [
+            {key: value for key, value in unit.to_json().items() if key != "metadata"}
+            for file_id in primary_files for unit in backend.extract_units(
+                file_id, contained_path(repository_root, file_id).read_text())
+        ]
+        language_context["backend_identity"] = backend.identity().to_json()
     return ExtractionRequest(
         workspace_root=repository_root,
-        output_dir=output_root / packet_id,
+        output_dir=contained_path(output_root, packet_id),
         strategy="protocol_candidate_blind_extraction_v1",
         workspace_scope="candidate",
         context={
+            **language_context,
             "primary_extraction_files": list(primary_files),
             "primary_extraction_units": list(primary_units),
         },

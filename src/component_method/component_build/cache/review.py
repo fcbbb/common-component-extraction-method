@@ -258,8 +258,53 @@ def observed_dependencies(trajectory: Path, repo: Path):
     return {"files": sorted(files), "search_scopes": sorted(scopes)} if seen else None
 
 
+def merge_review_dependencies(manifest, observed):
+    """Keep malformed dependency claims from crashing reviews or enabling cache reuse."""
+    if not isinstance(manifest, dict):
+        return manifest
+    result = dict(manifest)
+    invalid = []
+    for field in ("files", "search_scopes"):
+        values = manifest.get(field)
+        if not isinstance(values, list) or any(not isinstance(value, str) or not value.strip()
+                                               for value in values):
+            invalid.append(field)
+        declared = [value for value in values if isinstance(value, str) and value.strip()] if isinstance(values, list) else []
+        result[field] = sorted(set(declared) | set(observed[field] if observed is not None else []))
+    if invalid:
+        result["complete"] = False
+        result["dependency_errors"] = [f"{field} must be a list of non-empty repository-relative strings"
+                                       for field in invalid]
+    if observed is None:
+        result.update(complete=False, trace_accounting="unrecognized_trace")
+    else:
+        result["trace_accounting"] = "conservative_shell_scopes"
+    return result
+
+
 def review_identity(payload, runner, experiment_dir):
     config_identity = getattr(runner, "agent_config_identity", None)
+    from component_method.component_build.validation.artifact_service import artifact_backend, artifact_of, extraction_record
+
+    proposed = payload.get("proposed_component", payload.get("candidate", payload))
+    if "artifact" in extraction_record(proposed):
+        from component_method.languages.prompts import review_prompt
+
+        artifact = artifact_of(proposed)
+        backend = artifact_backend(artifact)
+        repository_root = getattr(runner, "repository_root", None)
+        if repository_root and hasattr(backend, "set_repository"):
+            backend.set_repository(Path(repository_root))
+        return digest({"schema": 2, "component": proposed, "payload": payload,
+                       "task": review_prompt(proposed, backend), "backend_identity": backend.identity().to_json(),
+                       "agent_config": config_identity("review") if callable(config_identity) else None,
+                       "model": getattr(runner, "model", None), "endpoint": getattr(runner, "base_url", None),
+                       "review_runtime_image": getattr(runner, "image_id", None),
+                       "task_runtime_image": getattr(runner, "runtime_image", None),
+                       "code": code_digest("component_build/validation/artifact_service.py",
+                                           "component_build/validation/execution.py",
+                                           "component_build/submission.py", "component_build/extraction/runner.py",
+                                           "component_build/cache/review.py")})
     return digest({"schema": 1, "task": _review_task_prompt(payload, experiment_dir),
                    "component_code": digest(_review_brief(payload)["component_code"]),
                    "agent_config": config_identity("review") if callable(config_identity) else None,

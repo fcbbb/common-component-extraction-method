@@ -29,6 +29,12 @@ def main() -> None:
     component_ids = summary["published_components"]
     if not component_ids:
         raise RuntimeError("review produced no publishable components")
+    from component_method.component_build.validation.artifact_service import extraction_record
+
+    formats = {"artifact" in extraction_record(load_json(
+        review_root / "components" / component_id / "effective_component.json")) for component_id in component_ids}
+    if len(formats) > 1:
+        raise ValueError("publish historical records and artifact-v2 records as separate libraries")
 
     library = ROOT / "outputs" / "full_library"
     if library.exists() and any(library.iterdir()):
@@ -50,6 +56,20 @@ def main() -> None:
         component = load_json(component_path)
         review = load_json(review_path)
         bundle_id = f"component-{number:03d}"
+        if "artifact" in extraction_record(component):
+            from component_method.library_publish.artifacts import publish_artifact
+
+            manifest_record = publish_artifact(component, result["validation"], library, bundle_id)
+            manifest_records.append(manifest_record)
+            mapping.append({"bundle_id": bundle_id, "component_id": component_id,
+                            "source_packet_id": source_record["source_packet_id"],
+                            "protocol_status": review["protocol_contract_review"]["status"]})
+            construction_records.append({"component_id": component_id,
+                                         "component_sha256": sha256(component_path), "review_sha256": sha256(review_path),
+                                         "validation_sha256": sha256(component_root / "runtime_validation/validation.json")})
+            index.extend([f"## [{component.get('name') or component_id}]({manifest_record['readme']})", "",
+                          f"- Language: `{manifest_record['language']}`", ""])
+            continue
         bundle_root = library / "components" / bundle_id
         bundle_root.mkdir(parents=True)
         (bundle_root / "component.py").write_text(
@@ -132,7 +152,7 @@ def main() -> None:
     write_json(
         library / "manifest.json",
         {
-            "schema_version": 7,
+            "schema_version": 8 if any("artifact_file" in r for r in manifest_records) else 7,
             "discovery_audit_status": "task_blind_reviewed_unscreened",
             "method": "ffsim_focus_context_protocol_contract_audit_gate_v2",
             "repository": config["repository"],

@@ -12,7 +12,8 @@ import copy
 from collections import defaultdict
 from typing import Any
 
-from component_method.source_scan.units import unit_is_ancestor
+from component_method.languages.base import SignalBackend
+from component_method.languages.registry import default_backend
 
 # 兼容信号接口的默认值；最终候选生成使用冻结配置中的阈值。
 DEFAULT_CFG = {
@@ -248,6 +249,8 @@ def _unit_record(signal: str, record: dict[str, Any], file_a: str | None = None,
 def _remove_nested_candidate_units(
     candidates: list[dict[str, Any]],
     unit_preference: str = "leaf",
+    *,
+    backend: SignalBackend | None = None,
 ) -> list[dict[str, Any]]:
     """Resolve nested candidate scopes without making files exclusive.
 
@@ -258,13 +261,16 @@ def _remove_nested_candidate_units(
     coarse preference because they represent the non-container module body,
     not the whole file.
     """
-    occurrences: list[tuple[int, str, str]] = []
+    backend = backend or default_backend()
+    if unit_preference not in {"leaf", "coarse"}:
+        raise ValueError(f"Unsupported unit_preference: {unit_preference!r}")
+    occurrences: list[tuple[int, dict[str, Any]]] = []
     for index, candidate in enumerate(candidates):
         for unit in candidate.get("units", []):
             file_id = unit.get("file_id")
             unit_id = unit.get("unit_id")
             if isinstance(file_id, str) and isinstance(unit_id, str):
-                occurrences.append((index, file_id, unit_id))
+                occurrences.append((index, unit))
 
     normalized: list[dict[str, Any]] = []
     for index, candidate in enumerate(candidates):
@@ -275,22 +281,20 @@ def _remove_nested_candidate_units(
             if not isinstance(file_id, str) or not isinstance(unit_id, str):
                 continue
             if unit_preference == "coarse":
-                if unit_id.startswith("method:"):
-                    has_class_ancestor = any(
-                        other_file == file_id
-                        and (other_index != index or other_unit_id != unit_id)
-                        and other_unit_id.startswith("class:")
-                        and unit_is_ancestor(other_unit_id, unit_id)
-                        for other_index, other_file, other_unit_id in occurrences
-                    )
-                    if has_class_ancestor:
-                        continue
+                has_ancestor = any(
+                    other["file_id"] == file_id
+                    and (other_index != index or other["unit_id"] != unit_id)
+                    and backend.is_ancestor(other, unit)
+                    for other_index, other in occurrences
+                )
+                if has_ancestor:
+                    continue
             else:
                 has_descendant = any(
-                    other_file == file_id
-                    and (other_index != index or other_unit_id != unit_id)
-                    and unit_is_ancestor(unit_id, other_unit_id)
-                    for other_index, other_file, other_unit_id in occurrences
+                    other["file_id"] == file_id
+                    and (other_index != index or other["unit_id"] != unit_id)
+                    and backend.is_ancestor(unit, other)
+                    for other_index, other in occurrences
                 )
                 if has_descendant:
                     continue
@@ -322,7 +326,8 @@ def _remove_nested_candidate_units(
     return normalized
 
 
-def fuse_units(signal_evidences: list[dict[str, Any]], cfg: dict[str, Any] | None = None) -> dict[str, Any]:
+def fuse_units(signal_evidences: list[dict[str, Any]], cfg: dict[str, Any] | None = None,
+               *, backend: SignalBackend | None = None) -> dict[str, Any]:
     """Fuse signal evidence on ``(file_id, unit_id)`` vertices.
 
     A component may therefore contain multiple units from one file, while each
@@ -330,6 +335,7 @@ def fuse_units(signal_evidences: list[dict[str, Any]], cfg: dict[str, Any] | Non
     file IDs so the downstream discovery and extraction schema remains stable.
     """
     cfg = cfg or copy.deepcopy(DEFAULT_CFG)
+    backend = backend or default_backend()
     nodes: set[tuple[str, str]] = set()
     per_edge: dict[tuple[tuple[str, str], tuple[str, str]], dict[str, dict[str, Any]]] = defaultdict(dict)
     for evidence in signal_evidences:
@@ -429,7 +435,7 @@ def fuse_units(signal_evidences: list[dict[str, Any]], cfg: dict[str, Any] | Non
                     **value,
                 })
         units = [
-            {"file_id": file_id, "unit_id": unit_id, "kind": unit_id.split(":", 1)[0] if ":" in unit_id else unit_id}
+            {"file_id": file_id, "unit_id": unit_id, "kind": backend.describe_unit_id(unit_id)["kind"]}
             for file_id, unit_id in sorted(component)
         ]
         candidates.append({
@@ -440,7 +446,7 @@ def fuse_units(signal_evidences: list[dict[str, Any]], cfg: dict[str, Any] | Non
             "evidence": dict(shared),
             "gain": sum(edge["tokens"] for edge in component_edges),
         })
-    candidates = _remove_nested_candidate_units(candidates, cfg.get("unit_preference", "leaf"))
+    candidates = _remove_nested_candidate_units(candidates, cfg.get("unit_preference", "leaf"), backend=backend)
     assigned_files = {member for candidate in candidates for member in candidate["members"]}
     file_ids = sorted({file_id for file_id, _ in nodes})
     return {

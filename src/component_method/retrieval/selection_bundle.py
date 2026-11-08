@@ -222,6 +222,10 @@ def materialize_selected_bundle(
     source_manifest = json.loads(
         (source_library / "manifest.json").read_text(encoding="utf-8")
     )
+    if source_manifest.get("schema_version") == 8:
+        from component_method.library_publish.artifacts import select_artifact_bundle
+
+        return select_artifact_bundle(source_library, selection, destination)
     records_by_id = {
         record["bundle_id"]: record for record in source_manifest["components"]
     }

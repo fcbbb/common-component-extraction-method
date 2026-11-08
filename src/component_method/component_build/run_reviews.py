@@ -178,6 +178,19 @@ def main() -> None:
                 and final_review.get("artifact_review", {}).get("status") == "faithful"
                 and not final_summary["blocks_publication"]
             )
+            validation = None
+            from component_method.component_build.validation.artifact_service import extraction_record, validate_artifact_component
+            if "artifact" in extraction_record(effective_component):
+                from component_method.component_build.contracts import RepositoryContext
+
+                validation = validate_artifact_component(
+                    component_id=component_id, component=effective_component,
+                    candidate_payload={"candidate": effective_component},
+                    repository=RepositoryContext(repository_root, runtime_image=config["runtime_image"],
+                                                 metadata={"languages": config.get("languages", [])}),
+                    agent_runner=runner, output_dir=component_root / "runtime_validation", review=final_review,
+                )
+                publishable = publishable and validation["status"] == "validated"
             result = {
                 "source_packet_id": record["source_packet_id"],
                 "component_id": component_id,
@@ -189,6 +202,7 @@ def main() -> None:
                 "initial": initial_summary,
                 "final": final_summary,
                 "publishable": publishable,
+                **({"validation": validation} if validation is not None else {}),
             }
         except Exception as exc:
             result = {

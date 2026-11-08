@@ -1,0 +1,980 @@
+{
+  "semantic": {
+    "signal": "semantic",
+    "units": [],
+    "pairs": [
+      {
+        "file_a": "alpha.py",
+        "unit_a": "method:Parser.parse",
+        "file_b": "beta.py",
+        "unit_b": "method:Reader.parse",
+        "cosine": 0.9
+      },
+      {
+        "file_a": "alpha.py",
+        "unit_a": "function:normalize",
+        "file_b": "beta.py",
+        "unit_b": "function:normalize",
+        "cosine": 0.85
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file_id": "alpha.py",
+      "source_code": "from functools import wraps\n\nREGISTRY = {}\n\ndef register(name):\n    def decorate(fn):\n        REGISTRY[name] = fn\n        return fn\n    return decorate\n\nclass Parser:\n    cache = {}\n\n    @register('text')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n\n    async def finish(self, value):\n        return value\n\ndef normalize(value):\n    if value is None:\n        return ''\n    return str(value).strip()\n"
+    },
+    {
+      "file_id": "beta.py",
+      "source_code": "from alpha import normalize, register\n\nclass Reader:\n    cache = {}\n\n    @register('binary')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n\n    async def finish(self, value):\n        return value\n\ndef normalize(value):\n    if value is None:\n        return ''\n    return str(value).strip()\n"
+    },
+    {
+      "file_id": "broken.py",
+      "source_code": "def unfinished(\n"
+    }
+  ],
+  "component": {
+    "name": "Normalizer",
+    "summary": "Normalize an optional text value",
+    "status": "draft_ready",
+    "type": "repeated_implementation",
+    "library": {
+      "path": "normalizer.py",
+      "content": "def normalize(value):\n    return '' if value is None else str(value).strip()\n"
+    },
+    "entrypoints": [
+      {
+        "name": "normalize",
+        "kind": "function",
+        "purpose": "Normalize text"
+      }
+    ],
+    "members": [
+      {
+        "file_id": "alpha.py",
+        "unit_id": "function:normalize"
+      },
+      {
+        "file_id": "beta.py",
+        "unit_id": "function:normalize"
+      }
+    ]
+  },
+  "expected": {
+    "schema": "python-characterization-baseline-v1",
+    "ordering": "input files; legacy backend order within each stage; candidate rank",
+    "source_sha256": "271d4aa7590c8ef37832048d95b3068b9bd1693ebd6b93eecaeb95087bdf1406",
+    "stages": {
+      "embedding_units": [
+        {
+          "file_id": "alpha.py",
+          "unit_id": "function:register",
+          "source_code": "def register(name):\n    def decorate(fn):\n        REGISTRY[name] = fn\n        return fn\n    return decorate\n"
+        },
+        {
+          "file_id": "alpha.py",
+          "unit_id": "class:Parser",
+          "source_code": "class Parser:\n    cache = {}\n\n    @register('text')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n\n    async def finish(self, value):\n        return value\n"
+        },
+        {
+          "file_id": "alpha.py",
+          "unit_id": "function:normalize",
+          "source_code": "def normalize(value):\n    if value is None:\n        return ''\n    return str(value).strip()\n"
+        },
+        {
+          "file_id": "alpha.py",
+          "unit_id": "method:Parser.parse",
+          "source_code": "    @register('text')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n"
+        },
+        {
+          "file_id": "alpha.py",
+          "unit_id": "method:Parser.finish",
+          "source_code": "    async def finish(self, value):\n        return value\n"
+        },
+        {
+          "file_id": "alpha.py",
+          "unit_id": "module",
+          "source_code": "from functools import wraps\n\nREGISTRY = {}\n\n\n\n"
+        },
+        {
+          "file_id": "beta.py",
+          "unit_id": "class:Reader",
+          "source_code": "class Reader:\n    cache = {}\n\n    @register('binary')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n\n    async def finish(self, value):\n        return value\n"
+        },
+        {
+          "file_id": "beta.py",
+          "unit_id": "function:normalize",
+          "source_code": "def normalize(value):\n    if value is None:\n        return ''\n    return str(value).strip()\n"
+        },
+        {
+          "file_id": "beta.py",
+          "unit_id": "method:Reader.parse",
+          "source_code": "    @register('binary')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n"
+        },
+        {
+          "file_id": "beta.py",
+          "unit_id": "method:Reader.finish",
+          "source_code": "    async def finish(self, value):\n        return value\n"
+        },
+        {
+          "file_id": "beta.py",
+          "unit_id": "module",
+          "source_code": "from alpha import normalize, register\n\n\n"
+        },
+        {
+          "file_id": "broken.py",
+          "unit_id": "module",
+          "source_code": "def unfinished(\n"
+        }
+      ],
+      "source_records": {
+        "alpha.py": [
+          {
+            "unit_id": "module",
+            "kind": "module",
+            "start": 1,
+            "end": 26,
+            "source_code": "from functools import wraps\n\nREGISTRY = {}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+          },
+          {
+            "unit_id": "function:register",
+            "kind": "function",
+            "start": 5,
+            "end": 9,
+            "source_code": "def register(name):\n    def decorate(fn):\n        REGISTRY[name] = fn\n        return fn\n    return decorate\n"
+          },
+          {
+            "unit_id": "class:Parser",
+            "kind": "class",
+            "start": 11,
+            "end": 21,
+            "source_code": "class Parser:\n    cache = {}\n\n    @register('text')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n\n    async def finish(self, value):\n        return value\n"
+          },
+          {
+            "unit_id": "method:Parser.parse",
+            "kind": "method",
+            "start": 14,
+            "end": 18,
+            "source_code": "    @register('text')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n"
+          },
+          {
+            "unit_id": "method:Parser.finish",
+            "kind": "method",
+            "start": 20,
+            "end": 21,
+            "source_code": "    async def finish(self, value):\n        return value\n"
+          },
+          {
+            "unit_id": "function:normalize",
+            "kind": "function",
+            "start": 23,
+            "end": 26,
+            "source_code": "def normalize(value):\n    if value is None:\n        return ''\n    return str(value).strip()\n"
+          }
+        ],
+        "beta.py": [
+          {
+            "unit_id": "module",
+            "kind": "module",
+            "start": 1,
+            "end": 18,
+            "source_code": "from alpha import normalize, register\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+          },
+          {
+            "unit_id": "class:Reader",
+            "kind": "class",
+            "start": 3,
+            "end": 13,
+            "source_code": "class Reader:\n    cache = {}\n\n    @register('binary')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n\n    async def finish(self, value):\n        return value\n"
+          },
+          {
+            "unit_id": "method:Reader.parse",
+            "kind": "method",
+            "start": 6,
+            "end": 10,
+            "source_code": "    @register('binary')\n    def parse(self, previous_value):\n        result = normalize(previous_value)\n        self.cache[previous_value] = result\n        return self.finish(result)\n"
+          },
+          {
+            "unit_id": "method:Reader.finish",
+            "kind": "method",
+            "start": 12,
+            "end": 13,
+            "source_code": "    async def finish(self, value):\n        return value\n"
+          },
+          {
+            "unit_id": "function:normalize",
+            "kind": "function",
+            "start": 15,
+            "end": 18,
+            "source_code": "def normalize(value):\n    if value is None:\n        return ''\n    return str(value).strip()\n"
+          }
+        ],
+        "broken.py": [
+          {
+            "unit_id": "module",
+            "kind": "module",
+            "start": 1,
+            "end": 1,
+            "source_code": "def unfinished(\n"
+          }
+        ]
+      },
+      "clone": {
+        "signal": "clone",
+        "k": 6,
+        "min_run": 12,
+        "per_file_tokens": {
+          "alpha.py": 104,
+          "beta.py": 80,
+          "broken.py": 3
+        },
+        "unit_tokens": {
+          "alpha.py": {
+            "module": 8,
+            "function:register": 22,
+            "class:Parser": 12,
+            "method:Parser.parse": 29,
+            "method:Parser.finish": 11,
+            "function:normalize": 22
+          },
+          "beta.py": {
+            "module": 6,
+            "class:Reader": 12,
+            "method:Reader.parse": 29,
+            "method:Reader.finish": 11,
+            "function:normalize": 22
+          },
+          "broken.py": {
+            "module": 3
+          }
+        },
+        "pairs": [
+          {
+            "file_a": "alpha.py",
+            "file_b": "beta.py",
+            "shared_tokens": 51,
+            "n_runs": 2,
+            "tokens_a": 104,
+            "tokens_b": 80,
+            "containment": 0.6375,
+            "lines_a": 12,
+            "lines_b": 12,
+            "unit_pairs": [
+              {
+                "file_a": "alpha.py",
+                "unit_a": "method:Parser.parse",
+                "file_b": "beta.py",
+                "unit_b": "method:Reader.parse",
+                "shared_tokens": 29,
+                "n_runs": 1,
+                "tokens_a": 29,
+                "tokens_b": 29,
+                "containment": 1.0
+              },
+              {
+                "file_a": "alpha.py",
+                "unit_a": "function:normalize",
+                "file_b": "beta.py",
+                "unit_b": "function:normalize",
+                "shared_tokens": 22,
+                "n_runs": 1,
+                "tokens_a": 22,
+                "tokens_b": 22,
+                "containment": 1.0
+              }
+            ]
+          }
+        ],
+        "unit_pairs": [
+          {
+            "file_a": "alpha.py",
+            "unit_a": "method:Parser.parse",
+            "file_b": "beta.py",
+            "unit_b": "method:Reader.parse",
+            "shared_tokens": 29,
+            "n_runs": 1,
+            "tokens_a": 29,
+            "tokens_b": 29,
+            "containment": 1.0
+          },
+          {
+            "file_a": "alpha.py",
+            "unit_a": "function:normalize",
+            "file_b": "beta.py",
+            "unit_b": "function:normalize",
+            "shared_tokens": 22,
+            "n_runs": 1,
+            "tokens_a": 22,
+            "tokens_b": 22,
+            "containment": 1.0
+          }
+        ],
+        "shared_units": [
+          {
+            "name": "normalize",
+            "files": [
+              "alpha.py",
+              "beta.py"
+            ],
+            "shared_tokens": 44
+          }
+        ]
+      },
+      "skeleton": {
+        "signal": "skeleton",
+        "k": 3,
+        "min_run": 9,
+        "per_file_tokens": {
+          "alpha.py": 35,
+          "beta.py": 27,
+          "broken.py": 0
+        },
+        "unit_tokens": {
+          "alpha.py": {
+            "function:register": 7,
+            "class:Parser": 14,
+            "function:normalize": 6,
+            "method:Parser.parse": 4,
+            "method:Parser.finish": 2,
+            "module": 2
+          },
+          "beta.py": {
+            "class:Reader": 14,
+            "function:normalize": 6,
+            "method:Reader.parse": 4,
+            "method:Reader.finish": 2,
+            "module": 1
+          },
+          "broken.py": {}
+        },
+        "parse_errors": {
+          "broken.py": "SyntaxError: '(' was never closed at line 1"
+        },
+        "pairs": [
+          {
+            "file_a": "alpha.py",
+            "file_b": "beta.py",
+            "shared_tokens": 14,
+            "n_runs": 1,
+            "tokens_a": 35,
+            "tokens_b": 27,
+            "containment": 0.5185,
+            "unit_pairs": [
+              {
+                "file_a": "alpha.py",
+                "unit_a": "class:Parser",
+                "file_b": "beta.py",
+                "unit_b": "class:Reader",
+                "shared_tokens": 14,
+                "n_runs": 1,
+                "tokens_a": 14,
+                "tokens_b": 14,
+                "containment": 1.0
+              }
+            ]
+          }
+        ],
+        "unit_pairs": [
+          {
+            "file_a": "alpha.py",
+            "unit_a": "class:Parser",
+            "file_b": "beta.py",
+            "unit_b": "class:Reader",
+            "shared_tokens": 14,
+            "n_runs": 1,
+            "tokens_a": 14,
+            "tokens_b": 14,
+            "containment": 1.0
+          }
+        ]
+      },
+      "semantic": {
+        "signal": "semantic",
+        "units": [],
+        "pairs": [
+          {
+            "file_a": "alpha.py",
+            "unit_a": "method:Parser.parse",
+            "file_b": "beta.py",
+            "unit_b": "method:Reader.parse",
+            "cosine": 0.9
+          },
+          {
+            "file_a": "alpha.py",
+            "unit_a": "function:normalize",
+            "file_b": "beta.py",
+            "unit_b": "function:normalize",
+            "cosine": 0.85
+          }
+        ]
+      },
+      "candidates": {
+        "candidates": [
+          {
+            "candidate_id": "protocol_aa1e3d10b96b",
+            "members": [
+              "alpha.py",
+              "beta.py"
+            ],
+            "n_members": 2,
+            "units": [
+              {
+                "file_id": "alpha.py",
+                "unit_id": "class:Parser",
+                "kind": "class"
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "function:normalize",
+                "kind": "function"
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "function:register",
+                "kind": "function"
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "method:Parser.finish",
+                "kind": "method"
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "method:Parser.parse",
+                "kind": "method"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "class:Reader",
+                "kind": "class"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "function:normalize",
+                "kind": "function"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "method:Reader.finish",
+                "kind": "method"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "method:Reader.parse",
+                "kind": "method"
+              }
+            ],
+            "seed_units": [
+              {
+                "file_id": "alpha.py",
+                "unit_id": "method:Parser.parse",
+                "kind": "method"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "method:Reader.parse",
+                "kind": "method"
+              }
+            ],
+            "seed_evidence": {
+              "seed_kind": "signal_supported",
+              "signals_passed": [
+                "semantic"
+              ],
+              "signals": {
+                "clone": {
+                  "file_a": "alpha.py",
+                  "unit_a": "method:Parser.parse",
+                  "file_b": "beta.py",
+                  "unit_b": "method:Reader.parse",
+                  "shared_tokens": 29,
+                  "n_runs": 1,
+                  "tokens_a": 29,
+                  "tokens_b": 29,
+                  "containment": 1.0
+                },
+                "semantic": {
+                  "file_a": "alpha.py",
+                  "unit_a": "method:Parser.parse",
+                  "file_b": "beta.py",
+                  "unit_b": "method:Reader.parse",
+                  "cosine": 0.9
+                }
+              },
+              "direct_relations": [
+                {
+                  "relation": "shared_call",
+                  "key": "finish"
+                },
+                {
+                  "relation": "shared_call",
+                  "key": "normalize"
+                },
+                {
+                  "relation": "shared_call",
+                  "key": "register"
+                },
+                {
+                  "relation": "shared_call",
+                  "key": "self.finish"
+                },
+                {
+                  "relation": "shared_protocol_api",
+                  "key": "call:register"
+                },
+                {
+                  "relation": "shared_registration",
+                  "key": "decorator:register"
+                },
+                {
+                  "relation": "shared_registration",
+                  "key": "register"
+                },
+                {
+                  "relation": "lifecycle_flow",
+                  "key": "previous_value"
+                },
+                {
+                  "relation": "sibling_method",
+                  "key": "parse"
+                }
+              ]
+            },
+            "expanded_units": [
+              {
+                "file_id": "alpha.py",
+                "unit_id": "class:Parser",
+                "relation": "shared_protocol_api",
+                "key": "call:register",
+                "from_file_id": "beta.py",
+                "from_unit_id": "method:Reader.parse",
+                "relation_score": 1.2
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "class:Reader",
+                "relation": "shared_protocol_api",
+                "key": "call:register",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "method:Parser.parse",
+                "relation_score": 1.2
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "class:Parser",
+                "relation": "lifecycle_flow",
+                "key": "previous_value",
+                "from_file_id": "beta.py",
+                "from_unit_id": "method:Reader.parse",
+                "relation_score": 1.1
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "class:Reader",
+                "relation": "lifecycle_flow",
+                "key": "previous_value",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "method:Parser.parse",
+                "relation_score": 1.1
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "class:Parser",
+                "relation": "shared_registration",
+                "key": "decorator:register",
+                "from_file_id": "beta.py",
+                "from_unit_id": "method:Reader.parse",
+                "relation_score": 1.0
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "class:Reader",
+                "relation": "shared_registration",
+                "key": "decorator:register",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "method:Parser.parse",
+                "relation_score": 1.0
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "function:normalize",
+                "relation": "definition_reference",
+                "key": "normalize",
+                "from_file_id": "beta.py",
+                "from_unit_id": "method:Reader.parse",
+                "relation_score": 0.9
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "function:register",
+                "relation": "definition_reference",
+                "key": "register",
+                "from_file_id": "beta.py",
+                "from_unit_id": "method:Reader.parse",
+                "relation_score": 0.9
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "method:Parser.finish",
+                "relation": "definition_reference",
+                "key": "finish",
+                "from_file_id": "beta.py",
+                "from_unit_id": "method:Reader.parse",
+                "relation_score": 0.9
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "function:normalize",
+                "relation": "definition_reference",
+                "key": "normalize",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "method:Parser.parse",
+                "relation_score": 0.9
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "class:Parser",
+                "relation": "shared_call",
+                "key": "finish",
+                "from_file_id": "beta.py",
+                "from_unit_id": "method:Reader.parse",
+                "relation_score": 0.65
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "class:Reader",
+                "relation": "shared_call",
+                "key": "finish",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "method:Parser.parse",
+                "relation_score": 0.65
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "method:Parser.finish",
+                "relation": "class_protocol_context",
+                "key": "Parser",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "method:Parser.parse",
+                "relation_score": 0.55
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "method:Reader.finish",
+                "relation": "class_protocol_context",
+                "key": "Reader",
+                "from_file_id": "beta.py",
+                "from_unit_id": "method:Reader.parse",
+                "relation_score": 0.55
+              }
+            ],
+            "truncated_units": [
+              {
+                "file_id": "beta.py",
+                "unit_id": "method:Reader.finish",
+                "relation": "definition_reference",
+                "key": "finish",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "method:Parser.parse",
+                "relation_score": 0.9
+              }
+            ],
+            "relation_kinds": [
+              "class_protocol_context",
+              "definition_reference",
+              "lifecycle_flow",
+              "shared_call",
+              "shared_protocol_api",
+              "shared_registration",
+              "sibling_method"
+            ],
+            "signals_hit": [
+              "clone",
+              "semantic"
+            ],
+            "score": 2.17,
+            "rank": 1
+          },
+          {
+            "candidate_id": "protocol_5bf55289b5eb",
+            "members": [
+              "alpha.py",
+              "beta.py"
+            ],
+            "n_members": 2,
+            "units": [
+              {
+                "file_id": "alpha.py",
+                "unit_id": "class:Parser",
+                "kind": "class"
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "function:normalize",
+                "kind": "function"
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "method:Parser.parse",
+                "kind": "method"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "class:Reader",
+                "kind": "class"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "function:normalize",
+                "kind": "function"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "method:Reader.parse",
+                "kind": "method"
+              }
+            ],
+            "seed_units": [
+              {
+                "file_id": "alpha.py",
+                "unit_id": "function:normalize",
+                "kind": "function"
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "function:normalize",
+                "kind": "function"
+              }
+            ],
+            "seed_evidence": {
+              "seed_kind": "signal_supported",
+              "signals_passed": [
+                "semantic"
+              ],
+              "signals": {
+                "clone": {
+                  "file_a": "alpha.py",
+                  "unit_a": "function:normalize",
+                  "file_b": "beta.py",
+                  "unit_b": "function:normalize",
+                  "shared_tokens": 22,
+                  "n_runs": 1,
+                  "tokens_a": 22,
+                  "tokens_b": 22,
+                  "containment": 1.0
+                },
+                "semantic": {
+                  "file_a": "alpha.py",
+                  "unit_a": "function:normalize",
+                  "file_b": "beta.py",
+                  "unit_b": "function:normalize",
+                  "cosine": 0.85
+                }
+              },
+              "direct_relations": [
+                {
+                  "relation": "shared_call",
+                  "key": "strip"
+                }
+              ]
+            },
+            "expanded_units": [
+              {
+                "file_id": "alpha.py",
+                "unit_id": "class:Parser",
+                "relation": "definition_reference",
+                "key": "normalize",
+                "from_file_id": "beta.py",
+                "from_unit_id": "function:normalize",
+                "relation_score": 0.9
+              },
+              {
+                "file_id": "alpha.py",
+                "unit_id": "method:Parser.parse",
+                "relation": "definition_reference",
+                "key": "normalize",
+                "from_file_id": "beta.py",
+                "from_unit_id": "function:normalize",
+                "relation_score": 0.9
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "class:Reader",
+                "relation": "definition_reference",
+                "key": "normalize",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "function:normalize",
+                "relation_score": 0.9
+              },
+              {
+                "file_id": "beta.py",
+                "unit_id": "method:Reader.parse",
+                "relation": "definition_reference",
+                "key": "normalize",
+                "from_file_id": "alpha.py",
+                "from_unit_id": "function:normalize",
+                "relation_score": 0.9
+              }
+            ],
+            "truncated_units": [],
+            "relation_kinds": [
+              "definition_reference",
+              "shared_call"
+            ],
+            "signals_hit": [
+              "clone",
+              "semantic"
+            ],
+            "score": 1.264932,
+            "rank": 2
+          }
+        ],
+        "config": {
+          "semantic_seed_min_cosine": 0.78,
+          "semantic_supported_min_cosine": 0.35,
+          "clone": {
+            "min_shared": 40,
+            "min_containment": 0.35,
+            "min_runs": 1
+          },
+          "skeleton": {
+            "min_shared": 18,
+            "min_containment": 0.55,
+            "min_runs": 1
+          },
+          "max_relation_frequency": 12,
+          "max_definition_references": 20,
+          "max_expanded_per_relation": 4,
+          "max_candidate_units": 20,
+          "max_candidate_files": 8,
+          "max_seed_edges": 4000,
+          "top_candidates": 5,
+          "protocol_candidate_reserve": 24,
+          "min_candidates_per_relation": 3,
+          "min_protocol_supported_candidates": 8,
+          "selection_policy": "score_topk_v1",
+          "candidate_overlap_jaccard": 0.5,
+          "coverage_role_weight": 8.0,
+          "coverage_relation_weight": 3.0,
+          "coverage_edge_weight": 1.0,
+          "coverage_unit_weight": 0.25
+        },
+        "stats": {
+          "source_units": 12,
+          "signal_edges": 3,
+          "qualified_seed_edges": 2,
+          "frozen_candidates": 2,
+          "relation_counts_directed": {
+            "class_protocol_context": 4,
+            "definition_reference": 20,
+            "lifecycle_flow": 8,
+            "shared_call": 34,
+            "shared_protocol_api": 8,
+            "shared_registration": 16,
+            "sibling_method": 4
+          },
+          "selection_policy": "score_topk_v1",
+          "generated_candidate_count": 2,
+          "selected_candidate_count": 2
+        }
+      },
+      "packets": [
+        {
+          "packet_id": "protocol_packet_557ed60d47ef",
+          "candidate_ids": [
+            "protocol_aa1e3d10b96b",
+            "protocol_5bf55289b5eb"
+          ],
+          "candidate_ranks": [
+            1,
+            2
+          ],
+          "primary_files": [
+            "alpha.py",
+            "beta.py"
+          ],
+          "primary_units": [
+            {
+              "file_id": "alpha.py",
+              "unit_id": "class:Parser"
+            },
+            {
+              "file_id": "alpha.py",
+              "unit_id": "function:normalize"
+            },
+            {
+              "file_id": "alpha.py",
+              "unit_id": "function:register"
+            },
+            {
+              "file_id": "alpha.py",
+              "unit_id": "method:Parser.finish"
+            },
+            {
+              "file_id": "alpha.py",
+              "unit_id": "method:Parser.parse"
+            },
+            {
+              "file_id": "beta.py",
+              "unit_id": "class:Reader"
+            },
+            {
+              "file_id": "beta.py",
+              "unit_id": "function:normalize"
+            },
+            {
+              "file_id": "beta.py",
+              "unit_id": "method:Reader.finish"
+            },
+            {
+              "file_id": "beta.py",
+              "unit_id": "method:Reader.parse"
+            }
+          ],
+          "candidate_count": 2,
+          "unit_count": 9,
+          "file_count": 2
+        }
+      ],
+      "component": {
+        "schema": "component-draft-v1",
+        "component_id": "baseline",
+        "status": "draft_ready",
+        "name": "Normalizer",
+        "summary": "Normalize an optional text value",
+        "type": "repeated_implementation",
+        "confidence": "medium",
+        "relationships": [],
+        "invariants": [],
+        "variation_points": [],
+        "library": {
+          "content": "def normalize(value):\n    return '' if value is None else str(value).strip()\n"
+        },
+        "entrypoints": [
+          {
+            "name": "normalize",
+            "kind": "function",
+            "purpose": "Normalize text"
+          }
+        ],
+        "members": [
+          {
+            "file_id": "alpha.py",
+            "unit_id": "function:normalize"
+          },
+          {
+            "file_id": "beta.py",
+            "unit_id": "function:normalize"
+          }
+        ],
+        "evidence": [],
+        "dependencies": [],
+        "limitations": [],
+        "guidance": {},
+        "applicability": {},
+        "integration_steps": [],
+        "origin_strategy": "baseline"
+      }
+    }
+  }
+}

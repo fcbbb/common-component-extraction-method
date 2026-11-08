@@ -14,6 +14,10 @@
 20 个源码快照均形成了非空组件库，共发布 486 个组件，最终选择 63 个组件。完整实验说明见 `docs/final_report_20_tasks.md`，逐任务结果见 `results/per_task.csv`。
 Agent runtime 的 DeepSeek Harness 迁移设计见 `docs/dsh_migration_plan.md`。
 
+新增的多语言流水线支持 Python、C++ 和 Java 的独立候选图、多文件制品、隔离运行验证、发布与检索交付。
+配置和运行说明见 [多语言实现状态](docs/multilanguage_implementation_status.md)，配置模板见
+[multilanguage_pipeline.json](config/reference/multilanguage_pipeline.json)。上述 20 任务结果仍对应原有 Python 实验。
+
 ## 仓库内容
 
 - `src/component_method/source_scan/`：扫描生产源码并切分代码单元。

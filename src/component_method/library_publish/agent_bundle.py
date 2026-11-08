@@ -165,6 +165,9 @@ def _load_validated_components(audit_dir: Path) -> list[dict[str, Any]]:
             raise ValueError(f"component at {source}:{line_number} is not a JSON object")
         if item.get("local_validation", {}).get("status") != "validated":
             continue
+        if isinstance(item.get("component"), dict) and "artifact" in item["component"]:
+            components.append(item)
+            continue
         library = Path(str(item.get("library") or ""))
         if library.is_absolute() or ".." in library.parts:
             raise ValueError(f"unsafe component library path: {library}")
@@ -202,6 +205,17 @@ def publish_agent_bundle(
 
     config = load_bundle_config(experiment_dir)
     items = _load_validated_components(audit_dir)
+    structured = [item for item in items if isinstance(item.get("component"), dict) and "artifact" in item["component"]]
+    if structured:
+        if len(structured) != len(items):
+            raise ValueError("publish historical records and artifact-v2 records as separate libraries")
+        from .artifacts import publish_artifact_library
+
+        return publish_artifact_library(
+            [{"component": item["component"], "validation": item["local_validation"]["validation"]} for item in items],
+            destination, repository=repo, source_commit=commit,
+            manifest_metadata={"task_snapshot_key": task_key, **({"construction_key": construction_key} if construction_key else {})},
+        )
     if config["sort_by"] == "original":
         pass
     elif config["sort_by"] == "members_count":
@@ -324,7 +338,7 @@ def validate_agent_bundle(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     expected_repo = normalize_repository_id(repository_id)
     expected_commit = normalize_commit(source_commit)
-    if manifest.get("schema_version") != BUNDLE_SCHEMA_VERSION:
+    if manifest.get("schema_version") not in {BUNDLE_SCHEMA_VERSION, 8}:
         raise ValueError(
             f"unsupported component bundle schema {manifest.get('schema_version')!r} at {path}"
         )
@@ -358,6 +372,18 @@ def validate_agent_bundle(
     if len(set(libraries)) != len(libraries):
         raise ValueError("component bundle contains duplicate library paths")
     for record, library in zip(records, libraries):
+        if manifest.get("schema_version") == 8:
+            from .artifacts import file_digest
+            from component_method.languages.contracts import contained_path
+
+            required = {record.get("library"), record.get("readme"), record.get("audit_file"),
+                        *record.get("files", [])}
+            hashes = record.get("file_sha256", {})
+            if None in required or not required or set(hashes) != required:
+                raise ValueError("artifact digest manifest does not cover every published file")
+            for name, expected in hashes.items():
+                if file_digest(contained_path(path, name)) != expected:
+                    raise ValueError(f"artifact file digest changed: {name}")
         if record.get("library") != library:
             raise ValueError("component library does not match its manifest entry")
         for field in ("library", "readme", "audit_file"):
@@ -411,8 +437,15 @@ def get_task_bundle(
     raise FileNotFoundError(f"matching component bundle is missing: {path}")
 
 
-def agent_bundle_prompt(experiment_dir: Path | str | None = None) -> str:
+def agent_bundle_prompt(experiment_dir: Path | str | None = None, *, bundle: Path | None = None) -> str:
     """Ask the coding agent to read the complete index and explore components itself."""
+    if bundle is not None and json.loads((bundle / "manifest.json").read_text()).get("schema_version") == 8:
+        return ("Read /testbed/component_bundle/INDEX.md and each relevant component README and audit record. "
+                "Use the existing repository toolchain and the documented component source files. Check each "
+                "entrypoint's validation_status and language before use. Direct reuse and reference-pattern "
+                "adaptation are distinct delivery modes. Keep the supplied bundle read-only and do not download "
+                "dependencies. Record used component IDs and entrypoints in /tmp/component_usage.json as "
+                '{"component_usage": ["component identifier / entrypoint"]}.\n')
     template = resolve_prompt(experiment_dir, "usage/agent_bundle_prompt.txt")
     return (
         template.replace("{bundle_path}", BUNDLE_CONTAINER_PATH)

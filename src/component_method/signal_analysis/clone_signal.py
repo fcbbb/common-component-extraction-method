@@ -1,58 +1,18 @@
-"""S1 verbatim signal: normalized-token clone detection (CCFinder-style, python-native).
-
-Names are kept verbatim so this captures true copy-paste sharing; strings/numbers
-collapse to placeholders so only literals differ.  Compare unit-level streams across
-files, find maximal shared runs, then aggregate evidence per file pair.
-"""
+"""Language-neutral clone evidence over backend-provided token streams."""
 from __future__ import annotations
 
-import ast
-import io
-import tokenize
 from collections import defaultdict
 from typing import Any
 
+from component_method.languages.base import SignalBackend
+from component_method.languages.registry import default_backend
 from .ngrams import NgramStream, SharedRun, find_shared_runs
-from component_method.source_scan.units import container_of_row, parse_units
 
 DEFAULT_K = 6
 DEFAULT_MIN_RUN = 12
 
 
-def _normalized_tokens(source: str) -> list[tuple[str, int]]:
-    """(token_text, start_row) pairs, comments/whitespace stripped, STRING->str NUMBER->num."""
-    out: list[tuple[str, int]] = []
-    try:
-        tokens = tokenize.generate_tokens(io.StringIO(source).readline)
-        for tok in tokens:
-            if tok.type in (tokenize.ENCODING, tokenize.NEWLINE, tokenize.NL, tokenize.COMMENT, tokenize.INDENT, tokenize.DEDENT, tokenize.ENDMARKER):
-                continue
-            text = tok.string
-            if tok.type == tokenize.STRING:
-                text = "str"
-            elif tok.type == tokenize.NUMBER:
-                text = "num"
-            out.append((text, tok.start[0]))
-    except (tokenize.TokenError, IndentationError):
-        pass
-    return out
-
-
-def _unit_streams(file_id: str, source: str) -> tuple[list[NgramStream], list[Unit] | None]:
-    tree, units, error = parse_units(source)
-    if tree is None or units is None:
-        # Unparseable file: fall back to a single module-level stream.
-        tokens = _normalized_tokens(source)
-        return [NgramStream(file_id, "module", [t for t, _ in tokens], [r for _, r in tokens])], None
-    raw = _normalized_tokens(source)
-    buckets: dict[str, list[tuple[str, int]]] = defaultdict(list)
-    for text, row in raw:
-        container = container_of_row(units, row)
-        buckets[container.unit_id].append((text, row))
-    return [NgramStream(file_id, unit_id, [t for t, _ in pairs], [r for _, r in pairs]) for unit_id, pairs in buckets.items()], units
-
-
-def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min_run: int = DEFAULT_MIN_RUN) -> dict[str, Any]:
+def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min_run: int = DEFAULT_MIN_RUN, *, backend: SignalBackend | None = None) -> dict[str, Any]:
     """file_sources: [{"file_id": ..., "source_code": ...}] -> evidence dict.
 
     Returns:
@@ -62,15 +22,19 @@ def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min
        unit_tokens: {file_id: {unit_id: n}}, unit_pairs: [...],
        shared_units: [{name, files: [...], shared_tokens}]}
     """
+    backend = backend or default_backend()
     streams: list[NgramStream] = []
     per_file_tokens: dict[str, int] = {}
     unit_tokens: dict[str, dict[str, int]] = defaultdict(dict)
+    display_names: dict[tuple[str, str], str] = {}
     unit_share_tokens: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     for entry in file_sources:
         file_id = entry["file_id"]
-        unit_streams, _ = _unit_streams(file_id, entry["source_code"])
-        streams.extend(unit_streams)
+        unit_streams, _ = backend.file_token_streams(file_id, entry["source_code"], "clone")
+        streams.extend(NgramStream(stream.file_id, stream.unit_id, list(stream.tokens), list(stream.rows))
+                       for stream in unit_streams)
         per_file_tokens[file_id] = sum(len(s.tokens) for s in unit_streams)
+        display_names.update({(file_id, stream.unit_id): stream.display_name for stream in unit_streams})
         unit_tokens[file_id] = {stream.unit_id: len(stream.tokens) for stream in unit_streams}
 
     runs = find_shared_runs(streams, k=k, min_run=min_run)
@@ -88,7 +52,7 @@ def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min
         pair_units[(file_a, file_b)][(unit_a, unit_b)]["shared_tokens"] += run.tokens
         pair_units[(file_a, file_b)][(unit_a, unit_b)]["n_runs"] += 1
         for run_file, run_unit in ((run.file_a, run.unit_a), (run.file_b, run.unit_b)):
-            name = run_unit.split(":", 1)[1] if ":" in run_unit else run_unit
+            name = display_names[(run_file, run_unit)]
             if name not in {"module", "<module>"}:
                 unit_share_tokens[name][run_file] += run.tokens
 

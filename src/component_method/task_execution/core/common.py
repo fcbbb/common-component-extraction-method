@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 
 from component_method.runtime_paths import offline_task_root, resolve_release_path
+from component_method.languages import normalize_language_config
 
 
 RUNTIME_ROOT = Path(__file__).resolve().parents[1]
@@ -57,7 +58,7 @@ def hashes(root):
 
 
 def task_config():
-    return read(ROOT / "config.json")
+    return normalize_language_config(read(ROOT / "config.json"))
 
 
 def task_data_root():

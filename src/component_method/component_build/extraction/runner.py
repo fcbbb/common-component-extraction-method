@@ -83,6 +83,10 @@ def _task_visible_volumes(
         volumes[str(submission_directory.resolve())] = {"bind": OUTPUT_DIRECTORY, "mode": "rw"}
         checker = Path(__file__).resolve().parents[1] / "submission.py"
         volumes[str(checker)] = {"bind": CHECKER_PATH, "mode": "ro"}
+        from component_method.languages.python import submission_support
+
+        volumes[str(Path(submission_support.__file__).resolve())] = {
+            "bind": "/component-tools/language_support.py", "mode": "ro"}
     return volumes
 
 

@@ -48,6 +48,9 @@ def load_reuse(reuse_dir: Path, input_manifest: dict[str, Any]):
         raise RuntimeError(f"incomplete reuse directory: {reuse_dir}")
     old_input = json.loads(manifest_path.read_text(encoding="utf-8"))
     old_result = json.loads(result_path.read_text(encoding="utf-8"))
+    if old_input.get("schema") == "featurebench-c2llm-offline-input-v2":
+        if old_result.get("input_manifest_sha256") != sha256_file(manifest_path):
+            raise RuntimeError("reuse input manifest hash mismatch")
     if old_input["model_id"] != input_manifest["model_id"]:
         raise RuntimeError("reuse model ID differs")
     if old_input["model_revision"] != input_manifest["model_revision"]:
@@ -65,8 +68,29 @@ def load_reuse(reuse_dir: Path, input_manifest: dict[str, Any]):
     with gzip.open(units_path, "rt", encoding="utf-8") as source:
         for row_number, line in enumerate(source):
             row = json.loads(line)
+            if not reuse_backend_matches(old_input, input_manifest, row["repo_key"]):
+                continue
             index[row["unit_key"]] = (row["unit_sha256"], row_number)
     return old_input, old_result, matrix, index
+
+
+def reuse_backend_matches(old_input: dict[str, Any], new_input: dict[str, Any], repository: str) -> bool:
+    old = old_input.get("language_backends")
+    new = new_input.get("language_backends")
+    if old is None and new is None:
+        return old_input.get("schema") == new_input.get("schema") == "featurebench-c2llm-offline-input-v1"
+    return (isinstance(old, dict) and isinstance(new, dict)
+            and repository in old and repository in new and old[repository] == new[repository])
+
+
+def completed_output_matches(result: dict[str, Any], input_manifest: dict[str, Any],
+                              input_path: Path, manifest_path: Path, output_path: Path) -> bool:
+    return (
+        result.get("input_manifest_sha256") == sha256_file(manifest_path)
+        and result.get("units_file_sha256") == sha256_file(input_path)
+        and result.get("unit_order_sha256") == input_manifest["unit_order_sha256"]
+        and result.get("embedding_file_sha256") == sha256_file(output_path)
+    )
 
 
 def main() -> int:
@@ -97,18 +121,20 @@ def main() -> int:
     input_manifest_path = args.input_manifest.resolve()
     output_path = args.output.resolve()
     result_manifest_path = args.result_manifest.resolve()
-    if args.resume and output_path.is_file() and result_manifest_path.is_file():
-        result = json.loads(result_manifest_path.read_text(encoding="utf-8"))
-        if result.get("embedding_file_sha256") == sha256_file(output_path):
-            print(f"[embed] valid output already exists: {output_path}")
-            return 0
     if args.batch_size < 1 or args.chunk_size < args.batch_size:
         raise RuntimeError("batch-size must be positive and chunk-size must be >= batch-size")
     input_manifest = json.loads(input_manifest_path.read_text(encoding="utf-8"))
-    if input_manifest.get("schema") != "featurebench-c2llm-offline-input-v1":
+    if input_manifest.get("schema") not in {
+        "featurebench-c2llm-offline-input-v1", "featurebench-c2llm-offline-input-v2"
+    }:
         raise RuntimeError("unsupported input manifest schema")
     if input_manifest.get("units_file_sha256") != sha256_file(input_path):
         raise RuntimeError("units hash does not match input manifest")
+    if args.resume and output_path.is_file() and result_manifest_path.is_file():
+        result = json.loads(result_manifest_path.read_text(encoding="utf-8"))
+        if completed_output_matches(result, input_manifest, input_path, input_manifest_path, output_path):
+            print(f"[embed] valid output already exists: {output_path}")
+            return 0
 
     import numpy as np
     import torch
@@ -210,7 +236,9 @@ def main() -> int:
             total_memory_bytes=torch.cuda.get_device_properties(0).total_memory,
         )
     result = {
-        "schema": "featurebench-c2llm-offline-output-v1",
+        "schema": ("featurebench-c2llm-offline-output-v2" if "language_backends" in input_manifest
+                   else "featurebench-c2llm-offline-output-v1"),
+        **({"language_backends": input_manifest["language_backends"]} if "language_backends" in input_manifest else {}),
         "model_id": input_manifest["model_id"],
         "model_revision_requested": input_manifest["model_revision"],
         "model_revision_resolved": input_manifest["model_revision"],

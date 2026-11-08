@@ -10,6 +10,8 @@ import sys
 from typing import Any, Iterable
 
 from component_method.runtime_paths import release_root
+from component_method.languages import normalize_language_config
+from component_method.languages.registry import normalize_languages
 
 
 PROJECT = release_root()
@@ -236,14 +238,22 @@ def admit_review_component_failures(root: Path, task_id: str) -> dict[str, Any] 
 
 
 def config() -> dict[str, Any]:
-    return load_json(ROOT / "config.json")
+    return normalize_language_config(load_json(ROOT / "config.json"))
 
 
 def tasks() -> list[dict[str, Any]]:
     path = ROOT / "tasks.json"
     if not path.is_file():
         raise RuntimeError(f"run prepare_batch.py first: {path}")
-    return load_json(path)["tasks"]
+    config_path = ROOT / "config.json"
+    defaults = normalize_languages(load_json(config_path) if config_path.is_file() else {})
+    return [
+        normalize_language_config(
+            task if "languages" in task or "language" in task
+            else {**task, "languages": defaults}
+        )
+        for task in load_json(path)["tasks"]
+    ]
 
 
 def repository_stats() -> dict[str, dict[str, Any]]:

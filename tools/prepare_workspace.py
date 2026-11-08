@@ -10,12 +10,16 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 
 TOOLS = Path(__file__).resolve().parent
 REPOSITORY = TOOLS.parent
 RELEASE = REPOSITORY.parent
 OFFLINE = RELEASE / "offline_artifacts"
+
+sys.path.insert(0, str(REPOSITORY / "src"))
+from component_method.languages.registry import normalize_languages
 
 
 def read_json(path: Path):
@@ -91,6 +95,9 @@ def task_config(
     pipeline = method["pipeline"]
     return {
         "schema": "component-method-standalone-task-v1",
+        "languages": normalize_languages(
+            task if "languages" in task or "language" in task else method
+        ),
         "task_id": task_id,
         "repository": task["repo"],
         "source_commit": library["source_commit"],
@@ -119,6 +126,7 @@ def task_config(
 def workspace_config(method: dict, api_base: str) -> dict:
     return {
         "schema": "component-method-standalone-workspace-v1",
+        "languages": normalize_languages(method),
         "experiment_id": "component-method-final-20tasks-standalone",
         "frozen_pipeline": "component_method.workflow",
         "model": method["task_model"],

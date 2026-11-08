@@ -40,7 +40,10 @@ def _verify_isolated_container(container: docker.models.containers.Container) ->
     other_mounts = [mount for mount in mounts if mount.get("Type") != "bind"]
     network = attrs.get("HostConfig", {}).get("NetworkMode")
     bind_destinations = [mount.get("Destination") for mount in bind_mounts]
-    allowed = {"/testbed", "/root/my_repo", COMPONENT_DIRECTORY, OUTPUT_DIRECTORY, CHECKER_PATH}
+    allowed = {
+        "/testbed", "/root/my_repo", COMPONENT_DIRECTORY, OUTPUT_DIRECTORY, CHECKER_PATH,
+        "/component-tools/language_support.py",
+    }
     if (
         "/testbed" not in bind_destinations
         or len(bind_destinations) != len(set(bind_destinations))
@@ -48,7 +51,7 @@ def _verify_isolated_container(container: docker.models.containers.Container) ->
     ):
         raise RuntimeError(
             "Repository containers may bind only source, supplied components, "
-            "the output directory and its checker"
+            "the output directory, its checker and language support"
         )
     if any(
         mount.get("Type") != "tmpfs" or mount.get("Destination") != "/tmp"

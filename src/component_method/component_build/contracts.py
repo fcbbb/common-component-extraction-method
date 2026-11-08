@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from component_method.languages.contracts import ComponentArtifact
+
 
 REPOSITORY_CONTEXT_SCHEMA = "repository-context-v1"
 COMPONENT_DRAFT_SCHEMA = "component-draft-v1"
@@ -92,9 +94,10 @@ class ComponentDraft:
     integration_steps: tuple[str, ...] = ()
     origin_strategy: str = ""
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
+    artifact: ComponentArtifact | None = None
 
     def to_json(self) -> dict[str, Any]:
-        return {
+        result = {
             "schema": COMPONENT_DRAFT_SCHEMA,
             "component_id": self.component_id,
             "status": self.status,
@@ -116,6 +119,13 @@ class ComponentDraft:
             "integration_steps": list(self.integration_steps),
             "origin_strategy": self.origin_strategy,
         }
+        if self.artifact is not None:
+            result.pop("library")
+            result.update(schema="component-draft-v2", language=self.artifact.language,
+                          backend_id=self.artifact.backend_id, artifact=self.artifact.to_json())
+            if "protocol_contract" in self.raw:
+                result["protocol_contract"] = self.raw["protocol_contract"]
+        return result
 
 
 def normalize_component_draft(
@@ -130,6 +140,8 @@ def normalize_component_draft(
         extraction = {}
 
     status = extraction.get("status", "missing")
+    artifact_value = extraction.get("artifact", value.get("artifact"))
+    artifact = ComponentArtifact.from_json(artifact_value) if artifact_value is not None else None
     library = extraction.get("library")
     if not isinstance(library, dict):
         library = value.get("library")
@@ -140,6 +152,8 @@ def normalize_component_draft(
     entrypoints = extraction.get("entrypoints", value.get("entrypoints", []))
     if not isinstance(entrypoints, list):
         entrypoints = []
+    if artifact is not None:
+        entrypoints = [{**entry.to_json(), "name": entry.entrypoint_id} for entry in artifact.entrypoints]
     members = value.get("members", [])
     evidence = value.get("evidence", [])
     dependencies = value.get("dependencies", value.get("required_dependencies", []))
@@ -176,6 +190,7 @@ def normalize_component_draft(
         ),
         origin_strategy=origin_strategy,
         raw=value,
+        artifact=artifact,
     )
 
 
@@ -218,7 +233,12 @@ def validate_component_draft(draft: ComponentDraft) -> list[str]:
         isinstance(item, str) for item in integration_steps
     ):
         errors.append("integration_steps must be a list of strings")
-    if not draft.library_content.strip():
+    if draft.artifact is not None:
+        from component_method.languages.registry import default_registry
+
+        backend = default_registry().resolve({"language": draft.artifact.language}).single()
+        errors.extend(d.message for d in backend.validate_artifact(draft.artifact))
+    elif not draft.library_content.strip():
         errors.append("component library is empty")
     if not draft.entrypoints:
         errors.append("component has no public entrypoints")
@@ -227,8 +247,8 @@ def validate_component_draft(draft: ComponentDraft) -> list[str]:
     for index, member in enumerate(draft.members):
         if (
             not isinstance(member.get("file_id"), str)
-            or not isinstance(member.get("unit_id"), str)
-            or not member.get("unit_id", "").strip()
+            or not isinstance(member.get("unit_key", member.get("unit_id")), str)
+            or not member.get("unit_key", member.get("unit_id", "")).strip()
         ):
             errors.append(f"member {index} has invalid file_id or unit_id")
     if not draft.evidence:
@@ -247,6 +267,8 @@ def validate_component_draft(draft: ComponentDraft) -> list[str]:
         ):
             errors.append(f"evidence {index} has invalid source citation or claim")
     names: list[str] = []
+    if draft.artifact is not None:
+        return errors
     for index, entrypoint in enumerate(draft.entrypoints):
         name = entrypoint.get("name")
         kind = entrypoint.get("kind")

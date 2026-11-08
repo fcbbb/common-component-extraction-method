@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import argparse
-import ast
 import copy
 import json
 from pathlib import Path
 from typing import Any
+
+try:
+    from component_method.languages.python.submission_support import validate_file_source, validate_smoke_source
+except ModuleNotFoundError:
+    from language_support import validate_file_source, validate_smoke_source
 
 
 OUTPUT_DIRECTORY = "/component-output"
@@ -29,6 +33,8 @@ def _read_file(root: Path, relative: Any, *, python: bool = True) -> str:
     if not isinstance(relative, str) or not relative:
         raise ValueError("file reference must be a non-empty relative path")
     path = Path(relative)
+    if "\\" in relative or ":" in relative or "\x00" in relative or path.as_posix() != relative:
+        raise ValueError(f"file reference must be a canonical relative path: {relative}")
     if path.is_absolute() or ".." in path.parts:
         raise ValueError(f"file reference must stay inside the output directory: {relative}")
     # Reject symlinks, including links in parent directories. The output may be
@@ -44,9 +50,7 @@ def _read_file(root: Path, relative: Any, *, python: bool = True) -> str:
     if not content.strip():
         raise ValueError(f"output file is empty: {relative}")
     if python:
-        if path.suffix != ".py":
-            raise ValueError(f"Python output must use a .py filename: {relative}")
-        compile(content, relative, "exec")
+        validate_file_source(path, content)
     return content
 
 
@@ -145,6 +149,8 @@ def validate_repair(result: dict[str, Any]) -> None:
         evidence = result.get("evidence")
         if not isinstance(evidence, list) or not evidence:
             raise ValueError("component_evidence repair needs a complete evidence list")
+    elif "artifact" in result:
+        _validate_artifact_submission(result["artifact"])
     else:
         library = result.get("library")
         if not isinstance(library, dict) or not isinstance(library.get("content"), str):
@@ -264,6 +270,19 @@ def load_submission(output_root: Path, role: str) -> dict[str, Any]:
             for item in value:
                 hydrate(item)
         elif isinstance(value, dict):
+            if value.get("schema") in {"component-artifact-v2", "smoke-case-v2"}:
+                files = value.get("files")
+                if not isinstance(files, list) or not files:
+                    raise ValueError("artifact and smoke files must be non-empty lists")
+                names = []
+                for item in files:
+                    if not isinstance(item, dict) or "content" in item:
+                        raise ValueError("write artifact source to files; inline content is not accepted")
+                    item["content"] = _read_file(root, item.get("path"), python=False)
+                    names.append(item["path"])
+                if len(names) != len(set(names)):
+                    raise ValueError("duplicate artifact file paths")
+                return
             library = value.get("library")
             if isinstance(library, dict):
                 if "content" in library:
@@ -274,9 +293,7 @@ def load_submission(output_root: Path, role: str) -> dict[str, Any]:
                 raise ValueError("write the test to a .py file and use test_file, not test_py")
             if "test_file" in value:
                 code = _read_file(root, value.pop("test_file"))
-                tree = ast.parse(code)
-                if not any(isinstance(node, ast.FunctionDef) and node.name == "run" for node in tree.body):
-                    raise ValueError("each smoke-test file must define run(common)")
+                validate_smoke_source(code)
                 value["test_py"] = code
             # Only recurse through original children, avoiding the code we added.
             for key, item in list(value.items()):
@@ -297,6 +314,9 @@ def load_submission(output_root: Path, role: str) -> dict[str, Any]:
             if not isinstance(draft, dict):
                 raise ValueError(f"component {index} extraction must be an object")
             if draft.get("status") == "not_extractable":
+                continue
+            if "artifact" in draft:
+                _validate_artifact_submission(draft["artifact"])
                 continue
             library = draft.get("library")
             if not isinstance(library, dict) or not library.get("content"):
@@ -332,7 +352,9 @@ def load_submission(output_root: Path, role: str) -> dict[str, Any]:
             if cases is not None:
                 if not isinstance(cases, list) or not cases:
                     raise ValueError("ready smoke plan must contain non-empty cases")
-                if any(not isinstance(case, dict) or not case.get("test_py") for case in cases):
+                if any(not isinstance(case, dict) or not (case.get("test_py") or
+                       (case.get("schema") == "smoke-case-v2" and case.get("files") and case.get("entrypoint_id")))
+                       for case in cases):
                     raise ValueError("each ready case needs test_file referencing its test")
             elif not plan.get("test_py"):
                 raise ValueError("ready smoke plan needs test_file or cases")
@@ -354,9 +376,12 @@ def file_submission_instructions() -> str:
     return (
         "\n\nFile submission protocol (applies to this run, including saved prompt templates):\n"
         f"Write the result metadata to {OUTPUT_DIRECTORY}/{MANIFEST_NAME}. "
-        "Write component implementations as .py files inside that directory; "
+        "For component-artifact-v2 and smoke-case-v2, list files as objects with path and role; "
+        "the controller reads their contents and rejects inline source. Preserve language, backend_id, "
+        "qualified entrypoints, source references and the declared schemas. "
+        "For the historical submission format, write component implementations as .py files inside that directory; "
         "library must contain path, a relative filename, instead of content. "
-        "Write smoke tests as .py files and put their relative paths in test_file instead of test_py. "
+        "For historical Python smoke cases, write .py files and put their relative paths in test_file instead of test_py. "
         "Keep all other schema fields, source citations and entrypoint declarations. "
         "The original repository and supplied artifacts are read-only; this output directory is writable. "
         "Do not embed source code in JSON or print the manifest as the final answer. "
@@ -367,6 +392,19 @@ def file_submission_instructions() -> str:
         "it prints the completion marker only when your files are valid. "
         "The program checks the files before accepting completion; errors are returned so you can correct them."
     )
+
+
+def _validate_artifact_submission(artifact):
+    if not isinstance(artifact, dict) or artifact.get("schema") != "component-artifact-v2":
+        raise ValueError("unsupported artifact schema")
+    language = artifact.get("language")
+    if not isinstance(language, str) or not artifact.get("backend_id", "").startswith(language + "@"):
+        raise ValueError("artifact needs explicit language and backend identity")
+    if not artifact.get("files") or not artifact.get("entrypoints"):
+        raise ValueError("artifact needs files and declared entrypoints")
+    for entry in artifact["entrypoints"]:
+        if not isinstance(entry, dict) or not entry.get("qualified_name") or not entry.get("kind"):
+            raise ValueError("entrypoints need kind and qualified_name")
 
 
 def main() -> int:

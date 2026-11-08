@@ -6,19 +6,17 @@ different roles in one repository protocol can be inspected together.
 """
 from __future__ import annotations
 
-import ast
 from copy import deepcopy
 import hashlib
 import itertools
 import json
 import math
-import textwrap
-import warnings
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Iterable
 
-from component_method.source_scan.units import source_unit_records
+
+from component_method.languages.registry import default_backend
 
 Node = tuple[str, str]
 
@@ -45,44 +43,25 @@ DEFAULT_CFG: dict[str, Any] = {
     "coverage_unit_weight": 0.25,
 }
 
-COMMON_CALLS = {
-    "append", "copy", "extend", "get", "items", "keys", "len", "list",
-    "pop", "range", "set", "sorted", "str", "tuple", "type", "update",
-    "values", "zip", "super", "getattr", "setattr", "hasattr", "print",
-}
-COMMON_NAMES = {
-    "args", "kwargs", "value", "values", "result", "results", "self", "cls",
-    "obj", "object", "item", "items", "data", "name", "type", "state", "key",
-}
-PROTOCOL_CALLS = {
-    "get_origin", "get_args", "isinstance", "issubclass", "register",
-    "register_serializer", "serialize", "deserialize", "dispatch", "visit",
-}
-
-
-def _qualified_name(node: ast.AST) -> str | None:
-    if isinstance(node, ast.Name):
-        return node.id
-    if isinstance(node, ast.Attribute):
-        prefix = _qualified_name(node.value)
-        return f"{prefix}.{node.attr}" if prefix else node.attr
-    return None
-
-
-def _tail(name: str) -> str:
-    return name.rsplit(".", 1)[-1]
-
-
-def _meaningful_name(name: str) -> bool:
-    return (
-        name not in COMMON_NAMES
-        and len(name) >= 5
-        and ("_" in name or name.startswith(("old", "previous", "cached", "original")))
-    )
-
-
-def _lifecycle_name(name: str) -> bool:
-    return name.startswith(("old_", "previous_", "cached_", "original_", "deleted_"))
+def build_profiles(sources: Iterable[dict[str, str]], backend=None) -> dict[Node, UnitProfile]:
+    backend = backend or default_backend()
+    result = {}
+    for entry in sources:
+        for unit in backend.extract_units(entry["file_id"], entry["source_code"]):
+            p = backend.build_profile(unit)
+            node = (unit.file_id, unit.unit_key if getattr(backend, "canonical_units", False)
+                    else unit.metadata.get("legacy_unit_id", unit.unit_key))
+            result[node] = UnitProfile(
+                node=node, kind=unit.kind, source_code=unit.source_code,
+                owner_name=p.owner_name, member_name=p.member_name,
+                defined_symbols=set(p.defined_symbols), references=set(p.referenced_symbols),
+                calls=set(p.calls) - set(p.ignored_calls), protocol_symbols=set(p.protocol_markers),
+                registration_keys=set(p.registration_keys),
+                flow_names=set(p.flow_names) - set(p.ignored_names),
+                state_fields=set(p.state_reads) | set(p.state_writes),
+                member_calls=set(p.related_members), lifecycle_names=set(p.lifecycle_names),
+            )
+    return result
 
 
 @dataclass
@@ -90,120 +69,17 @@ class UnitProfile:
     node: Node
     kind: str
     source_code: str
-    owner_class: str | None = None
+    owner_name: str | None = None
+    member_name: str = ""
     defined_symbols: set[str] = field(default_factory=set)
     references: set[str] = field(default_factory=set)
     calls: set[str] = field(default_factory=set)
     protocol_symbols: set[str] = field(default_factory=set)
     registration_keys: set[str] = field(default_factory=set)
     flow_names: set[str] = field(default_factory=set)
-    self_fields: set[str] = field(default_factory=set)
-    self_calls: set[str] = field(default_factory=set)
-
-
-class _ProfileVisitor(ast.NodeVisitor):
-    def __init__(self, profile: UnitProfile) -> None:
-        self.profile = profile
-
-    def visit_Name(self, node: ast.Name) -> None:
-        self.profile.references.add(node.id)
-        self.generic_visit(node)
-
-    def visit_Attribute(self, node: ast.Attribute) -> None:
-        name = _qualified_name(node)
-        if name:
-            self.profile.references.update((name, _tail(name)))
-        if isinstance(node.value, ast.Name) and node.value.id in {"self", "cls"}:
-            self.profile.self_fields.add(node.attr)
-        self.generic_visit(node)
-
-    def visit_Call(self, node: ast.Call) -> None:
-        name = _qualified_name(node.func)
-        if name:
-            tail = _tail(name)
-            self.profile.calls.update((name, tail))
-            if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
-                if node.func.value.id in {"self", "cls"}:
-                    self.profile.self_calls.add(tail)
-            if tail in PROTOCOL_CALLS:
-                self.profile.protocol_symbols.add(f"call:{tail}")
-                for arg in node.args[:3]:
-                    symbol = _qualified_name(arg)
-                    if symbol:
-                        self.profile.protocol_symbols.update((symbol, _tail(symbol)))
-            if tail.startswith("register") or tail in {"dispatch", "visit"}:
-                args = [_qualified_name(arg) for arg in node.args[:2]]
-                key = ":".join([name, *(arg for arg in args if arg)])
-                self.profile.registration_keys.add(key)
-        for keyword in node.keywords:
-            if keyword.arg and _meaningful_name(keyword.arg):
-                self.profile.flow_names.add(keyword.arg)
-        self.generic_visit(node)
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        self._visit_function(node)
-
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        self._visit_function(node)
-
-    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        args = [*node.args.posonlyargs, *node.args.args, *node.args.kwonlyargs]
-        if node.args.vararg:
-            args.append(node.args.vararg)
-        if node.args.kwarg:
-            args.append(node.args.kwarg)
-        self.profile.flow_names.update(arg.arg for arg in args if _meaningful_name(arg.arg))
-        for decorator in node.decorator_list:
-            name = _qualified_name(decorator.func if isinstance(decorator, ast.Call) else decorator)
-            if name and (_tail(name).startswith("register") or _tail(name) in {"dispatch", "visit"}):
-                self.profile.registration_keys.add(f"decorator:{name}")
-        self.generic_visit(node)
-
-    def visit_Assign(self, node: ast.Assign) -> None:
-        for target in node.targets:
-            if isinstance(target, ast.Name) and _meaningful_name(target.id):
-                self.profile.flow_names.add(target.id)
-        self.generic_visit(node)
-
-    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if isinstance(node.target, ast.Name) and _meaningful_name(node.target.id):
-            self.profile.flow_names.add(node.target.id)
-        self.generic_visit(node)
-
-
-def build_profiles(sources: Iterable[dict[str, str]]) -> dict[Node, UnitProfile]:
-    profiles: dict[Node, UnitProfile] = {}
-    for entry in sources:
-        file_id = entry["file_id"]
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", SyntaxWarning)
-            records = source_unit_records(entry["source_code"])
-        for record in records:
-            unit_id = record["unit_id"]
-            owner = None
-            if unit_id.startswith("method:"):
-                owner = unit_id.split(":", 1)[1].split(".", 1)[0]
-            profile = UnitProfile(
-                node=(file_id, unit_id),
-                kind=record["kind"],
-                source_code=record["source_code"],
-                owner_class=owner,
-            )
-            if unit_id != "module":
-                qualified = unit_id.split(":", 1)[1]
-                profile.defined_symbols.update((qualified, qualified.rsplit(".", 1)[-1]))
-                if owner:
-                    profile.defined_symbols.add(owner)
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", SyntaxWarning)
-                    tree = ast.parse(textwrap.dedent(record["source_code"]))
-            except SyntaxError:
-                profiles[profile.node] = profile
-                continue
-            _ProfileVisitor(profile).visit(tree)
-            profiles[profile.node] = profile
-    return profiles
+    state_fields: set[str] = field(default_factory=set)
+    member_calls: set[str] = field(default_factory=set)
+    lifecycle_names: set[str] = field(default_factory=set)
 
 
 def _add_relation(
@@ -247,7 +123,7 @@ def _index_relations(
                 if first[0] != second[0]:
                     _add_relation(relations, first, second, kind, key)
 
-    connect_shared("shared_call", {node: p.calls for node, p in profiles.items()}, COMMON_CALLS)
+    connect_shared("shared_call", {node: p.calls for node, p in profiles.items()})
     connect_shared(
         "shared_protocol_api",
         {node: {key for key in p.protocol_symbols if key.startswith("call:")} for node, p in profiles.items()},
@@ -259,19 +135,18 @@ def _index_relations(
     connect_shared("shared_registration", {node: p.registration_keys for node, p in profiles.items()})
     connect_shared(
         "shared_flow_name",
-        {node: {name for name in p.flow_names if not _lifecycle_name(name)} for node, p in profiles.items()},
-        COMMON_NAMES,
+        {node: {name for name in p.flow_names if name not in p.lifecycle_names} for node, p in profiles.items()},
     )
     connect_shared(
         "lifecycle_flow",
-        {node: {name for name in p.flow_names if _lifecycle_name(name)} for node, p in profiles.items()},
+        {node: {name for name in p.flow_names if name in p.lifecycle_names} for node, p in profiles.items()},
     )
 
     methods: dict[str, list[Node]] = defaultdict(list)
     for node in sorted(profiles):
         profile = profiles[node]
-        if profile.owner_class and node[1].startswith("method:"):
-            methods[node[1].rsplit(".", 1)[-1]].append(node)
+        if profile.owner_name and profile.member_name:
+            methods[profile.member_name].append(node)
     for method_name in sorted(methods):
         nodes = methods[method_name]
         unique = sorted(set(nodes))
@@ -299,17 +174,17 @@ def _index_relations(
     owners: dict[tuple[str, str], list[Node]] = defaultdict(list)
     for node in sorted(profiles):
         profile = profiles[node]
-        if profile.owner_class:
-            owners[(node[0], profile.owner_class)].append(node)
+        if profile.owner_name:
+            owners[(node[0], profile.owner_name)].append(node)
     for owner_key in sorted(owners):
         owner = owner_key[1]
         nodes = owners[owner_key]
         for first, second in itertools.combinations(sorted(nodes), 2):
             left, right = profiles[first], profiles[second]
-            shared_fields = left.self_fields & right.self_fields
+            shared_fields = left.state_fields & right.state_fields
             direct_call = (
-                second[1].rsplit(".", 1)[-1] in left.self_calls
-                or first[1].rsplit(".", 1)[-1] in right.self_calls
+                right.member_name in left.member_calls
+                or left.member_name in right.member_calls
             )
             if shared_fields or direct_call:
                 key = ",".join(sorted(shared_fields)[:3]) or owner
@@ -961,12 +836,13 @@ def recall_candidates(
     sources: list[dict[str, str]],
     signal_evidences: list[dict[str, Any]],
     cfg: dict[str, Any] | None = None,
+    *, backend=None,
 ) -> dict[str, Any]:
     """Return frozen task-blind candidate packets for one repository."""
     resolved = {**DEFAULT_CFG, **(cfg or {})}
     for key in ("clone", "skeleton"):
         resolved[key] = {**DEFAULT_CFG[key], **((cfg or {}).get(key, {}))}
-    profiles = build_profiles(sources)
+    profiles = build_profiles(sources, backend=backend)
     relations = _index_relations(profiles, resolved)
     signal_edges = _collect_signal_edges(signal_evidences)
     seeds = _seed_edges(signal_edges, relations, profiles, resolved)

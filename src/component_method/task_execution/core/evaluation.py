@@ -8,6 +8,7 @@ import tempfile
 import uuid
 
 import docker
+from component_method.languages.task_environment import bundle_environment
 from common import OUT, RUNTIME_ROOT, evaluation_adjustments, read, write
 
 
@@ -62,7 +63,10 @@ def evaluate(task, patch, output, bundle=None):
             # Both paths cover relative imports and the task environment's absolute path.
             for destination in (workdir + '/component_bundle', '/testbed/component_bundle'):
                 args += ['-v', str(Path(bundle).resolve()) + ':' + destination + ':ro']
-        args += ['-e', 'PYTHONPATH=' + workdir + ':' + workdir + '/component_bundle:/testbed:/testbed/component_bundle', image, '/bin/bash', '-c', '\n'.join(commands)]
+        language_environment = bundle_environment(bundle, container_root=workdir + '/component_bundle', repository_root=workdir)
+        for key, value in language_environment.items():
+            args += ['-e', key + '=' + value]
+        args += [image, '/bin/bash', '-c', '\n'.join(commands)]
         error = None
         try:
             with (output / 'tests.log').open('w') as handle:

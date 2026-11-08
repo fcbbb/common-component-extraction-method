@@ -31,8 +31,18 @@ def read_json(path: Path):
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--task", help="额外检查指定任务的 Docker 镜像。")
+    parser.add_argument("--config", type=Path, help="检查多语言配置及其隔离运行时，不依赖历史 20 任务数据。")
     parser.add_argument("--require-model-env", action="store_true")
     args = parser.parse_args()
+    if args.config:
+        from component_method.languages.preflight import inspect_configuration
+
+        if args.task:
+            parser.error("--config and --task cannot be combined")
+        if args.require_model_env and not os.environ.get("OPENAI_API_KEY"):
+            parser.error("OPENAI_API_KEY is required")
+        print(json.dumps(inspect_configuration(read_json(args.config)), ensure_ascii=False, indent=2))
+        return 0
     failures = []
     agent_backend = selected_backend_name()
 
