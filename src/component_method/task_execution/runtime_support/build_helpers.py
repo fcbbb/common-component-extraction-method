@@ -54,7 +54,11 @@ def _verify_isolated_container(container: docker.models.containers.Container) ->
             "the output directory, its checker and language support"
         )
     if any(
-        mount.get("Type") != "tmpfs" or mount.get("Destination") != "/tmp"
+        mount.get("Type") != "tmpfs"
+        or not (
+            mount.get("Destination") == "/tmp"
+            or str(mount.get("Destination", "")).startswith("/testbed/")
+        )
         for mount in other_mounts
     ):
         raise RuntimeError(f"Unexpected non-repository container mounts: {other_mounts}")

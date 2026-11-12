@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -155,6 +155,43 @@ def pack_protocol_candidates(
     return result
 
 
+
+def protocol_packet_manifest(candidates_payload: dict[str, Any], *, config: ProtocolPacketConfig | None = None) -> dict[str, Any]:
+    """Build the persisted, deterministic packet view of a candidate file."""
+    if not isinstance(candidates_payload, dict) or not isinstance(candidates_payload.get("candidates"), list):
+        raise ValueError("candidate payload must contain a candidates list")
+    cfg = config or ProtocolPacketConfig()
+    packets = pack_protocol_candidates(candidates_payload["candidates"], config=cfg)
+    return {
+        "schema": "protocol-packets-v2",
+        "packet_config": asdict(cfg),
+        "candidate_count": len(candidates_payload["candidates"]),
+        "packet_count": len(packets),
+        "packets": packets,
+    }
+
+
+def write_protocol_packet_manifest(
+    candidate_path: Path,
+    output_path: Path,
+    *,
+    config: ProtocolPacketConfig | None = None,
+) -> dict[str, Any]:
+    """Write a packet manifest next to a frozen candidate file."""
+    candidate_path = Path(candidate_path)
+    output_path = Path(output_path)
+    payload = json.loads(candidate_path.read_text(encoding="utf-8"))
+    manifest = protocol_packet_manifest(payload, config=config)
+    manifest.update(
+        candidate_file=candidate_path.name,
+        candidate_sha256=hashlib.sha256(candidate_path.read_bytes()).hexdigest(),
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output_path.with_suffix(output_path.suffix + ".tmp")
+    temporary.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(output_path)
+    return manifest
+
 def protocol_packet_extraction_request(
     *,
     repository_root: Path,
@@ -189,11 +226,21 @@ def protocol_packet_extraction_request(
             backend = default_registry().resolve({"language": packet["language"]}).single()
         if hasattr(backend, "set_repository"):
             backend.set_repository(repository_root)
-        language_context["source_units"] = [
-            {key: value for key, value in unit.to_json().items() if key != "metadata"}
-            for file_id in primary_files for unit in backend.extract_units(
-                file_id, contained_path(repository_root, file_id).read_text())
-        ]
+        wanted = {
+            (unit.get("file_id"), unit.get("unit_key", unit.get("unit_id")))
+            for unit in primary_units
+            if isinstance(unit, dict)
+        }
+        source_units = []
+        for file_id in primary_files:
+            source = contained_path(repository_root, file_id).read_text()
+            for unit in backend.extract_units(file_id, source):
+                if ((unit.file_id, unit.unit_key) in wanted
+                        or (unit.file_id, unit.metadata.get("legacy_unit_id")) in wanted):
+                    source_units.append({
+                        key: value for key, value in unit.to_json().items() if key != "metadata"
+                    })
+        language_context["source_units"] = source_units
         language_context["backend_identity"] = backend.identity().to_json()
     return ExtractionRequest(
         workspace_root=repository_root,

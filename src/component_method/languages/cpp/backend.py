@@ -297,7 +297,7 @@ class CppBackend(ArtifactSupport):
         return prepare_smoke(self, artifact, case, workspace)
 
     def agent_instructions(self, role):
-        return "Use C++ headers and sources with qualified namespace and class symbols and exact overload signatures. A smoke source defines main() and asserts the selected operation. Headers may live in include/. Runtime optionally declares standard (c++11, c++14, c++17, c++20, c++23)."
+        return "Use C++ headers and sources with qualified namespace and class symbols and exact overload signatures. A smoke source defines main() and asserts the selected operation. Smoke cases must target a non-template concrete function with a linkage symbol; template implementations need a concrete wrapper. Headers may live in include/. Runtime optionally declares standard (c++11, c++14, c++17, c++20, c++23)."
 
     def toolchain_probes(self):
         return (("g++", "--version"), ("g++", "-dumpmachine"), ("nm", "--version"))

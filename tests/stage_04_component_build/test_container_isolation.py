@@ -1,8 +1,9 @@
+import json
 from types import SimpleNamespace
 
 import pytest
 
-from component_method.component_build.extraction.runner import _task_visible_volumes
+from component_method.component_build.extraction.runner import ComponentAgentRunner, _task_visible_volumes
 from component_method.task_execution.runtime_support.build_helpers import _verify_isolated_container
 
 
@@ -39,6 +40,21 @@ def test_language_support_mount_must_be_read_only(agent_container):
         _verify_isolated_container(agent_container)
 
 
+def test_testbed_image_volume_tmpfs_is_allowed(agent_container):
+    agent_container.attrs["Mounts"].append(
+        {"Type": "tmpfs", "Destination": "/testbed/mnt_tmp"}
+    )
+    _verify_isolated_container(agent_container)
+
+
+def test_unknown_tmpfs_mount_is_rejected(agent_container):
+    agent_container.attrs["Mounts"].append(
+        {"Type": "tmpfs", "Destination": "/unexpected"}
+    )
+    with pytest.raises(RuntimeError, match="Unexpected non-repository"):
+        _verify_isolated_container(agent_container)
+
+
 def test_unknown_bind_mount_is_rejected(agent_container):
     agent_container.attrs["Mounts"].append(
         {"Type": "bind", "Destination": "/unexpected", "RW": False}
@@ -51,3 +67,19 @@ def test_agent_network_must_be_disabled(agent_container):
     agent_container.attrs["HostConfig"]["NetworkMode"] = "bridge"
     with pytest.raises(RuntimeError, match="unexpected network mode"):
         _verify_isolated_container(agent_container)
+
+
+def test_failure_manifest_preserves_agent_status_and_dsh_session(tmp_path):
+    output = tmp_path / "output"
+    output.mkdir()
+    (output / "agent_status.json").write_text('{"exit_status": "AgentProcessError"}\n')
+    (output / "dsh_session.json").write_text('{"session_id": "session-1"}\n')
+    runner = ComponentAgentRunner.__new__(ComponentAgentRunner)
+    runner._write_failure_manifest(
+        output, tmp_path / "submission", "AgentProcessError", "root cause"
+    )
+    failure = json.loads((output / "failure.json").read_text())
+    assert failure["status"] == "AgentProcessError"
+    assert failure["error"] == "root cause"
+    assert failure["dsh_session"] == {"session_id": "session-1"}
+    assert (output / "agent_status.json").is_file()

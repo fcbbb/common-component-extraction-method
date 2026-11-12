@@ -131,6 +131,14 @@ class ComponentAgentRunner:
                 repository_root=REPOSITORY_ROOT,
                 request_timeout_ms=self._request_timeout_ms(),
                 runtime_activation=self._runtime_activation(),
+                # Extraction prompts can trigger long source-grounded reasoning.
+                # Keep the default DSH output budget from ending the turn before
+                # the agent can write its file submission.
+                options={
+                    "max_output_tokens": int(
+                        os.environ.get("COMPONENT_DSH_MAX_OUTPUT_TOKENS", "16384")
+                    )
+                },
             ),
             name=self.backend_name,
         )
@@ -301,6 +309,49 @@ class ComponentAgentRunner:
         write_json(output_dir / "discover.json", result)
         return result
 
+    def _image_volume_tmpfs(self) -> dict[str, str]:
+        """Map task-image VOLUME paths under /testbed to private tmpfs mounts.
+
+        OS-Bench images declare ``/testbed/mnt_tmp`` as a Docker volume.  The
+        component runner bind-mounts the source snapshot at ``/testbed`` and uses
+        a read-only root filesystem; allowing Docker to create an anonymous
+        volume there requires a writable mountpoint and would also make the
+        mount set fail isolation checks.  A tmpfs keeps that path private and
+        ephemeral.
+        """
+        if not self.image_tag:
+            return {}
+        image = self.docker_client.images.get(self.image_tag)
+        destinations = (image.attrs.get("Config", {}).get("Volumes") or {})
+        return {
+            destination: "rw,nosuid,nodev,size=512m,mode=1777"
+            for destination in destinations
+            if isinstance(destination, str) and destination.startswith("/testbed/")
+        }
+
+    def _write_failure_manifest(self, output_dir: Path, submission_directory: Path,
+                                status: str, error: Any) -> None:
+        """Preserve enough failure evidence for diagnosis before a retry."""
+        session_path = output_dir / "dsh_session.json"
+        session = None
+        if session_path.is_file():
+            try:
+                session = json.loads(session_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                session = {"path": str(session_path), "unreadable": True}
+        write_json(
+            output_dir / "failure.json",
+            {
+                "schema": "component-agent-failure-v1",
+                "status": status,
+                "error": error if isinstance(error, (str, dict, list, int, float, bool)) else str(error),
+                "submission_directory": str(submission_directory),
+                "dsh_session": session,
+                "agent_status_file": str(output_dir / "agent_status.json"),
+                "dsh_session_file": str(session_path),
+            },
+        )
+
     def run_workspace_agent(
         self,
         *,
@@ -314,6 +365,7 @@ class ComponentAgentRunner:
         """Run one tool-using agent against exactly the caller's read-only workspace."""
         config_identity = self.agent_config_identity(agent_role)
         workspace_root = workspace_root.expanduser().resolve()
+        output_dir = output_dir.expanduser().resolve()
         if not workspace_root.is_dir():
             raise FileNotFoundError(f"agent workspace does not exist: {workspace_root}")
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -370,7 +422,10 @@ class ComponentAgentRunner:
                 volumes=_task_visible_volumes(workspace_root, output_dir, component_workspace, submission_directory),
                 network_mode="none",
                 read_only=True,
-                tmpfs={"/tmp": "rw,nosuid,nodev,size=512m,mode=1777"},
+                tmpfs={
+                    "/tmp": "rw,nosuid,nodev,size=512m,mode=1777",
+                    **self._image_volume_tmpfs(),
+                },
                 cap_drop=["ALL"],
                 security_opt=["no-new-privileges:true"],
                 pids_limit=128,
@@ -407,26 +462,47 @@ class ComponentAgentRunner:
                             "could not write the long agent task in container /tmp: "
                             f"{output}"
                         )
-            backend_result = self.backend.run(
-                AgentRunRequest(
-                    run_id=safe_label,
-                    role=agent_role,
-                    model=self.model,
-                    system_prompt=self._effective_system_prompt(agent_role),
-                    task_prompt=task_argument,
-                    output_dir=output_dir,
-                    container_name=container_name,
-                    container_cwd="/testbed",
-                    command_timeout_seconds=120,
-                    total_timeout_seconds=self.timeout_seconds,
-                    step_limit=None,
-                    submission_mode="files",
-                    submission_role=agent_role,
-                    resume_session_id=(
-                        resume_reference
-                    ),
+            try:
+                backend_result = self.backend.run(
+                    AgentRunRequest(
+                        run_id=safe_label,
+                        role=agent_role,
+                        model=self.model,
+                        system_prompt=self._effective_system_prompt(agent_role),
+                        task_prompt=task_argument,
+                        output_dir=output_dir,
+                        container_name=container_name,
+                        container_cwd="/testbed",
+                        command_timeout_seconds=120,
+                        total_timeout_seconds=self.timeout_seconds,
+                        step_limit=None,
+                        submission_mode="files",
+                        submission_role=agent_role,
+                        resume_session_id=(
+                            resume_reference
+                        ),
+                    )
                 )
-            )
+            except Exception as exc:
+                write_json(
+                    output_dir / "agent_status.json",
+                    {
+                        "return_code": None,
+                        "exit_status": "AgentProcessError",
+                        "error": str(exc),
+                        "model": self.model,
+                        "container_image_id": self.image_id,
+                        "container_network": "none",
+                        "workspace_mount": "read-only",
+                        "workspace_scope": safe_label,
+                        "agent_role": agent_role,
+                        "agent_backend": self.backend_name,
+                        "submission_transport": "files",
+                        "submission_directory": str(submission_directory),
+                    },
+                )
+                self._write_failure_manifest(output_dir, submission_directory, "AgentProcessError", str(exc))
+                raise
             (output_dir / "submission.txt").write_text(
                 backend_result.final_output, encoding="utf-8"
             )
@@ -437,6 +513,7 @@ class ComponentAgentRunner:
                     "exit_status": backend_result.status,
                     "reported_cost_usd": backend_result.reported_cost_usd,
                     "api_calls": backend_result.model_calls,
+                    "error": backend_result.error,
                     "model": self.model,
                     "container_image_id": self.image_id,
                     "container_network": "none",
@@ -451,6 +528,9 @@ class ComponentAgentRunner:
                 },
             )
             if backend_result.status != "Submitted":
+                self._write_failure_manifest(
+                    output_dir, submission_directory, backend_result.status, backend_result.error
+                )
                 raise RuntimeError(
                     "agent backend did not submit a result "
                     f"(backend={self.backend_name}, status={backend_result.status}, "

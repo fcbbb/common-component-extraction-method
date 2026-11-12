@@ -566,6 +566,7 @@ def _validate_protocol_contract_review(
     entrypoints: list[dict[str, Any]],
     *,
     artifact_content: str | None = None,
+    artifact_files: dict[str, str] | None = None,
     review_fields: tuple[str, ...] | None = None,
     require_schema_version: int | None = None,
 ) -> None:
@@ -652,6 +653,7 @@ def _validate_protocol_contract_review(
             {"status": "uncertain", "confirmed_members": [], "evidence": evidence},
             repo_root,
             artifact_content=artifact_content,
+            artifact_files=artifact_files,
         )
         issue_fields.add(field)
         (blocking_fields if severity == "blocking" else warning_fields).add(field)
@@ -740,6 +742,7 @@ def _checked_citations(response: dict[str, Any], repo_root: Path) -> list[dict[s
 
 def _validate_review_result(
     review: dict[str, Any], repo_root: Path, *, artifact_content: str | None = None,
+    artifact_files: dict[str, str] | None = None,
 ) -> None:
     members = review.get("confirmed_members")
     evidence = review.get("evidence")
@@ -790,6 +793,12 @@ def _validate_review_result(
             # This mount is separate from the host repository. Check the exact
             # submitted artifact rather than trusting an unrelated host file.
             line_count = len(artifact_content.splitlines())
+        elif artifact_files is not None and Path(file_id).parts[:1] == (Path(COMPONENT_DIRECTORY).name,):
+            relative = Path(*Path(file_id).parts[1:]).as_posix()
+            content = artifact_files.get(relative)
+            if content is None:
+                raise ValueError(f"commonality review citation is outside repository: {file_id}")
+            line_count = len(content.splitlines())
         else:
             source_path = (root / file_id).resolve()
             if (

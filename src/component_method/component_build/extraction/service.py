@@ -58,10 +58,15 @@ def normalize_extraction_result(
         raise ValueError("workspace_audit.checked_files must be a list of paths")
     if not isinstance(gaps, list) or not all(isinstance(item, str) for item in gaps):
         raise ValueError("workspace_audit.gaps must be a list of strings")
-    if expected_files is not None and (
-        len(checked_files) != len(set(checked_files)) or set(checked_files) != set(expected_files)
-    ):
-        raise ValueError("extraction agent did not report every expected primary file exactly once")
+    if expected_files is not None:
+        if len(checked_files) != len(set(checked_files)):
+            raise ValueError("extraction agent reported a primary file more than once")
+        missing = sorted(set(expected_files) - set(checked_files))
+        if missing:
+            raise ValueError(
+                "extraction agent did not inspect every expected primary file: "
+                f"{missing}"
+            )
     if not isinstance(components, list):
         raise ValueError("extraction agent components must be a list")
 
@@ -82,7 +87,7 @@ def normalize_extraction_result(
             component_id=component_id,
             origin_strategy=strategy,
         )
-        draft_errors = validate_component_draft(draft)
+        draft_errors = validate_component_draft(draft, repository=workspace_root)
         if context and context.get("language") and draft.status == "draft_ready":
             if (draft.artifact is None or draft.artifact.language != context["language"]
                     or draft.artifact.backend_id != context["backend_id"]):

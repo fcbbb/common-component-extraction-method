@@ -237,6 +237,13 @@ export function firstEffectiveLine(output: Buffer): string | undefined {
   return output.toString("utf8").split(/\r?\n/).find((line) => line.trim())?.trim();
 }
 
+export function containsCompletionMarker(output: Buffer): boolean {
+  return output
+    .toString("utf8")
+    .split(/\r?\n/)
+    .some((line) => line.trim() === COMPLETION_MARKER);
+}
+
 async function writeValidatedSubmission(record: ValidatedSubmission): Promise<void> {
   const target = requiredEnvironment("COMPONENT_DSH_VALIDATED_SUBMISSION_PATH");
   const directory = path.dirname(target);
@@ -259,7 +266,7 @@ async function validateCompletion(
   if (
     !["files", "patch"].includes(submissionMode ?? "")
     || commandResult.exitCode !== 0
-    || firstEffectiveLine(commandResult.output) !== COMPLETION_MARKER
+    || !containsCompletionMarker(commandResult.output)
   ) {
     return { result: commandResult, completed: false };
   }
@@ -306,6 +313,16 @@ async function validateCompletion(
     },
     completed: true,
   };
+}
+
+export function cwdOrFallback(value: string): string {
+  try {
+    return allowedCwd(value);
+  } catch (error) {
+    const fallback = process.env.COMPONENT_DSH_DEFAULT_CWD?.trim();
+    if (!fallback) throw error;
+    return allowedCwd(fallback);
+  }
 }
 
 export function allowedCwd(value: string): string {
@@ -407,7 +424,7 @@ export function apply(ctx: any): void {
     },
     async execute(args, execution) {
       const expectedContainer = requiredEnvironment("COMPONENT_DSH_CONTAINER_NAME");
-      const cwd = allowedCwd(args.cwd);
+      const cwd = cwdOrFallback(args.cwd);
       const configuredLimit = Number(requiredEnvironment("COMPONENT_DSH_COMMAND_TIMEOUT"));
       if (!Number.isFinite(configuredLimit) || configuredLimit < 1) {
         throw new Error("COMPONENT_DSH_COMMAND_TIMEOUT must be a positive number");

@@ -28,6 +28,10 @@ from component_method.source_scan.scanning import source_files, task_backends
 ANN_SEED = 20261024
 from component_method.signal_analysis import ast_signal, clone_signal, fusion  # noqa: E402
 from component_method.protocol_candidates import protocol_recall  # noqa: E402
+from component_method.protocol_candidates.extraction import (  # noqa: E402
+    ProtocolPacketConfig,
+    write_protocol_packet_manifest,
+)
 
 
 def read_rows(path: Path) -> list[dict[str, Any]]:
@@ -348,6 +352,11 @@ def build_task(
             "mode": "generated_from_frozen_50_task_embedding",
             "embedding_manifest": manifest_label,
         }
+    packet_path = candidate_root / "protocol_packets_v2.json"
+    packet_config = ProtocolPacketConfig(**candidate_cfg.get("packet_config", {}))
+    packet_manifest = write_protocol_packet_manifest(
+        candidate_path, packet_path, config=packet_config
+    )
     file_counts = Counter(unit["file_id"] for unit in units)
     write_json(
         status_path,
@@ -367,8 +376,10 @@ def build_task(
             "skeleton_unit_pairs": len(skeleton.get("unit_pairs", [])),
             "strict_candidates": len(strict.get("candidates", [])),
             "protocol_candidates": len(protocol.get("candidates", [])),
+            "protocol_packets": packet_manifest["packet_count"],
             "selection_policy": protocol.get("stats", {}).get("selection_policy"),
             "candidate_sha256": sha256_file(candidate_path),
+            "protocol_packet_sha256": sha256_file(packet_path),
             "provenance": provenance,
             "elapsed_seconds": round(time.monotonic() - started, 2),
         },

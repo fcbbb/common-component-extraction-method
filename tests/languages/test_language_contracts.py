@@ -89,3 +89,37 @@ def test_contract_shape_errors():
         TokenStream("unit", ("token",), ())
     assert PythonBackend().validate_source("broken.py", "def broken(")
     assert not PythonBackend().validate_source("ok.py", "value = 1")
+
+
+def test_component_draft_normalizes_cpp_agent_aliases_and_paths():
+    from component_method.component_build.contracts import normalize_component_draft
+
+    component = {
+        "component_id": "collection",
+        "status": "ready",
+        "name": "Collection",
+        "summary": "Repeated collection harness",
+        "type": "repeated_implementation",
+        "confidence": 0.87,
+        "members": [],
+        "evidence": [],
+        "artifact": {
+            "schema": "component-artifact-v2",
+            "language": "cpp",
+            "backend_id": "cpp@1",
+            "files": [
+                {"path": "collection/include/cereal_test/collection.hpp", "role": "header", "content": "// header\n"},
+                {"path": "collection/src/collection.cpp", "role": "source", "content": "// source\n"},
+                {"path": "collection/smoke/collection.cpp", "role": "smoke", "content": "// smoke\n"},
+            ],
+            "entrypoints": [{"kind": "function", "qualified_name": "run"}],
+        },
+    }
+    draft = normalize_component_draft(component, component_id="collection", origin_strategy="fixture")
+    assert draft.status == "draft_ready"
+    assert draft.confidence == "high"
+    assert [item.path for item in draft.artifact.files] == [
+        "include/cereal_test/collection.hpp",
+        "src/collection.cpp",
+        "smoke/collection.cpp",
+    ]

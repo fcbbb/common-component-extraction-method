@@ -15,14 +15,21 @@ class ArtifactSupport:
         return [unit for item in artifact.files if item.role in {"source", "header"}
                 for unit in self.extract_units(item.path, item.content)]
 
-    def resolve_entrypoints(self, artifact):
+    def resolve_entrypoints(self, artifact, entrypoint_ids: set[str] | None = None):
         units = self.artifact_units(artifact)
         resolved = {}
         for entry in artifact.entrypoints:
-            matches = [u for u in units if u.qualified_name == entry.qualified_name
-                       and u.kind == entry.kind and (not entry.signature or u.signature == entry.signature)]
-            definitions = [u for u in matches if u.metadata.get("is_definition", True)]
-            matches = definitions or matches
+            if entrypoint_ids is not None and entry.entrypoint_id not in entrypoint_ids:
+                continue
+            candidates = [u for u in units if u.qualified_name == entry.qualified_name
+                          and u.kind == entry.kind]
+            definitions = [u for u in candidates if u.metadata.get("is_definition", True)]
+            candidates = definitions or candidates
+            exact = [u for u in candidates if not entry.signature or u.signature == entry.signature]
+            # Template signatures are rendered differently by libclang and by
+            # agents.  A single source definition is unambiguous even when the
+            # textual signature differs; overloads still require an exact match.
+            matches = exact or (candidates if len(candidates) == 1 else [])
             if len(matches) != 1:
                 raise ValueError(f"entrypoint must identify one definition: {entry.qualified_name} ({len(matches)} matches)")
             if entry.entrypoint_id in resolved:

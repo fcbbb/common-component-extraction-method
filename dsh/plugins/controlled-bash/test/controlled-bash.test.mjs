@@ -5,6 +5,8 @@ import {
   allowedCwd,
   canonicalResult,
   decodeDockerStream,
+  containsCompletionMarker,
+  cwdOrFallback,
   firstEffectiveLine,
   submissionCheckerCommand,
 } from "../dist/index.js";
@@ -19,12 +21,13 @@ test("cwd must stay inside the controller allowlist", () => {
   assert.throws(() => allowedCwd("testbed"), /absolute container path/);
 });
 
-test("only the first non-empty line can request completion", () => {
+test("completion marker is detected as a standalone output line", () => {
   assert.equal(
     firstEffectiveLine(Buffer.from("\n COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT \nextra\n")),
     "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT",
   );
-  assert.equal(firstEffectiveLine(Buffer.from("ordinary\nCOMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n")), "ordinary");
+  assert.equal(containsCompletionMarker(Buffer.from("ordinary\nCOMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n")), true);
+  assert.equal(containsCompletionMarker(Buffer.from("ordinary output\n")), false);
 });
 
 test("large output keeps its head and tail and reports original bytes", () => {
@@ -65,4 +68,14 @@ test("a controller-supplied checker command is parsed and shell quoted", () => {
     "'python' '/retrieval-tools/check_selection.py' '--task-id' 'task with spaces' '--submit'",
   );
   delete process.env.COMPONENT_DSH_CHECKER_COMMAND_JSON;
+});
+
+
+test("invalid cwd can fall back explicitly to the configured container cwd", () => {
+  process.env.COMPONENT_DSH_ALLOWED_CWDS = JSON.stringify(["/testbed"]);
+  process.env.COMPONENT_DSH_DEFAULT_CWD = "/testbed";
+  assert.equal(cwdOrFallback("/host/workspace/dsh"), "/testbed");
+  assert.equal(cwdOrFallback("/testbed/component_bundle"), "/testbed/component_bundle");
+  delete process.env.COMPONENT_DSH_DEFAULT_CWD;
+  assert.throws(() => cwdOrFallback("/host/workspace/dsh"), /outside the allowed/);
 });

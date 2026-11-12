@@ -61,6 +61,13 @@ def test_v2_embedding_to_candidates_and_resume(tmp_path, monkeypatch):
     assert status["protocol_candidates"] > 0
     assert status["language_backends"] == manifest["language_backends"]["fixture"]
     assert not status["legacy_embedding_input"]
+    packet_path = root / "candidates/protocol_packets_v2.json"
+    packet_manifest = json.loads(packet_path.read_text())
+    assert packet_manifest["schema"] == "protocol-packets-v2"
+    assert packet_manifest["candidate_count"] == status["protocol_candidates"]
+    assert packet_manifest["packet_count"] == status["protocol_packets"]
+    assert len(packet_manifest["packets"]) == packet_manifest["packet_count"]
+    assert sum(len(p["candidate_ids"]) for p in packet_manifest["packets"]) == packet_manifest["candidate_count"]
     before = status_path.read_bytes()
     build_candidates.build_task(task, cfg, manifest, rows, matrix, resume=True, reuse_frozen=False)
     assert status_path.read_bytes() == before

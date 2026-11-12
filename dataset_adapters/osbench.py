@@ -50,6 +50,10 @@ PRUNE_DIRECTORIES = {
 }
 PRUNE_FILES = {"test-output.log", "ctest-output.log", "ctest-verbose.log"}
 CONTAINER_REPOSITORY = "/testbed"
+# OS-Bench images declare /testbed/mnt_tmp as a Docker VOLUME.  The component
+# runner bind-mounts the source snapshot at /testbed and runs with a read-only
+# root filesystem, so Docker needs this mountpoint to exist in the bind source.
+IMAGE_VOLUME_DIRECTORIES = ("mnt_tmp",)
 
 REQUIRED_FIELDS = (
     "instance_id",
@@ -935,6 +939,8 @@ def prepare_osbench(
             mode=compile_commands_mode,
         )
         prune_source_snapshot(snapshot)
+        for directory in IMAGE_VOLUME_DIRECTORIES:
+            (snapshot / directory).mkdir(exist_ok=True)
         write_task_package(
             row,
             snapshot,

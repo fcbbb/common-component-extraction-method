@@ -252,6 +252,14 @@ class SmokeCase(JsonRecord):
                 if key in metadata and metadata[key] != declared:
                     raise ValueError(f"conflicting smoke case {key}")
                 metadata[key] = declared
+        # Reviewers commonly add explanatory top-level fields such as
+        # description or expected_exit_code to a smoke case.  Keep the strict
+        # structural fields explicit and carry unknown fields as metadata
+        # rather than rejecting an otherwise valid case.
+        structural = {"case_id", "entrypoint_id", "files", "expected_paths", "sources", "metadata"}
+        for key in list(payload):
+            if key not in structural:
+                metadata[key] = payload.pop(key)
         payload["metadata"] = metadata
         payload["files"] = tuple(ArtifactFile(**item) for item in payload["files"])
         for key in ("expected_paths", "sources"):

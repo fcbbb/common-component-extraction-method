@@ -216,6 +216,8 @@ def test_prepare_osbench_writes_workspace_without_docker(tmp_path, monkeypatch):
     assert config["runtime_image"].startswith("example/prepared:")
     assert config["languages"][0]["standard"] == "c++17"
     assert (workspace / "offline_artifacts" / "tasks" / row()["instance_id"] / "task.json").is_file()
+    snapshot = workspace / "offline_artifacts" / "tasks" / row()["instance_id"] / "source_snapshot"
+    assert (snapshot / "mnt_tmp").is_dir()
 
 
 @pytest.mark.skipif(not DATASET.is_file(), reason="OS-Bench dataset is not present")

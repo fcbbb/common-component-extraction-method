@@ -73,10 +73,47 @@ packets：9
 work/osbench/offline_artifacts/embeddings/USCiLab__cereal-a56bad8__cpp__linux__54d544/
 work/osbench/tasks/USCiLab__cereal-a56bad8__cpp__linux__54d544/signals/
 work/osbench/tasks/USCiLab__cereal-a56bad8__cpp__linux__54d544/candidates/
+  protocol_candidates_v2.json
+  protocol_packets_v2.json
 ```
 
-OpenCC 旧 embedding 和 simdjson 不完整 embedding 已删除；当前不保留无效结果。
-完整阶段 A 的 extraction/review/publish 尚未对 cereal 全量调用大模型。
+`protocol_packets_v2.json` 记录 9 个 packet 及其来源 candidate、文件、
+unit 和 packet 配置。
+
+阶段 A 的最小 packet smoke test 已经进入真实抽取和 review：
+
+```text
+smoke9 extraction：Submitted，20 次模型调用
+extraction schema：ok，accepted component
+smoke9 review：NoValidatedSubmission，17 次模型调用
+review_retry：0 次（输出路径问题）
+review_retry2：22 次（review cwd 问题）
+review_retry3：Submitted，68 次模型调用，review confirmed
+component validation/publish：citation 校验已修复；C++ template smoke 约束已修复，
+尚未重新调用模型验证
+```
+
+当前阻塞根因：
+
+- review agent 使用 host cwd，未使用容器 `/testbed`；
+- controlled-bash 的 allowed cwd 只包含 `/testbed` / `/testbed/...`。
+
+已修复：
+
+- review/submission 提示明确 cwd `/testbed`；
+- `DshHeadlessBackend` 设置 `COMPONENT_DSH_DEFAULT_CWD`；
+- controlled-bash 对非法 cwd 回退到显式配置的容器 cwd；
+- review artifact citation 支持 `component_bundle/...`；
+- C++ smoke 必须使用非模板 concrete wrapper。
+
+失败输出保留在：
+
+```text
+work/osbench/stage_a_cereal_smoke9/
+```
+
+启动阶段已支持 `unit_cache` 复用候选阶段 units；cereal 的 177 文件/3550 units
+加载实测约 0.4 秒，不再重复完整 libclang 解析。
 
 ## 5. 方法适配性
 

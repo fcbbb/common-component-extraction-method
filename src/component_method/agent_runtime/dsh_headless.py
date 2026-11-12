@@ -162,6 +162,7 @@ class DshHeadlessBackend:
             "COMPONENT_DSH_SYSTEM_PROMPT": request.system_prompt,
             "COMPONENT_DSH_CONTAINER_NAME": request.container_name,
             "COMPONENT_DSH_ALLOWED_CWDS": json.dumps([request.container_cwd]),
+            "COMPONENT_DSH_DEFAULT_CWD": request.container_cwd,
             "COMPONENT_DSH_COMMAND_TIMEOUT": str(request.command_timeout_seconds),
             "COMPONENT_DSH_SUBMISSION_MODE": request.submission_mode,
             "COMPONENT_DSH_SUBMISSION_ROLE": request.submission_role or request.role,

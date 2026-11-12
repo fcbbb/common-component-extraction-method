@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 
 from component_method.languages.contracts import ComponentArtifact, SmokeCase, SourceUnitRef, contained_path, stable_digest
+from component_method.component_build.workspace import COMPONENT_DIRECTORY
 from component_method.languages.registry import default_registry
 from .execution import execute_invocation
 
@@ -33,16 +34,44 @@ def artifact_backend(artifact, repository=None, registry=None):
     return backend
 
 
-def check_citations(values, repository):
+def _artifact_citation_content(citation, artifact):
+    """Resolve a citation that refers to the mounted component bundle."""
+    if artifact is None:
+        return None
+    file_id = citation.get("file_id")
+    if not isinstance(file_id, str):
+        return None
+    prefixes = (
+        COMPONENT_DIRECTORY + "/",
+        COMPONENT_DIRECTORY.lstrip("/") + "/",
+        COMPONENT_DIRECTORY.rsplit("/", 1)[-1] + "/",
+    )
+    relative = None
+    for prefix in prefixes:
+        if file_id.startswith(prefix):
+            relative = file_id[len(prefix):]
+            break
+    if relative is None:
+        return None
+    for item in artifact.files:
+        if item.path == relative:
+            return item.content
+    return None
+
+
+def check_citations(values, repository, artifact=None):
     if not isinstance(values, (list, tuple)) or not values:
         raise ValueError("source citations are required")
     for citation in values:
         if not isinstance(citation, dict):
             raise ValueError("source citations must be objects")
-        path = contained_path(repository, citation["file_id"])
+        content = _artifact_citation_content(citation, artifact)
+        if content is None:
+            path = contained_path(repository, citation["file_id"])
+            content = path.read_text() if path.is_file() else None
         start, end = citation.get("line_start"), citation.get("line_end")
         if (type(start) is not int or type(end) is not int or start < 1 or end < start
-                or not path.is_file() or end > len(path.read_text().splitlines())):
+                or content is None or end > len(content.splitlines())):
             raise ValueError("source citation is missing or out of bounds")
 
 
@@ -117,12 +146,40 @@ def validate_artifact_component(*, component_id, component, candidate_payload, r
             return result
         if review.get("artifact_review", {}).get("status") != "faithful":
             raise ValueError("artifact fidelity is not established")
-        check_citations(review.get("evidence"), repository.resolved_root())
+        check_citations(review.get("evidence"), repository.resolved_root(), artifact)
         allowed = {(m.file_id, m.unit_key) for m in members}
-        confirmed = {(m["file_id"], m.get("unit_key", m.get("unit_id"))) for m in review.get("confirmed_members", [])}
+        allowed_by_file = {}
+        for file_id, unit_key in allowed:
+            allowed_by_file.setdefault(file_id, set()).add(unit_key)
+        confirmed = set()
+        for member in review.get("confirmed_members", []):
+            file_id = member.get("file_id") if isinstance(member, dict) else None
+            if not isinstance(file_id, str):
+                raise ValueError("review members exceed the proposed source boundary")
+            candidates = allowed_by_file.get(file_id, set())
+            matched = None
+            for field in ("unit_key", "unit_id"):
+                value = member.get(field)
+                if value in candidates:
+                    matched = value
+                    break
+                if isinstance(value, str):
+                    matches = sorted(
+                        candidate for candidate in candidates
+                        if candidate.startswith(value)
+                    )
+                    if len(matches) == 1:
+                        matched = matches[0]
+                        break
+            if matched is None:
+                raise ValueError("review members exceed the proposed source boundary")
+            confirmed.add((file_id, matched))
         if not confirmed or not confirmed <= allowed:
             raise ValueError("review members exceed the proposed source boundary")
-        _validate_protocol_contract_review(review, contract, repository.resolved_root(), entries)
+        _validate_protocol_contract_review(
+            review, contract, repository.resolved_root(), entries,
+            artifact_files={item.path: item.content for item in artifact.files},
+        )
         if review["protocol_contract_review"]["status"] not in {"confirmed", "confirmed_with_warnings"}:
             raise ValueError("protocol review blocks publication")
         plan = review.get("smoke_test", {})
@@ -137,7 +194,7 @@ def validate_artifact_component(*, component_id, component, candidate_payload, r
             if not re.fullmatch(r"[A-Za-z0-9_-]+", case.case_id) or case.case_id in seen:
                 raise ValueError("duplicate or unsafe smoke case id")
             seen.add(case.case_id)
-            check_citations(case.sources, repository.resolved_root())
+            check_citations(case.sources, repository.resolved_root(), artifact)
             invocation = replace(backend.prepare_smoke(artifact, case, output_dir / "cases" / case.case_id),
                                  timeout_seconds=runtime_timeout)
             process, environment = executor(invocation, output_dir / "cases" / case.case_id, repository)
