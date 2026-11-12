@@ -51,6 +51,8 @@ def find_shared_runs(
     streams: list[NgramStream],
     k: int = 6,
     min_run: int = 12,
+    *,
+    max_stream_frequency: int = 0,
 ) -> list[SharedRun]:
     """Maximal runs of identical consecutive tokens between units of *different* files.
 
@@ -75,6 +77,10 @@ def find_shared_runs(
         by_stream: dict[int, list[int]] = {}
         for si, pos in occurrences:
             by_stream.setdefault(si, []).append(pos)
+        if max_stream_frequency and len(by_stream) > max_stream_frequency:
+            # Ubiquitous syntax n-grams (e.g. C++ punctuation triples) create
+            # quadratic pair work without adding discriminative evidence.
+            continue
         stream_ids = sorted(by_stream)
         for i in range(len(stream_ids)):
             for j in range(i + 1, len(stream_ids)):

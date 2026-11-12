@@ -161,6 +161,7 @@ def protocol_packet_extraction_request(
     output_root: Path,
     packet: dict[str, Any],
     output_contract: dict[str, list[str]] | None = None,
+    backend=None,
 ) -> ExtractionRequest:
     """Build an extraction request that exposes only neutral source focus data."""
 
@@ -182,9 +183,10 @@ def protocol_packet_extraction_request(
         raise ValueError("protocol packet primary_units must be source unit objects")
     language_context = {key: packet[key] for key in ("language", "backend_id") if key in packet}
     if language_context:
-        from component_method.languages.registry import default_registry
+        if backend is None:
+            from component_method.languages.registry import default_registry
 
-        backend = default_registry().resolve({"language": packet["language"]}).single()
+            backend = default_registry().resolve({"language": packet["language"]}).single()
         if hasattr(backend, "set_repository"):
             backend.set_repository(repository_root)
         language_context["source_units"] = [

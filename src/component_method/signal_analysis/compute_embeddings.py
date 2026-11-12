@@ -166,12 +166,17 @@ def main() -> int:
     def ensure_model():
         nonlocal model, parameter_dtype
         if model is None:
+            model_kwargs = {"attn_implementation": "eager"}
+            if args.device == "cuda":
+                # C2LLM is published in bfloat16; eager attention plus
+                # bfloat16 is stable for the 4 GiB laptop GPU at batch size 1.
+                model_kwargs["torch_dtype"] = torch.bfloat16
             model = SentenceTransformer(
                 input_manifest["model_id"],
                 revision=input_manifest["model_revision"],
                 trust_remote_code=True,
                 device=args.device,
-                model_kwargs={"attn_implementation": "eager"},
+                model_kwargs=model_kwargs,
             )
             model.max_seq_length = int(input_manifest["embedding_policy"]["max_seq_length"])
             for module in model:
@@ -194,16 +199,23 @@ def main() -> int:
                 missing_positions.append(position)
                 missing_texts.append(row["source_code"])
         if missing_texts:
-            fresh = ensure_model().encode(
-                missing_texts,
+            # Sort by source length so batches contain similarly sized units and
+            # spend less time on padding.  The inverse permutation restores the
+            # original unit order before the vectors are written to the matrix.
+            order = sorted(range(len(missing_texts)), key=lambda index: len(missing_texts[index]))
+            sorted_texts = [missing_texts[index] for index in order]
+            fresh_sorted = ensure_model().encode(
+                sorted_texts,
                 batch_size=args.batch_size,
                 show_progress_bar=False,
                 normalize_embeddings=True,
                 convert_to_numpy=True,
             )
-            fresh = np.asarray(fresh, dtype=np.float32)
-            if fresh.shape != (len(missing_texts), dimension):
-                raise RuntimeError(f"unexpected fresh embedding shape: {fresh.shape}")
+            fresh_sorted = np.asarray(fresh_sorted, dtype=np.float32)
+            if fresh_sorted.shape != (len(missing_texts), dimension):
+                raise RuntimeError(f"unexpected fresh embedding shape: {fresh_sorted.shape}")
+            fresh = np.empty_like(fresh_sorted)
+            fresh[np.asarray(order)] = fresh_sorted
             vectors[np.asarray(missing_positions)] = fresh
             computed_rows += len(missing_texts)
         if not np.isfinite(vectors).all():

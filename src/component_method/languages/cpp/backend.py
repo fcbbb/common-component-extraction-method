@@ -159,6 +159,12 @@ class CppBackend(ArtifactSupport):
                 kind = kinds.get(child.kind.name)
                 if kind and (child.is_definition() or kind in {"function", "method", "constructor", "destructor"}):
                     start, end = child.extent.start, child.extent.end
+                    # Vendored macro-heavy headers can expose zero-line or
+                    # otherwise invalid declarations.  They carry no usable
+                    # source span, so skip them instead of aborting the whole
+                    # corpus.
+                    if start.line < 1 or end.line < start.line:
+                        continue
                     tokens = list(child.get_tokens())
                     text = encoded[start.offset:end.offset].decode()
                     qname = self._qualified(child)
@@ -239,7 +245,10 @@ class CppBackend(ArtifactSupport):
         return mapped
 
     def _stream(self, unit, key):
-        pairs = unit.metadata[key]
+        # Tokens produced by macro expansion can carry line 0 (no source
+        # location).  TokenStream requires positive rows, so drop those
+        # synthetic tokens rather than failing the whole repository.
+        pairs = [pair for pair in unit.metadata[key] if isinstance(pair[1], int) and pair[1] > 0]
         return TokenStream(unit.unit_key, tuple(p[0] for p in pairs), tuple(p[1] for p in pairs),
                            unit.file_id, unit.unit_key, unit.display_name, self.language_id, self.backend_id)
 

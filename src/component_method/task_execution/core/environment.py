@@ -33,11 +33,12 @@ def initialize_task(container, task):
     code = """import os,shutil,sys
 name=sys.argv[1]
 source='/'+name
-os.makedirs('/testbed',exist_ok=True)
-for entry in os.scandir(source):
-    shutil.move(entry.path, '/testbed/'+entry.name)
-os.rmdir(source)
-os.symlink('/testbed',source)
+if not os.path.isdir('/testbed/.git'):
+    os.makedirs('/testbed',exist_ok=True)
+    for entry in os.scandir(source):
+        shutil.move(entry.path, '/testbed/'+entry.name)
+    os.rmdir(source)
+    os.symlink('/testbed',source)
 shutil.rmtree('/root/my_repo',ignore_errors=True)
 shutil.rmtree('/root/.cache/pip',ignore_errors=True)
 os.makedirs('/testbed/component_bundle',exist_ok=True)
@@ -169,7 +170,13 @@ def check_patch(image, patch):
         with tarfile.open(fileobj=archive, mode='w') as tar:
             item = tarfile.TarInfo('agent.patch'); item.size = len(content); tar.addfile(item, io.BytesIO(content))
         container.put_archive('/tmp', archive.getvalue())
-        result = container.exec_run(['git', 'apply', '--check', '/tmp/agent.patch'], workdir='/' + task['repo'].split('/')[1])
+        workdir = (
+            '/testbed'
+            if task.get('task_type') == 'cross_platform_migration'
+            or task.get('language') not in (None, 'python')
+            else '/' + task['repo'].split('/')[1]
+        )
+        result = container.exec_run(['git', 'apply', '--check', '/tmp/agent.patch'], workdir=workdir)
         if result.exit_code: raise ValueError('Patch cannot apply to clean official baseline: ' + result.output.decode(errors='replace'))
     finally: container.remove(force=True)
 

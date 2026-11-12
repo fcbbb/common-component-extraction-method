@@ -12,7 +12,7 @@ DEFAULT_K = 6
 DEFAULT_MIN_RUN = 12
 
 
-def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min_run: int = DEFAULT_MIN_RUN, *, backend: SignalBackend | None = None) -> dict[str, Any]:
+def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min_run: int = DEFAULT_MIN_RUN, *, backend: SignalBackend | None = None, max_stream_frequency: int = 0) -> dict[str, Any]:
     """file_sources: [{"file_id": ..., "source_code": ...}] -> evidence dict.
 
     Returns:
@@ -37,7 +37,8 @@ def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min
         display_names.update({(file_id, stream.unit_id): stream.display_name for stream in unit_streams})
         unit_tokens[file_id] = {stream.unit_id: len(stream.tokens) for stream in unit_streams}
 
-    runs = find_shared_runs(streams, k=k, min_run=min_run)
+    runs = find_shared_runs(streams, k=k, min_run=min_run,
+                            max_stream_frequency=max_stream_frequency)
 
     pair_units: dict[tuple[str, str], dict[tuple[str, str], dict[str, int]]] = defaultdict(
         lambda: defaultdict(lambda: {"shared_tokens": 0, "n_runs": 0})

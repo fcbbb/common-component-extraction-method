@@ -7,6 +7,7 @@ from component_method.component_build.repair.artifacts import repair_artifact_wi
 from component_method.component_build.validation.artifact_service import validate_artifact_component
 from component_method.library_publish.artifacts import publish_artifact_library
 from component_method.protocol_candidates.extraction import protocol_packet_extraction_request
+from component_method.languages.cache import CachingSourceBackend
 from component_method.languages.contracts import contained_path
 
 
@@ -16,9 +17,21 @@ def build_artifact_library(*, packets, repository, agent_runner, output_dir, rev
     output_dir.mkdir(parents=True, exist_ok=True)
     review_runner = review_runner or agent_runner
     accepted, results = [], []
+    source_backends: dict[str, CachingSourceBackend] = {}
     for packet in packets:
+        language = packet.get("language")
+        packet_backend = None
+        if isinstance(language, str):
+            if language not in source_backends:
+                from component_method.languages.registry import default_registry
+
+                source_backends[language] = CachingSourceBackend(
+                    default_registry().resolve({"language": language}).single()
+                )
+            packet_backend = source_backends[language]
         request = protocol_packet_extraction_request(repository_root=repository.resolved_root(),
-                                                     output_root=output_dir / "extraction", packet=packet)
+                                                     output_root=output_dir / "extraction", packet=packet,
+                                                     backend=packet_backend)
         drafts = extract_components(request, agent_runner=agent_runner, system_prompt="")
         for draft in drafts:
             component = draft.to_json()

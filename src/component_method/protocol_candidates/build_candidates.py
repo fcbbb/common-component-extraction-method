@@ -18,8 +18,10 @@ import hnswlib
 import numpy as np
 
 from component_method.workflow.batch_common import PROJECT, ROOT, config, select_tasks, sha256_file, write_json
+from component_method.languages.cache import CachingSourceBackend
 from component_method.languages.contracts import stable_digest
 from component_method.languages.graph import GraphBackend
+from component_method.languages.registry import BackendSelection
 from component_method.source_scan.scanning import source_files, task_backends
 
 
@@ -57,15 +59,38 @@ def validate_matrix(embedding_dir: Path):
     return input_manifest, result_manifest, rows, matrix
 
 
-def collect_sources(task: dict[str, Any]) -> list[dict[str, str]]:
+def signal_frequency_limit(candidate_cfg: dict[str, Any], language: str) -> dict[str, int]:
+    """Resolve an optional ubiquitous-n-gram cutoff without changing defaults.
+
+    Python keeps the historical unlimited behavior unless a configuration
+    explicitly opts in.  The C++ OS-Bench track uses 32 by default because
+    punctuation-heavy k=3 skeleton streams otherwise make pairing quadratic.
+    """
+    configured = candidate_cfg.get("max_stream_frequency", 0)
+    if isinstance(configured, dict):
+        value = configured.get(language, configured.get("default", 0))
+    else:
+        value = configured
+    if not value and language == "cpp":
+        value = 32
+    try:
+        return {"max_stream_frequency": int(value)} if int(value) > 0 else {}
+    except (TypeError, ValueError):
+        raise ValueError("max_stream_frequency must be a positive integer or language mapping") from None
+
+
+def collect_sources(task: dict[str, Any], selection: BackendSelection | None = None) -> list[dict[str, str]]:
     snapshot = PROJECT / task["repository_root"]
+    selected = selection or task_backends(task)
     return [{**entry, "language": backend.language_id, "backend_id": backend.backend_id}
-            for entry, backend in source_files(snapshot, task["source_subdir"], task_backends(task))]
+            for entry, backend in source_files(snapshot, task["source_subdir"], selected)]
 
 
-def validate_units(task: dict[str, Any], frozen_rows: list[dict[str, Any]]):
-    sources = collect_sources(task)
-    backends = {backend.language_id: backend for backend, _ in task_backends(task).entries}
+def validate_units(task: dict[str, Any], frozen_rows: list[dict[str, Any]],
+                   selection: BackendSelection | None = None):
+    sources = collect_sources(task, selection)
+    selected = selection or task_backends(task)
+    backends = {backend.language_id: backend for backend, _ in selected.entries}
     for backend in backends.values():
         if hasattr(backend, "set_repository"):
             backend.set_repository(PROJECT / task["repository_root"])
@@ -188,6 +213,7 @@ def build_task(
     *,
     resume: bool,
     reuse_frozen: bool,
+    embedding_dir: Path | None = None,
 ) -> None:
     instance_id = task["instance_id"]
     task_root = ROOT / "tasks" / instance_id
@@ -196,6 +222,12 @@ def build_task(
     status_path = candidate_root / "status.json"
     candidate_path = candidate_root / "protocol_candidates_v2.json"
     selection = task_backends(task)
+    # The same repository is parsed by validation, graph construction, clone,
+    # skeleton and protocol profiling.  Wrap every backend once so those stages
+    # share deterministic units and token streams instead of re-parsing files.
+    selection = BackendSelection(tuple(
+        (CachingSourceBackend(backend), options) for backend, options in selection.entries
+    ))
     for backend, _ in selection.entries:
         if hasattr(backend, "set_repository"):
             backend.set_repository(PROJECT / task["repository_root"])
@@ -205,12 +237,17 @@ def build_task(
         if recorded != backend_manifest:
             raise RuntimeError(f"{instance_id} backend identity or path rules changed; prepare embedding input again")
     started = time.monotonic()
+    report = lambda label: print(
+        f"[candidate] {instance_id} {label}: {time.monotonic() - started:.1f}s",
+        flush=True,
+    )
     info = input_manifest["repositories"][instance_id]
     start, end = info["row_start"], info["row_end_exclusive"]
     frozen_rows = rows[start:end]
     if any(row["repo_key"] != instance_id for row in frozen_rows):
         raise RuntimeError(f"row range contains another repository: {instance_id}")
-    sources, units = validate_units(task, frozen_rows)
+    sources, units = validate_units(task, frozen_rows, selection)
+    report("sources+units")
     fingerprint = stable_digest({
         "schema": "candidate-build-input-v2", "language_backends": backend_manifest,
         "embedding_input": input_manifest, "candidate_config": candidate_cfg,
@@ -245,21 +282,28 @@ def build_task(
         language_sources = [s for s in sources if s["language"] == backend.language_id]
         graph = GraphBackend(backend, [u for s in language_sources for u in
                                      backend.extract_units(s["file_id"], s["source_code"])])
+        report(f"graph:{backend.language_id}")
         pairs, retrieval = cross_file_pairs(np.asarray(matrix[start:end])[indices], language_units,
                                             int(candidate_cfg["semantic_top_k"]))
+        report(f"semantic:{backend.language_id}")
         semantic = {"signal": "semantic", "model": input_manifest["model_id"],
                     "model_revision": input_manifest["model_revision"],
                     "max_seq_length": input_manifest["embedding_policy"]["max_seq_length"],
                     "units": [{"file_id": u["file_id"], "unit_id": u["unit_id"]} for u in language_units],
                     "pairs": pairs, "retrieval": retrieval}
         signal_backend = graph if graph.ambiguous_aliases else backend
-        clone = clone_signal.cluster_evidence(language_sources, backend=signal_backend)
-        skeleton = ast_signal.cluster_evidence(language_sources, backend=signal_backend)
+        signal_limit = signal_frequency_limit(candidate_cfg, backend.language_id)
+        clone = clone_signal.cluster_evidence(language_sources, backend=signal_backend, **signal_limit)
+        report(f"clone:{backend.language_id}")
+        skeleton = ast_signal.cluster_evidence(language_sources, backend=signal_backend, **signal_limit)
+        report(f"skeleton:{backend.language_id}")
         signals = [graph.signal(value) for value in (clone, skeleton, semantic)]
         strict = graph.candidates(fusion.fuse_units(
             signals, cfg=copy.deepcopy(candidate_cfg["strict_fusion"]), backend=graph))
+        report(f"strict:{backend.language_id}")
         protocol = graph.candidates(protocol_recall.recall_candidates(
             language_sources, signals, cfg=candidate_cfg["protocol_recall"], backend=graph))
+        report(f"protocol:{backend.language_id}")
         partitions.append({"language": backend.language_id, "backend_id": backend.backend_id,
                            "semantic_topk": semantic, "clone": clone, "skeleton": skeleton,
                            "strict_candidates": strict, "protocol": protocol})
@@ -289,14 +333,20 @@ def build_task(
             "source_sha256": sha256_file(source),
         }
     else:
-        print(f"[candidate] protocol expansion {instance_id}", flush=True)
         protocol = combined("protocol")
         write_json(candidate_path, protocol)
+        manifest_path = (
+            embedding_dir / "embedding_result_manifest.json"
+            if embedding_dir is not None
+            else ROOT / "offline_embedding_50tasks_20261024" / "embedding_result_manifest.json"
+        )
+        try:
+            manifest_label = str(manifest_path.relative_to(PROJECT))
+        except ValueError:
+            manifest_label = str(manifest_path)
         provenance = {
             "mode": "generated_from_frozen_50_task_embedding",
-            "embedding_manifest": str(
-                (ROOT / "offline_embedding_50tasks_20261024" / "embedding_result_manifest.json").relative_to(PROJECT)
-            ),
+            "embedding_manifest": manifest_label,
         }
     file_counts = Counter(unit["file_id"] for unit in units)
     write_json(
@@ -350,6 +400,7 @@ def main() -> int:
             matrix,
             resume=args.resume,
             reuse_frozen=not args.regenerate_frozen_candidates,
+            embedding_dir=args.embedding_dir.resolve(),
         )
     return 0
 
