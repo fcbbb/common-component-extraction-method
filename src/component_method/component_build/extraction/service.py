@@ -77,7 +77,7 @@ def normalize_extraction_result(
         if not isinstance(value, dict):
             errors.append({"index": index, "errors": ["component must be an object"]})
             continue
-        component_id = str(value.get("component_id") or f"{strategy}-{index + 1:03d}")
+        component_id = str(value.get("component_id") or value.get("id") or f"{strategy}-{index + 1:03d}")
         if component_id in seen_component_ids:
             errors.append({"component_id": component_id, "errors": ["component_id must be unique in the response"]})
             continue

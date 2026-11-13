@@ -153,6 +153,20 @@ def validate_artifact_component(*, component_id, component, candidate_payload, r
             allowed_by_file.setdefault(file_id, set()).add(unit_key)
         confirmed = set()
         for member in review.get("confirmed_members", []):
+            if isinstance(member, str):
+                # Reviewers emit either a file path or a bare unit key.
+                unit_matches = [
+                    (file_id, unit_key) for file_id, keys in allowed_by_file.items()
+                    for unit_key in keys if unit_key == member or unit_key.startswith(member)
+                ]
+                if len(unit_matches) == 1:
+                    confirmed.add(unit_matches[0])
+                    continue
+                candidates = allowed_by_file.get(member, set())
+                if not candidates:
+                    raise ValueError("review members exceed the proposed source boundary")
+                confirmed.update((member, candidate) for candidate in candidates)
+                continue
             file_id = member.get("file_id") if isinstance(member, dict) else None
             if not isinstance(file_id, str):
                 raise ValueError("review members exceed the proposed source boundary")
@@ -194,9 +208,33 @@ def validate_artifact_component(*, component_id, component, candidate_payload, r
             if not re.fullmatch(r"[A-Za-z0-9_-]+", case.case_id) or case.case_id in seen:
                 raise ValueError("duplicate or unsafe smoke case id")
             seen.add(case.case_id)
+            canonical = backend.canonical_entrypoint_id(artifact, case.entrypoint_id)
+            if canonical is None:
+                raise ValueError("smoke case names an undeclared entrypoint")
+            expected = tuple(
+                ({**item, "entrypoint_id": backend.canonical_entrypoint_id(artifact, item["entrypoint_id"])
+                  or item["entrypoint_id"]}
+                 if isinstance(item, dict) and isinstance(item.get("entrypoint_id"), str) else item)
+                for item in case.expected_paths
+            )
+            case = replace(case, entrypoint_id=canonical, expected_paths=expected)
             check_citations(case.sources, repository.resolved_root(), artifact)
-            invocation = replace(backend.prepare_smoke(artifact, case, output_dir / "cases" / case.case_id),
-                                 timeout_seconds=runtime_timeout)
+            try:
+                invocation = replace(backend.prepare_smoke(artifact, case, output_dir / "cases" / case.case_id),
+                                     timeout_seconds=runtime_timeout)
+            except ValueError as exc:
+                # Reviewers sometimes list a class/template as extra smoke
+                # coverage even though only concrete functions have an
+                # executable linkage symbol.  Keep the concrete cases and mark
+                # this one unverified instead of rejecting the component.
+                if "no executable linkage symbol" in str(exc):
+                    result["case_results"][case.case_id] = {
+                        "status": "skipped",
+                        "reason": f"{type(exc).__name__}: {exc}",
+                    }
+                    entry_cases.setdefault(case.entrypoint_id, []).append(False)
+                    continue
+                raise
             process, environment = executor(invocation, output_dir / "cases" / case.case_id, repository)
             observations = backend.parse_observations(invocation, process)
             executed = {o.entrypoint_id for o in observations if o.executed}

@@ -199,6 +199,32 @@ class Entrypoint(JsonRecord):
     def entrypoint_id(self) -> str:
         return self.metadata.get("entrypoint_id", self.qualified_name)
 
+    @classmethod
+    def from_json(cls, value: dict[str, Any]) -> "Entrypoint":
+        payload = dict(value)
+        metadata = dict(payload.pop("metadata", {}) or {})
+        # Review/extraction agents sometimes use the short ``id`` key and may
+        # emit both id and entrypoint_id.  Normalize both spellings into the
+        # metadata field without changing the public entrypoint identifier.
+        for key in ("id", "entrypoint_id"):
+            if key in payload:
+                candidate = payload.pop(key)
+                if isinstance(candidate, str) and candidate and "entrypoint_id" not in metadata:
+                    metadata["entrypoint_id"] = candidate
+        if not isinstance(payload.get("qualified_name"), str) or not payload["qualified_name"]:
+            for key in ("name", "symbol"):
+                if isinstance(payload.get(key), str) and payload[key]:
+                    payload["qualified_name"] = payload.pop(key)
+                    break
+        structural = {"kind", "qualified_name", "signature", "purpose", "metadata"}
+        for key in list(payload):
+            if key not in structural:
+                metadata[key] = payload.pop(key)
+        payload.setdefault("kind", "function")
+        payload.setdefault("signature", "")
+        payload["metadata"] = metadata
+        return cls(**payload)
+
 
 @dataclass(frozen=True)
 class ComponentArtifact(JsonRecord):
@@ -221,7 +247,7 @@ class ComponentArtifact(JsonRecord):
         if payload.pop("schema", None) != cls.schema:
             raise ValueError("unsupported component-artifact schema")
         payload["files"] = tuple(ArtifactFile(**item) for item in payload["files"])
-        payload["entrypoints"] = tuple(Entrypoint(**item) for item in payload["entrypoints"])
+        payload["entrypoints"] = tuple(Entrypoint.from_json(item) for item in payload["entrypoints"])
         return cls(**payload)
 
 

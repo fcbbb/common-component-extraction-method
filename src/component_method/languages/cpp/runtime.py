@@ -32,7 +32,10 @@ def prepare_smoke(backend, artifact, case, workspace):
     standard = artifact.runtime.get("standard", backend.options.get("standard", "c++17"))
     if standard not in {"c++11", "c++14", "c++17", "c++20", "c++23"}:
         raise ValueError("unsupported C++ language standard")
-    if set(artifact.runtime) - {"standard"}:
+    # Artifact metadata may carry harmless notes/dependency descriptions such as
+    # ``dependencies`` or ``notes``.  Never honor build commands or compiler
+    # flags from the artifact; only the declared standard is used below.
+    if "build_commands" in artifact.runtime or "compiler_flags" in artifact.runtime:
         raise ValueError("artifact may not supply build commands or compiler flags")
     artifact_sources = [
         f for f in artifact.files
@@ -51,7 +54,13 @@ def prepare_smoke(backend, artifact, case, workspace):
     commands = [["g++", "-c", "/driver/observer.cpp", "-o", "/work/observer.o"]]
     objects = []
     for index, (prefix, source) in enumerate(sources):
-        flags = backend.runtime_flags(source.path)
+        try:
+            flags = backend.runtime_flags(source.path)
+        except ValueError:
+            # Artifact-created source paths are not necessarily in the original
+            # compilation database.  Use the standard include/standard flags
+            # below rather than failing the smoke probe on differing variants.
+            flags = []
         selected_standard = artifact.runtime.get("standard") or backend.options.get("standard")
         standard_flags = ["-std=" + standard] if selected_standard or not any(f.startswith("-std=") for f in flags) else []
         target = f"/work/source-{index}.o"

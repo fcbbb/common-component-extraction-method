@@ -115,6 +115,12 @@ def main() -> int:
     parser.add_argument("--device", choices=("cuda", "cpu"), default="cuda")
     parser.add_argument("--batch-size", type=int, default=embedding_cfg["batch_size"])
     parser.add_argument("--chunk-size", type=int, default=embedding_cfg["chunk_size"])
+    parser.add_argument(
+        "--cpu-fallback-chars",
+        type=int,
+        default=0,
+        help="Route units longer than this many characters to CPU; 0 disables the fallback.",
+    )
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     input_path = args.input.resolve()
@@ -185,6 +191,59 @@ def main() -> int:
             parameter_dtype = str(next(model.parameters()).dtype)
         return model
 
+    cpu_model = None
+
+    def ensure_cpu_model():
+        nonlocal cpu_model
+        if cpu_model is None:
+            cpu_model = SentenceTransformer(
+                input_manifest["model_id"],
+                revision=input_manifest["model_revision"],
+                trust_remote_code=True,
+                device="cpu",
+                model_kwargs={"attn_implementation": "eager"},
+            )
+            cpu_model.max_seq_length = int(input_manifest["embedding_policy"]["max_seq_length"])
+            for module in cpu_model:
+                if hasattr(module, "auto_model") and getattr(module, "model_forward_params", None) is None:
+                    module.model_forward_params = set(inspect.signature(module.auto_model.forward).parameters)
+        return cpu_model
+
+    def encode_texts(texts):
+        """Encode with GPU, routing unusually long units to CPU.
+
+        WSL's CUDA driver resets on some very long sequences.  The fallback is
+        opt-in so the historical Python behavior remains unchanged by default.
+        """
+        threshold = args.cpu_fallback_chars
+        long_positions = [i for i, text in enumerate(texts) if threshold and len(text) > threshold]
+        if not long_positions:
+            return ensure_model().encode(
+                texts,
+                batch_size=args.batch_size,
+                show_progress_bar=False,
+                normalize_embeddings=True,
+                convert_to_numpy=True,
+            )
+        short_positions = [i for i in range(len(texts)) if i not in set(long_positions)]
+        output = np.empty((len(texts), dimension), dtype=np.float32)
+        if short_positions:
+            output[short_positions] = ensure_model().encode(
+                [texts[i] for i in short_positions],
+                batch_size=args.batch_size,
+                show_progress_bar=False,
+                normalize_embeddings=True,
+                convert_to_numpy=True,
+            )
+        output[long_positions] = ensure_cpu_model().encode(
+            [texts[i] for i in long_positions],
+            batch_size=1,
+            show_progress_bar=False,
+            normalize_embeddings=True,
+            convert_to_numpy=True,
+        )
+        return output
+
     for rows in read_batches(input_path, args.chunk_size):
         vectors = np.empty((len(rows), dimension), dtype=np.float32)
         missing_positions = []
@@ -204,13 +263,7 @@ def main() -> int:
             # original unit order before the vectors are written to the matrix.
             order = sorted(range(len(missing_texts)), key=lambda index: len(missing_texts[index]))
             sorted_texts = [missing_texts[index] for index in order]
-            fresh_sorted = ensure_model().encode(
-                sorted_texts,
-                batch_size=args.batch_size,
-                show_progress_bar=False,
-                normalize_embeddings=True,
-                convert_to_numpy=True,
-            )
+            fresh_sorted = encode_texts(sorted_texts)
             fresh_sorted = np.asarray(fresh_sorted, dtype=np.float32)
             if fresh_sorted.shape != (len(missing_texts), dimension):
                 raise RuntimeError(f"unexpected fresh embedding shape: {fresh_sorted.shape}")
@@ -268,6 +321,7 @@ def main() -> int:
         "parameter_dtype": parameter_dtype,
         "batch_size": args.batch_size,
         "chunk_size": args.chunk_size,
+        "cpu_fallback_chars": args.cpu_fallback_chars,
         "device": device_info,
         "torch_version": torch.__version__,
         "cuda_version": torch.version.cuda,

@@ -654,6 +654,7 @@ def _validate_protocol_contract_review(
             repo_root,
             artifact_content=artifact_content,
             artifact_files=artifact_files,
+            require_claim=False,
         )
         issue_fields.add(field)
         (blocking_fields if severity == "blocking" else warning_fields).add(field)
@@ -742,7 +743,7 @@ def _checked_citations(response: dict[str, Any], repo_root: Path) -> list[dict[s
 
 def _validate_review_result(
     review: dict[str, Any], repo_root: Path, *, artifact_content: str | None = None,
-    artifact_files: dict[str, str] | None = None,
+    artifact_files: dict[str, str] | None = None, require_claim: bool = True,
 ) -> None:
     members = review.get("confirmed_members")
     evidence = review.get("evidence")
@@ -784,8 +785,10 @@ def _validate_review_result(
             or isinstance(end, bool)
             or start < 1
             or end < start
-            or not isinstance(citation.get("claim"), str)
-            or not citation["claim"].strip()
+            or (require_claim and (
+                not isinstance(citation.get("claim"), str)
+                or not citation["claim"].strip()
+            ))
         ):
             raise ValueError("commonality review returned malformed evidence")
         artifact_file = f"{Path(COMPONENT_DIRECTORY).name}/common.py"

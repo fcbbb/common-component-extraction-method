@@ -176,3 +176,131 @@ work/osbench/
   direct_baseline/reference_vs_direct.json
   direct_baseline/reference_vs_direct.csv
 ```
+
+## 8. 单任务完整组件方法验证（cereal / leveldb）
+
+在 direct baseline 之外，已选择两个任务做完整组件方法验证：
+
+```text
+cereal：
+  1 个 validated component，library_stage_a
+  Stage B 选中 component-001
+  F2P 4/4，P2P 154/154
+
+leveldb：
+  5/5 packets，6 drafts，4 validated components
+  Stage B 选中 component-004
+  F2P 217/217，P2P 0/0
+```
+
+leveldb 的完整流程、阶段耗时、模型调用、失败组件和与 cereal 的对比见：
+
+```text
+docs/osbench_component_method_report.md
+```
+
+leveldb 归档：
+
+```text
+work/osbench/tasks/google__leveldb-ac69108__cpp__linux__b9bf34/
+  stage_a/
+  stage_b/
+  README.md
+  test_summary.json
+```
+
+## 9. 任务级分析与组件方法适用性
+
+### 9.1 六个任务的基本面
+
+| 任务 | repo | 源码文件 | 源码 byte | compile_commands | direct F2P | direct P2P |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| OpenCC | BYVoid/OpenCC | 341 | 3,930,767 | 51 | 50/50 | 50/50 |
+| cereal | USCiLab/cereal | 177 | 1,975,006 | 39 | 4/4 | 154/154 |
+| simdjson | simdjson/simdjson | 388 | 10,221,534 | 153 | 31/31 | 80/80 |
+| asmjit | asmjit/asmjit | 152 | 4,031,219 | 136 | 8/8 | 1/1 |
+| cppcheck | danmar/cppcheck | 303 | 5,846,900 | 171 | 1/1 | 107/107 |
+| leveldb | google/leveldb | 133 | 882,433 | 93 | 217/217 | 0/0 |
+
+共同点：
+
+- 都是 Windows → Linux 的 C++ 迁移任务；
+- 都存在平台分支、文件 I/O、路径、时间、编码、线程/锁或序列化差异；
+- direct baseline 都能达到 required tests；组件方法的主要价值不是提升
+  required pass rate。
+
+### 9.2 cereal 的任务特征
+
+cereal 是 header-heavy 的序列化库：
+
+- 源码以 `include/cereal/**/*.hpp` 和 `unittests/*.hpp` 为主；
+- 大量测试是模板化的容器/归档组合；
+- 跨平台差异集中在归档字节序、类型宽度和序列化路径；
+- 最小 packet 的 9 个 unit/7 个文件就能抽出“序列化容器 roundtrip harness”；
+- 组件可以复用 `run_binary_sequence_matrix` 和
+  `run_portable_binary_sequence_matrix` 这类 concrete wrapper；
+- 适合用组件方法展示“测试模式抽取”和“可复用验证 harness”。
+
+### 9.3 leveldb 的任务特征
+
+leveldb 是 I/O、文件系统、线程和日志密集的存储引擎：
+
+- 源码 133 个文件，但 `compile_commands` 有 93 条；
+- 平台差异集中在 `util/env_posix.cc`、`util/posix_logger.h`、
+  `db/filename.cc`、`port/posix_logger` 等；
+- 迁移问题往往横跨文件系统 API、锁、日志、错误码和时间；
+- F2P 粒度很细：217 个 required assertions；
+- 适合检验：
+  - 多个 packet 是否能覆盖不同迁移模式；
+  - 组件是否能抽出 logger、cache、range probe 等局部能力；
+  - 组件边界是否足以 standalone 编译/链接。
+
+leveldb 的 5 个 packet 共产生 6 个 drafts：
+
+- 4 个 validated：sharded LRU cache、benchmark stats、range-size probe、
+  logger dispatch；
+- 2 个 withheld：table block reader、table file cache；
+- withheld 的原因是 artifact 仍依赖未提供的 leveldb 仓库符号，
+  说明“局部 translation unit 抽取”不等于“可独立复用组件”。
+
+### 9.4 哪些任务更适合组件方法
+
+**更适合：**
+
+- cereal：模板化、重复测试模式明显，组件边界相对容易闭合；
+- leveldb：存在多个清晰平台适配层，logger/cache/range 等可独立表达；
+- OpenCC：平台适配和转换管线较多，但源码规模较大；
+- asmjit：代码生成/后端抽象，可能存在可复用模式。
+
+**更困难：**
+
+- simdjson：源码大、header 多、编译配置复杂；
+- cppcheck：仓库包含大量第三方/测试/构建材料，候选和 review 噪声大。
+
+### 9.5 任务规模与组件成本不完全是线性关系
+
+leveldb 的源文件数/字节数比 cereal 小，但：
+
+- leveldb 的 packet 更“宽”（最多 60 primary units / 17 files）；
+- 每个 packet 的 extraction/review agent 需要更多工具调用；
+- leveldb 产生了 5 个 packet 和 6 个 drafts，而 cereal 只跑了 1 个最小 packet；
+- leveldb 的 review/validation 触及 logger、cache、table、range 等多个子系统。
+
+因此：
+
+```text
+源码小 ≠ Stage A 调用少
+```
+
+组件方法的成本主要由 **packet 数、packet 宽度、draft 数、review 轮次和
+validation 编译/链接** 决定，而不是单纯由仓库总字节数决定。
+
+### 9.6 本数据集上的结论
+
+1. 6 个任务的 direct baseline 都达到 required ceiling；
+2. cereal 证明组件方法可以端到端闭环；
+3. leveldb 证明多 packet 可以完整进入 Stage A，但会暴露组件边界问题；
+4. 组件方法当前更适合作为“迁移模式分析 + 可复用验证 harness”，
+   而不是“提升 required pass rate”；
+5. 后续若要扩展到其余 4 个任务，应先按 packet 宽度、组件边界和 review
+   成本做预算，而不是直接 6 任务全量运行。

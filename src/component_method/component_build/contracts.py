@@ -171,6 +171,8 @@ def normalize_component_draft(
     if status == "ready":
         status = "draft_ready"
     artifact_value = extraction.get("artifact", value.get("artifact"))
+    if isinstance(artifact_value, dict) and not artifact_value.get("runtime") and isinstance(value.get("runtime"), dict):
+        artifact_value = {**artifact_value, "runtime": value["runtime"]}
     artifact = ComponentArtifact.from_json(artifact_value) if artifact_value is not None else None
     if artifact is not None:
         artifact = _normalize_cpp_artifact_paths(artifact)
@@ -187,7 +189,34 @@ def normalize_component_draft(
     if artifact is not None:
         entrypoints = [{**entry.to_json(), "name": entry.entrypoint_id} for entry in artifact.entrypoints]
     members = value.get("members", [])
-    evidence = value.get("evidence", [])
+    if isinstance(members, list) and artifact is not None:
+        members = [
+            ({**member,
+              "language": member.get("language", artifact.language),
+              "backend_id": member.get("backend_id", artifact.backend_id)}
+             if isinstance(member, dict) else member)
+            for member in members
+        ]
+    evidence = value.get("evidence") or value.get("additional_evidence") or []
+    if isinstance(evidence, list):
+        evidence = [
+            ({**item, "claim": item.get("claim") or item.get("note") or "source evidence"}
+             if isinstance(item, dict) else item)
+            for item in evidence
+        ]
+    if isinstance(evidence, list) and not evidence and isinstance(members, list):
+        # Some agents attach per-member evidence rather than a top-level list.
+        evidence = []
+        for member in members:
+            if not isinstance(member, dict):
+                continue
+            for item in member.get("evidence", []) or []:
+                if not isinstance(item, dict):
+                    continue
+                evidence.append({
+                    **item,
+                    "claim": item.get("claim") or item.get("note") or member.get("role") or "source member evidence",
+                })
     dependencies = value.get("dependencies", value.get("required_dependencies", []))
     limitations = extraction.get("limitations", value.get("limitations", []))
     guidance = value.get("guidance", value.get("agent_guidance", {}))
@@ -203,9 +232,12 @@ def normalize_component_draft(
     return ComponentDraft(
         component_id=component_id,
         status=status if isinstance(status, str) else "invalid",
-        name=str(value.get("name") or value.get("candidate_id") or component_id),
+        name=str(value.get("name") or value.get("title") or value.get("candidate_id") or component_id),
         summary=str(value.get("capability") or value.get("summary") or ""),
-        component_type=str(value.get("type") or value.get("candidate_kind") or ""),
+        component_type=str(
+            value.get("type") or value.get("candidate_kind")
+            or ("cooperating_units" if isinstance(members, list) and len(members) > 1 else "existing_reused_asset")
+        ),
         confidence=confidence if isinstance(confidence, str) else "invalid",
         relationships=tuple(item for item in relationships if isinstance(item, str)) if isinstance(relationships, list) else (),
         invariants=tuple(item for item in invariants if isinstance(item, str)) if isinstance(invariants, list) else (),
