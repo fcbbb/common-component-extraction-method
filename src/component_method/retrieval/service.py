@@ -297,6 +297,7 @@ def _run_dsh_retrieval(
                 submission_mode="files",
                 submission_role="retrieval",
                 submission_checker_command=_retrieval_checker_command(request.task_id),
+                submission_directory=submission_dir,
             )
         )
         status = backend_result.status

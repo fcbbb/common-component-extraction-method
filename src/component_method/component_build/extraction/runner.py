@@ -481,6 +481,7 @@ class ComponentAgentRunner:
                         resume_session_id=(
                             resume_reference
                         ),
+                        submission_directory=submission_directory,
                     )
                 )
             except Exception as exc:
