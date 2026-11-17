@@ -29,6 +29,27 @@ def _ensure_image(client: docker.DockerClient) -> tuple[str, str]:
     return image.id, IMAGE_TAG
 
 
+def _image_declared_volumes(
+    container: docker.models.containers.Container,
+) -> set[str]:
+    """Return VOLUME paths declared by the container's image.
+
+    Docker merges the image config into the container config, so ``Config``
+    usually carries ``Volumes`` directly; fall back to the image object for
+    older daemons or test doubles.
+    """
+    config = container.attrs.get("Config")
+    volumes = config.get("Volumes") if isinstance(config, dict) else None
+    if not isinstance(volumes, dict):
+        image = getattr(container, "image", None)
+        image_attrs = getattr(image, "attrs", None)
+        image_config = image_attrs.get("Config") if isinstance(image_attrs, dict) else None
+        volumes = image_config.get("Volumes") if isinstance(image_config, dict) else None
+    if not isinstance(volumes, dict):
+        return set()
+    return {path for path in volumes if isinstance(path, str) and path}
+
+
 def _verify_isolated_container(container: docker.models.containers.Container) -> None:
     from component_method.component_build.submission import CHECKER_PATH, OUTPUT_DIRECTORY
     from component_method.component_build.workspace import COMPONENT_DIRECTORY
@@ -38,6 +59,7 @@ def _verify_isolated_container(container: docker.models.containers.Container) ->
     mounts = attrs.get("Mounts", [])
     bind_mounts = [mount for mount in mounts if mount.get("Type") == "bind"]
     other_mounts = [mount for mount in mounts if mount.get("Type") != "bind"]
+    declared_volumes = _image_declared_volumes(container)
     network = attrs.get("HostConfig", {}).get("NetworkMode")
     bind_destinations = [mount.get("Destination") for mount in bind_mounts]
     allowed = {
@@ -57,7 +79,11 @@ def _verify_isolated_container(container: docker.models.containers.Container) ->
         mount.get("Type") != "tmpfs"
         or not (
             mount.get("Destination") == "/tmp"
-            or str(mount.get("Destination", "")).startswith("/testbed/")
+            or (
+                isinstance(mount.get("Destination"), str)
+                and mount["Destination"].startswith("/testbed/")
+                and mount["Destination"] in declared_volumes
+            )
         )
         for mount in other_mounts
     ):

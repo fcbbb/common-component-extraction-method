@@ -24,6 +24,7 @@ def agent_container(tmp_path):
                 for volume in volumes.values()
             ] + [{"Type": "tmpfs", "Destination": "/tmp"}],
             "HostConfig": {"NetworkMode": "none"},
+            "Config": {"Volumes": {"/testbed/mnt_tmp": {}}},
         },
     )
 
@@ -45,6 +46,14 @@ def test_testbed_image_volume_tmpfs_is_allowed(agent_container):
         {"Type": "tmpfs", "Destination": "/testbed/mnt_tmp"}
     )
     _verify_isolated_container(agent_container)
+
+
+def test_undeclared_testbed_tmpfs_is_rejected(agent_container):
+    agent_container.attrs["Mounts"].append(
+        {"Type": "tmpfs", "Destination": "/testbed/shadow"}
+    )
+    with pytest.raises(RuntimeError, match="Unexpected non-repository"):
+        _verify_isolated_container(agent_container)
 
 
 def test_unknown_tmpfs_mount_is_rejected(agent_container):
