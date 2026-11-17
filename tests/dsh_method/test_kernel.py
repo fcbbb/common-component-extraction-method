@@ -8,7 +8,7 @@ import time
 
 import pytest
 
-from component_method import dsh_jobs, dsh_kernel
+from component_method import dsh_jobs, dsh_kernel, dsh_registry
 from component_method.dsh_registry import RegistryError, load_registry, resolve_run
 
 
@@ -46,6 +46,96 @@ def test_registry_resolves_registered_task_and_rejects_traversal(tmp_path):
         resolve_run(registry, "../run-a", "task-a")
     with pytest.raises(RegistryError):
         resolve_run(registry, "run-a", "task-b")
+
+
+def test_registry_cli_writes_a_round_trippable_document(tmp_path):
+    path = tmp_path / "registry.json"
+    run_root = tmp_path / "run"
+    run_root.mkdir()
+    task_root = run_root / "task-a"
+    task_root.mkdir()
+    dsh_registry.main(["init", "--registry", str(path)])
+    dsh_registry.main([
+        "add-run", "--registry", str(path), "--run-id", "run-a",
+        "--run-root", str(run_root), "--embedding-dir", "custom_embeddings",
+    ])
+    dsh_registry.main([
+        "add-task", "--registry", str(path), "--run-id", "run-a",
+        "--task-id", "task-a", "--task-root", str(task_root),
+    ])
+    registry = load_registry(path)
+    resolved = resolve_run(registry, "run-a", "task-a")
+    assert resolved["task_root"] == task_root.resolve()
+    assert registry["runs"]["run-a"]["embedding_dir"] == "custom_embeddings"
+    with pytest.raises(RegistryError):
+        dsh_registry.main(["init", "--registry", str(path)])
+
+
+def test_run_embedding_dir_comes_from_registry_metadata(tmp_path, monkeypatch):
+    run_root = tmp_path / "run"
+    custom = run_root / "custom_embeddings"
+    custom.mkdir(parents=True)
+    path = tmp_path / "registry.json"
+    path.write_text(json.dumps({
+        "schema": "component-method-dsh-registry-v1",
+        "runs": {
+            "run-a": {
+                "run_root": str(run_root),
+                "embedding_dir": "custom_embeddings",
+                "tasks": {},
+            }
+        },
+    }), encoding="utf-8")
+    registry = load_registry(path)
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(dsh_kernel.subprocess, "run", fake_run)
+    result = dsh_kernel.execute_method(
+        "signal_prepare", {"run_id": "run-a"}, registry=registry
+    )
+    assert result["ok"] is True
+    command = captured["command"]
+    assert command[command.index("--output-dir") + 1] == str(custom)
+
+
+def test_ops_arguments_are_allow_listed_per_module(tmp_path, monkeypatch):
+    _, registry = _registry(tmp_path)
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(dsh_kernel.subprocess, "run", fake_run)
+    result = dsh_kernel.execute_method(
+        "ops",
+        {"module": "preflight", "args": ["--task", "task-a", "--run-scan"]},
+        registry=registry,
+    )
+    assert result["ok"] is True
+    assert captured["command"][-3:] == ["--task", "task-a", "--run-scan"]
+    for rejected in (["--output", "/tmp/x"], ["/bin/sh"]):
+        result = dsh_kernel.execute_method(
+            "ops", {"module": "preflight", "args": rejected}, registry=registry
+        )
+        assert result["ok"] is False
+        assert "ops module preflight" in result["error"]
+
+
+def test_kernel_reads_repository_from_environment(tmp_path, monkeypatch):
+    repository = tmp_path / "repository"
+    repository.mkdir()
+    monkeypatch.setenv("COMPONENT_DSH_REPOSITORY", str(repository))
+    assert dsh_kernel._repository_from_environment() == repository.resolve()
+    monkeypatch.setenv("COMPONENT_DSH_REPOSITORY", str(tmp_path / "missing"))
+    with pytest.raises(dsh_kernel.KernelError):
+        dsh_kernel._repository_from_environment()
+    monkeypatch.delenv("COMPONENT_DSH_REPOSITORY")
+    assert dsh_kernel._repository_from_environment() is None
 
 
 def test_stage_command_is_built_without_a_shell(tmp_path, monkeypatch):

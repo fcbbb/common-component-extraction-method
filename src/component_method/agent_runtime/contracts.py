@@ -29,6 +29,7 @@ class AgentRunRequest:
     submission_checker_command: tuple[str, ...] | None = None
     profile_name: str | None = None
     submission_directory: Path | None = None
+    repository: Path | None = None
 
 
 @dataclass(frozen=True)

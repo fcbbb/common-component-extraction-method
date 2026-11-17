@@ -47,11 +47,7 @@ def load_registry(path: Path | str | None = None) -> dict[str, Any]:
         value = json.loads(registry_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise RegistryError(f"invalid run registry JSON: {exc}") from exc
-    if not isinstance(value, dict) or value.get("schema") != SCHEMA:
-        raise RegistryError(f"unsupported run registry schema: {value.get('schema')!r}")
-    runs = value.get("runs")
-    if not isinstance(runs, dict):
-        raise RegistryError("run registry runs must be an object")
+    _validate_registry_document(value)
     return value
 
 
@@ -108,3 +104,176 @@ def resolve_run(
 
 def registry_from_environment() -> dict[str, Any]:
     return load_registry()
+
+
+def _validate_registry_document(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict) or value.get("schema") != SCHEMA:
+        schema = value.get("schema") if isinstance(value, dict) else None
+        raise RegistryError(f"unsupported run registry schema: {schema!r}")
+    runs = value.get("runs")
+    if not isinstance(runs, dict):
+        raise RegistryError("run registry runs must be an object")
+    for run_id, run in runs.items():
+        _check_id(run_id, field="run_id")
+        if not isinstance(run, dict):
+            raise RegistryError(f"run must be an object: {run_id}")
+        if not isinstance(run.get("run_root"), str) or not run["run_root"]:
+            raise RegistryError(f"run has no run_root: {run_id}")
+        if run.get("embedding_dir") is not None and not isinstance(run["embedding_dir"], str):
+            raise RegistryError(f"run embedding_dir must be a string: {run_id}")
+        tasks = run.get("tasks", {})
+        if not isinstance(tasks, dict):
+            raise RegistryError(f"run tasks must be an object: {run_id}")
+        for task_id, task in tasks.items():
+            _check_id(task_id, field="task_id")
+            if not isinstance(task, dict):
+                raise RegistryError(f"task must be an object: {task_id}")
+            if not isinstance(task.get("task_root"), str) or not task["task_root"]:
+                raise RegistryError(f"task has no task_root: {task_id}")
+            if task.get("repository") is not None and (
+                not isinstance(task["repository"], str) or not task["repository"]
+            ):
+                raise RegistryError(f"task repository is invalid: {task_id}")
+    return value
+
+
+def empty_registry() -> dict[str, Any]:
+    return {"schema": SCHEMA, "runs": {}}
+
+
+def _registry_path(path: Path | str | None) -> Path:
+    configured = path or os.environ.get("COMPONENT_DSH_RUN_REGISTRY")
+    if not configured:
+        raise RegistryError(
+            "run registry path is not configured; pass --registry or set "
+            "COMPONENT_DSH_RUN_REGISTRY"
+        )
+    return Path(configured).expanduser().resolve()
+
+
+def write_registry(registry: dict[str, Any], path: Path | str | None = None) -> Path:
+    """Validate and atomically write a controller-owned registry document."""
+    _validate_registry_document(registry)
+    target = _registry_path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name + ".tmp")
+    temporary.write_text(
+        json.dumps(registry, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    os.replace(temporary, target)
+    return target
+
+
+def register_run(
+    registry: dict[str, Any],
+    run_id: str,
+    run_root: Path | str,
+    *,
+    embedding_dir: str | None = None,
+    task_id: str | None = None,
+) -> dict[str, Any]:
+    """Add or replace one run entry in a registry document."""
+    key = _check_id(run_id, field="run_id")
+    existing = registry.setdefault("runs", {}).get(key)
+    tasks = existing.get("tasks", {}) if isinstance(existing, dict) else {}
+    run: dict[str, Any] = {
+        "run_root": str(Path(run_root).expanduser().resolve()),
+        "tasks": dict(tasks) if isinstance(tasks, dict) else {},
+    }
+    if task_id is None and isinstance(existing, dict):
+        task_id = existing.get("task_id")
+    if task_id is not None:
+        run["task_id"] = _check_id(task_id, field="task_id")
+    if embedding_dir is not None:
+        if not isinstance(embedding_dir, str) or not embedding_dir.strip():
+            raise RegistryError("embedding_dir must be a non-empty string")
+        run["embedding_dir"] = embedding_dir
+    registry.setdefault("runs", {})[key] = run
+    return registry
+
+
+def register_task(
+    registry: dict[str, Any],
+    run_id: str,
+    task_id: str,
+    task_root: Path | str,
+    *,
+    repository: Path | str | None = None,
+) -> dict[str, Any]:
+    """Add or replace one task entry inside an existing run."""
+    run_key = _check_id(run_id, field="run_id")
+    task_key = _check_id(task_id, field="task_id")
+    run = registry.get("runs", {}).get(run_key)
+    if not isinstance(run, dict):
+        raise RegistryError(f"run is not registered: {run_key}")
+    task: dict[str, Any] = {"task_root": str(Path(task_root).expanduser().resolve())}
+    if repository is not None:
+        task["repository"] = str(Path(repository).expanduser().resolve())
+    run.setdefault("tasks", {})[task_key] = task
+    return registry
+
+
+def _read_registry_for_update(path: Path, *, create: bool) -> dict[str, Any]:
+    if path.is_file():
+        return load_registry(path)
+    if not create:
+        raise RegistryError(f"run registry does not exist: {path}")
+    return empty_registry()
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Create and edit the run registry before starting a DSH session."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    init = commands.add_parser("init", help="create an empty registry")
+    add_run = commands.add_parser("add-run", help="add or replace a run entry")
+    add_task = commands.add_parser("add-task", help="add or replace a task entry")
+    validate = commands.add_parser("validate", help="validate an existing registry")
+    for command in (init, add_run, add_task, validate):
+        command.add_argument("--registry", type=Path, default=None)
+    init.add_argument("--force", action="store_true")
+    add_run.add_argument("--run-id", required=True)
+    add_run.add_argument("--run-root", type=Path, required=True)
+    add_run.add_argument("--embedding-dir", default=None)
+    add_run.add_argument("--task-id", default=None)
+    add_task.add_argument("--run-id", required=True)
+    add_task.add_argument("--task-id", required=True)
+    add_task.add_argument("--task-root", type=Path, required=True)
+    add_task.add_argument("--repository", type=Path, default=None)
+    args = parser.parse_args(argv)
+
+    target = _registry_path(args.registry)
+    if args.command == "init":
+        if target.exists() and not args.force:
+            raise RegistryError(f"run registry already exists: {target}")
+        write_registry(empty_registry(), target)
+    elif args.command == "add-run":
+        registry = _read_registry_for_update(target, create=True)
+        register_run(
+            registry,
+            args.run_id,
+            args.run_root,
+            embedding_dir=args.embedding_dir,
+            task_id=args.task_id,
+        )
+        write_registry(registry, target)
+    elif args.command == "add-task":
+        registry = _read_registry_for_update(target, create=False)
+        register_task(
+            registry,
+            args.run_id,
+            args.task_id,
+            args.task_root,
+            repository=args.repository,
+        )
+        write_registry(registry, target)
+    else:
+        load_registry(target)
+    print(target)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

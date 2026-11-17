@@ -482,6 +482,7 @@ class ComponentAgentRunner:
                             resume_reference
                         ),
                         submission_directory=submission_directory,
+                        repository=workspace_root,
                     )
                 )
             except Exception as exc:

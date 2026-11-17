@@ -8,9 +8,9 @@ export function apply(ctx: any): void {
     {
       name: "component_task",
       job: true,
-      description: "Run one task arm.",
+      description: "Run one retrieval-selected task with the components arm.",
       method: "task",
-      parameters: {"run_id": {"type": "string", "required": true}, "task_id": {"type": "string", "required": true}, "arm": {"type": "string", "enum": ["direct", "components"]}},
+      parameters: {"run_id": {"type": "string", "required": true}, "task_id": {"type": "string", "required": true}},
     },
   ]);
 }

@@ -48,6 +48,69 @@ STAGE_OPTIONS = {
     "report": frozenset(),
 }
 
+DEFAULT_EMBEDDING_DIR = "offline_embedding_50tasks_20261024"
+
+# Operator tool arguments are allow-listed per module.  Values are never
+# interpreted by the kernel; each entry says whether the flag takes one value.
+OPS_ARGUMENTS: dict[str, dict[str, bool]] = {
+    "prepare_workspace": {
+        "--task": True,
+        "--workspace": True,
+        "--api-base": True,
+        "--refresh": False,
+        "--materialize-sources": False,
+    },
+    "prepare_osbench": {
+        "--dataset": True,
+        "--workspace": True,
+        "--project-root": True,
+        "--image-prefix": True,
+        "--task": True,
+        "--expect-count": True,
+        "--no-materialize-sources": False,
+        "--compile-commands": True,
+        "--api-base": True,
+        "--refresh": False,
+        "--check": False,
+        "--require-model-env": False,
+        "--run-scan": False,
+        "--scan-limit": True,
+    },
+    "prepare_osbench_direct": {
+        "--workspace": True,
+        "--output-root": True,
+        "--task": True,
+        "--model": True,
+        "--api-base": True,
+        "--official-image": False,
+    },
+    "run_osbench_direct": {
+        "--workspace": True,
+        "--output-root": True,
+        "--task": True,
+        "--skip-completed": False,
+        "--evaluate-only": False,
+        "--agent-timeout": True,
+        "--evaluation-timeout": True,
+    },
+    "preflight": {
+        "--task": True,
+        "--config": True,
+        "--workspace": True,
+        "--run-scan": False,
+        "--scan-limit": True,
+        "--require-model-env": False,
+    },
+    "verify_release": {"--skip-hashes": False},
+    "refresh_manifests": {},
+    "compare_backend": {"--revision": True},
+    "clean_runtime": {
+        "--workspace": True,
+        "--task": True,
+        "--image-prefix": True,
+    },
+}
+
 
 class KernelError(ValueError):
     """A method request is malformed or outside the allowlist."""
@@ -92,6 +155,69 @@ def _contained_run_path(value: Any, run_root: Path, *, field: str) -> Path:
     if candidate != root and root not in candidate.parents:
         raise KernelError(f"{field} must stay inside the registered run root")
     return candidate
+
+
+def _embedding_base(resolved: Mapping[str, Any]) -> Path:
+    """Resolve the run's embedding directory from registry metadata.
+
+    Runs may declare ``embedding_dir`` (relative to the run root or an absolute
+    path inside it); otherwise the historical offline task-set name applies.
+    """
+    run = resolved.get("run") or {}
+    configured = run.get("embedding_dir") or DEFAULT_EMBEDDING_DIR
+    if not isinstance(configured, str) or not configured:
+        raise KernelError("run embedding_dir must be a non-empty string")
+    candidate = Path(configured).expanduser()
+    root = resolved["run_root"].resolve()
+    if candidate.is_absolute():
+        candidate = candidate.resolve()
+        if candidate != root and root not in candidate.parents:
+            raise KernelError("run embedding_dir must stay inside the registered run root")
+        return candidate
+    return (root / candidate).resolve()
+
+
+def _repository_from_environment() -> Path | None:
+    value = os.environ.get("COMPONENT_DSH_REPOSITORY")
+    if not value:
+        return None
+    path = Path(value).expanduser().resolve()
+    if not path.is_dir():
+        raise KernelError(f"repository does not exist: {path}")
+    return path
+
+
+def _validated_ops_args(module: str, args: Any) -> list[str]:
+    allowed = OPS_ARGUMENTS[module]
+    if not isinstance(args, list) or any(not isinstance(item, str) for item in args):
+        raise KernelError("args must be a list of strings")
+    validated: list[str] = []
+    index = 0
+    while index < len(args):
+        token = args[index]
+        if not token.startswith("--"):
+            raise KernelError(f"ops module {module} accepts flags only, not {token!r}")
+        name, separator, inline = token.partition("=")
+        if name not in allowed:
+            raise KernelError(f"ops module {module} does not accept {name}")
+        takes_value = allowed[name]
+        if separator:
+            if not takes_value:
+                raise KernelError(f"ops module {module} flag takes no value: {name}")
+            if not inline:
+                raise KernelError(f"ops module {module} flag needs a value: {name}")
+            validated.append(token)
+            index += 1
+            continue
+        if takes_value:
+            if index + 1 >= len(args) or args[index + 1].startswith("--"):
+                raise KernelError(f"ops module {module} flag needs a value: {name}")
+            validated.extend([name, args[index + 1]])
+            index += 2
+        else:
+            validated.append(name)
+            index += 1
+    return validated
 
 
 def _stage_command(
@@ -140,7 +266,7 @@ def _signal_prepare_command(payload: Mapping[str, Any], registry: dict[str, Any]
     resolved = _run_root_from_payload(payload, registry)
     output = _contained_run_path(
         payload.get("output_dir"),
-        resolved["run_root"] / "offline_embedding_50tasks_20261024",
+        _embedding_base(resolved),
         field="output_dir",
     )
     command = [
@@ -159,7 +285,7 @@ def _signal_embed_command(payload: Mapping[str, Any], registry: dict[str, Any]) 
     resolved = _run_root_from_payload(payload, registry)
     base = _contained_run_path(
         payload.get("embedding_dir"),
-        resolved["run_root"] / "offline_embedding_50tasks_20261024",
+        _embedding_base(resolved),
         field="embedding_dir",
     )
     command = [
@@ -192,7 +318,7 @@ def _protocol_build_command(payload: Mapping[str, Any], registry: dict[str, Any]
     resolved = _run_root_from_payload(payload, registry)
     embedding_dir = _contained_run_path(
         payload.get("embedding_dir"),
-        resolved["run_root"] / "offline_embedding_50tasks_20261024",
+        _embedding_base(resolved),
         field="embedding_dir",
     )
     command = [
@@ -248,10 +374,7 @@ def _ops_command(payload: Mapping[str, Any], registry: dict[str, Any]) -> list[s
     if module not in allowed:
         raise KernelError(f"unsupported ops module: {module!r}")
     command = [_python(), "-m", allowed[module]]
-    args = payload.get("args", [])
-    if not isinstance(args, list) or any(not isinstance(item, str) for item in args):
-        raise KernelError("args must be a list of strings")
-    command.extend(args)
+    command.extend(_validated_ops_args(module, payload.get("args", [])))
     return command
 
 
@@ -287,7 +410,9 @@ def _validate_draft(payload: Mapping[str, Any], registry: dict[str, Any]) -> dic
         component_id=component_id,
         origin_strategy=str(payload.get("origin_strategy", "dsh")),
     )
-    diagnostics = validate_component_draft(draft)
+    diagnostics = validate_component_draft(
+        draft, repository=_repository_from_environment()
+    )
     return {"ok": not diagnostics, "diagnostics": diagnostics}
 
 
@@ -300,6 +425,9 @@ def _validate_artifact(payload: Mapping[str, Any], registry: dict[str, Any]) -> 
         raise KernelError("artifact must be an object")
     artifact = ComponentArtifact.from_json(value)
     backend = default_registry().resolve({"language": artifact.language}).single()
+    repository = _repository_from_environment()
+    if repository is not None and hasattr(backend, "set_repository"):
+        backend.set_repository(repository)
     diagnostics = [item.message for item in backend.validate_artifact(artifact)]
     return {"ok": not diagnostics, "diagnostics": diagnostics}
 

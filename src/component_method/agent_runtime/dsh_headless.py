@@ -256,6 +256,10 @@ class DshHeadlessBackend:
         ):
             if value := self.host_environment.get(key):
                 environment[key] = value
+        if request.repository is not None:
+            environment["COMPONENT_DSH_REPOSITORY"] = str(
+                Path(request.repository).expanduser().resolve()
+            )
         return environment
 
     def _profile_for(self, request: AgentRunRequest) -> str:
