@@ -173,9 +173,28 @@ def parser(log):
     assert result["passed_match"] is True
 
 
+def test_osbench_evaluator_survives_a_parser_that_exits_the_process(tmp_path, monkeypatch):
+    install_fakes(monkeypatch, status_log())
+    parser = """
+import os
+
+def parser(log):
+    os._exit(7)
+"""
+    result = osbench_evaluation.evaluate_osbench(
+        task(parser),
+        "",
+        tmp_path,
+        normalize_test_name=lambda value: value.strip(),
+    )
+    assert result["evaluated"] is True
+    assert result["passed_match"] is False
+    assert "OS-Bench log parser failed" in result["error"]
+
+
 def test_osbench_evaluator_image_mismatch_is_rejected(tmp_path, monkeypatch):
     install_fakes(monkeypatch, status_log())
-    with pytest.raises(AssertionError):
+    with pytest.raises(RuntimeError, match="official task image changed"):
         osbench_evaluation.evaluate_osbench(
             task(),
             "",

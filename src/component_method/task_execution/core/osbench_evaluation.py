@@ -23,6 +23,7 @@ from typing import Any, Callable
 
 import docker
 from component_method.languages.task_environment import bundle_environment
+from component_method.task_execution.core.osbench_parser import load_inline_parser
 
 
 STATUS_MARKER = "__OSBENCH_STATUS__"
@@ -51,18 +52,6 @@ def _not_evaluated(task: dict[str, Any], reason: str) -> dict[str, Any]:
         "passed_match": False,
         "required_tests_passed": False,
     }
-
-
-def load_inline_parser(source: Any) -> Callable[[str], dict[str, Any]]:
-    """Compile the dataset-provided parser function into a callable."""
-    if not isinstance(source, str) or not source.strip():
-        raise ValueError("OS-Bench log_parser_source is missing")
-    namespace: dict[str, Any] = {}
-    exec(compile(source, "<osbench-log-parser>", "exec"), namespace)  # noqa: S102
-    parser = namespace.get("parser")
-    if not callable(parser):
-        raise ValueError("OS-Bench log_parser_source must define parser(log)")
-    return parser
 
 
 def _normalize_status(value: Any) -> str:
@@ -186,8 +175,11 @@ def evaluate_osbench(
 
     client = docker.from_env()
     image = client.images.get(task["image_name"]).id
-    if expected_image_id is not None:
-        assert image == expected_image_id, "official task image changed after preflight"
+    if expected_image_id is not None and image != expected_image_id:
+        raise RuntimeError(
+            "official task image changed after preflight: "
+            f"expected {expected_image_id}, found {image}"
+        )
     timeout_seconds = int(install.get("timeout_seconds") or DEFAULT_TIMEOUT_SECONDS)
     name = "osbench-eval-" + uuid.uuid4().hex[:12]
     workdir = "/testbed"
