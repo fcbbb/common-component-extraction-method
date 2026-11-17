@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass, field, replace
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from component_method.languages.contracts import ComponentArtifact
@@ -128,6 +128,34 @@ class ComponentDraft:
         return result
 
 
+
+
+def _normalize_cpp_artifact_paths(artifact: ComponentArtifact) -> ComponentArtifact:
+    """Strip an accidental component-specific top-level directory from C++ files.
+
+    C++ artifacts must be rooted at include/ and src/ (or smoke/ for smoke
+    sources) so the trusted compiler can use ``-I artifact/include``.  Agents
+    sometimes emit ``<component>/include/...`` instead.  Only strip when every
+    file shares that one prefix and the remaining paths use the standard roots.
+    """
+    if artifact.language != "cpp" or not artifact.files:
+        return artifact
+    parts = [PurePosixPath(item.path).parts for item in artifact.files]
+    if not parts or len({item[0] for item in parts if item}) != 1:
+        return artifact
+    prefix = parts[0][0]
+    if prefix in {"include", "src", "source", "smoke", "test", "tests"}:
+        return artifact
+    stripped = [PurePosixPath(*item[1:]) for item in parts if len(item) > 1]
+    if len(stripped) != len(parts):
+        return artifact
+    if not all(path.parts and path.parts[0] in {"include", "src", "source", "smoke", "test", "tests"}
+               for path in stripped):
+        return artifact
+    files = tuple(replace(item, path=path.as_posix()) for item, path in zip(artifact.files, stripped))
+    return replace(artifact, files=files)
+
+
 def normalize_component_draft(
     value: dict[str, Any],
     *,
@@ -140,8 +168,14 @@ def normalize_component_draft(
         extraction = {}
 
     status = extraction.get("status", "missing")
+    if status == "ready":
+        status = "draft_ready"
     artifact_value = extraction.get("artifact", value.get("artifact"))
+    if isinstance(artifact_value, dict) and not artifact_value.get("runtime") and isinstance(value.get("runtime"), dict):
+        artifact_value = {**artifact_value, "runtime": value["runtime"]}
     artifact = ComponentArtifact.from_json(artifact_value) if artifact_value is not None else None
+    if artifact is not None:
+        artifact = _normalize_cpp_artifact_paths(artifact)
     library = extraction.get("library")
     if not isinstance(library, dict):
         library = value.get("library")
@@ -155,7 +189,34 @@ def normalize_component_draft(
     if artifact is not None:
         entrypoints = [{**entry.to_json(), "name": entry.entrypoint_id} for entry in artifact.entrypoints]
     members = value.get("members", [])
-    evidence = value.get("evidence", [])
+    if isinstance(members, list) and artifact is not None:
+        members = [
+            ({**member,
+              "language": member.get("language", artifact.language),
+              "backend_id": member.get("backend_id", artifact.backend_id)}
+             if isinstance(member, dict) else member)
+            for member in members
+        ]
+    evidence = value.get("evidence") or value.get("additional_evidence") or []
+    if isinstance(evidence, list):
+        evidence = [
+            ({**item, "claim": item.get("claim") or item.get("note") or "source evidence"}
+             if isinstance(item, dict) else item)
+            for item in evidence
+        ]
+    if isinstance(evidence, list) and not evidence and isinstance(members, list):
+        # Some agents attach per-member evidence rather than a top-level list.
+        evidence = []
+        for member in members:
+            if not isinstance(member, dict):
+                continue
+            for item in member.get("evidence", []) or []:
+                if not isinstance(item, dict):
+                    continue
+                evidence.append({
+                    **item,
+                    "claim": item.get("claim") or item.get("note") or member.get("role") or "source member evidence",
+                })
     dependencies = value.get("dependencies", value.get("required_dependencies", []))
     limitations = extraction.get("limitations", value.get("limitations", []))
     guidance = value.get("guidance", value.get("agent_guidance", {}))
@@ -165,13 +226,18 @@ def normalize_component_draft(
     invariants = value.get("invariants", [])
     variation_points = value.get("variation_points", [])
     confidence = value.get("confidence", "medium")
+    if isinstance(confidence, (int, float)) and not isinstance(confidence, bool):
+        confidence = "high" if confidence >= 0.8 else "medium" if confidence >= 0.5 else "low"
 
     return ComponentDraft(
         component_id=component_id,
         status=status if isinstance(status, str) else "invalid",
-        name=str(value.get("name") or value.get("candidate_id") or component_id),
+        name=str(value.get("name") or value.get("title") or value.get("candidate_id") or component_id),
         summary=str(value.get("capability") or value.get("summary") or ""),
-        component_type=str(value.get("type") or value.get("candidate_kind") or ""),
+        component_type=str(
+            value.get("type") or value.get("candidate_kind")
+            or ("cooperating_units" if isinstance(members, list) and len(members) > 1 else "existing_reused_asset")
+        ),
         confidence=confidence if isinstance(confidence, str) else "invalid",
         relationships=tuple(item for item in relationships if isinstance(item, str)) if isinstance(relationships, list) else (),
         invariants=tuple(item for item in invariants if isinstance(item, str)) if isinstance(invariants, list) else (),
@@ -194,7 +260,7 @@ def normalize_component_draft(
     )
 
 
-def validate_component_draft(draft: ComponentDraft) -> list[str]:
+def validate_component_draft(draft: ComponentDraft, repository: Path | None = None) -> list[str]:
     """Return schema errors for an extracted draft without executing its code."""
     errors: list[str] = []
     if draft.status == "not_extractable":
@@ -237,6 +303,8 @@ def validate_component_draft(draft: ComponentDraft) -> list[str]:
         from component_method.languages.registry import default_registry
 
         backend = default_registry().resolve({"language": draft.artifact.language}).single()
+        if repository is not None and hasattr(backend, "set_repository"):
+            backend.set_repository(repository)
         errors.extend(d.message for d in backend.validate_artifact(draft.artifact))
     elif not draft.library_content.strip():
         errors.append("component library is empty")

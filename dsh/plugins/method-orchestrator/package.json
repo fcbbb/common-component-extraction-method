@@ -1,0 +1,17 @@
+{
+  "name": "@component-method/dsh-method-orchestrator",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@component-method/dsh-method-shared": "0.0.0",
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.1"
+  }
+}

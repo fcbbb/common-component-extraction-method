@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from typing import Any
@@ -21,6 +22,28 @@ from .status import AGENT_PROCESS_ERROR, RESUME_ERROR, TIMEOUT
 PINNED_DSH_VERSION = "0.2.2-rc.1"
 PINNED_NODE_VERSION = "24.9.0"
 PROFILE_NAME = "component-method"
+PROFILE_BY_ROLE = {
+    "operator": "component-method-operator",
+    "extraction": "component-method-extraction",
+    "review": "component-method-review",
+    "retrieval": "component-method-retrieval",
+    "task": "component-method-task",
+}
+PLUGIN_PACKAGES = {
+    "controlled-bash": "@component-method/dsh-controlled-bash",
+    "method-shared": "@component-method/dsh-method-shared",
+    "source-scan": "@component-method/dsh-source-scan",
+    "signal-analysis": "@component-method/dsh-signal-analysis",
+    "protocol-candidates": "@component-method/dsh-protocol-candidates",
+    "component-build": "@component-method/dsh-component-build",
+    "library-publish": "@component-method/dsh-library-publish",
+    "retrieval": "@component-method/dsh-retrieval",
+    "task-execution": "@component-method/dsh-task-execution",
+    "reporting": "@component-method/dsh-reporting",
+    "method-orchestrator": "@component-method/dsh-method-orchestrator",
+    "method-ops": "@component-method/dsh-method-ops",
+    "agent-runtime": "@component-method/dsh-agent-runtime",
+}
 
 
 def _sha256(path: Path) -> str:
@@ -42,6 +65,7 @@ class DshHeadlessBackend:
         host_environment: Mapping[str, str] | None = None,
         request_timeout_ms: int = 600_000,
         max_retries: int = 2,
+        profile_name: str | None = None,
         compatibility: Mapping[str, Any] | None = None,
         context_window: int = 131_072,
         max_output_tokens: int = 8_192,
@@ -71,8 +95,13 @@ class DshHeadlessBackend:
         self.context_window = context_window
         self.max_output_tokens = max_output_tokens
         self.runtime_activation = runtime_activation.strip()
-        self.profile_patch = self.dsh_root / "profiles" / PROFILE_NAME / "cordis.patch.yml"
-        self.plugin_bundle = self.dsh_root / "plugins" / "controlled-bash" / "dist" / "index.js"
+        self.profile_name = (profile_name or PROFILE_NAME).strip() or PROFILE_NAME
+        self.profile_patch = self.dsh_root / "profiles" / self.profile_name / "cordis.patch.yml"
+        self.plugin_bundles = {
+            name: self.dsh_root / "plugins" / name / "dist" / "index.js"
+            for name in PLUGIN_PACKAGES
+        }
+        self.plugin_bundle = self.plugin_bundles["controlled-bash"]
         self.lockfile = self.dsh_root / "package-lock.json"
         self.package_json = self.dsh_root / "package.json"
 
@@ -106,8 +135,12 @@ class DshHeadlessBackend:
             "dsh_version": self._dsh_version(),
             "node_version": self._node_version(),
             "lockfile_sha256": digest(self.lockfile),
+            "profile_name": self.profile_name,
             "profile_sha256": digest(self.profile_patch),
             "plugin_bundle_sha256": digest(self.plugin_bundle),
+            "plugin_bundles": {
+                name: digest(path) for name, path in sorted(self.plugin_bundles.items())
+            },
         }
 
     def validate_runtime(self) -> None:
@@ -123,10 +156,16 @@ class DshHeadlessBackend:
             (self.dsh_bin, "DSH executable"),
             (self.lockfile, "DSH lockfile"),
             (self.profile_patch, "DSH profile patch"),
-            (self.plugin_bundle, "controlled-bash plugin bundle"),
         ):
             if not path.is_file():
                 raise RuntimeError(f"{description} is missing: {path}")
+        if not self.plugin_bundle.is_file():
+            raise RuntimeError(f"DSH plugin controlled-bash bundle is missing: {self.plugin_bundle}")
+        for name, path in self.plugin_bundles.items():
+            if name == "controlled-bash":
+                continue
+            if path.parent.parent.is_dir() and not path.is_file():
+                raise RuntimeError(f"DSH plugin {name} bundle is missing: {path}")
 
     def _minimal_environment(self, request: AgentRunRequest, dsh_home: Path) -> dict[str, str]:
         process_home = request.output_dir / "agent_home"
@@ -162,14 +201,23 @@ class DshHeadlessBackend:
             "COMPONENT_DSH_SYSTEM_PROMPT": request.system_prompt,
             "COMPONENT_DSH_CONTAINER_NAME": request.container_name,
             "COMPONENT_DSH_ALLOWED_CWDS": json.dumps([request.container_cwd]),
+            "COMPONENT_DSH_DEFAULT_CWD": request.container_cwd,
             "COMPONENT_DSH_COMMAND_TIMEOUT": str(request.command_timeout_seconds),
             "COMPONENT_DSH_SUBMISSION_MODE": request.submission_mode,
             "COMPONENT_DSH_SUBMISSION_ROLE": request.submission_role or request.role,
             "COMPONENT_DSH_VALIDATED_SUBMISSION_PATH": str(
                 request.output_dir / "validated_submission.json"
             ),
+            "COMPONENT_DSH_METHOD_ROOT": str(self.repository_root),
+            "COMPONENT_DSH_OUTPUT_DIRECTORY": "/component-output",
+            "COMPONENT_DSH_PYTHON_BIN": sys.executable,
+            "COMPONENT_DSH_JOB_ROOT": str(request.output_dir / "method_jobs"),
             "PYTHONUNBUFFERED": "1",
         }
+        if request.submission_directory is not None:
+            environment["COMPONENT_DSH_OUTPUT_HOST_DIR"] = str(
+                request.submission_directory.expanduser().resolve()
+            )
         if request.submission_checker_command is not None:
             if not request.submission_checker_command or any(
                 not isinstance(argument, str) or not argument
@@ -194,15 +242,44 @@ class DshHeadlessBackend:
         ):
             if value := self.host_environment.get(key):
                 environment[key] = value
+        for key in (
+            "COMPONENT_DSH_RUN_REGISTRY",
+            "COMPONENT_DSH_OUTPUT_HOST_DIR",
+            "COMPONENT_DSH_COMPONENT_INDEX",
+            "COMPONENT_DSH_REPOSITORY",
+            "COMPONENT_DSH_PATCH_PATH",
+            "COMPONENT_DSH_COMPONENT_LIBRARY",
+            "COMPONENT_DSH_SELECTION_PATH",
+            "COMPONENT_DSH_COVERAGE_PATH",
+            "COMPONENT_DSH_TASK_ID",
+            "COMPONENT_DSH_BUNDLE_DESTINATION",
+        ):
+            if value := self.host_environment.get(key):
+                environment[key] = value
+        if request.repository is not None:
+            environment["COMPONENT_DSH_REPOSITORY"] = str(
+                Path(request.repository).expanduser().resolve()
+            )
         return environment
+
+    def _profile_for(self, request: AgentRunRequest) -> str:
+        requested = (request.profile_name or "").strip()
+        if requested:
+            return requested
+        configured = (os.environ.get("COMPONENT_DSH_PROFILE") or "").strip()
+        if configured:
+            return configured
+        if os.environ.get("COMPONENT_DSH_PROFILE_BY_ROLE") == "1":
+            return PROFILE_BY_ROLE.get(request.role, self.profile_name)
+        return self.profile_name
 
     def build_command(self, request: AgentRunRequest) -> list[str]:
         command = [
             str(self.dsh_bin),
             "--profile",
-            PROFILE_NAME,
+            self._profile_for(request),
             "--patch",
-            str(self.profile_patch),
+            str(self.dsh_root / "profiles" / self._profile_for(request) / "cordis.patch.yml"),
             "--json",
         ]
         if request.resume_session_id:
@@ -210,14 +287,19 @@ class DshHeadlessBackend:
         command.append("-")
         return command
 
-    def _ensure_profile(self, dsh_home: Path, environment: Mapping[str, str]) -> None:
-        manifest = dsh_home / "profiles" / PROFILE_NAME / "package.json"
+    def _ensure_profile(
+        self,
+        dsh_home: Path,
+        environment: Mapping[str, str],
+        profile_name: str,
+    ) -> None:
+        manifest = dsh_home / "profiles" / profile_name / "package.json"
         if not manifest.is_file():
             completed = subprocess.run(
                 [
                     str(self.dsh_bin),
                     "--profile",
-                    PROFILE_NAME,
+                    profile_name,
                     "--from-default-profile",
                     "headless",
                     "--dump-config",
@@ -232,24 +314,31 @@ class DshHeadlessBackend:
                 detail = completed.stderr.strip() or "profile manifest was not created"
                 raise RuntimeError(f"could not initialize DSH profile: {detail}")
 
-        plugin_source = self.dsh_root / "plugins" / "controlled-bash"
-        plugin_link = (
-            manifest.parent
-            / "node_modules"
-            / "@component-method"
-            / "dsh-controlled-bash"
-        )
-        if plugin_link.is_symlink():
-            if plugin_link.resolve() != plugin_source.resolve():
-                raise RuntimeError(f"DSH profile plugin link points elsewhere: {plugin_link}")
-            return
-        if plugin_link.exists():
-            raise RuntimeError(f"DSH profile plugin path is not a symlink: {plugin_link}")
-        plugin_link.parent.mkdir(parents=True, exist_ok=True)
-        plugin_link.symlink_to(plugin_source, target_is_directory=True)
+        for folder, package in sorted(PLUGIN_PACKAGES.items()):
+            plugin_source = self.dsh_root / "plugins" / folder
+            plugin_link = (
+                manifest.parent
+                / "node_modules"
+                / "@component-method"
+                / package.split("/")[-1]
+            )
+            if plugin_link.is_symlink():
+                if plugin_link.resolve() != plugin_source.resolve():
+                    raise RuntimeError(f"DSH profile plugin link points elsewhere: {plugin_link}")
+                continue
+            if plugin_link.exists():
+                raise RuntimeError(f"DSH profile plugin path is not a symlink: {plugin_link}")
+            plugin_link.parent.mkdir(parents=True, exist_ok=True)
+            plugin_link.symlink_to(plugin_source, target_is_directory=True)
 
     def _write_trajectory(self, request: AgentRunRequest, result: AgentRunResult) -> None:
         identity = self.runtime_identity()
+        identity["profile_name"] = self._profile_for(request)
+        identity["profile_sha256"] = (
+            _sha256(self.dsh_root / "profiles" / self._profile_for(request) / "cordis.patch.yml")
+            if (self.dsh_root / "profiles" / self._profile_for(request) / "cordis.patch.yml").is_file()
+            else None
+        )
         identity.update(
             {
                 "system_prompt_sha256": hashlib.sha256(
@@ -337,7 +426,7 @@ class DshHeadlessBackend:
             self.validate_runtime()
             if request.resume_session_id and not dsh_home.is_dir():
                 raise FileNotFoundError("DSH_HOME is missing for the requested session resume")
-            self._ensure_profile(dsh_home, environment)
+            self._ensure_profile(dsh_home, environment, self._profile_for(request))
         except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
             status = RESUME_ERROR if request.resume_session_id else AGENT_PROCESS_ERROR
             result = AgentRunResult(

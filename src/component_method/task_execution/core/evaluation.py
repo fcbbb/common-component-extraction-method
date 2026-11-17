@@ -39,6 +39,23 @@ def evaluate(task, patch, output, bundle=None):
     image = docker.from_env().images.get(task['image_name']).id
     if (OUT / 'prepared.json').exists():
         assert image == read(OUT / 'prepared.json')['official_images'][task['instance_id']]
+    try:
+        import osbench_evaluation
+    except ImportError:  # package import in tests/controllers
+        from . import osbench_evaluation  # type: ignore[no-redef]
+
+    if osbench_evaluation.is_osbench_task(task):
+        result = osbench_evaluation.evaluate_osbench(
+            task,
+            patch or '',
+            output,
+            bundle,
+            normalize_test_name=helper._normalize_test_name,
+            excluded=excluded,
+            expected_image_id=image,
+        )
+        write(output / 'result.json', result)
+        return result
     workdir = '/' + task['repo'].split('/')[1]
     name = 'minimal-eval-' + uuid.uuid4().hex[:12]
     with tempfile.TemporaryDirectory(prefix='minimal-eval-') as directory:

@@ -26,6 +26,8 @@ def extraction_prompt(request, backend):
     return (
         "Extract reusable components from the read-only production repository at /testbed. "
         "Inspect the supplied source focus, its callers and dependencies. Keep extraction task-blind. "
+        "workspace_audit.checked_files must include every required primary file exactly once; "
+        "additional inspected repository files may be listed. "
         "Do not execute repository code or tests. Cite real source lines, preserve unit keys, and provide "
         "at least two source consumers in each eight-field protocol_contract. covered_variants is a list; "
         "consumers are objects with file_id, unit_id and role; reuse_interface contains mode "
@@ -33,7 +35,19 @@ def extraction_prompt(request, backend):
         "one declared entrypoint_id (or qualified_name when no explicit ID is declared), with no arguments, "
         "return type or extra module prefix. Do not supply shell commands or download dependencies. "
         "Write implementations to files and metadata to /component-output/manifest.json.\n"
-        + backend.agent_instructions("extraction") + "\nSource focus:\n"
+        + backend.agent_instructions("extraction") + "\n"
+        + "For C++ artifacts, use status draft_ready, confidence high|medium|low, "
+          "and file paths rooted at include/, src/, or smoke/ (do not add a component-specific "
+          "top-level directory). Include every header required by your sources or smoke files; "
+          "do not reference a header that exists only in another extracted component. "
+          "Template-template parameters must match the exact arity of their target: "
+          "std::vector is template<class, class>, so it cannot bind to template<class> class; "
+          "use a matching template parameter or an adapter. Before final submission, compile all "
+          "source and smoke files with g++ -std=c++17 -I/testbed/include -I/component-output/include "
+          "-I/component-output and fix every diagnostic. For smoke cases, target a non-template "
+          "concrete exported function with a linkage symbol; template functions may be listed as "
+          "reuse entrypoints, but add a concrete wrapper and use that wrapper in smoke cases.\n"
+        + "Source focus:\n"
         + json.dumps(request.context, ensure_ascii=False, indent=2) + "\nOutput schema:\n"
         + json.dumps(schema, ensure_ascii=False, indent=2)
     )
@@ -43,6 +57,8 @@ def review_prompt(component, backend):
     return (
         "Independently review reusable value, source fidelity and protocol claims using the read-only "
         f"repository at /testbed and artifact files in {COMPONENT_DIRECTORY}. Do not run builds or tests. "
+        "Every controlled_bash command must use cwd /testbed; use /testbed/... paths, never host paths "
+        "such as /home/.../dsh. "
         "Keep confirmed_members within proposed members. Cite original source paths and line ranges. "
         "Return status confirmed, rejected or uncertain, reason, confirmed_members, evidence, artifact_review "
         "with status faithful, invalid or uncertain and reason. "
@@ -56,7 +72,9 @@ def review_prompt(component, backend):
         "files [{path, role}], sources [{file_id, line_start, line_end, role}], expected_paths "
         "[{entrypoint_id}], and metadata (including any language/backend_id declarations and backend options). "
         "Each case must actually call its entrypoint and assert "
-        "source-backed behavior; compilation or import is insufficient. Write source files and "
+        "source-backed behavior; compilation or import is insufficient. For C++, the smoke entrypoint "
+        "must be a non-template concrete function with a linkage symbol; use a concrete wrapper for "
+        "template implementations. Write source files and "
         "manifest.json under /component-output. Do not embed code in JSON or supply build commands.\n"
         + backend.agent_instructions("review") + "\nComponent:\n" + json.dumps(component, ensure_ascii=False, indent=2)
     )

@@ -87,3 +87,26 @@ def test_packet_limits_prevent_oversized_merge():
     )
     assert len(packets) == 2
 
+
+
+def test_packet_request_limits_source_units_to_primary_units(tmp_path):
+    (tmp_path / "sample.py").write_text(
+        "def selected(value):\n    return value + 1\n\ndef context(value):\n    return value - 1\n"
+    )
+    backend = __import__("component_method.languages.python.backend", fromlist=["PythonBackend"]).PythonBackend()
+    units = backend.extract_units("sample.py", (tmp_path / "sample.py").read_text())
+    selected = next(unit for unit in units if unit.kind == "function" and unit.display_name == "selected")
+    packet = {
+        "packet_id": "protocol_packet_primary_units",
+        "language": "python",
+        "backend_id": "python@1",
+        "primary_files": ["sample.py"],
+        "primary_units": [{"file_id": "sample.py", "unit_id": selected.unit_key,
+                          "unit_key": selected.unit_key}],
+    }
+    request = protocol_packet_extraction_request(
+        repository_root=tmp_path,
+        output_root=tmp_path / "out",
+        packet=packet,
+    )
+    assert [unit["qualified_name"] for unit in request.context["source_units"]] == ["selected"]

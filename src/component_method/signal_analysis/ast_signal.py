@@ -12,7 +12,7 @@ DEFAULT_K = 3
 DEFAULT_MIN_RUN = 9
 
 
-def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min_run: int = DEFAULT_MIN_RUN, *, backend: SignalBackend | None = None) -> dict[str, Any]:
+def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min_run: int = DEFAULT_MIN_RUN, *, backend: SignalBackend | None = None, max_stream_frequency: int = 0) -> dict[str, Any]:
     backend = backend or default_backend()
     streams: list[NgramStream] = []
     per_file_tokens: dict[str, int] = {}
@@ -28,7 +28,8 @@ def cluster_evidence(file_sources: list[dict[str, str]], k: int = DEFAULT_K, min
         if error:
             errors[file_id] = error
 
-    runs = find_shared_runs(streams, k=k, min_run=min_run)
+    runs = find_shared_runs(streams, k=k, min_run=min_run,
+                            max_stream_frequency=max_stream_frequency)
     pair_units: dict[tuple[str, str], dict[tuple[str, str], dict[str, int]]] = defaultdict(
         lambda: defaultdict(lambda: {"shared_tokens": 0, "n_runs": 0})
     )

@@ -11,17 +11,17 @@ from pathlib import Path
 import subprocess
 import sys
 
-from component_method.agent_runtime import (
-    BackendSettings,
-    create_agent_backend,
-    selected_backend_name,
-)
-
-
 TOOLS = Path(__file__).resolve().parent
 REPOSITORY = TOOLS.parent
 RELEASE = REPOSITORY.parent
 OFFLINE = RELEASE / "offline_artifacts"
+sys.path[:0] = [str(REPOSITORY), str(REPOSITORY / "src")]
+
+from component_method.agent_runtime import (  # noqa: E402
+    BackendSettings,
+    create_agent_backend,
+    selected_backend_name,
+)
 
 
 def read_json(path: Path):
@@ -32,8 +32,38 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--task", help="额外检查指定任务的 Docker 镜像。")
     parser.add_argument("--config", type=Path, help="检查多语言配置及其隔离运行时，不依赖历史 20 任务数据。")
+    parser.add_argument(
+        "--workspace",
+        type=Path,
+        help="检查 prepare_osbench.py 生成的 OSBench 工作区。",
+    )
+    parser.add_argument(
+        "--run-scan",
+        action="store_true",
+        help="检查 OSBench 工作区时额外运行 C++ 源码扫描。",
+    )
+    parser.add_argument(
+        "--scan-limit",
+        type=int,
+        default=20,
+        help="--run-scan 时最多解析的文件数；0 表示全部扫描。",
+    )
     parser.add_argument("--require-model-env", action="store_true")
     args = parser.parse_args()
+    if args.workspace:
+        from dataset_adapters.osbench import preflight_workspace
+
+        if args.config:
+            parser.error("--workspace and --config cannot be combined")
+        result = preflight_workspace(
+            args.workspace,
+            task_ids=[args.task] if args.task else None,
+            require_model_env=args.require_model_env,
+            run_scan=args.run_scan,
+            scan_limit=args.scan_limit,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result["ok"] else 1
     if args.config:
         from component_method.languages.preflight import inspect_configuration
 

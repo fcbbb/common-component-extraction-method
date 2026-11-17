@@ -11,8 +11,8 @@
     "profiles/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "check": "npm run check --workspaces --if-present"
+    "build": "npm run build --workspace=@component-method/dsh-method-shared && npm run build --workspaces --if-present",
+    "check": "npm run build --workspace=@component-method/dsh-method-shared && npm run check --workspaces --if-present"
   },
   "dependencies": {
     "@deepseek-ai/dsh": "0.2.2-rc.1"

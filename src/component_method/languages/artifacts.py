@@ -15,20 +15,71 @@ class ArtifactSupport:
         return [unit for item in artifact.files if item.role in {"source", "header"}
                 for unit in self.extract_units(item.path, item.content)]
 
-    def resolve_entrypoints(self, artifact):
+    def resolve_entrypoints(self, artifact, entrypoint_ids: set[str] | None = None):
         units = self.artifact_units(artifact)
         resolved = {}
         for entry in artifact.entrypoints:
-            matches = [u for u in units if u.qualified_name == entry.qualified_name
-                       and u.kind == entry.kind and (not entry.signature or u.signature == entry.signature)]
-            definitions = [u for u in matches if u.metadata.get("is_definition", True)]
-            matches = definitions or matches
+            if entrypoint_ids is not None and entry.entrypoint_id not in entrypoint_ids:
+                continue
+            kind_aliases = {
+                "class": {"class", "struct", "union"},
+                "struct": {"class", "struct", "union"},
+                "method": {"method", "function"},
+                "function": {"function", "method"},
+                "template": {"template", "class", "struct"},
+            }
+            kinds = kind_aliases.get(entry.kind, {entry.kind})
+            candidates = [u for u in units if u.qualified_name == entry.qualified_name
+                          and u.kind in kinds]
+            definitions = [u for u in candidates if u.metadata.get("is_definition", True)]
+            candidates = definitions or candidates
+            exact = [u for u in candidates if not entry.signature or u.signature == entry.signature]
+            # Template and method signatures are rendered differently by
+            # libclang and by agents (return type placement, parameter names,
+            # spacing).  If exact text does not match, use the callable arity to
+            # disambiguate overloads; a single source definition is already
+            # unambiguous.
+            matches = exact
+            if not matches:
+                def arity(signature):
+                    text = str(signature or "")
+                    # The last parenthesized group is the callable argument
+                    # list; libclang places a return type such as ``void ()``
+                    # before the function name.
+                    start = text.rfind("(")
+                    if start < 0:
+                        return None
+                    depth, commas = 0, 0
+                    for character in text[start + 1:]:
+                        if character == "(":
+                            depth += 1
+                        elif character == ")":
+                            if depth == 0:
+                                break
+                            depth -= 1
+                        elif character == "," and depth == 0:
+                            commas += 1
+                    inner = text[start + 1:text.find(")", start)].strip()
+                    return 0 if not inner else commas + 1
+                wanted_arity = arity(entry.signature)
+                by_arity = [u for u in candidates if arity(u.signature) == wanted_arity]
+                if len(by_arity) == 1:
+                    matches = by_arity
+                elif len(candidates) == 1:
+                    matches = candidates
             if len(matches) != 1:
                 raise ValueError(f"entrypoint must identify one definition: {entry.qualified_name} ({len(matches)} matches)")
             if entry.entrypoint_id in resolved:
                 raise ValueError("duplicate entrypoint; overloaded entrypoints require distinct identifiers")
             resolved[entry.entrypoint_id] = matches[0]
         return resolved
+
+    def canonical_entrypoint_id(self, artifact, value):
+        """Resolve either an entrypoint id or its qualified source name."""
+        for entry in artifact.entrypoints:
+            if value in {entry.entrypoint_id, entry.qualified_name}:
+                return entry.entrypoint_id
+        return None
 
     def validate_entrypoints(self, artifact):
         try:

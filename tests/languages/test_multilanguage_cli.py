@@ -1,5 +1,7 @@
 from copy import deepcopy
 from functools import partial
+import gzip
+import hashlib
 import json
 import sys
 from types import SimpleNamespace
@@ -65,3 +67,30 @@ def test_cli_exit_code_reflects_real_pipeline_results(
     assert [item["status"] for item in summary["results"]] == outcomes
     assert summary["published_count"] == published_count
     assert json.loads(capsys.readouterr().out) == summary
+
+
+def test_workflow_unit_cache_requires_current_source_hashes(tmp_path):
+    source = "def selected(value):\n    return value + 1\n"
+    source_path = tmp_path / "sample.py"
+    source_path.write_text(source)
+    cache = tmp_path / "units.jsonl.gz"
+    row = {
+        "schema": "source-unit-v2",
+        "language": "python",
+        "backend_id": "python@1",
+        "file_id": "sample.py",
+        "unit_key": "unit-key",
+        "source_sha256": hashlib.sha256(source.encode()).hexdigest(),
+    }
+    with gzip.open(cache, "wt", encoding="utf-8") as stream:
+        stream.write(json.dumps(row) + "\n")
+    sources = [{"file_id": "sample.py", "source_code": source}]
+    assert multilanguage._load_cached_units(
+        cache, sources, {("python", "python@1")}
+    ) == {("sample.py", "unit-key", "python", "python@1")}
+    with pytest.raises(ValueError, match="source changed"):
+        multilanguage._load_cached_units(
+            cache,
+            [{"file_id": "sample.py", "source_code": source + "# changed\n"}],
+            {("python", "python@1")},
+        )
