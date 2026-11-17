@@ -14,7 +14,6 @@ from component_method.agent_runtime.dsh_headless import (
 
 
 REPOSITORY = Path(__file__).resolve().parents[2]
-NODE = Path("/home/luoyexx/.nvm/versions/node/v24.9.0/bin/node")
 
 
 def _request(tmp_path: Path, **changes) -> AgentRunRequest:
@@ -37,11 +36,12 @@ def _request(tmp_path: Path, **changes) -> AgentRunRequest:
 
 
 def _backend() -> DshHeadlessBackend:
+    # Node is resolved from COMPONENT_DSH_NODE_BIN or PATH so the test runs on
+    # any machine instead of assuming one developer's home directory.
     return DshHeadlessBackend(
         api_key="fixture",
         base_url="https://example.invalid/v1",
         dsh_root=REPOSITORY / "dsh",
-        node_bin=NODE,
         host_environment={},
     )
 
