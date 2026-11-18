@@ -31,6 +31,19 @@ class ArtifactSupport:
             kinds = kind_aliases.get(entry.kind, {entry.kind})
             candidates = [u for u in units if u.qualified_name == entry.qualified_name
                           and u.kind in kinds]
+            if not candidates:
+                # Agents sometimes declare an extracted symbol without every
+                # enclosing scope (``run`` for ``ns::Class::run``, or
+                # ``Class::run`` for ``ns::Class::run``).  Fall back to the
+                # qualified-name suffix; the unique-match check below still
+                # rejects an ambiguous declaration.
+                candidates = [
+                    u for u in units if u.kind in kinds and (
+                        u.qualified_name == entry.qualified_name
+                        or u.qualified_name.endswith("::" + entry.qualified_name)
+                        or u.qualified_name.endswith("." + entry.qualified_name)
+                    )
+                ]
             definitions = [u for u in candidates if u.metadata.get("is_definition", True)]
             candidates = definitions or candidates
             exact = [u for u in candidates if not entry.signature or u.signature == entry.signature]

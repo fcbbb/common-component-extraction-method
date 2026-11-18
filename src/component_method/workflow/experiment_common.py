@@ -34,6 +34,34 @@ def unit_key(unit: dict[str, str]) -> tuple[str, str]:
     return unit.get("file_id", ""), unit.get("unit_id", "")
 
 
+def _declared_entrypoints(component: dict[str, Any]) -> set[str]:
+    """Names a component declares, including artifact-v2 entrypoints.
+
+    The historical contract stores entrypoints on the component; a
+    component-artifact-v2 draft declares them inside its artifact instead.
+    """
+    names = {
+        entry.get("name")
+        for entry in component.get("entrypoints", []) or []
+        if isinstance(entry, dict)
+    }
+    artifact = component.get("artifact")
+    extraction = component.get("extraction")
+    if not isinstance(artifact, dict) and isinstance(extraction, dict):
+        artifact = extraction.get("artifact")
+    if isinstance(artifact, dict):
+        for entry in artifact.get("entrypoints", []) or []:
+            if isinstance(entry, dict):
+                names.update(
+                    value for value in (
+                        entry.get("entrypoint_id"),
+                        entry.get("qualified_name"),
+                        entry.get("name"),
+                    ) if isinstance(value, str) and value
+                )
+    return names
+
+
 def validate_protocol_contracts(
     response: dict[str, Any],
     *,
@@ -136,11 +164,7 @@ def validate_protocol_contracts(
             if not isinstance(value, str) or not value.strip():
                 errors.append("reuse_interface.value must be a non-empty string")
             if mode == "stable_entrypoint":
-                entrypoints = {
-                    entry.get("name")
-                    for entry in component.get("entrypoints", [])
-                    if isinstance(entry, dict)
-                }
+                entrypoints = _declared_entrypoints(component)
                 if value not in entrypoints:
                     errors.append(
                         "stable_entrypoint value is not a declared component entrypoint"

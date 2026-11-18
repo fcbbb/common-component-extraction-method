@@ -18,7 +18,7 @@ class CppBackend(ArtifactSupport):
     backend_id = "cpp@1"
     capabilities = frozenset({"source", "lexical", "structure", "ancestry", "profile", "artifact",
                               "runtime", "publication", "task"})
-    extensions = frozenset({".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx", ".h"})
+    extensions = frozenset({".cpp", ".cc", ".cxx", ".c", ".hpp", ".hh", ".hxx", ".h"})
 
     def __init__(self, options=None):
         self.options = options or {}

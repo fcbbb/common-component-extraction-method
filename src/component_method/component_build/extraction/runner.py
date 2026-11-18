@@ -8,6 +8,8 @@ import json
 import os
 import shlex
 import shutil
+import subprocess
+import sys
 import threading
 import uuid
 from pathlib import Path
@@ -21,6 +23,11 @@ from component_method.agent_runtime import (
     create_agent_backend,
     selected_backend_name,
 )
+from component_method.agent_runtime.stage_plane import (
+    HOST_STAGE_RUNTIME,
+    host_stage_profile,
+    stage_runtime,
+)
 
 from ..workspace import COMPONENT_DIRECTORY, TASK_RUNTIME_ACTIVATION, prepare_component_mount
 from ..submission import CHECKER_PATH, OUTPUT_DIRECTORY, file_submission_instructions, load_submission
@@ -31,6 +38,31 @@ from ..context.support import write_json
 AGENT_CONFIG_DIR = Path(__file__).resolve().parents[1] / "agent_configs"
 AGENT_ROLES = ("extraction", "review", "repair", "proposal", "proposal_review")
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+
+# Stage execution plane.  ``docker`` gives each stage agent its own container,
+# which is what the benchmark host uses.  ``host`` runs the same agent directly
+# on the machine that owns the workspace, which is the only option on an
+# execution host without a Docker daemon (the remote MUSA box).  The benchmark
+# sets COMPONENT_DSH_STAGE_RUNTIME; the kernel forwards it to every stage.
+HOST_STAGE_PROFILE = host_stage_profile("extraction")
+HOST_IGNORED_WORKSPACE_DIRECTORIES = {".git", "__pycache__", ".pytest_cache", ".mypy_cache"}
+
+
+def host_task_text(
+    task: str, *, workspace_root: Path, submission_directory: Path
+) -> str:
+    """Rewrite container-plane prompt names to the host stage's real ones.
+
+    Extraction and review prompts are written for the container plane: the
+    snapshot is at ``/testbed``, artifacts go to ``/component-output`` and the
+    shell tool is ``controlled_bash``.  None of those exist on the host, so the
+    runner rewrites them before handing the task to the agent.  ``/testbed`` is
+    replaced first, which also turns ``/testbed/component_bundle`` into a path
+    under the real workspace.
+    """
+    text = task.replace("/testbed", str(workspace_root))
+    text = text.replace(OUTPUT_DIRECTORY, str(submission_directory))
+    return text.replace("controlled_bash", "bash")
 
 
 def agent_config_paths(role: str) -> tuple[Path, Path]:
@@ -112,18 +144,32 @@ class ComponentAgentRunner:
         if self.repository_root is not None and not self.repository_root.is_dir():
             raise FileNotFoundError(f"task repository does not exist: {self.repository_root}")
         self.backend_name = selected_backend_name()
+        self.stage_runtime = stage_runtime()
 
-        try:
-            import docker
-            from component_method.task_execution.runtime_support import build_helpers
-        except ImportError as exc:
-            raise RuntimeError("component exploration requires Docker dependencies") from exc
+        if self.stage_runtime == HOST_STAGE_RUNTIME:
+            # No Docker API is touched on the host plane; the stage agent runs
+            # in the stage process's own environment.
+            self.gold = None
+            self.docker_client = None
+        else:
+            try:
+                import docker
+                from component_method.task_execution.runtime_support import build_helpers
+            except ImportError as exc:
+                raise RuntimeError("component exploration requires Docker dependencies") from exc
 
-        self.gold = build_helpers
-        self.docker_client = docker.from_env()
+            self.gold = build_helpers
+            self.docker_client = docker.from_env()
         self.image_id: str | None = None
         self.image_tag: str | None = None
         self._image_lock = threading.Lock()
+        options: dict[str, Any] = {
+            "max_output_tokens": int(
+                os.environ.get("COMPONENT_DSH_MAX_OUTPUT_TOKENS", "16384")
+            )
+        }
+        if self.stage_runtime == HOST_STAGE_RUNTIME:
+            options["profile_name"] = HOST_STAGE_PROFILE
         self.backend = create_agent_backend(
             BackendSettings(
                 api_key=self.api_key,
@@ -134,11 +180,7 @@ class ComponentAgentRunner:
                 # Extraction prompts can trigger long source-grounded reasoning.
                 # Keep the default DSH output budget from ending the turn before
                 # the agent can write its file submission.
-                options={
-                    "max_output_tokens": int(
-                        os.environ.get("COMPONENT_DSH_MAX_OUTPUT_TOKENS", "16384")
-                    )
-                },
+                options=options,
             ),
             name=self.backend_name,
         )
@@ -157,6 +199,14 @@ class ComponentAgentRunner:
         payload = yaml.safe_load(agent_config_paths(role)[1].read_text(encoding="utf-8"))
         agent = payload.get("agent") if isinstance(payload, dict) else None
         role_prompt = str(agent.get("system_template") or "") if isinstance(agent, dict) else ""
+        if self.stage_runtime == HOST_STAGE_RUNTIME:
+            return (
+                role_prompt.strip()
+                + "\n\nUse only the bash tool. Commands run in this stage's own "
+                "process environment on the execution host. Treat the supplied "
+                "repository workspace as read-only and write results only through "
+                "the file submission protocol."
+            )
         return (
             role_prompt.strip()
             + "\n\nUse only the controlled_bash tool. All commands run in the selected "
@@ -170,6 +220,8 @@ class ComponentAgentRunner:
         return 600_000
 
     def _ensure_image(self) -> None:
+        if self.stage_runtime == HOST_STAGE_RUNTIME:
+            return
         with self._image_lock:
             if self.image_tag is None:
                 if self.runtime_image:
@@ -206,7 +258,7 @@ class ComponentAgentRunner:
         )
         import shlex
         result = container.exec_run(
-            ["/bin/bash", "-lc", TASK_RUNTIME_ACTIVATION + " && python -c " + shlex.quote(probe)],
+            ["/bin/bash", "-lc", TASK_RUNTIME_ACTIVATION + " && python3 -c " + shlex.quote(probe)],
             user="10001:10001", environment={"HOME": "/tmp", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "/testbed"},
         )
         if result.exit_code:
@@ -362,7 +414,35 @@ class ComponentAgentRunner:
         agent_role: str = "extraction",
         component_workspace: Path | None = None,
     ) -> dict[str, Any]:
-        """Run one tool-using agent against exactly the caller's read-only workspace."""
+        """Run one tool-using agent against exactly the caller's workspace."""
+        if self.stage_runtime == HOST_STAGE_RUNTIME:
+            return self._run_host_workspace_agent(
+                workspace_root=workspace_root,
+                task=task,
+                output_dir=output_dir,
+                task_label=task_label,
+                agent_role=agent_role,
+            )
+        return self._run_container_workspace_agent(
+            workspace_root=workspace_root,
+            task=task,
+            output_dir=output_dir,
+            task_label=task_label,
+            agent_role=agent_role,
+            component_workspace=component_workspace,
+        )
+
+    def _run_container_workspace_agent(
+        self,
+        *,
+        workspace_root: Path,
+        task: str,
+        output_dir: Path,
+        task_label: str,
+        agent_role: str = "extraction",
+        component_workspace: Path | None = None,
+    ) -> dict[str, Any]:
+        """Run the stage agent in a read-only container over the workspace."""
         config_identity = self.agent_config_identity(agent_role)
         workspace_root = workspace_root.expanduser().resolve()
         output_dir = output_dir.expanduser().resolve()
@@ -515,6 +595,8 @@ class ComponentAgentRunner:
                     "exit_status": backend_result.status,
                     "reported_cost_usd": backend_result.reported_cost_usd,
                     "api_calls": backend_result.model_calls,
+                    "input_tokens": backend_result.input_tokens,
+                    "output_tokens": backend_result.output_tokens,
                     "error": backend_result.error,
                     "model": self.model,
                     "container_image_id": self.image_id,
@@ -557,6 +639,228 @@ class ComponentAgentRunner:
                     container.remove(force=True)
                 except Exception:
                     pass
+
+    @staticmethod
+    def _workspace_hashes(root: Path) -> dict[str, str]:
+        """Content hashes of every visible workspace entry.
+
+        Host stages cannot be given a read-only bind mount, so the runner
+        proves afterwards that the snapshot the agent inspected is the snapshot
+        the caller supplied.  Bytecode caches are excluded: importing a module
+        must not count as editing the repository.
+        """
+        entries: dict[str, str] = {}
+        for current, dirs, names in os.walk(root, followlinks=False):
+            dirs[:] = sorted(
+                name for name in dirs if name not in HOST_IGNORED_WORKSPACE_DIRECTORIES
+            )
+            for name in sorted(names):
+                if name.endswith((".pyc", ".pyo")):
+                    continue
+                path = Path(current) / name
+                relative = path.relative_to(root).as_posix()
+                if path.is_symlink():
+                    entries[relative] = "symlink:" + os.readlink(path)
+                elif path.is_file():
+                    entries[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+        return entries
+
+    def _write_host_integrity(
+        self, output_dir: Path, before: dict[str, str], after: dict[str, str]
+    ) -> dict[str, Any]:
+        added = sorted(set(after) - set(before))
+        removed = sorted(set(before) - set(after))
+        changed = sorted(
+            path for path in set(before) & set(after) if before[path] != after[path]
+        )
+        report = {
+            "stage_runtime": "host",
+            "workspace_mount": "read-only by contract (directory, not a mount)",
+            "unchanged": not (added or removed or changed),
+            "added": added,
+            "removed": removed,
+            "changed": changed,
+            "files_hashed": len(after),
+        }
+        write_json(output_dir / "workspace_integrity.json", report)
+        return report
+
+    def _write_host_runtime_environment(self, output_dir: Path) -> None:
+        """Record the Python environment the host stage actually ran in."""
+        probe = (
+            "import json,sys; print(json.dumps({'executable': sys.executable, "
+            "'prefix': sys.prefix, 'python_version': sys.version}))"
+        )
+        runtime: dict[str, Any] = {
+            "kind": "host",
+            "stage_runtime": self.stage_runtime,
+            "declared_runtime_image": self.runtime_image or None,
+            "activation": self._runtime_activation() or None,
+        }
+        try:
+            completed = subprocess.run(
+                [sys.executable, "-c", probe],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if completed.returncode == 0 and completed.stdout.strip():
+                runtime.update(json.loads(completed.stdout.strip().splitlines()[-1]))
+            else:
+                runtime["probe_error"] = completed.stderr.strip()[-2000:]
+        except (OSError, subprocess.SubprocessError, ValueError) as exc:
+            runtime["probe_error"] = f"{type(exc).__name__}: {exc}"
+        write_json(output_dir / "runtime_environment.json", runtime)
+
+    def _run_host_workspace_agent(
+        self,
+        *,
+        workspace_root: Path,
+        task: str,
+        output_dir: Path,
+        task_label: str,
+        agent_role: str = "extraction",
+    ) -> dict[str, Any]:
+        """Run the stage agent directly on the execution host.
+
+        There is no container: the agent's shell runs in this process's own
+        environment with the workspace as its working directory.  The file
+        submission protocol therefore names the real submission directory, and
+        the runner validates it itself instead of relying on the controlled
+        shell's completion marker.
+        """
+        config_identity = self.agent_config_identity(agent_role)
+        workspace_root = workspace_root.expanduser().resolve()
+        output_dir = output_dir.expanduser().resolve()
+        if not workspace_root.is_dir():
+            raise FileNotFoundError(f"agent workspace does not exist: {workspace_root}")
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        safe_label = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in task_label)[:48]
+        stage_name = f"host-{safe_label}-{uuid.uuid4().hex[:10]}"
+        submission_directory = output_dir / "file_submissions" / uuid.uuid4().hex
+        submission_directory.mkdir(parents=True)
+        checker = Path(__file__).resolve().parents[1] / "submission.py"
+        task = host_task_text(
+            task,
+            workspace_root=workspace_root,
+            submission_directory=submission_directory,
+        ).rstrip() + file_submission_instructions(
+            tool_name="bash",
+            workspace_directory=str(workspace_root),
+            output_directory=str(submission_directory),
+            checker_path=str(checker),
+            isolation="host",
+        )
+        (output_dir / "agent_task.txt").write_text(task, encoding="utf-8")
+        self._write_host_runtime_environment(output_dir)
+        before = self._workspace_hashes(workspace_root)
+
+        def status_record(status: str, *, error: Any = None, result: Any = None) -> dict[str, Any]:
+            return {
+                "return_code": 0 if status in {"Submitted", "NoValidatedSubmission"} else None,
+                "exit_status": status,
+                "reported_cost_usd": result.reported_cost_usd if result is not None else None,
+                "api_calls": result.model_calls if result is not None else None,
+                "input_tokens": result.input_tokens if result is not None else None,
+                "output_tokens": result.output_tokens if result is not None else None,
+                "error": error,
+                "model": self.model,
+                "stage_runtime": "host",
+                "container_image_id": None,
+                "container_network": None,
+                "workspace_mount": "read-only by contract",
+                "workspace_scope": safe_label,
+                "agent_role": agent_role,
+                "agent_backend": self.backend_name,
+                "runtime_identity": self.backend.runtime_identity(),
+                "agent_config_identity": config_identity,
+                "submission_transport": "files",
+                "submission_directory": str(submission_directory),
+            }
+
+        try:
+            backend_result = self.backend.run(
+                AgentRunRequest(
+                    run_id=safe_label,
+                    role=agent_role,
+                    model=self.model,
+                    system_prompt=self._effective_system_prompt(agent_role),
+                    task_prompt=task,
+                    output_dir=output_dir,
+                    container_name=stage_name,
+                    container_cwd=str(workspace_root),
+                    command_timeout_seconds=120,
+                    total_timeout_seconds=self.timeout_seconds,
+                    step_limit=None,
+                    # The controlled shell is absent, so it cannot write the
+                    # validated submission record; this runner validates the
+                    # files below instead.
+                    submission_mode="none",
+                    submission_role=agent_role,
+                    profile_name=HOST_STAGE_PROFILE,
+                    submission_directory=submission_directory,
+                    repository=workspace_root,
+                )
+            )
+        except Exception as exc:
+            self._write_host_integrity(
+                output_dir, before, self._workspace_hashes(workspace_root)
+            )
+            write_json(
+                output_dir / "agent_status.json",
+                status_record("AgentProcessError", error=str(exc)),
+            )
+            self._write_failure_manifest(
+                output_dir, submission_directory, "AgentProcessError", str(exc)
+            )
+            raise
+        report = self._write_host_integrity(
+            output_dir, before, self._workspace_hashes(workspace_root)
+        )
+        (output_dir / "submission.txt").write_text(
+            backend_result.final_output, encoding="utf-8"
+        )
+        write_json(
+            output_dir / "agent_status.json",
+            status_record(
+                backend_result.status, error=backend_result.error, result=backend_result
+            ),
+        )
+        if backend_result.status not in {"Submitted", "NoValidatedSubmission"}:
+            self._write_failure_manifest(
+                output_dir, submission_directory, backend_result.status, backend_result.error
+            )
+            raise RuntimeError(
+                "agent backend did not finish on the host plane "
+                f"(backend={self.backend_name}, status={backend_result.status}, "
+                f"error={backend_result.error})"
+            )
+        if not report["unchanged"]:
+            detail = {
+                "added": report["added"][:20],
+                "removed": report["removed"][:20],
+                "changed": report["changed"][:20],
+            }
+            self._write_failure_manifest(
+                output_dir, submission_directory, "WorkspaceModified", detail
+            )
+            raise RuntimeError(
+                "host stage modified the read-only workspace: "
+                f"{json.dumps(detail, ensure_ascii=False)}"
+            )
+        try:
+            result = load_submission(submission_directory, agent_role)
+        except (ValueError, OSError, SyntaxError) as exc:
+            self._write_failure_manifest(
+                output_dir, submission_directory, "InvalidSubmission", str(exc)
+            )
+            raise RuntimeError(
+                "host stage did not produce a valid file submission: "
+                f"{type(exc).__name__}: {exc}"
+            ) from exc
+        write_json(output_dir / "agent_result.json", result)
+        return result
 
     def run_validation_agent(
         self,
@@ -610,7 +914,7 @@ except ImportError:
 print(json.dumps({'executable':sys.executable,'prefix':sys.prefix,'python_version':sys.version,'packages':packages}))
 """
         result = container.exec_run(
-            ["/bin/bash", "-lc", OFFICIAL_IMAGE_ACTIVATION + " && python -c " + shlex.quote(probe)],
+            ["/bin/bash", "-lc", OFFICIAL_IMAGE_ACTIVATION + " && python3 -c " + shlex.quote(probe)],
             user="10001:10001",
             environment={
                 "HOME": "/tmp",

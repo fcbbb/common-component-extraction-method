@@ -372,10 +372,40 @@ def load_submission(output_root: Path, role: str) -> dict[str, Any]:
     return result
 
 
-def file_submission_instructions() -> str:
+def file_submission_instructions(
+    *,
+    tool_name: str = "controlled_bash",
+    workspace_directory: str = "/testbed",
+    output_directory: str = OUTPUT_DIRECTORY,
+    checker_path: str = CHECKER_PATH,
+    isolation: str = "container",
+) -> str:
+    """Describe the file submission protocol for one stage agent.
+
+    Container stages name the bind-mounted paths and the controlled shell.
+    Host stages (``isolation="host"``) run on the machine that owns the
+    workspace, so the same protocol names the real directories instead.
+    """
+    if isolation not in {"container", "host"}:
+        raise ValueError(f"unknown stage isolation: {isolation}")
+    if isolation == "host":
+        paths = (
+            f"Run every {tool_name} command with the workdir set to "
+            f"{workspace_directory}. The repository snapshot is read-only: never "
+            "create, edit or delete anything inside it. Write submission files "
+            f"only under {output_directory}."
+        )
+    else:
+        paths = (
+            f"Run every {tool_name} command with cwd {workspace_directory} and "
+            f"use container paths ({workspace_directory}/... and "
+            f"{output_directory}), never host paths. "
+            "The original repository and supplied artifacts are read-only; this "
+            "output directory is writable."
+        )
     return (
         "\n\nFile submission protocol (applies to this run, including saved prompt templates):\n"
-        f"Write the result metadata to {OUTPUT_DIRECTORY}/{MANIFEST_NAME}. "
+        f"Write the result metadata to {output_directory}/{MANIFEST_NAME}. "
         "For component-artifact-v2 and smoke-case-v2, list files as objects with path and role; "
         "the controller reads their contents and rejects inline source. Preserve language, backend_id, "
         "qualified entrypoints, source references and the declared schemas. "
@@ -383,15 +413,14 @@ def file_submission_instructions() -> str:
         "library must contain path, a relative filename, instead of content. "
         "For historical Python smoke cases, write .py files and put their relative paths in test_file instead of test_py. "
         "Keep all other schema fields, source citations and entrypoint declarations. "
-        "Run every controlled_bash command with cwd /testbed and use container paths "
-        "(/testbed/... and /component-output), never host paths. "
-        "The original repository and supplied artifacts are read-only; this output directory is writable. "
+        + paths
+        + " "
         "Do not embed source code in JSON or print the manifest as the final answer. "
-        f"Check your files with python {CHECKER_PATH} --role $COMPONENT_OUTPUT_ROLE "
-        f"--output {OUTPUT_DIRECTORY}; this validates metadata and mounted source citations and compiles "
+        f"Check your files with python3 {checker_path} --role $COMPONENT_OUTPUT_ROLE "
+        f"--output {output_directory}; this validates metadata and mounted source citations and compiles "
         "Python, without running tests. "
         "Fix errors and check again. Finish by running the same checker with --submit as a "
-        "standalone controlled_bash command; do not chain it with ls/find/echo or other commands. "
+        f"standalone {tool_name} command; do not chain it with ls/find/echo or other commands. "
         "It prints the completion marker only when your files are valid. "
         "The program checks the files before accepting completion; errors are returned so you can correct them."
     )

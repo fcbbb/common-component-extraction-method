@@ -27,9 +27,38 @@ from component_method.component_build.extraction import (  # noqa: E402
     ExtractionRequest,
     extract_components,
 )
+from component_method.component_build.extraction.service import (  # noqa: E402
+    normalize_extraction_result,
+)
+from component_method.component_build.submission import load_submission  # noqa: E402
 from component_method.component_build.extraction.runner import (  # noqa: E402
     OfficialImageExtractionRunner,
 )
+from component_method.languages.agent_contract import EXTRACTION_COMPONENT_FIELDS  # noqa: E402
+
+
+def packet_admission(results: list[dict]) -> dict:
+    """Summarize packet outcomes under component-level admission.
+
+    A packet the agent answered but whose payload failed contract/schema
+    validation is ``invalid_contract``: ``curate`` re-validates and drops the
+    rejected components, so it must not fail extraction.  Only a packet that
+    never produced output is an execution failure.
+    """
+    successful = sum(result.get("status") == "ok" for result in results)
+    invalid = sum(result.get("status") == "invalid_contract" for result in results)
+    failed = sum(result.get("status") not in {"ok", "invalid_contract"}
+                 for result in results)
+    return {
+        "status": (
+            "failed" if failed
+            else "completed_with_rejections" if invalid
+            else "completed"
+        ),
+        "successful_packets": successful,
+        "invalid_packets": invalid,
+        "failed_packets": failed,
+    }
 
 
 def main() -> None:
@@ -48,8 +77,16 @@ def main() -> None:
 
     input_path = ROOT / "inputs" / "focus_context_packets.json"
     payload = load_json(input_path)
+    if payload.get("schema") == "migration-focus-context-packets-v1":
+        from component_method.source_scan.prepare_migration_inputs import (
+            verify_workspace_unchanged,
+        )
+
+        verify_workspace_unchanged(config, payload)
     packets = payload["packets"]
     workers = args.workers or config["extraction_workers"]
+    language = str(payload.get("language") or config.get("language") or "")
+    backend_id = str(payload.get("backend_id") or config.get("backend_id") or "")
 
     baseline = PROJECT / config["baseline_experiment"]
     focus_instructions = PROJECT / config["focus_context_instructions"]
@@ -71,8 +108,26 @@ def main() -> None:
             protocol_instructions.read_text(encoding="utf-8").strip(),
         )
     )
-    contract = load_component_contract(baseline)
-    contract["required_fields"] = [*contract["required_fields"], "protocol_contract"]
+    if language:
+        # Language-aware extraction returns component-artifact-v2 records, not
+        # the historical Python ``library`` payload.  Required fields come from
+        # the same contract the extraction prompt renders.
+        contract = {
+            "required_fields": list(EXTRACTION_COMPONENT_FIELDS),
+            "optional_fields": [
+                "relationships",
+                "invariants",
+                "variation_points",
+                "dependencies",
+                "limitations",
+                "guidance",
+                "applicability",
+                "integration_steps",
+            ],
+        }
+    else:
+        contract = load_component_contract(baseline)
+        contract["required_fields"] = [*contract["required_fields"], "protocol_contract"]
 
     run_root = ROOT / "runs" / config["task_id"] / "extraction_v1"
     output_root = run_root / "packets"
@@ -87,6 +142,8 @@ def main() -> None:
         "workers": workers,
         "model": config["model"],
         "runtime_image": config["runtime_image"],
+        "language": language or None,
+        "backend_id": backend_id or None,
         "input_sha256": sha256(input_path),
         "baseline_prompt_sha256": sha256(
             baseline / "prompts" / "extraction" / "extract_system.txt"
@@ -111,9 +168,109 @@ def main() -> None:
         if not result_path.is_file():
             return None
         result = load_json(result_path)
-        if result.get("status") != "ok":
+        # ``invalid_contract`` is a finished packet, not a crash: the agent
+        # submitted and the protocol-contract validator rejected part of the
+        # payload.  The batch pipeline admits those packets (curate filters the
+        # invalid components), so ``--resume`` must not re-run them -- doing so
+        # burned a full extraction wave on every retry while only the crashed
+        # packets needed another attempt.
+        if result.get("status") not in {"ok", "invalid_contract"}:
             return None
         return result
+
+    def finalize_packet(
+        packet: dict,
+        packet_root: Path,
+        drafts: list,
+        started: float,
+        *,
+        schema_error: str | None = None,
+        reused_submission: bool = False,
+    ) -> dict:
+        """Validate a submitted packet and persist its result."""
+        packet_id = packet["packet_id"]
+        response = load_json(packet_root / "extraction_response.json")
+        validation = validate_protocol_contracts(
+            response,
+            packet=packet,
+            repository_root=repository_root,
+            schema_path=schema_path,
+        )
+        write_json(packet_root / "protocol_contract_validation.json", validation)
+        result = {
+            "packet_id": packet_id,
+            "status": (
+                "invalid_contract"
+                if schema_error or validation["status"] != "ok"
+                else "ok"
+            ),
+            "candidate_count": len(packet["candidate_ids"]),
+            "focus_unit_count": packet["focus_unit_count"],
+            "context_unit_count": packet["context_unit_count"],
+            "draft_count": len(drafts),
+            "component_ids": [draft.component_id for draft in drafts],
+            "elapsed_seconds": round(time.monotonic() - started, 3),
+            "protocol_contract_validation": validation,
+        }
+        if schema_error:
+            result["schema_error"] = schema_error
+        if reused_submission:
+            result["reused_submission"] = True
+        write_json(packet_root / "result.json", result)
+        return result
+
+    def revalidate_finished_packet(
+        packet: dict,
+        packet_root: Path,
+        context: dict,
+    ) -> dict | None:
+        """Re-check a finished agent submission without spending another run.
+
+        ``--resume`` used to re-run any packet whose result was not ``ok``,
+        including packets the agent had already submitted but a validator
+        bug rejected.  Reusing the existing submission keeps the agent's work
+        and re-applies the current contract/schema checks.
+        """
+        if not (packet_root / "agent_result.json").is_file():
+            return None
+        submissions = sorted(
+            (
+                path for path in (packet_root / "file_submissions").glob("*")
+                if path.is_dir() and (path / "manifest.json").is_file()
+            ),
+            key=lambda path: path.stat().st_mtime,
+        )
+        if not submissions:
+            return None
+        started = time.monotonic()
+        try:
+            response = load_submission(submissions[-1], "extraction")
+        except (OSError, ValueError, json.JSONDecodeError):
+            return None
+        schema_error = None
+        drafts = []
+        try:
+            drafts = normalize_extraction_result(
+                response,
+                strategy="protocol_seed_focus_context_contract_v1",
+                output_dir=packet_root,
+                workspace_root=repository_root,
+                expected_files=packet["visible_files"],
+                required_fields=contract["required_fields"],
+                context=context,
+            )
+        except ValueError as exc:
+            schema_error = f"{type(exc).__name__}: {exc}"
+        if not (packet_root / "extraction_response.json").is_file():
+            return None
+        return finalize_packet(
+            packet,
+            packet_root,
+            drafts,
+            started,
+            schema_error=schema_error,
+            reused_submission=True,
+        )
 
     def run_packet(packet: dict) -> tuple[str, dict]:
         packet_id = packet["packet_id"]
@@ -146,6 +303,10 @@ def main() -> None:
             "context_units": packet["context_units"],
             "visible_files": packet["visible_files"],
         }
+        if language:
+            context["language"] = language
+            context["backend_id"] = backend_id
+            context["primary_extraction_units"] = packet["focus_units"]
         request = ExtractionRequest(
             workspace_root=repository_root,
             output_dir=packet_root,
@@ -156,27 +317,33 @@ def main() -> None:
             output_contract=contract,
         )
         started = time.monotonic()
-        drafts = extract_components(request, agent_runner=runner, system_prompt=system_prompt)
-        response = load_json(packet_root / "extraction_response.json")
-        validation = validate_protocol_contracts(
-            response,
-            packet=packet,
-            repository_root=repository_root,
-            schema_path=schema_path,
-        )
-        write_json(packet_root / "protocol_contract_validation.json", validation)
-        result = {
-            "packet_id": packet_id,
-            "status": "ok" if validation["status"] == "ok" else "invalid_contract",
-            "candidate_count": len(packet["candidate_ids"]),
-            "focus_unit_count": packet["focus_unit_count"],
-            "context_unit_count": packet["context_unit_count"],
-            "draft_count": len(drafts),
-            "component_ids": [draft.component_id for draft in drafts],
-            "elapsed_seconds": round(time.monotonic() - started, 3),
-            "protocol_contract_validation": validation,
-        }
-        write_json(packet_root / "result.json", result)
+        if args.resume:
+            # A finished submission from an earlier attempt may only need the
+            # current validators, not another (expensive) agent run.
+            reused = revalidate_finished_packet(packet, packet_root, context)
+            if reused is not None:
+                return packet_id, reused
+        try:
+            drafts = extract_components(request, agent_runner=runner, system_prompt=system_prompt)
+        except ValueError as exc:
+            response_path = packet_root / "extraction_response.json"
+            if not response_path.is_file():
+                raise
+            # The agent submitted, but its payload failed schema validation.
+            # This is a component-level rejection, not an execution failure:
+            # ``curate`` re-validates every component and drops the invalid
+            # ones, exactly like the batch pipeline's admission policy.  Keep
+            # the packet admissible and record the schema rejection instead of
+            # failing the whole extraction stage.
+            result = finalize_packet(
+                packet,
+                packet_root,
+                [],
+                started,
+                schema_error=f"{type(exc).__name__}: {exc}",
+            )
+            return packet_id, result
+        result = finalize_packet(packet, packet_root, drafts, started)
         return packet_id, result
 
     results_by_id = {}
@@ -205,16 +372,19 @@ def main() -> None:
 
     results = [results_by_id[packet["packet_id"]] for packet in packets]
     statuses = [load_json(path) for path in output_root.glob("*/agent_status.json")]
+    outcome = packet_admission(results)
     summary = {
         **manifest,
-        "status": "completed"
-        if all(result["status"] == "ok" for result in results)
-        else "failed",
-        "successful_packets": sum(result["status"] == "ok" for result in results),
-        "failed_packets": sum(result["status"] != "ok" for result in results),
+        **outcome,
         "component_count": sum(result.get("draft_count", 0) for result in results),
         "results": results,
         "extraction_api_calls": sum(int(status.get("api_calls") or 0) for status in statuses),
+        "extraction_input_tokens": sum(
+            int(status.get("input_tokens") or 0) for status in statuses
+        ),
+        "extraction_output_tokens": sum(
+            int(status.get("output_tokens") or 0) for status in statuses
+        ),
         "extraction_reported_cost_usd": round(
             sum(float(status.get("reported_cost_usd") or 0) for status in statuses), 9
         ),

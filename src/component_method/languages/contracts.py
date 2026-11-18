@@ -187,6 +187,33 @@ def validate_files(files: tuple[ArtifactFile, ...]) -> None:
             raise ValueError("artifact file conflicts with a parent directory")
 
 
+_ARTIFACT_ROLES = frozenset({"header", "source", "smoke"})
+
+
+def normalize_artifact_role(value: Any) -> str:
+    """Map the descriptive file roles agents submit onto the artifact vocabulary.
+
+    The artifact schema names roles ``header``/``source``/``smoke`` but the
+    prompts only say "path and role", so extraction agents also emit spellings
+    such as ``public header`` or ``implementation``.  ``ArtifactSupport``
+    filters on the canonical spellings, so an otherwise valid artifact used to
+    resolve zero source units and fail every entrypoint.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return "source"
+    normalized = value.strip().lower().replace("_", " ").replace("-", " ")
+    if normalized in _ARTIFACT_ROLES:
+        return normalized
+    words = set(normalized.split())
+    if "header" in words:
+        return "header"
+    if words & {"smoke", "test", "tests", "testing"}:
+        return "smoke"
+    if words & {"source", "implementation", "impl", "definition"}:
+        return "source"
+    return value
+
+
 @dataclass(frozen=True)
 class Entrypoint(JsonRecord):
     kind: str
@@ -246,8 +273,26 @@ class ComponentArtifact(JsonRecord):
         payload = dict(value)
         if payload.pop("schema", None) != cls.schema:
             raise ValueError("unsupported component-artifact schema")
-        payload["files"] = tuple(ArtifactFile(**item) for item in payload["files"])
+        payload["files"] = tuple(
+            ArtifactFile(
+                path=item["path"],
+                content=item["content"],
+                role=normalize_artifact_role(item.get("role")),
+            )
+            for item in payload["files"]
+        )
         payload["entrypoints"] = tuple(Entrypoint.from_json(item) for item in payload["entrypoints"])
+        # Extraction agents routinely add descriptive artifact-level fields
+        # (``status``, ``confidence``, ``standard``, ``namespace``, ...) that
+        # are not part of the artifact's structural schema.  Rejecting the
+        # whole artifact for them crashed the packet loader with a TypeError
+        # instead of a validation diagnostic; carry them as metadata, like
+        # ``Entrypoint`` and ``SmokeCase`` already do.
+        metadata = dict(payload.get("metadata") or {})
+        for key in list(payload):
+            if key not in {"language", "backend_id", "files", "entrypoints", "runtime", "metadata"}:
+                metadata[key] = payload.pop(key)
+        payload["metadata"] = metadata
         return cls(**payload)
 
 
@@ -287,7 +332,14 @@ class SmokeCase(JsonRecord):
             if key not in structural:
                 metadata[key] = payload.pop(key)
         payload["metadata"] = metadata
-        payload["files"] = tuple(ArtifactFile(**item) for item in payload["files"])
+        payload["files"] = tuple(
+            ArtifactFile(
+                path=item["path"],
+                content=item["content"],
+                role=normalize_artifact_role(item.get("role")),
+            )
+            for item in payload["files"]
+        )
         for key in ("expected_paths", "sources"):
             payload[key] = tuple(payload.get(key, []))
         return cls(**payload)

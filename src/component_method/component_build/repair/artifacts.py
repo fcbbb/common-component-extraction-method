@@ -23,10 +23,13 @@ def repair_artifact_with_agent(agent_runner, repo_root, component, repair_reques
         "Repair only the requested defects in this already-reviewed component. Keep the original repository "
         "read-only, source members, identity, language and declared entrypoints fixed. Do not claim approval. "
         "Write manifest.json with status repaired or not_repairable, repair_target, reason and changes. "
-        "For artifact or smoke_failure return a complete component-artifact-v2 with files referenced by path; "
-        "preserve its file set, runtime and metadata. For protocol_contract replace only allowed_protocol_fields. "
-        "For component_evidence preserve current citations and append only required_evidence_files. "
-        "For review_manifest change only requested citation line ranges. Never supply commands or download dependencies.\n"
+        "For artifact or smoke_failure return the complete component-artifact-v2 under `artifact` with files "
+        "referenced by path; preserve its file set, runtime and metadata. For protocol_contract return the "
+        "complete protocol_contract under `protocol_contract`, replacing only allowed_protocol_fields. "
+        "For component_evidence return the complete evidence list under `evidence`, preserving current "
+        "citations and appending only required_evidence_files. "
+        "For review_manifest return the complete review object under `review`, changing only the requested "
+        "citation line ranges. Never supply commands or download dependencies.\n"
         + backend.agent_instructions("repair") + "\nComponent:\n" + json.dumps(component, ensure_ascii=False, indent=2)
         + "\nRepair request:\n" + json.dumps(repair_request, ensure_ascii=False, indent=2)
     )

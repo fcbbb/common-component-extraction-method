@@ -119,8 +119,14 @@ def select_artifact_bundle(source, selection, destination):
         (staging / "README.md").write_text("# Selected component library\n\nSee INDEX.md for loading instructions.\n")
         (staging / "INDEX.md").write_text("# Selected components\n\n" + "\n".join(
             f"- [{r['bundle_id']}]({r['readme']}) ({r['language']})" for r in records) + "\n")
+        (staging / "SELECTION.md").write_text(
+            "# Selected components\n\n"
+            + "\n".join(f"- `{bundle_id}`" for bundle_id in sorted(selected))
+            + "\n"
+        )
         write_json(staging / "manifest.json", {**manifest, "components": records, "component_count": len(records),
                    "libraries": [r["library"] for r in records], "selected_bundle_ids": sorted(selected),
+                   "selection_file": "selection.json", "selection_document": "SELECTION.md",
                    "parent_construction_key": manifest["construction_key"], "construction_key": stable_digest(records),
                    "selection_method": "validated_task_retrieval_subset"})
         os.replace(staging, destination)

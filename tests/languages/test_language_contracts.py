@@ -3,7 +3,7 @@ from dataclasses import replace
 import pytest
 
 from component_method.languages.contracts import (
-    ArtifactFile, ComponentArtifact, SmokeCase, SourceUnit, Span, TokenStream, contained_path,
+    ArtifactFile, ComponentArtifact, Entrypoint, SmokeCase, SourceUnit, Span, TokenStream, contained_path,
 )
 from component_method.languages.python.backend import PythonBackend
 from component_method.languages.python.compat import (
@@ -78,6 +78,38 @@ def test_lossless_python_converters():
     assert component["library"]["path"] == "old/path.py"
     minimal = {"library": {"content": "value = 1"}}
     assert artifact_to_legacy(artifact_from_legacy(minimal)) == minimal
+
+
+def test_artifact_folds_descriptive_fields_and_roles():
+    value = {
+        "schema": "component-artifact-v2",
+        "language": "cpp", "backend_id": "cpp@1",
+        "status": "draft_ready", "confidence": "high", "standard": "c++17",
+        "namespace": "uvcomp::stream",
+        "files": [
+            {"path": "include/stream.hpp", "content": "void run();", "role": "public header"},
+            {"path": "src/stream.cpp", "content": "void run() {}", "role": "implementation"},
+            {"path": "smoke/stream.cpp", "content": "int main() { return 0; }", "role": "smoke"},
+        ],
+        "entrypoints": [{"kind": "function", "qualified_name": "run"}],
+    }
+    artifact = ComponentArtifact.from_json(value)
+    assert [item.role for item in artifact.files] == ["header", "source", "smoke"]
+    assert artifact.metadata["status"] == "draft_ready"
+    assert artifact.metadata["standard"] == "c++17"
+    assert artifact.metadata["namespace"] == "uvcomp::stream"
+    # Descriptive fields survive a round trip as metadata.
+    assert ComponentArtifact.from_json(artifact.to_json()) == artifact
+
+
+def test_entrypoint_resolves_unqualified_terminal_name():
+    artifact = ComponentArtifact(
+        "python", "python@1",
+        (ArtifactFile("worker.py", "class Worker:\n    def run(self):\n        return 1\n"),),
+        (Entrypoint(kind="method", qualified_name="run"),),
+    )
+    resolved = PythonBackend().resolve_entrypoints(artifact)
+    assert [unit.qualified_name for unit in resolved.values()] == ["Worker.run"]
 
 
 def test_contract_shape_errors():

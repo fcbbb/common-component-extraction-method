@@ -137,6 +137,11 @@ def test_v2_submission_validation_publication_and_selection(language, tmp_path):
     assert catalog["components"][0]["language"] == language
     selected = select_artifact_bundle(library, {"selected_bundle_ids": ["component-001"]}, tmp_path / "selected")
     validate_agent_bundle(selected, "owner/repo", "a" * 40)
+    selected_manifest = json.loads((selected / "manifest.json").read_text())
+    assert selected_manifest["selection_document"] == "SELECTION.md"
+    assert selected_manifest["selection_file"] == "selection.json"
+    assert (selected / "INDEX.md").is_file()
+    assert "component-001" in (selected / "SELECTION.md").read_text()
     environment = bundle_environment(selected)
     assert all(str(tmp_path) not in value for value in environment.values())
     assert environment["COMPONENT_BUNDLE"] == "/testbed/component_bundle"
@@ -173,6 +178,44 @@ def test_v2_review_runtime_and_publication_in_real_container(language, tmp_path)
 def test_v2_review_cannot_expand_source_boundary(tmp_path):
     component, review, repository = fixture_component(tmp_path, "python")
     review["confirmed_members"] = [{"file_id": "unknown.py", "unit_key": "unknown"}]
+    result = validate_artifact_component(component_id="addition", component=component, candidate_payload={},
+                                         repository=repository, agent_runner=None, review=review,
+                                         output_dir=tmp_path / "validation", executor=fake_executor)
+    assert result["status"] == "failed"
+    assert "boundary" in result["reason"]
+
+
+def test_review_member_may_cite_name_and_line_range(tmp_path):
+    # Review agents cite confirmed members descriptively (``member`` plus a
+    # source line range) instead of copying the canonical unit key.  The
+    # citation is grounded against the real source units.
+    component, review, repository = fixture_component(tmp_path, "python")
+    member = component["members"][0]
+    backend = default_registry().resolve({"language": "python"}).single()
+    source = (tmp_path / "repository" / member["file_id"]).read_text()
+    unit = next(item for item in backend.extract_units(member["file_id"], source)
+                if item.unit_key == member["unit_key"])
+    review["confirmed_members"] = [{
+        "file_id": member["file_id"],
+        "member": unit.display_name or unit.qualified_name,
+        "line_start": unit.span.start_line,
+        "line_end": unit.span.end_line,
+    }]
+    result = validate_artifact_component(component_id="addition", component=component, candidate_payload={},
+                                         repository=repository, agent_runner=None, review=review,
+                                         output_dir=tmp_path / "validation", executor=fake_executor)
+    assert result["status"] == "validated", result
+
+
+def test_review_member_outside_the_source_boundary_still_fails(tmp_path):
+    component, review, repository = fixture_component(tmp_path, "python")
+    member = component["members"][0]
+    review["confirmed_members"] = [{
+        "file_id": member["file_id"],
+        "member": "not_a_source_unit",
+        "line_start": 10_000,
+        "line_end": 10_001,
+    }]
     result = validate_artifact_component(component_id="addition", component=component, candidate_payload={},
                                          repository=repository, agent_runner=None, review=review,
                                          output_dir=tmp_path / "validation", executor=fake_executor)

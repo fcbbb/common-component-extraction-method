@@ -12,32 +12,15 @@ from component_method.component_build.contracts import RepositoryContext, VALIDA
 from component_method.component_build.experiment import resolve_prompt
 from component_method.component_build.validation.runtime import validate_callable_artifact
 from component_method.component_build.workspace import COMPONENT_DIRECTORY
+from component_method.languages.agent_contract import (
+    PROTOCOL_CONTRACT_FIELDS,
+    PROTOCOL_CONTRACT_ISSUE_SEVERITIES,
+    PROTOCOL_CONTRACT_ISSUE_STATUSES,
+    PROTOCOL_CONTRACT_REVIEW_STATUSES,
+)
 
 
 PROMPT_DIR = Path(__file__).resolve().parents[2] / "component_build/validation/prompts"
-PROTOCOL_CONTRACT_FIELDS = (
-    "capability_family",
-    "semantic_domain",
-    "extension_trigger",
-    "covered_variants",
-    "downstream_guarantee",
-    "consumers",
-    "reuse_interface",
-    "boundary",
-)
-PROTOCOL_CONTRACT_ISSUE_STATUSES = {
-    "overstated",
-    "unsupported",
-    "incomplete",
-    "inaccurate",
-}
-PROTOCOL_CONTRACT_ISSUE_SEVERITIES = {"blocking", "warning"}
-PROTOCOL_CONTRACT_REVIEW_STATUSES = {
-    "confirmed",
-    "confirmed_with_warnings",
-    "needs_revision",
-    "rejected",
-}
 
 
 def _review_brief(candidate_payload: dict[str, Any]) -> dict[str, Any]:

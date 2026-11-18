@@ -5,6 +5,12 @@ import json
 from pathlib import Path
 import re
 
+from component_method.languages.agent_contract import (
+    REVIEW_STATUSES,
+    SMOKE_CASE_ID_PATTERN,
+    annotate_component_members,
+    normalize_review_result,
+)
 from component_method.languages.contracts import ComponentArtifact, SmokeCase, SourceUnitRef, contained_path, stable_digest
 from component_method.component_build.workspace import COMPONENT_DIRECTORY
 from component_method.languages.registry import default_registry
@@ -80,17 +86,26 @@ def review_artifact_with_agent(agent_runner, repo_root, component, output_dir):
 
     artifact = artifact_of(component)
     backend = artifact_backend(artifact)
+    if hasattr(backend, "set_repository"):
+        # Unit identity includes the parsed signature, which depends on the
+        # repository include layout.  Normalization must parse the sources in
+        # the same context that produced the proposed unit keys.
+        backend.set_repository(repo_root)
     workspace = output_dir / "component_workspace"
     backend.materialize_component(artifact, workspace)
-    (output_dir / "component.json").write_text(json.dumps(component, ensure_ascii=False, indent=2))
+    annotated = annotate_component_members(component, backend, repo_root)
+    (output_dir / "component.json").write_text(json.dumps(annotated, ensure_ascii=False, indent=2))
     result = agent_runner.run_workspace_agent(
-        workspace_root=repo_root, task=review_prompt(component, backend), output_dir=output_dir,
+        workspace_root=repo_root, task=review_prompt(annotated, backend), output_dir=output_dir,
         task_label="component-review-and-smoke", agent_role="review", component_workspace=workspace,
     )
-    if result.get("status") not in {"confirmed", "rejected", "uncertain"}:
+    if result.get("status") not in set(REVIEW_STATUSES):
         raise ValueError("component review returned an invalid status")
     if not isinstance(result.get("reason"), str) or not result["reason"].strip():
         raise ValueError("component review must explain its decision")
+    result = normalize_review_result(
+        result, component=component, backend=backend, repository_root=repo_root,
+    )
     from component_method.component_build.cache.review import merge_review_dependencies, observed_dependencies
 
     observed = observed_dependencies(output_dir / "trajectory.json", repo_root)
@@ -136,9 +151,16 @@ def validate_artifact_component(*, component_id, component, candidate_payload, r
         diagnostics = backend.validate_grounding(artifact, repository.resolved_root(), consumers)
         if diagnostics:
             raise ValueError("protocol consumer has no corresponding source unit")
+        repository_root = repository.resolved_root()
         if review is None:
-            review = review_artifact_with_agent(agent_runner, repository.resolved_root(), component,
+            review = review_artifact_with_agent(agent_runner, repository_root, component,
                                                output_dir / "review")
+        else:
+            # Reviews passed in from a saved run still go through the same
+            # intake normalization the agent path uses.
+            review = normalize_review_result(
+                review, component=component, backend=backend, repository_root=repository_root,
+            )
         result.update(commonality_review=review, artifact_review=review.get("artifact_review"))
         if review.get("status") != "confirmed":
             result.update(status="rejected" if review.get("status") == "rejected" else "unverified",
@@ -146,48 +168,30 @@ def validate_artifact_component(*, component_id, component, candidate_payload, r
             return result
         if review.get("artifact_review", {}).get("status") != "faithful":
             raise ValueError("artifact fidelity is not established")
-        check_citations(review.get("evidence"), repository.resolved_root(), artifact)
+        check_citations(review.get("evidence"), repository_root, artifact)
         allowed = {(m.file_id, m.unit_key) for m in members}
         allowed_by_file = {}
         for file_id, unit_key in allowed:
             allowed_by_file.setdefault(file_id, set()).add(unit_key)
         confirmed = set()
         for member in review.get("confirmed_members", []):
-            if isinstance(member, str):
-                # Reviewers emit either a file path or a bare unit key.
-                unit_matches = [
-                    (file_id, unit_key) for file_id, keys in allowed_by_file.items()
-                    for unit_key in keys if unit_key == member or unit_key.startswith(member)
-                ]
-                if len(unit_matches) == 1:
-                    confirmed.add(unit_matches[0])
-                    continue
-                candidates = allowed_by_file.get(member, set())
-                if not candidates:
-                    raise ValueError("review members exceed the proposed source boundary")
-                confirmed.update((member, candidate) for candidate in candidates)
-                continue
             file_id = member.get("file_id") if isinstance(member, dict) else None
             if not isinstance(file_id, str):
                 raise ValueError("review members exceed the proposed source boundary")
             candidates = allowed_by_file.get(file_id, set())
-            matched = None
+            resolved = set()
             for field in ("unit_key", "unit_id"):
                 value = member.get(field)
+                if not isinstance(value, str) or not value:
+                    continue
                 if value in candidates:
-                    matched = value
-                    break
-                if isinstance(value, str):
-                    matches = sorted(
-                        candidate for candidate in candidates
-                        if candidate.startswith(value)
-                    )
-                    if len(matches) == 1:
-                        matched = matches[0]
-                        break
-            if matched is None:
+                    resolved.add(value)
+                else:
+                    resolved.update(candidate for candidate in candidates
+                                    if candidate.startswith(value))
+            if not resolved:
                 raise ValueError("review members exceed the proposed source boundary")
-            confirmed.add((file_id, matched))
+            confirmed.update((file_id, unit_key) for unit_key in resolved)
         if not confirmed or not confirmed <= allowed:
             raise ValueError("review members exceed the proposed source boundary")
         _validate_protocol_contract_review(
@@ -205,7 +209,7 @@ def validate_artifact_component(*, component_id, component, candidate_payload, r
             for field in ("language", "backend_id"):
                 if field in case.metadata and case.metadata[field] != getattr(artifact, field):
                     raise ValueError(f"smoke case {field} does not match its artifact")
-            if not re.fullmatch(r"[A-Za-z0-9_-]+", case.case_id) or case.case_id in seen:
+            if not re.fullmatch(SMOKE_CASE_ID_PATTERN, case.case_id) or case.case_id in seen:
                 raise ValueError("duplicate or unsafe smoke case id")
             seen.add(case.case_id)
             canonical = backend.canonical_entrypoint_id(artifact, case.entrypoint_id)
