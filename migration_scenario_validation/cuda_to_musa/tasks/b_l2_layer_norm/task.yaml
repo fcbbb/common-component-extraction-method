@@ -1,0 +1,78 @@
+scenario: cuda_to_musa
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  gpu: mtt-s4000
+  backend: musa-sdk-5.2.0
+  toolchain: mcc
+  arch: x86_64
+gates:
+  build: the upstream evaluator imports the submission and builds its MUSA extension on musa:0
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: torch\.cuda|\.cuda\(\)|cuda[A-Z]\w*\s*\(|#include\s*[<"]cuda|#include\s*[<"]cublas|#include\s*[<"]cudnn|#include\s*[<"]cufft|\bnvcc\b|\bcublas[A-Za-z0-9_]*\s*\(|\bcudnn[A-Za-z0-9_]*\s*\(|\bcufft[A-Za-z0-9_]*\s*\(|device\s*=\s*['"]cuda|\bCUDA_[A-Z0-9_]+|__CUDACC__
+    exclude_globs: []
+  behavior: upstream numerical reference matches within atol=rtol=1e-4
+build:
+  mode: none
+  command: ''
+  artifact: ''
+prepare:
+  remove_globs:
+  - prompts/musa_new_model_*.py
+  remove:
+  - prompts/musa_new_model_layer_norm.py
+id: b_l2_layer_norm
+level: L2
+domain: normalization
+difficulty: medium
+op_name: layer_norm
+title: 'MultiKernelBench layer_norm: CUDA model -> MUSA kernel'
+source:
+  repo: https://github.com/wzzll123/MultiKernelBench.git
+  commit: 460a972c9be7ce18035984321d38b910e27df95f
+  license: MIT
+  source_files:
+  - prompts/cuda_model_layer_norm.py
+  - reference/normalization/layer_norm.py
+  test_files:
+  - utils/correctness.py
+  - utils/cheating_detection.py
+spec: '`prompts/cuda_model_layer_norm.py` is the CUDA sample upstream ships;
+
+  `reference/normalization/layer_norm.py` defines the numerical contract.
+
+  The upstream MUSA sample was written against a different (2-D) input
+
+  contract and is not a valid answer here; it is removed from `work/`.
+
+
+  Write `work/submission/layer_norm_submission.py` defining
+
+  `class ModelNew` whose `forward` calls a custom MUSA kernel built with
+
+  `load_inline(..., musa_sources=...)`.  The embedded source must declare
+
+  `__global__` kernels and launch them with `<<<...>>>`; implement the
+
+  mean/variance reduction, rsqrt and affine transform in the kernel.  Do
+
+  not reuse the reference `Model`.
+
+
+  The evaluator (`eval_single_runner.py --language musa`) runs the
+
+  reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+
+  '
+hidden_tests:
+  command: cd {work} && python3 eval_single_runner.py --input {work}/submission/layer_norm_submission.py
+    --op layer_norm --language musa --result {build}/result.json && python3 {root}/harness/check_result.py
+    {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py
+    {work}/submission/layer_norm_submission.py
+task_id: b_l2_layer_norm

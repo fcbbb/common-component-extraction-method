@@ -1,0 +1,722 @@
+# Scenario B: NVIDIA CUDA / PyTorch 算子契约 -> 摩尔线程 MUSA.
+#
+# Upstream MultiKernelBench is used as the judge: the agent writes a ModelNew
+# that builds a MUSA extension with load_inline(musa_sources=...), and the
+# pinned upstream evaluator runs eval_single_runner.py --language musa on an
+# MTT S4000.  The PyTorch reference (reference/<category>/<op>.py) is the
+# operator contract and stays visible on purpose.  Where upstream ships a MUSA
+# sample (prompts/musa_new_model_<op>.py) and a CUDA sample
+# (prompts/cuda_model_<op>.py), the MUSA sample is removed from work/ and kept
+# in gold/ as the evaluator-only positive control.
+#
+# MUSA keeps CUDA kernel syntax (__global__, threadIdx, <<<>>>), so the API
+# gate must ban CUDA *API symbols*, not CUDA syntax.  See design.md §4.
+scenario: cuda_to_musa
+
+defaults:
+  scenario: cuda_to_musa
+  fit: B
+  counted: true
+  layout: repo
+  gold_kind: benchmark-judge
+  source_kind: upstream-kernel-benchmark
+  tolerances: {}
+  target:
+    gpu: mtt-s4000
+    backend: musa-sdk-5.2.0
+    toolchain: mcc
+    arch: x86_64
+  gates:
+    build: "the upstream evaluator imports the submission and builds its MUSA extension on musa:0"
+    api_removal:
+      source_dirs:
+        - submission
+      source_regex: "torch\\.cuda|\\.cuda\\(\\)|cuda[A-Z]\\w*\\s*\\(|#include\\s*[<\"]cuda|#include\\s*[<\"]cublas|#include\\s*[<\"]cudnn|#include\\s*[<\"]cufft|\\bnvcc\\b|\\bcublas[A-Za-z0-9_]*\\s*\\(|\\bcudnn[A-Za-z0-9_]*\\s*\\(|\\bcufft[A-Za-z0-9_]*\\s*\\(|device\\s*=\\s*['\"]cuda|\\bCUDA_[A-Z0-9_]+|__CUDACC__"
+      exclude_globs: []
+    behavior: "upstream numerical reference matches within atol=rtol=1e-4"
+  build:
+    mode: none
+    command: ""
+    artifact: ""
+  prepare:
+    # MUSA shares CUDA kernel syntax, so every upstream MUSA sample is a
+    # target-language reference.  Keep all of them out of the agent tree,
+    # not just the sample for this task's operator.
+    remove_globs:
+      - prompts/musa_new_model_*.py
+
+tasks:
+  # ------------------------------------------------------------------ L1 ---
+  - id: b_l1_leaky_relu
+    level: L1
+    domain: activation
+    difficulty: easy
+    op_name: leaky_relu
+    title: "MultiKernelBench leaky_relu: CUDA model -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - prompts/cuda_model_leaky_relu.py
+        - reference/activation/leaky_relu.py
+      gold_files:
+        - prompts/musa_new_model_leaky_relu.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `prompts/cuda_model_leaky_relu.py` is the CUDA sample upstream ships;
+      `reference/activation/leaky_relu.py` defines `Model`, `get_inputs` and
+      `get_init_inputs` and is the numerical contract.  The upstream MUSA
+      sample has been removed from `work/` and kept in `gold/`.
+
+      Write `work/submission/leaky_relu_submission.py` defining
+      `class ModelNew` whose `forward` calls a custom MUSA kernel.  Build the
+      kernel with `torch_musa.utils.musa_extension.load_inline(...,
+      musa_sources=...)`; the embedded source must declare `__global__`
+      kernels and launch them with `<<<...>>>`.  Do not call PyTorch compute
+      ops for the operator body and do not reuse the reference `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) executes the
+      reference and `ModelNew` on `musa:0`, compares five trials with
+      atol=rtol=1e-4, then times `ModelNew`.
+    prepare:
+      remove:
+        - prompts/musa_new_model_leaky_relu.py
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/leaky_relu_submission.py --op leaky_relu --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/leaky_relu_submission.py"
+
+  - id: b_l1_mse_loss
+    level: L1
+    domain: loss
+    difficulty: easy
+    op_name: mse_loss
+    title: "MultiKernelBench mse_loss: CUDA model -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - prompts/cuda_model_mse_loss.py
+        - reference/loss/mse_loss.py
+      gold_files:
+        - prompts/musa_new_model_mse_loss.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `prompts/cuda_model_mse_loss.py` is the CUDA sample upstream ships;
+      `reference/loss/mse_loss.py` defines the numerical contract.  The
+      upstream MUSA sample has been removed from `work/` and kept in `gold/`.
+
+      Write `work/submission/mse_loss_submission.py` defining `class ModelNew`
+      whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  The final scalar
+      reduction may stay in PyTorch as the upstream sample does; do not reuse
+      the reference `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    prepare:
+      remove:
+        - prompts/musa_new_model_mse_loss.py
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/mse_loss_submission.py --op mse_loss --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/mse_loss_submission.py"
+
+  - id: b_l1_relu
+    level: L1
+    domain: activation
+    difficulty: easy
+    op_name: relu
+    title: "ReLU: CUDA elementwise semantics -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/activation/relu.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/activation/relu.py` is the upstream operator contract:
+      `Model`, `get_inputs`, `get_init_inputs`.  MultiKernelBench does not ship
+      a per-op CUDA sample for this operator at the pinned commit; the CUDA
+      side is the same elementwise `max(x, 0)` semantics.
+
+      Write `work/submission/relu_submission.py` defining `class ModelNew`
+      whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/relu_submission.py --op relu --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/relu_submission.py"
+
+  - id: b_l1_sigmoid
+    level: L1
+    domain: activation
+    difficulty: easy
+    op_name: sigmoid
+    title: "Sigmoid: CUDA elementwise semantics -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/activation/sigmoid.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/activation/sigmoid.py` is the upstream operator contract.
+      MultiKernelBench does not ship a per-op CUDA sample for this operator at
+      the pinned commit; the CUDA side is the same elementwise logistic
+      function.
+
+      Write `work/submission/sigmoid_submission.py` defining `class ModelNew`
+      whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/sigmoid_submission.py --op sigmoid --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/sigmoid_submission.py"
+
+  - id: b_l1_softmax
+    level: L1
+    domain: activation
+    difficulty: easy
+    op_name: softmax
+    title: "Softmax: CUDA row softmax -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/activation/softmax.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/activation/softmax.py` is the upstream operator contract.
+      MultiKernelBench does not ship a per-op CUDA sample for this operator at
+      the pinned commit; the CUDA side is a numerically stable row softmax
+      (max -> exp -> sum -> divide).
+
+      Write `work/submission/softmax_submission.py` defining `class ModelNew`
+      whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/softmax_submission.py --op softmax --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/softmax_submission.py"
+
+  - id: b_l1_swish
+    level: L1
+    domain: activation
+    difficulty: easy
+    op_name: swish
+    title: "Swish: CUDA elementwise semantics -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/activation/swish.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/activation/swish.py` is the upstream operator contract.
+      MultiKernelBench does not ship a per-op CUDA sample for this operator at
+      the pinned commit; the CUDA side is `x * sigmoid(x)`.
+
+      Write `work/submission/swish_submission.py` defining `class ModelNew`
+      whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/swish_submission.py --op swish --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/swish_submission.py"
+
+  # ------------------------------------------------------------------ L2 ---
+  - id: b_l2_layer_norm
+    level: L2
+    domain: normalization
+    difficulty: medium
+    op_name: layer_norm
+    title: "MultiKernelBench layer_norm: CUDA model -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - prompts/cuda_model_layer_norm.py
+        - reference/normalization/layer_norm.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `prompts/cuda_model_layer_norm.py` is the CUDA sample upstream ships;
+      `reference/normalization/layer_norm.py` defines the numerical contract.
+      The upstream MUSA sample was written against a different (2-D) input
+      contract and is not a valid answer here; it is removed from `work/`.
+
+      Write `work/submission/layer_norm_submission.py` defining
+      `class ModelNew` whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`; implement the
+      mean/variance reduction, rsqrt and affine transform in the kernel.  Do
+      not reuse the reference `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    prepare:
+      remove:
+        - prompts/musa_new_model_layer_norm.py
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/layer_norm_submission.py --op layer_norm --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/layer_norm_submission.py"
+
+  - id: b_l2_cosine_similarity_loss
+    level: L2
+    domain: loss
+    difficulty: medium
+    op_name: cosine_similarity_loss
+    title: "Cosine similarity loss: CUDA norms + dot + mean -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/loss/cosine_similarity_loss.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/loss/cosine_similarity_loss.py` is the upstream operator
+      contract.  It takes two (128, 4096) float32 tensors and returns the
+      scalar `mean(1 - F.cosine_similarity(predictions, targets, dim=1))`;
+      the default `eps=1e-8` clamps each row norm before the division.
+
+      Write `work/submission/cosine_similarity_loss_submission.py` defining
+      `class ModelNew` whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/cosine_similarity_loss_submission.py --op cosine_similarity_loss --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/cosine_similarity_loss_submission.py"
+
+  - id: b_l2_sum_reduce
+    level: L2
+    domain: reduce
+    difficulty: medium
+    op_name: sum_reduction_over_a_dimension
+    title: "Sum reduction over a dimension: CUDA reduce -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/reduce/sum_reduction_over_a_dimension.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/reduce/sum_reduction_over_a_dimension.py` is the upstream
+      operator contract.  MultiKernelBench does not ship a per-op CUDA sample
+      for this operator at the pinned commit; the CUDA side is a
+      dimension-wise reduction.
+
+      Write `work/submission/sum_reduction_over_a_dimension_submission.py`
+      defining `class ModelNew` whose `forward` calls a custom MUSA kernel
+      built with `load_inline(..., musa_sources=...)`.  The embedded source
+      must declare `__global__` kernels and launch them with `<<<...>>>`.
+      Do not call PyTorch compute ops for the operator body and do not reuse
+      `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/sum_reduction_over_a_dimension_submission.py --op sum_reduction_over_a_dimension --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/sum_reduction_over_a_dimension_submission.py"
+
+  - id: b_l2_argmax
+    level: L2
+    domain: index
+    difficulty: medium
+    op_name: argmax_over_a_dimension
+    title: "ArgMax over a dimension: CUDA arg-reduction -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/index/argmax_over_a_dimension.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/index/argmax_over_a_dimension.py` is the upstream operator
+      contract.  MultiKernelBench does not ship a per-op CUDA sample for this
+      operator at the pinned commit; the CUDA side is an index-reduction.
+
+      Write `work/submission/argmax_over_a_dimension_submission.py` defining
+      `class ModelNew` whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/argmax_over_a_dimension_submission.py --op argmax_over_a_dimension --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/argmax_over_a_dimension_submission.py"
+
+  - id: b_l2_gather
+    level: L2
+    domain: index
+    difficulty: medium
+    op_name: gather
+    title: "Gather: CUDA index kernel -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/index/gather.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/index/gather.py` is the upstream operator contract.
+      MultiKernelBench does not ship a per-op CUDA sample for this operator at
+      the pinned commit; the CUDA side is an index gather.
+
+      Write `work/submission/gather_submission.py` defining `class ModelNew`
+      whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/gather_submission.py --op gather --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/gather_submission.py"
+
+  - id: b_l2_cross_entropy_loss
+    level: L2
+    domain: loss
+    difficulty: medium
+    op_name: cross_entropy_loss
+    title: "CrossEntropyLoss: CUDA fused loss -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/loss/cross_entropy_loss.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/loss/cross_entropy_loss.py` is the upstream operator
+      contract.  MultiKernelBench does not ship a per-op CUDA sample for this
+      operator at the pinned commit; the CUDA side is a fused
+      log-softmax + NLL loss.
+
+      Write `work/submission/cross_entropy_loss_submission.py` defining
+      `class ModelNew` whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/cross_entropy_loss_submission.py --op cross_entropy_loss --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/cross_entropy_loss_submission.py"
+
+  - id: b_l2_cumsum
+    level: L2
+    domain: math
+    difficulty: medium
+    op_name: cumsum
+    title: "Cumsum: CUDA scan -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/math/cumsum.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/math/cumsum.py` is the upstream operator contract.
+      MultiKernelBench does not ship a per-op CUDA sample for this operator at
+      the pinned commit; the CUDA side is a prefix scan.
+
+      Write `work/submission/cumsum_submission.py` defining `class ModelNew`
+      whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`.  Do not call
+      PyTorch compute ops for the operator body and do not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/cumsum_submission.py --op cumsum --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/cumsum_submission.py"
+
+  # ------------------------------------------------------------------ L3 ---
+  - id: b_l3_standard_matmul
+    level: L3
+    domain: matmul
+    difficulty: hard
+    op_name: standard_matrix_multiplication
+    title: "Standard matmul: CUDA GEMM -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/matmul/standard_matrix_multiplication.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/matmul/standard_matrix_multiplication.py` is the upstream
+      operator contract.  MultiKernelBench does not ship a per-op CUDA sample
+      for this operator at the pinned commit; the CUDA side is a shared-memory
+      tiled GEMM.
+
+      Write `work/submission/standard_matrix_multiplication_submission.py`
+      defining `class ModelNew` whose `forward` calls a custom MUSA kernel
+      built with `load_inline(..., musa_sources=...)`.  The embedded source
+      must declare `__global__` kernels and launch them with `<<<...>>>`;
+      `muBLAS`/`torch.matmul` are not accepted as the operator body.  Do not
+      reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/standard_matrix_multiplication_submission.py --op standard_matrix_multiplication --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/standard_matrix_multiplication_submission.py"
+
+  - id: b_l3_conv2d
+    level: L3
+    domain: convolution
+    difficulty: hard
+    op_name: conv_standard_2d_square_input_square_kernel
+    title: "Conv2D: cuDNN-style convolution -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/convolution/conv_standard_2d_square_input_square_kernel.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/convolution/conv_standard_2d_square_input_square_kernel.py`
+      is the upstream operator contract.  MultiKernelBench does not ship a
+      per-op CUDA sample for this operator at the pinned commit; the CUDA side
+      is a direct convolution.
+
+      Write `work/submission/conv_standard_2d_square_input_square_kernel_submission.py`
+      defining `class ModelNew` whose `forward` calls a custom MUSA kernel
+      built with `load_inline(..., musa_sources=...)`.  The embedded source
+      must declare `__global__` kernels and launch them with `<<<...>>>`; do
+      not fall back to `muDNN`/`torch.nn.Conv2d` for the operator body and do
+      not reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/conv_standard_2d_square_input_square_kernel_submission.py --op conv_standard_2d_square_input_square_kernel --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/conv_standard_2d_square_input_square_kernel_submission.py"
+
+  - id: b_l3_gqa
+    level: L3
+    domain: attention
+    difficulty: hard
+    op_name: group_query_attention
+    title: "GQA: grouped-query attention -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/attention/group_query_attention.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/attention/group_query_attention.py` is the upstream operator
+      contract.  MultiKernelBench does not ship a per-op CUDA sample for this
+      operator at the pinned commit; the CUDA side is a fused grouped-query
+      attention.
+
+      Write `work/submission/group_query_attention_submission.py` defining
+      `class ModelNew` whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`; do not call
+      PyTorch SDPA/attention ops for the operator body and do not reuse
+      `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/group_query_attention_submission.py --op group_query_attention --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/group_query_attention_submission.py"
+
+  - id: b_l3_sdpa
+    level: L3
+    domain: attention
+    difficulty: hard
+    op_name: scaled_dot_product_attention
+    title: "Scaled dot-product attention -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/attention/scaled_dot_product_attention.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/attention/scaled_dot_product_attention.py` is the upstream
+      operator contract.  MultiKernelBench does not ship a per-op CUDA sample
+      for this operator at the pinned commit; the CUDA side is a fused
+      scaled dot-product attention.
+
+      Write `work/submission/scaled_dot_product_attention_submission.py`
+      defining `class ModelNew` whose `forward` calls a custom MUSA kernel
+      built with `load_inline(..., musa_sources=...)`.  The embedded source
+      must declare `__global__` kernels and launch them with `<<<...>>>`; do
+      not call `torch.nn.functional.scaled_dot_product_attention` and do not
+      reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/scaled_dot_product_attention_submission.py --op scaled_dot_product_attention --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/scaled_dot_product_attention_submission.py"
+
+  - id: b_l3_matmul_gelu_softmax
+    level: L3
+    domain: fuse
+    difficulty: hard
+    op_name: matmul_gelu_softmax
+    title: "Fused matmul + GELU + softmax -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/fuse/matmul_gelu_softmax.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/fuse/matmul_gelu_softmax.py` is the upstream operator
+      contract.  MultiKernelBench does not ship a per-op CUDA sample for this
+      operator at the pinned commit; the CUDA side is a fused
+      matmul -> GELU -> softmax epilogue.
+
+      Write `work/submission/matmul_gelu_softmax_submission.py` defining
+      `class ModelNew` whose `forward` calls a custom MUSA kernel built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`; do not chain
+      `torch.matmul` + `torch.nn.functional.gelu` + `torch.softmax` and do not
+      reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/matmul_gelu_softmax_submission.py --op matmul_gelu_softmax --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/matmul_gelu_softmax_submission.py"
+
+  - id: b_l3_conv2d_batch_norm_scaling
+    level: L3
+    domain: fuse
+    difficulty: hard
+    op_name: conv2d_batch_norm_scaling
+    title: "Conv2d + BatchNorm2d (batch stats) + scale: fused CUDA model -> MUSA kernels"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/fuse/conv2d_batch_norm_scaling.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/fuse/conv2d_batch_norm_scaling.py` is the upstream operator
+      contract: `nn.Conv2d(8, 64, 3)` on a (128, 8, 128, 128) float32 input,
+      then `nn.BatchNorm2d(64)` in training mode (per-channel mean and biased
+      variance over N*H*W, eps=1e-5, affine weight/bias), then a multiply by
+      the scaling factor (2.0).  The model is constructed from
+      `get_init_inputs() = [8, 64, 3, 2.0]` and the evaluator re-seeds before
+      constructing `ModelNew`, so an `nn.Conv2d` parameter container with the
+      same shape gets the same weights.
+
+      Write `work/submission/conv2d_batch_norm_scaling_submission.py` defining
+      `class ModelNew` whose `forward` calls custom MUSA kernels built with
+      `load_inline(..., musa_sources=...)`.  The embedded source must declare
+      `__global__` kernels and launch them with `<<<...>>>`; do not fall back
+      to `muDNN`/`torch.nn.Conv2d` or `torch.nn.functional.batch_norm` for the
+      operator body and do not reuse `Model`.
+
+      Precision: this torch_musa build enables muDNN TF32 by default, so the
+      reference `nn.Conv2d` is ~5e-4 off exact fp32.  Set
+      `torch.backends.mudnn.allow_tf32 = False` at module level and compute the
+      convolution in fp32; the harness compares at atol=rtol=1e-4.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0`.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/conv2d_batch_norm_scaling_submission.py --op conv2d_batch_norm_scaling --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/conv2d_batch_norm_scaling_submission.py"
+
+  - id: b_l3_kv_cached_attention
+    level: L3
+    domain: attention
+    difficulty: hard
+    op_name: kv_cached_attention_inference
+    title: "KV-cached attention inference -> MUSA kernel"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/attention/kv_cached_attention_inference.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `reference/attention/kv_cached_attention_inference.py` is the upstream
+      operator contract.  MultiKernelBench does not ship a per-op CUDA sample
+      for this operator at the pinned commit; the CUDA side is a decode-step
+      attention over a KV cache.
+
+      Write `work/submission/kv_cached_attention_inference_submission.py`
+      defining `class ModelNew` whose `forward` calls a custom MUSA kernel
+      built with `load_inline(..., musa_sources=...)`.  The embedded source
+      must declare `__global__` kernels and launch them with `<<<...>>>`; do
+      not call PyTorch SDPA/attention ops for the operator body and do not
+      reuse `Model`.
+
+      The evaluator (`eval_single_runner.py --language musa`) runs the
+      reference and `ModelNew` on `musa:0` with atol=rtol=1e-4.
+    hidden_tests:
+      command: "cd {work} && python3 eval_single_runner.py --input {work}/submission/kv_cached_attention_inference_submission.py --op kv_cached_attention_inference --language musa --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/kv_cached_attention_inference_submission.py"

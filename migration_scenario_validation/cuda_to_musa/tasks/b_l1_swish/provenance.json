@@ -1,0 +1,30 @@
+{
+  "task_id": "b_l1_swish",
+  "scenario": "cuda_to_musa",
+  "repo": "https://github.com/wzzll123/MultiKernelBench.git",
+  "commit": "460a972c9be7ce18035984321d38b910e27df95f",
+  "tag": null,
+  "license": "MIT",
+  "source_kind": "upstream-kernel-benchmark",
+  "source_files": [
+    "reference/activation/swish.py"
+  ],
+  "gold_files": [],
+  "reference_files": [],
+  "spec_files": [],
+  "test_files": [
+    "utils/correctness.py",
+    "utils/cheating_detection.py"
+  ],
+  "copied": {
+    "source_files": [],
+    "gold_files": [],
+    "reference_files": [],
+    "spec_files": [],
+    "test_files": []
+  },
+  "gold_kind": "benchmark-judge",
+  "materialized": true,
+  "generated_by": "tools/extract_migrate_task.py",
+  "generated_at": "2026-11-16T11:49:30Z"
+}
