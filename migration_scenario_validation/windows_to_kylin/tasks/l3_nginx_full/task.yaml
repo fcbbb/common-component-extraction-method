@@ -1,0 +1,75 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/os/unix
+  behavior: nginx builds, serves static content, and autoindex.t and range.t pass
+id: l3_nginx_full
+level: L3
+domain: networking
+difficulty: hard
+title: 'nginx full OS layer: whole Win32 port -> Kylin/POSIX'
+source:
+  repo: https://github.com/nginx/nginx.git
+  commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+  tag: release-1.26.3
+  license: BSD-2-Clause
+  windows_files:
+  - src/os/win32/ngx_win32_init.c
+  - src/os/win32/ngx_win32_config.h
+  gold_files:
+  - src/os/unix
+  test_files:
+  - src/os/unix/ngx_files.h
+  extra_repos:
+  - name: nginx-tests
+    repo: https://github.com/nginx/nginx-tests.git
+    commit: c0b7894063022fb86d5b5ad732c08507ea03aa78
+    dest: nginx-tests
+spec: "This is the whole-server variant: `src/os/unix/` has been removed as a\ndirectory, not one file.\
+  \  Rebuild nginx's operating-system layer for\nKylin from the Windows implementation and the rest of\
+  \ the tree:\n  - process model, daemonisation, signals and master/worker channels;\n  - event loop (epoll),\
+  \ timers, accept/connect/read/write/sendfile;\n  - file, directory, shared memory, atomics, errno and\
+  \ time;\n  - configuration-time detection in auto/ must still produce a working\n    `objs/nginx`.\n\
+  The hidden test starts nginx and runs upstream nginx-tests.\n"
+prepare:
+  remove:
+  - src/os/unix
+harness:
+  scripts:
+  - nginx_smoke.sh
+build:
+  command: ./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module
+    && make -j
+  artifact: '{work}/objs/nginx'
+hidden_tests:
+  command: bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port 18081 && cd {work}/nginx-tests
+    && TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t
+task_id: l3_nginx_full

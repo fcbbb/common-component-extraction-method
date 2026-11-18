@@ -1,0 +1,984 @@
+# Scenario A: Windows / MSVC C++ -> Kylin V10 + GCC/CMake.
+#
+# Every task is a slice of a real upstream repository.  `prepare.sh` checks out
+# the pinned commit, copies the target-platform implementation into the
+# evaluator-only `gold/` tree, then removes it from the agent-visible `work/`.
+# `windows_files` stays visible and is the reference the agent migrates from.
+scenario: windows_to_kylin
+
+defaults:
+  scenario: windows_to_kylin
+  fit: B
+  counted: true
+  source_kind: upstream-platform-port
+  gold_kind: implementation
+  tolerances: {}
+  target:
+    os: kylin-v10-sp3
+    arch: x86_64
+    toolchain: gcc-13.3
+    cmake: "3.28"
+  gates:
+    build: "configure and build the task target on Kylin V10"
+    api_removal:
+      symbol_regex: "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)"
+      source_regex: "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance"
+      exclude_globs:
+        - "**/*_WIN32*"
+        - "**/*_win32*"
+        - "**/*w32*"
+        - "**/*W32*"
+        - "**/*_windows.c"
+        - "**/*_windows.h"
+        - "**/win32/**"
+        - "**/Win32/**"
+        - "**/win/**"
+        - "**/Windows/**"
+        - "**/windows/**"
+        - "**/projects/Windows/**"
+        - "**/winbuild/**"
+    behavior: "the task's selected upstream tests pass on Kylin"
+
+tasks:
+  # ------------------------------------------------------------------ L1 ---
+  - id: l1_poco_thread
+    level: L1
+    domain: runtime
+    difficulty: easy
+    title: "POCO Thread: Win32 threads -> pthreads"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/Thread_WIN32.cpp
+        - Foundation/include/Poco/Thread_WIN32.h
+      gold_files:
+        - Foundation/src/Thread_POSIX.cpp
+      test_files:
+        - Foundation/testsuite/src/ThreadTest.cpp
+    spec: |
+      POCO's Foundation library is built from platform-suffixed sources selected
+      by CMake.  On Kylin the POSIX backend has been removed; the public header
+      `Poco/Thread.h` and the Win32 implementation `Thread_WIN32.cpp` are still
+      present as the reference.
+
+      Recreate `Foundation/src/Thread_POSIX.cpp` so that Poco::Thread provides
+      the same contract through pthreads: start/join, tryJoin, wakeup after a
+      timed join, current()/currentTid(), signal handlers, thread priorities,
+      OS-assigned stack size, and clean TLS teardown.  Keep every public
+      signature in `Poco/Thread.h` unchanged.
+    prepare:
+      remove:
+        - Foundation/src/Thread_POSIX.cpp
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j"
+      artifact: "{build}/lib/libPocoFoundation.a"
+    hidden_tests:
+      command: "cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx ThreadTest"
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/Thread_POSIX.cpp
+      behavior: "ThreadTest passes; no Win32 thread API remains"
+
+  - id: l1_poco_shared_library
+    level: L1
+    domain: runtime
+    difficulty: easy
+    title: "POCO SharedLibrary: LoadLibrary -> dlopen"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/SharedLibrary_WIN32U.cpp
+        - Foundation/include/Poco/SharedLibrary_WIN32U.h
+      gold_files:
+        - Foundation/src/SharedLibrary_UNIX.cpp
+      test_files:
+        - Foundation/testsuite/src/SharedLibraryTest.cpp
+    spec: |
+      Recreate `Foundation/src/SharedLibrary_UNIX.cpp`: load/UNLOAD shared
+      objects with dlopen/dlsym/dlclose, map Poco's Poco::SharedLibrary
+      exceptions onto dlerror(), expose prefix/suffix helpers, and keep the
+      symbol lookup semantics (missing symbol must throw
+      Poco::SharedLibrary::SymbolNotFoundException, not return null).
+    prepare:
+      remove:
+        - Foundation/src/SharedLibrary_UNIX.cpp
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j"
+      artifact: "{build}/lib/libPocoFoundation.a"
+    hidden_tests:
+      command: "cd {build}/bin && LD_LIBRARY_PATH=\"$PWD:$LD_LIBRARY_PATH\" ./Foundation-testrunner -ignore {work}/cppignore.lnx SharedLibraryTest"
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/SharedLibrary_UNIX.cpp
+      behavior: "SharedLibraryTest passes; no LoadLibrary/GetProcAddress remains"
+
+  - id: l1_poco_file
+    level: L1
+    domain: filesystem
+    difficulty: medium
+    title: "POCO File: Win32 file handles -> POSIX file descriptors"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/File_WIN32U.cpp
+        - Foundation/include/Poco/File_WIN32U.h
+      gold_files:
+        - Foundation/src/File_UNIX.cpp
+      test_files:
+        - Foundation/testsuite/src/FileTest.cpp
+    spec: |
+      Recreate `Foundation/src/File_UNIX.cpp`.  The Windows file uses
+      CreateFileW and 64-bit file pointers; the POSIX version must use
+      open/stat/lstat/mkdir/rmdir/rename/link/symlink/readlink/utime and keep
+      the same Poco::File observable behaviour:
+        - exists(), isFile(), isDirectory(), isLink(), canRead/canWrite
+        - sizes, timestamps, permissions (mode bits mapping)
+        - copyTo/moveTo across directories, symbolic and hard links
+        - directory iteration and the usual ENOENT/EEXIST error mapping
+    prepare:
+      remove:
+        - Foundation/src/File_UNIX.cpp
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j"
+      artifact: "{build}/lib/libPocoFoundation.a"
+    hidden_tests:
+      command: "cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest"
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/File_UNIX.cpp
+      behavior: "FileTest passes; no Win32 file API remains"
+
+  - id: l1_poco_path
+    level: L1
+    domain: filesystem
+    difficulty: easy
+    title: "POCO Path: Win32 path rules -> POSIX path rules"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/Path_WIN32U.cpp
+        - Foundation/include/Poco/Path_WIN32U.h
+      gold_files:
+        - Foundation/src/Path_UNIX.cpp
+      test_files:
+        - Foundation/testsuite/src/PathTest.cpp
+    spec: |
+      Recreate `Foundation/src/Path_UNIX.cpp`.  Path semantics are the trap:
+      separators are '/', drive letters and UNC prefixes disappear, '~' is
+      expanded from $HOME, case sensitivity changes, and the Windows
+      MAX_PATH-based buffer logic must become dynamic.  Keep the Poco::Path API
+      (parse, makeAbsolute, makeRelative, resolve, current, home, temp, list)
+      and the expected error behaviour for malformed input.
+    prepare:
+      remove:
+        - Foundation/src/Path_UNIX.cpp
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j"
+      artifact: "{build}/lib/libPocoFoundation.a"
+    hidden_tests:
+      command: "cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx PathTest"
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/Path_UNIX.cpp
+      behavior: "PathTest passes with POSIX path semantics"
+
+  - id: l1_poco_rwlock_semaphore
+    level: L1
+    domain: runtime
+    difficulty: medium
+    title: "POCO RWLock + Semaphore: Win32 primitives -> pthread primitives"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/RWLock_WIN32.cpp
+        - Foundation/src/Semaphore_WIN32.cpp
+        - Foundation/include/Poco/RWLock_WIN32.h
+        - Foundation/include/Poco/Semaphore_WIN32.h
+      gold_files:
+        - Foundation/src/RWLock_POSIX.cpp
+        - Foundation/src/Semaphore_POSIX.cpp
+      test_files:
+        - Foundation/testsuite/src/RWLockTest.cpp
+        - Foundation/testsuite/src/SemaphoreTest.cpp
+    spec: |
+      Recreate both POSIX backends.  RWLock must support read/write lock,
+      tryReadLock/tryWriteLock, unlock and the timeout variants; Semaphore must
+      support wait, tryWait, wait(timeout) and set, with EINTR retry loops.
+      The Windows implementations use SRWLOCK and HANDLE-based semaphores;
+      pthread_rwlock_t and sem_t are not drop-in equivalents:
+        - pthread semaphores use unsigned counts and reject negative initial
+          values that Poco accepts;
+        - timed waits use CLOCK_REALTIME on Linux and must convert Poco's
+          millisecond Timeout to an absolute timespec;
+        - writer starvation policy differs, so do not "optimise" the upstream
+          implementation away.
+    prepare:
+      remove:
+        - Foundation/src/RWLock_POSIX.cpp
+        - Foundation/src/Semaphore_POSIX.cpp
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j"
+      artifact: "{build}/lib/libPocoFoundation.a"
+    hidden_tests:
+      command: "cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx RWLockTest SemaphoreTest"
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/RWLock_POSIX.cpp
+          - Foundation/src/Semaphore_POSIX.cpp
+      behavior: "RWLockTest and SemaphoreTest pass"
+
+  # ------------------------------------------------------------------ L2 ---
+  - id: l2_libgit2_file
+    level: L2
+    domain: filesystem
+    difficulty: medium
+    title: "libgit2 file layer: Win32 mmap/realpath -> POSIX"
+    source:
+      repo: https://github.com/libgit2/libgit2.git
+      commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+      tag: v1.8.1
+      license: GPL-2.0-with-linking-exception
+      windows_files:
+        - src/util/win32/map.c
+        - src/util/win32/path_w32.c
+        - src/util/win32/posix_w32.c
+      gold_files:
+        - src/util/unix/map.c
+        - src/util/unix/realpath.c
+      test_files:
+        - tests/util/filebuf.c
+        - tests/util/ftruncate.c
+        - tests/util/stat.c
+        - tests/util/path/core.c
+    spec: |
+      libgit2 wraps the OS in p_* helpers.  The POSIX mmap and realpath
+      implementations were removed while the Win32 versions
+      (`src/util/win32/map.c`, `path_w32.c`, `posix_w32.c`) stay visible.
+
+      Reimplement:
+        - `git__page_size`, `git__mmap`, `git__munmap` on top of
+          sysconf(_SC_PAGE_SIZE), mmap/munmap, with the same
+          GIT_MMAP_* prot/flags mapping and GIT_ENOTFOUND/GIT_EINVAL errors;
+        - `p_realpath` and `p_realpath_utf8` via realpath(3), including the
+          non-existing-path fallback that libgit2 needs for clone targets.
+
+      Tests selected from the util suite exercise file buffers, truncation,
+      stat and path canonicalisation.
+    prepare:
+      remove:
+        - src/util/unix/map.c
+        - src/util/unix/realpath.c
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j"
+      artifact: "{build}/libgit2.a"
+    hidden_tests:
+      command: "cd {build} && ./util_tests -v -sfilebuf -sftruncate -sstat -spath::core"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/util/unix/map.c
+          - src/util/unix/realpath.c
+      behavior: "selected util clar suites pass offline"
+
+  - id: l2_libgit2_process
+    level: L2
+    domain: runtime
+    difficulty: hard
+    title: "libgit2 process/thread layer: Win32 process + pthread wrappers"
+    source:
+      repo: https://github.com/libgit2/libgit2.git
+      commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+      tag: v1.8.1
+      license: GPL-2.0-with-linking-exception
+      windows_files:
+        - src/util/win32/process.c
+        - src/util/win32/thread.c
+        - src/util/win32/thread.h
+      gold_files:
+        - src/util/unix/process.c
+        - src/util/unix/pthread.h
+        - src/util/unix/posix.h
+      test_files:
+        - tests/util/process/start.c
+        - tests/libgit2/threads/basic.c
+        - tests/libgit2/threads/tlsdata.c
+    spec: |
+      The POSIX process spawner and the pthread wrapper header were removed.
+      Recreate `src/util/unix/process.c`, `pthread.h` and `posix.h` with the
+      same interfaces the rest of libgit2 uses:
+        - git__process_init / git__process_cleanup
+        - git__spawn with the stdout/stderr redirection and environment
+          hooks used by the process tests
+        - thread, mutex, rwlock, cond and TLS wrappers including timed waits
+          and the cleanup destructors
+      The Win32 files remain as the behavioural reference; do not change the
+      call sites under src/.
+    prepare:
+      remove:
+        - src/util/unix/process.c
+        - src/util/unix/pthread.h
+        - src/util/unix/posix.h
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j"
+      artifact: "{build}/libgit2.a"
+    hidden_tests:
+      command: "cd {build} && ./util_tests -v -sprocess::start && ./libgit2_tests -v -sthreads::basic -sthreads::tlsdata"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/util/unix/process.c
+          - src/util/unix/pthread.h
+          - src/util/unix/posix.h
+      behavior: "process and thread clar suites pass offline"
+
+  - id: l2_libarchive_read_disk
+    level: L2
+    domain: archives
+    difficulty: hard
+    title: "libarchive read_disk: Win32 traversal -> POSIX traversal"
+    source:
+      repo: https://github.com/libarchive/libarchive.git
+      commit: 313aa1fa10b657de791e3202c168a6c833bc3543
+      tag: v3.7.4
+      license: BSD-2-Clause
+      windows_files:
+        - libarchive/archive_read_disk_windows.c
+        - libarchive/archive_read_disk_private.h
+      gold_files:
+        - libarchive/archive_read_disk_posix.c
+      test_files:
+        - libarchive/test/test_read_disk.c
+        - libarchive/test/test_read_disk_directory_traversals.c
+        - libarchive/test/test_read_disk_entry_from_file.c
+    spec: |
+      `archive_read_disk_posix.c` was removed.  Reimplement the disk reader
+      for Kylin while keeping `archive_read_disk_windows.c` as the reference
+      and `archive_read_disk_private.h` unchanged:
+        - ACL/xattr entry metadata (where supported), nlink, inode, device,
+          symlink target and hardlink detection;
+        - directory traversal with the documented visit order and the
+          `descend`/`can_descend` callback contract;
+        - sparse-file and file-type handling used by the write-disk tests.
+      The selected tests are the upstream read-disk tests, which run entirely
+      on local fixtures.
+    prepare:
+      remove:
+        - libarchive/archive_read_disk_posix.c
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_TAR=OFF -DENABLE_CPIO=OFF -DENABLE_CAT=OFF && cmake --build {build} -j"
+      artifact: "{build}/libarchive/libarchive.a"
+    hidden_tests:
+      command: "mkdir -p {build}/test-run && cd {build}/test-run && ../bin/libarchive_test -r {work}/libarchive/test test_read_disk test_read_disk_directory_traversals test_read_disk_entry_from_file"
+    gates:
+      api_removal:
+        source_dirs:
+          - libarchive/archive_read_disk_posix.c
+      behavior: "upstream read-disk tests pass"
+
+  - id: l2_libarchive_write_disk
+    level: L2
+    domain: archives
+    difficulty: hard
+    title: "libarchive write_disk: Win32 restore -> POSIX restore"
+    source:
+      repo: https://github.com/libarchive/libarchive.git
+      commit: 313aa1fa10b657de791e3202c168a6c833bc3543
+      tag: v3.7.4
+      license: BSD-2-Clause
+      windows_files:
+        - libarchive/archive_write_disk_windows.c
+        - libarchive/archive_write_disk_private.h
+      gold_files:
+        - libarchive/archive_write_disk_posix.c
+      test_files:
+        - libarchive/test/test_write_disk.c
+        - libarchive/test/test_write_disk_failures.c
+        - libarchive/test/test_write_disk_perms.c
+        - libarchive/test/test_write_disk_secure.c
+        - libarchive/test/test_write_disk_hardlink.c
+    spec: |
+      `archive_write_disk_posix.c` was removed.  Reimplement restore-to-disk
+      on Kylin, keeping the Win32 implementation as the reference:
+        - mkdir/rename/link/symlink with overwrite, no-overwrite and
+          secure-symlink policies;
+        - mode bits, ownership where permitted, timestamps, ACL/xattr flags;
+        - sparse file writing and hardlink bookkeeping;
+        - the documented error mapping for EEXIST/EPERM/ENOTSUP and the
+          `ARCHIVE_EXTRACT_*` flags.
+    prepare:
+      remove:
+        - libarchive/archive_write_disk_posix.c
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_TAR=OFF -DENABLE_CPIO=OFF -DENABLE_CAT=OFF && cmake --build {build} -j"
+      artifact: "{build}/libarchive/libarchive.a"
+    hidden_tests:
+      command: "mkdir -p {build}/test-run && cd {build}/test-run && ../bin/libarchive_test -r {work}/libarchive/test test_write_disk test_write_disk_failures test_write_disk_perms test_write_disk_secure test_write_disk_hardlink"
+    gates:
+      api_removal:
+        source_dirs:
+          - libarchive/archive_write_disk_posix.c
+      behavior: "upstream write-disk tests pass"
+
+  - id: l2_curl_tls
+    level: L2
+    domain: networking
+    difficulty: hard
+    title: "curl TLS backend: Schannel/Win32 -> OpenSSL on Kylin"
+    source:
+      repo: https://github.com/curl/curl.git
+      commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+      tag: curl-8_5_0
+      license: curl
+      windows_files:
+        - lib/vtls/schannel.c
+        - lib/vtls/schannel_verify.c
+        - lib/vtls/schannel.h
+      gold_files:
+        - lib/vtls/openssl.c
+      test_files:
+        - tests/data/test3000
+        - tests/data/test3001
+    spec: |
+      The OpenSSL vtls backend was removed; the Schannel backend and the
+      generic `vtls` interface stay visible.  Implement `lib/vtls/openssl.c`
+      against the OpenSSL 3.x API:
+        - the `Curl_ssl` backend vtable and version reporting;
+        - certificate and hostname verification, SNI, ALPN, session reuse;
+        - blocking and non-blocking handshakes with the curl connect state
+          machine, including the "want read/want write" return codes;
+        - client certificates, CRL and pinned public key hooks used by the
+          curl test suite.
+
+      The hidden test builds curl with `CURL_USE_OPENSSL=ON`, then checks a
+      real TLS handshake against a local `openssl s_server`.
+    prepare:
+      remove:
+        - lib/vtls/openssl.c
+    harness:
+      scripts:
+        - tls_probe.sh
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=ON -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF -DBUILD_TESTING=ON -DBUILD_CURL_EXE=ON && cmake --build {build} -j"
+      artifact: "{build}/src/curl"
+    hidden_tests:
+      command: "bash {root}/harness/tls_probe.sh --port 18443 --path {build}/src/curl"
+    gates:
+      api_removal:
+        source_dirs:
+          - lib/vtls/openssl.c
+      behavior: "curl completes a TLS request through the reimplemented backend"
+
+  - id: l2_opencv_highgui
+    level: L2
+    domain: gui
+    difficulty: medium
+    title: "OpenCV highgui window backend: Win32 -> GTK"
+    source:
+      repo: https://github.com/opencv/opencv.git
+      commit: 71d3237a093b60a27601c20e9ee6c3e52154e8b1
+      tag: 4.10.0
+      license: Apache-2.0
+      windows_files:
+        - modules/highgui/src/window_w32.cpp
+      gold_files:
+        - modules/highgui/src/window_gtk.cpp
+      test_files:
+        - modules/highgui/test/test_gui.cpp
+        - modules/highgui/test/test_main.cpp
+    spec: |
+      The GTK window backend was removed.  Reimplement
+      `modules/highgui/src/window_gtk.cpp` so that the backend-facing
+      functions declared in `modules/highgui/src/window.hpp` behave as on
+      Windows: named windows, imshow, waitKey/waitKeyEx, trackbars, mouse and
+      keyboard callbacks, window resizing and destruction, and the
+      `cvGetWindowHandle`/`cvGetWindowName` contract.
+
+      The hidden test runs the upstream highgui test binary under Xvfb with
+      GTK, so no physical display is required.
+    prepare:
+      remove:
+        - modules/highgui/src/window_gtk.cpp
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_LIST=core,imgproc,imgcodecs,highgui,ts -DWITH_GTK=ON -DWITH_QT=OFF -DBUILD_TESTS=ON -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF && cmake --build {build} -j4"
+      artifact: "{build}/lib/libopencv_highgui.a"
+    hidden_tests:
+      command: "cd {build} && timeout 900 xvfb-run -a ./bin/opencv_test_highgui --gtest_filter=Highgui_GUI.*"
+    gates:
+      api_removal:
+        source_dirs:
+          - modules/highgui/src/window_gtk.cpp
+      behavior: "upstream highgui GUI tests pass under Xvfb"
+
+  - id: l2_nginx_files
+    level: L2
+    domain: networking
+    difficulty: medium
+    title: "nginx file layer: Win32 file API -> POSIX file API"
+    source:
+      repo: https://github.com/nginx/nginx.git
+      commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+      tag: release-1.26.3
+      license: BSD-2-Clause
+      windows_files:
+        - src/os/win32/ngx_files.c
+        - src/os/win32/ngx_files.h
+      gold_files:
+        - src/os/unix/ngx_files.c
+      test_files:
+        - src/os/unix/ngx_files.h
+      extra_repos:
+        - name: nginx-tests
+          repo: https://github.com/nginx/nginx-tests.git
+          commit: c0b7894063022fb86d5b5ad732c08507ea03aa78
+          dest: nginx-tests
+    spec: |
+      `src/os/unix/ngx_files.c` was removed while the Win32 file layer and
+      `src/os/unix/ngx_files.h` stay visible.  Reimplement the POSIX file
+      primitives used by the whole server: open/close/read/write/pread/pwrite,
+      stat, rename, delete, mkdir/rmdir, symlink/readlink, timestamps,
+      directory iteration, path canonicalisation and the ngx_errno mapping.
+
+      The hidden test builds nginx, starts it, fetches a static file, then
+      runs the upstream `nginx-tests` `autoindex.t` + `range.t` suites.
+    prepare:
+      remove:
+        - src/os/unix/ngx_files.c
+    harness:
+      scripts:
+        - nginx_smoke.sh
+    build:
+      command: "./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module && make -j"
+      artifact: "{work}/objs/nginx"
+    hidden_tests:
+      command: "bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port 18080 && cd {work}/nginx-tests && TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/os/unix/ngx_files.c
+      behavior: "static file serving works and autoindex.t and range.t pass"
+
+  - id: l2_libuv_fs
+    level: L2
+    domain: async-io
+    difficulty: medium
+    title: "libuv fs: Win32 OVERLAPPED I/O -> POSIX thread pool"
+    source:
+      repo: https://github.com/libuv/libuv.git
+      commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+      tag: v1.48.0
+      license: MIT
+      windows_files:
+        - src/win/fs.c
+        - src/win/fs-event.c
+      gold_files:
+        - src/unix/fs.c
+      test_files:
+        - test/test-fs.c
+        - test/test-fs-event.c
+        - test/test-fs-poll.c
+        - test/test-fs-readdir.c
+    spec: |
+      `src/unix/fs.c` was removed.  Reimplement libuv's POSIX file-system
+      backend against the public `uv_fs_*` API and the internal loop/req
+      contracts:
+        - sync and async open/read/write/close, stat/lstat/fstat, mkdir,
+          rmdir, unlink, rename, link, symlink, readlink, chmod, chown,
+          utime, truncate, copyfile, sendfile, access and mkdtemp;
+        - the thread-pool work/after-work split, req->result, uv_fs_t.path
+          ownership and the documented error mapping;
+        - directory scanning (uv_fs_scandir) and the fs-event/fs-poll
+          integration expected by the tests.
+    prepare:
+      remove:
+        - src/unix/fs.c
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON && cmake --build {build} -j"
+      artifact: "{build}/libuv.a"
+    hidden_tests:
+      command: "cd {work} && {build}/uv_run_tests_a fs_file_async && {build}/uv_run_tests_a fs_file_sync && {build}/uv_run_tests_a fs_copyfile && {build}/uv_run_tests_a fs_stat_missing_path && {build}/uv_run_tests_a fs_readdir_non_empty_dir && {build}/uv_run_tests_a fs_scandir_empty_dir && {build}/uv_run_tests_a fs_poll && {build}/uv_run_tests_a fs_event_watch_dir"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/unix/fs.c
+      behavior: "libuv fs tests pass"
+
+  - id: l2_libuv_process
+    level: L2
+    domain: async-io
+    difficulty: hard
+    title: "libuv process: Win32 CreateProcess -> POSIX fork/exec"
+    source:
+      repo: https://github.com/libuv/libuv.git
+      commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+      tag: v1.48.0
+      license: MIT
+      windows_files:
+        - src/win/process.c
+        - src/win/process-stdio.c
+      gold_files:
+        - src/unix/process.c
+      test_files:
+        - test/test-spawn.c
+        - test/test-process-title.c
+        - test/test-process-title-threadsafe.c
+        - test/test-process-priority.c
+    spec: |
+      `src/unix/process.c` was removed.  Reimplement process spawning with
+      fork/exec and the pipe/stdio machinery the tests expect:
+        - uv_spawn argument and environment construction, PATH lookup,
+          executable validation and the ENOENT/EACCES error paths;
+        - stdio inheritance, uv_pipe_t and fd remapping, detached processes,
+          process groups, uid/gid switches and windows-hide semantics;
+        - uv_process_kill, uv_kill, exit/close callbacks, reaping and
+          process-title helpers.
+    prepare:
+      remove:
+        - src/unix/process.c
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON && cmake --build {build} -j"
+      artifact: "{build}/libuv.a"
+    hidden_tests:
+      command: "cd {work} && {build}/uv_run_tests_a spawn_stdout && {build}/uv_run_tests_a spawn_stdin && {build}/uv_run_tests_a spawn_exit_code && {build}/uv_run_tests_a spawn_and_kill && {build}/uv_run_tests_a spawn_detached && {build}/uv_run_tests_a spawn_reads_child_path && {build}/uv_run_tests_a spawn_relative_path && {build}/uv_run_tests_a process_title && {build}/uv_run_tests_a process_priority"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/unix/process.c
+      behavior: "libuv spawn/process tests pass"
+
+  - id: l2_libuv_thread
+    level: L2
+    domain: runtime
+    difficulty: medium
+    title: "libuv thread layer: Win32 threads -> pthreads"
+    source:
+      repo: https://github.com/libuv/libuv.git
+      commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+      tag: v1.48.0
+      license: MIT
+      windows_files:
+        - src/win/thread.c
+      gold_files:
+        - src/unix/thread.c
+      test_files:
+        - test/test-thread.c
+        - test/test-thread-affinity.c
+        - test/test-thread-equal.c
+        - test/test-thread-priority.c
+        - test/test-threadpool.c
+    spec: |
+      `src/unix/thread.c` was removed.  Reimplement libuv's threading layer
+      with pthreads: uv_thread_create/join/equal/self, thread names and
+      affinity/priority, uv_mutex/uv_rwlock/uv_sem/uv_cond/uv_barrier,
+      uv_once, TLS keys and the thread-pool (uv_queue_work /
+      uv_cancel).  Preserve the documented return codes and the
+      EAGAIN-on-exhaustion behaviour.
+    prepare:
+      remove:
+        - src/unix/thread.c
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON && cmake --build {build} -j"
+      artifact: "{build}/libuv.a"
+    hidden_tests:
+      command: "cd {work} && {build}/uv_run_tests_a thread_create && {build}/uv_run_tests_a thread_equal && {build}/uv_run_tests_a thread_affinity && {build}/uv_run_tests_a thread_priority && {build}/uv_run_tests_a thread_mutex && {build}/uv_run_tests_a thread_rwlock && {build}/uv_run_tests_a thread_local_storage && {build}/uv_run_tests_a barrier_serial_thread && {build}/uv_run_tests_a condvar_1 && {build}/uv_run_tests_a semaphore_1 && {build}/uv_run_tests_a threadpool_queue_work_simple && {build}/uv_run_tests_a threadpool_cancel_single"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/unix/thread.c
+      behavior: "libuv thread/threadpool tests pass"
+
+  # ------------------------------------------------------------------ L3 ---
+  - id: l3_nginx_full
+    level: L3
+    domain: networking
+    difficulty: hard
+    title: "nginx full OS layer: whole Win32 port -> Kylin/POSIX"
+    source:
+      repo: https://github.com/nginx/nginx.git
+      commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+      tag: release-1.26.3
+      license: BSD-2-Clause
+      windows_files:
+        - src/os/win32/ngx_win32_init.c
+        - src/os/win32/ngx_win32_config.h
+      gold_files:
+        - src/os/unix
+      test_files:
+        - src/os/unix/ngx_files.h
+      extra_repos:
+        - name: nginx-tests
+          repo: https://github.com/nginx/nginx-tests.git
+          commit: c0b7894063022fb86d5b5ad732c08507ea03aa78
+          dest: nginx-tests
+    spec: |
+      This is the whole-server variant: `src/os/unix/` has been removed as a
+      directory, not one file.  Rebuild nginx's operating-system layer for
+      Kylin from the Windows implementation and the rest of the tree:
+        - process model, daemonisation, signals and master/worker channels;
+        - event loop (epoll), timers, accept/connect/read/write/sendfile;
+        - file, directory, shared memory, atomics, errno and time;
+        - configuration-time detection in auto/ must still produce a working
+          `objs/nginx`.
+      The hidden test starts nginx and runs upstream nginx-tests.
+    prepare:
+      remove:
+        - src/os/unix
+    harness:
+      scripts:
+        - nginx_smoke.sh
+    build:
+      command: "./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module && make -j"
+      artifact: "{work}/objs/nginx"
+    hidden_tests:
+      command: "bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port 18081 && cd {work}/nginx-tests && TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/os/unix
+      behavior: "nginx builds, serves static content, and autoindex.t and range.t pass"
+
+  - id: l3_libgit2_full
+    level: L3
+    domain: vcs
+    difficulty: hard
+    title: "libgit2 full POSIX util layer"
+    source:
+      repo: https://github.com/libgit2/libgit2.git
+      commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+      tag: v1.8.1
+      license: GPL-2.0-with-linking-exception
+      windows_files:
+        - src/util/win32
+      gold_files:
+        - src/util/unix
+      test_files:
+        - tests/util
+    spec: |
+      The complete `src/util/unix/` directory was removed (process, map,
+      realpath and the pthread/posix wrapper headers).  Rebuild libgit2's
+      POSIX utility layer so the library and its clar test suite compile and
+      run on Kylin.  Public libgit2 headers and call sites are unchanged; the
+      Win32 layer (`src/util/win32/`) stays visible as the reference.
+    prepare:
+      remove:
+        - src/util/unix
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j"
+      artifact: "{build}/libgit2.a"
+    hidden_tests:
+      command: "cd {build} && ./util_tests -v -sfilebuf -sftruncate -sstat -spath::core -sprocess::start && ./libgit2_tests -v -xonline -sthreads::basic"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/util/unix
+      behavior: "libgit2 builds and the selected offline suites pass"
+
+  - id: l3_poco_foundation_full
+    level: L3
+    domain: runtime
+    difficulty: hard
+    title: "POCO Foundation full POSIX platform layer"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/Thread_WIN32.cpp
+        - Foundation/src/File_WIN32U.cpp
+        - Foundation/src/Path_WIN32U.cpp
+        - Foundation/src/Process_WIN32U.cpp
+      gold_files:
+        - Foundation/src/DirectoryIterator_UNIX.cpp
+        - Foundation/src/Environment_UNIX.cpp
+        - Foundation/src/Event_POSIX.cpp
+        - Foundation/src/FileStream_POSIX.cpp
+        - Foundation/src/File_UNIX.cpp
+        - Foundation/src/Mutex_POSIX.cpp
+        - Foundation/src/NamedEvent_UNIX.cpp
+        - Foundation/src/NamedMutex_UNIX.cpp
+        - Foundation/src/Path_UNIX.cpp
+        - Foundation/src/PipeImpl_POSIX.cpp
+        - Foundation/src/Process_UNIX.cpp
+        - Foundation/src/RWLock_POSIX.cpp
+        - Foundation/src/Semaphore_POSIX.cpp
+        - Foundation/src/SharedLibrary_UNIX.cpp
+        - Foundation/src/SharedMemory_POSIX.cpp
+        - Foundation/src/Thread_POSIX.cpp
+        - Foundation/src/Timezone_UNIX.cpp
+      test_files:
+        - Foundation/testsuite/src
+    spec: |
+      All POSIX/UNIX implementations under `Foundation/src/` were removed in
+      one go (17 files).  Rebuild the whole Foundation platform layer for
+      Kylin: threads, mutexes, events, rwlocks, semaphores, files, paths,
+      streams, processes, pipes, shared memory/libraries, environment,
+      directory iteration and timezone.  This is the calibration point for
+      "one repository, many coupled backends"; partial ports will not link.
+    prepare:
+      remove:
+        - Foundation/src/DirectoryIterator_UNIX.cpp
+        - Foundation/src/Environment_UNIX.cpp
+        - Foundation/src/Event_POSIX.cpp
+        - Foundation/src/FileStream_POSIX.cpp
+        - Foundation/src/File_UNIX.cpp
+        - Foundation/src/Mutex_POSIX.cpp
+        - Foundation/src/NamedEvent_UNIX.cpp
+        - Foundation/src/NamedMutex_UNIX.cpp
+        - Foundation/src/Path_UNIX.cpp
+        - Foundation/src/PipeImpl_POSIX.cpp
+        - Foundation/src/Process_UNIX.cpp
+        - Foundation/src/RWLock_POSIX.cpp
+        - Foundation/src/Semaphore_POSIX.cpp
+        - Foundation/src/SharedLibrary_UNIX.cpp
+        - Foundation/src/SharedMemory_POSIX.cpp
+        - Foundation/src/Thread_POSIX.cpp
+        - Foundation/src/Timezone_UNIX.cpp
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j"
+      artifact: "{build}/lib/libPocoFoundation.a"
+    hidden_tests:
+      command: "cd {build}/bin && LD_LIBRARY_PATH=\"$PWD:$LD_LIBRARY_PATH\" PATH=\"$PWD:$PATH\" ./Foundation-testrunner -ignore {work}/cppignore.lnx ThreadTest FileTest PathTest RWLockTest SemaphoreTest SharedLibraryTest ProcessTest"
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/DirectoryIterator_UNIX.cpp
+          - Foundation/src/Environment_UNIX.cpp
+          - Foundation/src/Event_POSIX.cpp
+          - Foundation/src/FileStream_POSIX.cpp
+          - Foundation/src/File_UNIX.cpp
+          - Foundation/src/Mutex_POSIX.cpp
+          - Foundation/src/NamedEvent_UNIX.cpp
+          - Foundation/src/NamedMutex_UNIX.cpp
+          - Foundation/src/Path_UNIX.cpp
+          - Foundation/src/PipeImpl_POSIX.cpp
+          - Foundation/src/Process_UNIX.cpp
+          - Foundation/src/RWLock_POSIX.cpp
+          - Foundation/src/Semaphore_POSIX.cpp
+          - Foundation/src/SharedLibrary_UNIX.cpp
+          - Foundation/src/SharedMemory_POSIX.cpp
+          - Foundation/src/Thread_POSIX.cpp
+          - Foundation/src/Timezone_UNIX.cpp
+      behavior: "Foundation builds and the core platform suites pass"
+
+  - id: l3_curl_build
+    level: L3
+    domain: build-system
+    difficulty: hard
+    title: "curl build system: VS projects -> CMake on Kylin"
+    source:
+      repo: https://github.com/curl/curl.git
+      commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+      tag: curl-8_5_0
+      license: curl
+      windows_files:
+        - projects/Windows/VC14.30/lib/libcurl.sln
+        - winbuild/Makefile.vc
+      gold_files:
+        - CMakeLists.txt
+        - CMake
+      test_files:
+        - tests/data/test3000
+        - tests/data/test3001
+    spec: |
+      The top-level CMake build system was removed; only the Visual Studio
+      projects and the nmake `winbuild/` files remain.  Produce a CMake build
+      for Kylin that:
+        - builds libcurl and the `curl` tool with OpenSSL, zlib and the
+          bundled content;
+        - generates `curl_config.h` (or an equivalent) with the feature macros
+          the source expects;
+        - accepts `-DCURL_USE_OPENSSL=ON -DBUILD_SHARED_LIBS=OFF` and installs
+          headers/libraries;
+        - runs the small TLS smoke test.
+      Do not vendor a prebuilt libcurl; the build must compile from this tree.
+    prepare:
+      remove:
+        - CMakeLists.txt
+        - CMake
+    harness:
+      scripts:
+        - tls_probe.sh
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=ON -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF && cmake --build {build} -j"
+      artifact: "{build}/src/curl"
+    hidden_tests:
+      command: "bash {root}/harness/tls_probe.sh --port 18444 --path {build}/src/curl"
+    gates:
+      api_removal:
+        source_dirs:
+          - CMakeLists.txt
+      behavior: "agent-authored CMake builds curl and TLS works"
+
+  # -------------------------------------------------------------- negative --
+  - id: negative_win32_eventlog
+    level: L3
+    domain: negative
+    difficulty: hard
+    title: "Negative control: Windows Event Log channel has no equivalent"
+    fit: C
+    negative: true
+    expected_api_removal: fail
+    gold_kind: none
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/EventLogChannel.cpp
+        - Foundation/include/Poco/EventLogChannel.h
+        - Foundation/src/pocomsg.mc
+      gold_files: []
+      test_files: []
+    spec: |
+      `Poco::EventLogChannel` writes to the Windows Event Log through
+      ReportEvent, registers an event source in the registry and loads
+      message-table resources compiled from `pocomsg.mc`.  Kylin has no
+      Event Log service, no equivalent registry event-source registration and
+      no message-table resource compiler.
+
+      The correct outcome is an explicit non-portability report, not a stub
+      that silently drops log records.  Write `work/PORTING_NOTES.md` that:
+        - names the platform-only APIs and where they are used;
+        - explains why syslog/journald is not a behaviour-preserving
+          replacement (different record model, source registration, IDs);
+        - states what a product team would have to redesign.
+      The API-removal gate is expected to FAIL on this task; it is a control
+      for "the agent fabricated a port".
+    prepare:
+      remove: []
+    build:
+      mode: none
+      command: ""
+    hidden_tests:
+      command: "test -s {work}/PORTING_NOTES.md && grep -qiE 'event ?log|not portable|no (direct )?(linux|posix|kylin) equivalent' {work}/PORTING_NOTES.md"
+    gates:
+      build: "not applicable: the module cannot be built on Kylin"
+      api_removal:
+        expect_fail: true
+        source_dirs:
+          - Foundation/src/EventLogChannel.cpp
+        symbol_regex: "^(ReportEvent|RegisterEventSource|DeregisterEventSource|OpenEventLog)"
+        source_regex: "windows\\.h|ReportEvent|RegisterEventSource|HKEY_|RegCreateKey|pocomsg"
+        exclude_globs: []
+      behavior: "PORTING_NOTES.md documents the non-portability and no fake backend is added"

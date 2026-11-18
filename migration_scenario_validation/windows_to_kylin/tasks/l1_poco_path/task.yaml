@@ -1,0 +1,78 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - Foundation/src/Path_UNIX.cpp
+  behavior: PathTest passes with POSIX path semantics
+id: l1_poco_path
+level: L1
+domain: filesystem
+difficulty: easy
+title: 'POCO Path: Win32 path rules -> POSIX path rules'
+source:
+  repo: https://github.com/pocoproject/poco.git
+  commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+  tag: poco-1.13.3-release
+  license: BSL-1.0
+  windows_files:
+  - Foundation/src/Path_WIN32U.cpp
+  - Foundation/include/Poco/Path_WIN32U.h
+  gold_files:
+  - Foundation/src/Path_UNIX.cpp
+  test_files:
+  - Foundation/testsuite/src/PathTest.cpp
+spec: 'Recreate `Foundation/src/Path_UNIX.cpp`.  Path semantics are the trap:
+
+  separators are ''/'', drive letters and UNC prefixes disappear, ''~'' is
+
+  expanded from $HOME, case sensitivity changes, and the Windows
+
+  MAX_PATH-based buffer logic must become dynamic.  Keep the Poco::Path API
+
+  (parse, makeAbsolute, makeRelative, resolve, current, home, temp, list)
+
+  and the expected error behaviour for malformed input.
+
+  '
+prepare:
+  remove:
+  - Foundation/src/Path_UNIX.cpp
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON
+    -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF
+    -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF
+    -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF
+    -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF
+    -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF
+    -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j
+  artifact: '{build}/lib/libPocoFoundation.a'
+hidden_tests:
+  command: cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx PathTest
+task_id: l1_poco_path

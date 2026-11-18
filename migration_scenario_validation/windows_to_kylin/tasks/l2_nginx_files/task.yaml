@@ -1,0 +1,85 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/os/unix/ngx_files.c
+  behavior: static file serving works and autoindex.t and range.t pass
+id: l2_nginx_files
+level: L2
+domain: networking
+difficulty: medium
+title: 'nginx file layer: Win32 file API -> POSIX file API'
+source:
+  repo: https://github.com/nginx/nginx.git
+  commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+  tag: release-1.26.3
+  license: BSD-2-Clause
+  windows_files:
+  - src/os/win32/ngx_files.c
+  - src/os/win32/ngx_files.h
+  gold_files:
+  - src/os/unix/ngx_files.c
+  test_files:
+  - src/os/unix/ngx_files.h
+  extra_repos:
+  - name: nginx-tests
+    repo: https://github.com/nginx/nginx-tests.git
+    commit: c0b7894063022fb86d5b5ad732c08507ea03aa78
+    dest: nginx-tests
+spec: '`src/os/unix/ngx_files.c` was removed while the Win32 file layer and
+
+  `src/os/unix/ngx_files.h` stay visible.  Reimplement the POSIX file
+
+  primitives used by the whole server: open/close/read/write/pread/pwrite,
+
+  stat, rename, delete, mkdir/rmdir, symlink/readlink, timestamps,
+
+  directory iteration, path canonicalisation and the ngx_errno mapping.
+
+
+  The hidden test builds nginx, starts it, fetches a static file, then
+
+  runs the upstream `nginx-tests` `autoindex.t` + `range.t` suites.
+
+  '
+prepare:
+  remove:
+  - src/os/unix/ngx_files.c
+harness:
+  scripts:
+  - nginx_smoke.sh
+build:
+  command: ./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module
+    && make -j
+  artifact: '{work}/objs/nginx'
+hidden_tests:
+  command: bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port 18080 && cd {work}/nginx-tests
+    && TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t
+task_id: l2_nginx_files

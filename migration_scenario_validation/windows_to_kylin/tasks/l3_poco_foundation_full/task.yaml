@@ -1,0 +1,130 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|\bCreateFile\b|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - Foundation/src/DirectoryIterator_UNIX.cpp
+    - Foundation/src/Environment_UNIX.cpp
+    - Foundation/src/Event_POSIX.cpp
+    - Foundation/src/FileStream_POSIX.cpp
+    - Foundation/src/File_UNIX.cpp
+    - Foundation/src/Mutex_POSIX.cpp
+    - Foundation/src/NamedEvent_UNIX.cpp
+    - Foundation/src/NamedMutex_UNIX.cpp
+    - Foundation/src/Path_UNIX.cpp
+    - Foundation/src/PipeImpl_POSIX.cpp
+    - Foundation/src/Process_UNIX.cpp
+    - Foundation/src/RWLock_POSIX.cpp
+    - Foundation/src/Semaphore_POSIX.cpp
+    - Foundation/src/SharedLibrary_UNIX.cpp
+    - Foundation/src/SharedMemory_POSIX.cpp
+    - Foundation/src/Thread_POSIX.cpp
+    - Foundation/src/Timezone_UNIX.cpp
+  behavior: Foundation builds and the core platform suites pass
+id: l3_poco_foundation_full
+level: L3
+domain: runtime
+difficulty: hard
+title: POCO Foundation full POSIX platform layer
+source:
+  repo: https://github.com/pocoproject/poco.git
+  commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+  tag: poco-1.13.3-release
+  license: BSL-1.0
+  windows_files:
+  - Foundation/src/Thread_WIN32.cpp
+  - Foundation/src/File_WIN32U.cpp
+  - Foundation/src/Path_WIN32U.cpp
+  - Foundation/src/Process_WIN32U.cpp
+  gold_files:
+  - Foundation/src/DirectoryIterator_UNIX.cpp
+  - Foundation/src/Environment_UNIX.cpp
+  - Foundation/src/Event_POSIX.cpp
+  - Foundation/src/FileStream_POSIX.cpp
+  - Foundation/src/File_UNIX.cpp
+  - Foundation/src/Mutex_POSIX.cpp
+  - Foundation/src/NamedEvent_UNIX.cpp
+  - Foundation/src/NamedMutex_UNIX.cpp
+  - Foundation/src/Path_UNIX.cpp
+  - Foundation/src/PipeImpl_POSIX.cpp
+  - Foundation/src/Process_UNIX.cpp
+  - Foundation/src/RWLock_POSIX.cpp
+  - Foundation/src/Semaphore_POSIX.cpp
+  - Foundation/src/SharedLibrary_UNIX.cpp
+  - Foundation/src/SharedMemory_POSIX.cpp
+  - Foundation/src/Thread_POSIX.cpp
+  - Foundation/src/Timezone_UNIX.cpp
+  test_files:
+  - Foundation/testsuite/src
+spec: 'All POSIX/UNIX implementations under `Foundation/src/` were removed in
+
+  one go (17 files).  Rebuild the whole Foundation platform layer for
+
+  Kylin: threads, mutexes, events, rwlocks, semaphores, files, paths,
+
+  streams, processes, pipes, shared memory/libraries, environment,
+
+  directory iteration and timezone.  This is the calibration point for
+
+  "one repository, many coupled backends"; partial ports will not link.
+
+  '
+prepare:
+  remove:
+  - Foundation/src/DirectoryIterator_UNIX.cpp
+  - Foundation/src/Environment_UNIX.cpp
+  - Foundation/src/Event_POSIX.cpp
+  - Foundation/src/FileStream_POSIX.cpp
+  - Foundation/src/File_UNIX.cpp
+  - Foundation/src/Mutex_POSIX.cpp
+  - Foundation/src/NamedEvent_UNIX.cpp
+  - Foundation/src/NamedMutex_UNIX.cpp
+  - Foundation/src/Path_UNIX.cpp
+  - Foundation/src/PipeImpl_POSIX.cpp
+  - Foundation/src/Process_UNIX.cpp
+  - Foundation/src/RWLock_POSIX.cpp
+  - Foundation/src/Semaphore_POSIX.cpp
+  - Foundation/src/SharedLibrary_UNIX.cpp
+  - Foundation/src/SharedMemory_POSIX.cpp
+  - Foundation/src/Thread_POSIX.cpp
+  - Foundation/src/Timezone_UNIX.cpp
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON
+    -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF
+    -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF
+    -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF
+    -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF
+    -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF
+    -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j
+  artifact: '{build}/lib/libPocoFoundation.a'
+hidden_tests:
+  command: cd {build}/bin && LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH" PATH="$PWD:$PATH" ./Foundation-testrunner
+    -ignore {work}/cppignore.lnx ThreadTest FileTest PathTest RWLockTest SemaphoreTest SharedLibraryTest
+    ProcessTest
+task_id: l3_poco_foundation_full

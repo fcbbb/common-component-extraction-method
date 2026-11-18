@@ -1,0 +1,79 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - modules/highgui/src/window_gtk.cpp
+  behavior: upstream highgui GUI tests pass under Xvfb
+id: l2_opencv_highgui
+level: L2
+domain: gui
+difficulty: medium
+title: 'OpenCV highgui window backend: Win32 -> GTK'
+source:
+  repo: https://github.com/opencv/opencv.git
+  commit: 71d3237a093b60a27601c20e9ee6c3e52154e8b1
+  tag: 4.10.0
+  license: Apache-2.0
+  windows_files:
+  - modules/highgui/src/window_w32.cpp
+  gold_files:
+  - modules/highgui/src/window_gtk.cpp
+  test_files:
+  - modules/highgui/test/test_gui.cpp
+  - modules/highgui/test/test_main.cpp
+spec: 'The GTK window backend was removed.  Reimplement
+
+  `modules/highgui/src/window_gtk.cpp` so that the backend-facing
+
+  functions declared in `modules/highgui/src/window.hpp` behave as on
+
+  Windows: named windows, imshow, waitKey/waitKeyEx, trackbars, mouse and
+
+  keyboard callbacks, window resizing and destruction, and the
+
+  `cvGetWindowHandle`/`cvGetWindowName` contract.
+
+
+  The hidden test runs the upstream highgui test binary under Xvfb with
+
+  GTK, so no physical display is required.
+
+  '
+prepare:
+  remove:
+  - modules/highgui/src/window_gtk.cpp
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_LIST=core,imgproc,imgcodecs,highgui,ts
+    -DWITH_GTK=ON -DWITH_QT=OFF -DBUILD_TESTS=ON -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF
+    && cmake --build {build} -j4
+  artifact: '{build}/lib/libopencv_highgui.a'
+hidden_tests:
+  command: cd {build} && timeout 900 xvfb-run -a ./bin/opencv_test_highgui --gtest_filter=Highgui_GUI.*
+task_id: l2_opencv_highgui

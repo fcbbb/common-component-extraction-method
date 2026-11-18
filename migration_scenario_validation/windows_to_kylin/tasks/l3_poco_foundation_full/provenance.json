@@ -1,0 +1,60 @@
+{
+  "task_id": "l3_poco_foundation_full",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/pocoproject/poco.git",
+  "commit": "d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b",
+  "tag": "poco-1.13.3-release",
+  "subdir": null,
+  "license": "BSL-1.0",
+  "source_files": [
+    "Foundation/src/Thread_WIN32.cpp",
+    "Foundation/src/File_WIN32U.cpp",
+    "Foundation/src/Path_WIN32U.cpp",
+    "Foundation/src/Process_WIN32U.cpp"
+  ],
+  "gold_files": [
+    "Foundation/src/DirectoryIterator_UNIX.cpp",
+    "Foundation/src/Environment_UNIX.cpp",
+    "Foundation/src/Event_POSIX.cpp",
+    "Foundation/src/FileStream_POSIX.cpp",
+    "Foundation/src/File_UNIX.cpp",
+    "Foundation/src/Mutex_POSIX.cpp",
+    "Foundation/src/NamedEvent_UNIX.cpp",
+    "Foundation/src/NamedMutex_UNIX.cpp",
+    "Foundation/src/Path_UNIX.cpp",
+    "Foundation/src/PipeImpl_POSIX.cpp",
+    "Foundation/src/Process_UNIX.cpp",
+    "Foundation/src/RWLock_POSIX.cpp",
+    "Foundation/src/Semaphore_POSIX.cpp",
+    "Foundation/src/SharedLibrary_UNIX.cpp",
+    "Foundation/src/SharedMemory_POSIX.cpp",
+    "Foundation/src/Thread_POSIX.cpp",
+    "Foundation/src/Timezone_UNIX.cpp"
+  ],
+  "test_files": [
+    "Foundation/testsuite/src"
+  ],
+  "remove": [
+    "Foundation/src/DirectoryIterator_UNIX.cpp",
+    "Foundation/src/Environment_UNIX.cpp",
+    "Foundation/src/Event_POSIX.cpp",
+    "Foundation/src/FileStream_POSIX.cpp",
+    "Foundation/src/File_UNIX.cpp",
+    "Foundation/src/Mutex_POSIX.cpp",
+    "Foundation/src/NamedEvent_UNIX.cpp",
+    "Foundation/src/NamedMutex_UNIX.cpp",
+    "Foundation/src/Path_UNIX.cpp",
+    "Foundation/src/PipeImpl_POSIX.cpp",
+    "Foundation/src/Process_UNIX.cpp",
+    "Foundation/src/RWLock_POSIX.cpp",
+    "Foundation/src/Semaphore_POSIX.cpp",
+    "Foundation/src/SharedLibrary_UNIX.cpp",
+    "Foundation/src/SharedMemory_POSIX.cpp",
+    "Foundation/src/Thread_POSIX.cpp",
+    "Foundation/src/Timezone_UNIX.cpp"
+  ],
+  "gold_kind": "implementation",
+  "materialized": false,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

@@ -1,0 +1,71 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/util/unix
+  behavior: libgit2 builds and the selected offline suites pass
+id: l3_libgit2_full
+level: L3
+domain: vcs
+difficulty: hard
+title: libgit2 full POSIX util layer
+source:
+  repo: https://github.com/libgit2/libgit2.git
+  commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+  tag: v1.8.1
+  license: GPL-2.0-with-linking-exception
+  windows_files:
+  - src/util/win32
+  gold_files:
+  - src/util/unix
+  test_files:
+  - tests/util
+spec: 'The complete `src/util/unix/` directory was removed (process, map,
+
+  realpath and the pthread/posix wrapper headers).  Rebuild libgit2''s
+
+  POSIX utility layer so the library and its clar test suite compile and
+
+  run on Kylin.  Public libgit2 headers and call sites are unchanged; the
+
+  Win32 layer (`src/util/win32/`) stays visible as the reference.
+
+  '
+prepare:
+  remove:
+  - src/util/unix
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF
+    -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j
+  artifact: '{build}/libgit2.a'
+hidden_tests:
+  command: cd {build} && ./util_tests -v -sfilebuf -sftruncate -sstat -spath::core
+    -sprocess::start && ./libgit2_tests -v -xonline -sthreads::basic
+task_id: l3_libgit2_full

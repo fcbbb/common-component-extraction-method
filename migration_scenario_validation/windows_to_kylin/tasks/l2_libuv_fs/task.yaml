@@ -1,0 +1,71 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/unix/fs.c
+  behavior: libuv fs tests pass
+id: l2_libuv_fs
+level: L2
+domain: async-io
+difficulty: medium
+title: 'libuv fs: Win32 OVERLAPPED I/O -> POSIX thread pool'
+source:
+  repo: https://github.com/libuv/libuv.git
+  commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+  tag: v1.48.0
+  license: MIT
+  windows_files:
+  - src/win/fs.c
+  - src/win/fs-event.c
+  gold_files:
+  - src/unix/fs.c
+  test_files:
+  - test/test-fs.c
+  - test/test-fs-event.c
+  - test/test-fs-poll.c
+  - test/test-fs-readdir.c
+spec: "`src/unix/fs.c` was removed.  Reimplement libuv's POSIX file-system\nbackend against the public\
+  \ `uv_fs_*` API and the internal loop/req\ncontracts:\n  - sync and async open/read/write/close, stat/lstat/fstat,\
+  \ mkdir,\n    rmdir, unlink, rename, link, symlink, readlink, chmod, chown,\n    utime, truncate, copyfile,\
+  \ sendfile, access and mkdtemp;\n  - the thread-pool work/after-work split, req->result, uv_fs_t.path\n\
+  \    ownership and the documented error mapping;\n  - directory scanning (uv_fs_scandir) and the fs-event/fs-poll\n\
+  \    integration expected by the tests.\n"
+prepare:
+  remove:
+  - src/unix/fs.c
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON
+    && cmake --build {build} -j
+  artifact: '{build}/libuv.a'
+hidden_tests:
+  command: cd {work} && {build}/uv_run_tests_a fs_file_async && {build}/uv_run_tests_a fs_file_sync && {build}/uv_run_tests_a
+    fs_copyfile && {build}/uv_run_tests_a fs_stat_missing_path && {build}/uv_run_tests_a fs_readdir_non_empty_dir
+    && {build}/uv_run_tests_a fs_scandir_empty_dir && {build}/uv_run_tests_a fs_poll && {build}/uv_run_tests_a fs_event_watch_dir
+task_id: l2_libuv_fs

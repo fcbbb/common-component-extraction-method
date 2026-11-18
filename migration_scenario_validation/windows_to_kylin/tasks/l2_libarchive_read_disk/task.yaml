@@ -1,0 +1,69 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - libarchive/archive_read_disk_posix.c
+  behavior: upstream read-disk tests pass
+id: l2_libarchive_read_disk
+level: L2
+domain: archives
+difficulty: hard
+title: 'libarchive read_disk: Win32 traversal -> POSIX traversal'
+source:
+  repo: https://github.com/libarchive/libarchive.git
+  commit: 313aa1fa10b657de791e3202c168a6c833bc3543
+  tag: v3.7.4
+  license: BSD-2-Clause
+  windows_files:
+  - libarchive/archive_read_disk_windows.c
+  - libarchive/archive_read_disk_private.h
+  gold_files:
+  - libarchive/archive_read_disk_posix.c
+  test_files:
+  - libarchive/test/test_read_disk.c
+  - libarchive/test/test_read_disk_directory_traversals.c
+  - libarchive/test/test_read_disk_entry_from_file.c
+spec: "`archive_read_disk_posix.c` was removed.  Reimplement the disk reader\nfor Kylin while keeping\
+  \ `archive_read_disk_windows.c` as the reference\nand `archive_read_disk_private.h` unchanged:\n  -\
+  \ ACL/xattr entry metadata (where supported), nlink, inode, device,\n    symlink target and hardlink\
+  \ detection;\n  - directory traversal with the documented visit order and the\n    `descend`/`can_descend`\
+  \ callback contract;\n  - sparse-file and file-type handling used by the write-disk tests.\nThe selected\
+  \ tests are the upstream read-disk tests, which run entirely\non local fixtures.\n"
+prepare:
+  remove:
+  - libarchive/archive_read_disk_posix.c
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_TAR=OFF -DENABLE_CPIO=OFF
+    -DENABLE_CAT=OFF && cmake --build {build} -j
+  artifact: '{build}/libarchive/libarchive.a'
+hidden_tests:
+  command: mkdir -p {build}/test-run && cd {build}/test-run && ../bin/libarchive_test -r {work}/libarchive/test
+    test_read_disk test_read_disk_directory_traversals test_read_disk_entry_from_file
+task_id: l2_libarchive_read_disk

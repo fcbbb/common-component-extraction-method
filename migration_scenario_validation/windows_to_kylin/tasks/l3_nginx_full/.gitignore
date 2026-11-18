@@ -1,0 +1,4 @@
+work/
+build/
+build_hidden/
+*.log

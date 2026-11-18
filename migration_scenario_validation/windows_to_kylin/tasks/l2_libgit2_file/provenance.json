@@ -1,0 +1,32 @@
+{
+  "task_id": "l2_libgit2_file",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/libgit2/libgit2.git",
+  "commit": "36f7e21ad757a3dacc58cf7944329da6bc1d6e96",
+  "tag": "v1.8.1",
+  "subdir": null,
+  "license": "GPL-2.0-with-linking-exception",
+  "source_files": [
+    "src/util/win32/map.c",
+    "src/util/win32/path_w32.c",
+    "src/util/win32/posix_w32.c"
+  ],
+  "gold_files": [
+    "src/util/unix/map.c",
+    "src/util/unix/realpath.c"
+  ],
+  "test_files": [
+    "tests/util/filebuf.c",
+    "tests/util/ftruncate.c",
+    "tests/util/stat.c",
+    "tests/util/path/core.c"
+  ],
+  "remove": [
+    "src/util/unix/map.c",
+    "src/util/unix/realpath.c"
+  ],
+  "gold_kind": "implementation",
+  "materialized": false,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

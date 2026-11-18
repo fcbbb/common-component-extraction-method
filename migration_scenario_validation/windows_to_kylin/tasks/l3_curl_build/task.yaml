@@ -1,0 +1,72 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: __declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - CMakeLists.txt
+  behavior: agent-authored CMake builds curl and TLS works
+id: l3_curl_build
+level: L3
+domain: build-system
+difficulty: hard
+title: 'curl build system: VS projects -> CMake on Kylin'
+source:
+  repo: https://github.com/curl/curl.git
+  commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+  tag: curl-8_5_0
+  license: curl
+  windows_files:
+  - projects/Windows/VC14.30/lib/libcurl.sln
+  - winbuild/Makefile.vc
+  gold_files:
+  - CMakeLists.txt
+  - CMake
+  test_files:
+  - tests/data/test3000
+  - tests/data/test3001
+spec: "The top-level CMake build system was removed; only the Visual Studio\nprojects and the nmake `winbuild/`\
+  \ files remain.  Produce a CMake build\nfor Kylin that:\n  - builds libcurl and the `curl` tool with\
+  \ OpenSSL, zlib and the\n    bundled content;\n  - generates `curl_config.h` (or an equivalent) with\
+  \ the feature macros\n    the source expects;\n  - accepts `-DCURL_USE_OPENSSL=ON -DBUILD_SHARED_LIBS=OFF`\
+  \ and installs\n    headers/libraries;\n  - runs the small TLS smoke test.\nDo not vendor a prebuilt\
+  \ libcurl; the build must compile from this tree.\n"
+prepare:
+  remove:
+  - CMakeLists.txt
+  - CMake
+harness:
+  scripts:
+  - tls_probe.sh
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=ON
+    -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF && cmake --build {build} -j
+  artifact: '{build}/src/curl'
+hidden_tests:
+  command: bash {root}/harness/tls_probe.sh --port 18444 --path {build}/src/curl
+task_id: l3_curl_build

@@ -1,0 +1,28 @@
+{
+  "task_id": "l2_libarchive_read_disk",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/libarchive/libarchive.git",
+  "commit": "313aa1fa10b657de791e3202c168a6c833bc3543",
+  "tag": "v3.7.4",
+  "subdir": null,
+  "license": "BSD-2-Clause",
+  "source_files": [
+    "libarchive/archive_read_disk_windows.c",
+    "libarchive/archive_read_disk_private.h"
+  ],
+  "gold_files": [
+    "libarchive/archive_read_disk_posix.c"
+  ],
+  "test_files": [
+    "libarchive/test/test_read_disk.c",
+    "libarchive/test/test_read_disk_directory_traversals.c",
+    "libarchive/test/test_read_disk_entry_from_file.c"
+  ],
+  "remove": [
+    "libarchive/archive_read_disk_posix.c"
+  ],
+  "gold_kind": "implementation",
+  "materialized": false,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

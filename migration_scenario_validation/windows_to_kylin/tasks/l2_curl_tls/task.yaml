@@ -1,0 +1,73 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - lib/vtls/openssl.c
+  behavior: curl completes a TLS request through the reimplemented backend
+id: l2_curl_tls
+level: L2
+domain: networking
+difficulty: hard
+title: 'curl TLS backend: Schannel/Win32 -> OpenSSL on Kylin'
+source:
+  repo: https://github.com/curl/curl.git
+  commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+  tag: curl-8_5_0
+  license: curl
+  windows_files:
+  - lib/vtls/schannel.c
+  - lib/vtls/schannel_verify.c
+  - lib/vtls/schannel.h
+  gold_files:
+  - lib/vtls/openssl.c
+  test_files:
+  - tests/data/test3000
+  - tests/data/test3001
+spec: "The OpenSSL vtls backend was removed; the Schannel backend and the\ngeneric `vtls` interface stay\
+  \ visible.  Implement `lib/vtls/openssl.c`\nagainst the OpenSSL 3.x API:\n  - the `Curl_ssl` backend\
+  \ vtable and version reporting;\n  - certificate and hostname verification, SNI, ALPN, session reuse;\n\
+  \  - blocking and non-blocking handshakes with the curl connect state\n    machine, including the \"\
+  want read/want write\" return codes;\n  - client certificates, CRL and pinned public key hooks used\
+  \ by the\n    curl test suite.\n\nThe hidden test builds curl with `CURL_USE_OPENSSL=ON`, then checks\
+  \ a\nreal TLS handshake against a local `openssl s_server`.\n"
+prepare:
+  remove:
+  - lib/vtls/openssl.c
+harness:
+  scripts:
+  - tls_probe.sh
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=ON
+    -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF -DBUILD_TESTING=ON -DBUILD_CURL_EXE=ON && cmake --build {build}
+    -j
+  artifact: '{build}/src/curl'
+hidden_tests:
+  command: bash {root}/harness/tls_probe.sh --port 18443 --path {build}/src/curl
+task_id: l2_curl_tls

@@ -1,0 +1,51 @@
+{
+  "task_id": "l3_nginx_full",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "build": {
+    "command": "./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module && make -j",
+    "artifact": "{work}/objs/nginx"
+  },
+  "public_tests": null,
+  "hidden_tests": {
+    "command": "bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port 18081 && cd {work}/nginx-tests && TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t"
+  },
+  "gates": {
+    "build": "configure and build the task target on Kylin V10",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "src/os/unix"
+      ]
+    },
+    "behavior": "nginx builds, serves static content, and autoindex.t and range.t pass"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.28"
+  },
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ]
+}

@@ -1,0 +1,74 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/util/unix/map.c
+    - src/util/unix/realpath.c
+  behavior: selected util clar suites pass offline
+id: l2_libgit2_file
+level: L2
+domain: filesystem
+difficulty: medium
+title: 'libgit2 file layer: Win32 mmap/realpath -> POSIX'
+source:
+  repo: https://github.com/libgit2/libgit2.git
+  commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+  tag: v1.8.1
+  license: GPL-2.0-with-linking-exception
+  windows_files:
+  - src/util/win32/map.c
+  - src/util/win32/path_w32.c
+  - src/util/win32/posix_w32.c
+  gold_files:
+  - src/util/unix/map.c
+  - src/util/unix/realpath.c
+  test_files:
+  - tests/util/filebuf.c
+  - tests/util/ftruncate.c
+  - tests/util/stat.c
+  - tests/util/path/core.c
+spec: "libgit2 wraps the OS in p_* helpers.  The POSIX mmap and realpath\nimplementations were removed\
+  \ while the Win32 versions\n(`src/util/win32/map.c`, `path_w32.c`, `posix_w32.c`) stay visible.\n\n\
+  Reimplement:\n  - `git__page_size`, `git__mmap`, `git__munmap` on top of\n    sysconf(_SC_PAGE_SIZE),\
+  \ mmap/munmap, with the same\n    GIT_MMAP_* prot/flags mapping and GIT_ENOTFOUND/GIT_EINVAL errors;\n\
+  \  - `p_realpath` and `p_realpath_utf8` via realpath(3), including the\n    non-existing-path fallback\
+  \ that libgit2 needs for clone targets.\n\nTests selected from the util suite exercise file buffers,\
+  \ truncation,\nstat and path canonicalisation.\n"
+prepare:
+  remove:
+  - src/util/unix/map.c
+  - src/util/unix/realpath.c
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF
+    -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j
+  artifact: '{build}/libgit2.a'
+hidden_tests:
+  command: cd {build} && ./util_tests -v -sfilebuf -sftruncate -sstat -spath::core
+task_id: l2_libgit2_file

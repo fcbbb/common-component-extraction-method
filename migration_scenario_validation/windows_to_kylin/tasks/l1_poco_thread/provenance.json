@@ -1,0 +1,26 @@
+{
+  "task_id": "l1_poco_thread",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/pocoproject/poco.git",
+  "commit": "d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b",
+  "tag": "poco-1.13.3-release",
+  "subdir": null,
+  "license": "BSL-1.0",
+  "source_files": [
+    "Foundation/src/Thread_WIN32.cpp",
+    "Foundation/include/Poco/Thread_WIN32.h"
+  ],
+  "gold_files": [
+    "Foundation/src/Thread_POSIX.cpp"
+  ],
+  "test_files": [
+    "Foundation/testsuite/src/ThreadTest.cpp"
+  ],
+  "remove": [
+    "Foundation/src/Thread_POSIX.cpp"
+  ],
+  "gold_kind": "implementation",
+  "materialized": false,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

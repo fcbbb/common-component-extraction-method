@@ -1,0 +1,21 @@
+scenario,task_id,level,fit,counted,source_kind,title,repo,commit,license
+windows_to_kylin,l1_poco_thread,L1,B,True,upstream-platform-port,POCO Thread: Win32 threads -> pthreads,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,l1_poco_shared_library,L1,B,True,upstream-platform-port,POCO SharedLibrary: LoadLibrary -> dlopen,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,l1_poco_file,L1,B,True,upstream-platform-port,POCO File: Win32 file handles -> POSIX file descriptors,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,l1_poco_path,L1,B,True,upstream-platform-port,POCO Path: Win32 path rules -> POSIX path rules,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,l1_poco_rwlock_semaphore,L1,B,True,upstream-platform-port,POCO RWLock + Semaphore: Win32 primitives -> pthread primitives,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,l2_libgit2_file,L2,B,True,upstream-platform-port,libgit2 file layer: Win32 mmap/realpath -> POSIX,https://github.com/libgit2/libgit2.git,36f7e21ad757a3dacc58cf7944329da6bc1d6e96,GPL-2.0-with-linking-exception
+windows_to_kylin,l2_libgit2_process,L2,B,True,upstream-platform-port,libgit2 process/thread layer: Win32 process + pthread wrappers,https://github.com/libgit2/libgit2.git,36f7e21ad757a3dacc58cf7944329da6bc1d6e96,GPL-2.0-with-linking-exception
+windows_to_kylin,l2_libarchive_read_disk,L2,B,True,upstream-platform-port,libarchive read_disk: Win32 traversal -> POSIX traversal,https://github.com/libarchive/libarchive.git,313aa1fa10b657de791e3202c168a6c833bc3543,BSD-2-Clause
+windows_to_kylin,l2_libarchive_write_disk,L2,B,True,upstream-platform-port,libarchive write_disk: Win32 restore -> POSIX restore,https://github.com/libarchive/libarchive.git,313aa1fa10b657de791e3202c168a6c833bc3543,BSD-2-Clause
+windows_to_kylin,l2_curl_tls,L2,B,True,upstream-platform-port,curl TLS backend: Schannel/Win32 -> OpenSSL on Kylin,https://github.com/curl/curl.git,7161cb17c01dcff1dc5bf89a18437d9d729f1ecd,curl
+windows_to_kylin,l2_opencv_highgui,L2,B,True,upstream-platform-port,OpenCV highgui window backend: Win32 -> GTK,https://github.com/opencv/opencv.git,71d3237a093b60a27601c20e9ee6c3e52154e8b1,Apache-2.0
+windows_to_kylin,l2_nginx_files,L2,B,True,upstream-platform-port,nginx file layer: Win32 file API -> POSIX file API,https://github.com/nginx/nginx.git,1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5,BSD-2-Clause
+windows_to_kylin,l2_libuv_fs,L2,B,True,upstream-platform-port,libuv fs: Win32 OVERLAPPED I/O -> POSIX thread pool,https://github.com/libuv/libuv.git,e9f29cb984231524e3931aa0ae2c5dae1a32884e,MIT
+windows_to_kylin,l2_libuv_process,L2,B,True,upstream-platform-port,libuv process: Win32 CreateProcess -> POSIX fork/exec,https://github.com/libuv/libuv.git,e9f29cb984231524e3931aa0ae2c5dae1a32884e,MIT
+windows_to_kylin,l2_libuv_thread,L2,B,True,upstream-platform-port,libuv thread layer: Win32 threads -> pthreads,https://github.com/libuv/libuv.git,e9f29cb984231524e3931aa0ae2c5dae1a32884e,MIT
+windows_to_kylin,l3_nginx_full,L3,B,True,upstream-platform-port,nginx full OS layer: whole Win32 port -> Kylin/POSIX,https://github.com/nginx/nginx.git,1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5,BSD-2-Clause
+windows_to_kylin,l3_libgit2_full,L3,B,True,upstream-platform-port,libgit2 full POSIX util layer,https://github.com/libgit2/libgit2.git,36f7e21ad757a3dacc58cf7944329da6bc1d6e96,GPL-2.0-with-linking-exception
+windows_to_kylin,l3_poco_foundation_full,L3,B,True,upstream-platform-port,POCO Foundation full POSIX platform layer,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,l3_curl_build,L3,B,True,upstream-platform-port,curl build system: VS projects -> CMake on Kylin,https://github.com/curl/curl.git,7161cb17c01dcff1dc5bf89a18437d9d729f1ecd,curl
+windows_to_kylin,negative_win32_eventlog,L3,C,True,upstream-platform-port,Negative control: Windows Event Log channel has no equivalent,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0

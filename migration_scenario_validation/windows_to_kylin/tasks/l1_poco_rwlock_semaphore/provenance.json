@@ -1,0 +1,31 @@
+{
+  "task_id": "l1_poco_rwlock_semaphore",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/pocoproject/poco.git",
+  "commit": "d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b",
+  "tag": "poco-1.13.3-release",
+  "subdir": null,
+  "license": "BSL-1.0",
+  "source_files": [
+    "Foundation/src/RWLock_WIN32.cpp",
+    "Foundation/src/Semaphore_WIN32.cpp",
+    "Foundation/include/Poco/RWLock_WIN32.h",
+    "Foundation/include/Poco/Semaphore_WIN32.h"
+  ],
+  "gold_files": [
+    "Foundation/src/RWLock_POSIX.cpp",
+    "Foundation/src/Semaphore_POSIX.cpp"
+  ],
+  "test_files": [
+    "Foundation/testsuite/src/RWLockTest.cpp",
+    "Foundation/testsuite/src/SemaphoreTest.cpp"
+  ],
+  "remove": [
+    "Foundation/src/RWLock_POSIX.cpp",
+    "Foundation/src/Semaphore_POSIX.cpp"
+  ],
+  "gold_kind": "implementation",
+  "materialized": false,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

@@ -1,0 +1,70 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - Foundation/src/File_UNIX.cpp
+  behavior: FileTest passes; no Win32 file API remains
+id: l1_poco_file
+level: L1
+domain: filesystem
+difficulty: medium
+title: 'POCO File: Win32 file handles -> POSIX file descriptors'
+source:
+  repo: https://github.com/pocoproject/poco.git
+  commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+  tag: poco-1.13.3-release
+  license: BSL-1.0
+  windows_files:
+  - Foundation/src/File_WIN32U.cpp
+  - Foundation/include/Poco/File_WIN32U.h
+  gold_files:
+  - Foundation/src/File_UNIX.cpp
+  test_files:
+  - Foundation/testsuite/src/FileTest.cpp
+spec: "Recreate `Foundation/src/File_UNIX.cpp`.  The Windows file uses\nCreateFileW and 64-bit file pointers;\
+  \ the POSIX version must use\nopen/stat/lstat/mkdir/rmdir/rename/link/symlink/readlink/utime and keep\n\
+  the same Poco::File observable behaviour:\n  - exists(), isFile(), isDirectory(), isLink(), canRead/canWrite\n\
+  \  - sizes, timestamps, permissions (mode bits mapping)\n  - copyTo/moveTo across directories, symbolic\
+  \ and hard links\n  - directory iteration and the usual ENOENT/EEXIST error mapping\n"
+prepare:
+  remove:
+  - Foundation/src/File_UNIX.cpp
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON
+    -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF
+    -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF
+    -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF
+    -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF
+    -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF
+    -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j
+  artifact: '{build}/lib/libPocoFoundation.a'
+hidden_tests:
+  command: cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest
+task_id: l1_poco_file

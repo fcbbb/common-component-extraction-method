@@ -1,0 +1,29 @@
+{
+  "task_id": "l2_libuv_thread",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/libuv/libuv.git",
+  "commit": "e9f29cb984231524e3931aa0ae2c5dae1a32884e",
+  "tag": "v1.48.0",
+  "subdir": null,
+  "license": "MIT",
+  "source_files": [
+    "src/win/thread.c"
+  ],
+  "gold_files": [
+    "src/unix/thread.c"
+  ],
+  "test_files": [
+    "test/test-thread.c",
+    "test/test-thread-affinity.c",
+    "test/test-thread-equal.c",
+    "test/test-thread-priority.c",
+    "test/test-threadpool.c"
+  ],
+  "remove": [
+    "src/unix/thread.c"
+  ],
+  "gold_kind": "implementation",
+  "materialized": false,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

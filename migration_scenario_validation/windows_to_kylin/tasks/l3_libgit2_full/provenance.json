@@ -1,0 +1,25 @@
+{
+  "task_id": "l3_libgit2_full",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/libgit2/libgit2.git",
+  "commit": "36f7e21ad757a3dacc58cf7944329da6bc1d6e96",
+  "tag": "v1.8.1",
+  "subdir": null,
+  "license": "GPL-2.0-with-linking-exception",
+  "source_files": [
+    "src/util/win32"
+  ],
+  "gold_files": [
+    "src/util/unix"
+  ],
+  "test_files": [
+    "tests/util"
+  ],
+  "remove": [
+    "src/util/unix"
+  ],
+  "gold_kind": "implementation",
+  "materialized": false,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

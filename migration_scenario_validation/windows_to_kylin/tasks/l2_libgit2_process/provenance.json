@@ -1,0 +1,33 @@
+{
+  "task_id": "l2_libgit2_process",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/libgit2/libgit2.git",
+  "commit": "36f7e21ad757a3dacc58cf7944329da6bc1d6e96",
+  "tag": "v1.8.1",
+  "subdir": null,
+  "license": "GPL-2.0-with-linking-exception",
+  "source_files": [
+    "src/util/win32/process.c",
+    "src/util/win32/thread.c",
+    "src/util/win32/thread.h"
+  ],
+  "gold_files": [
+    "src/util/unix/process.c",
+    "src/util/unix/pthread.h",
+    "src/util/unix/posix.h"
+  ],
+  "test_files": [
+    "tests/util/process/start.c",
+    "tests/libgit2/threads/basic.c",
+    "tests/libgit2/threads/tlsdata.c"
+  ],
+  "remove": [
+    "src/util/unix/process.c",
+    "src/util/unix/pthread.h",
+    "src/util/unix/posix.h"
+  ],
+  "gold_kind": "implementation",
+  "materialized": false,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

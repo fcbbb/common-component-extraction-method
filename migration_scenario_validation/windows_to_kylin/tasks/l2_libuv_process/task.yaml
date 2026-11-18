@@ -1,0 +1,71 @@
+scenario: windows_to_kylin
+fit: B
+counted: true
+source_kind: upstream-platform-port
+gold_kind: implementation
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: '3.28'
+gates:
+  build: configure and build the task target on Kylin V10
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/unix/process.c
+  behavior: libuv spawn/process tests pass
+id: l2_libuv_process
+level: L2
+domain: async-io
+difficulty: hard
+title: 'libuv process: Win32 CreateProcess -> POSIX fork/exec'
+source:
+  repo: https://github.com/libuv/libuv.git
+  commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+  tag: v1.48.0
+  license: MIT
+  windows_files:
+  - src/win/process.c
+  - src/win/process-stdio.c
+  gold_files:
+  - src/unix/process.c
+  test_files:
+  - test/test-spawn.c
+  - test/test-process-title.c
+  - test/test-process-title-threadsafe.c
+  - test/test-process-priority.c
+spec: "`src/unix/process.c` was removed.  Reimplement process spawning with\nfork/exec and the pipe/stdio\
+  \ machinery the tests expect:\n  - uv_spawn argument and environment construction, PATH lookup,\n  \
+  \  executable validation and the ENOENT/EACCES error paths;\n  - stdio inheritance, uv_pipe_t and fd\
+  \ remapping, detached processes,\n    process groups, uid/gid switches and windows-hide semantics;\n\
+  \  - uv_process_kill, uv_kill, exit/close callbacks, reaping and\n    process-title helpers.\n"
+prepare:
+  remove:
+  - src/unix/process.c
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON
+    && cmake --build {build} -j
+  artifact: '{build}/libuv.a'
+hidden_tests:
+  command: cd {work} && {build}/uv_run_tests_a spawn_stdout && {build}/uv_run_tests_a spawn_stdin && {build}/uv_run_tests_a
+    spawn_exit_code && {build}/uv_run_tests_a spawn_and_kill && {build}/uv_run_tests_a spawn_detached && {build}/uv_run_tests_a
+    spawn_reads_child_path && {build}/uv_run_tests_a spawn_relative_path && {build}/uv_run_tests_a process_title &&
+    {build}/uv_run_tests_a process_priority
+task_id: l2_libuv_process
