@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/migration-bench/task.schema.json",
+  "title": "Migration task package",
+  "type": "object",
+  "required": [
+    "task_id",
+    "scenario",
+    "level",
+    "source",
+    "target",
+    "spec",
+    "build",
+    "hidden_tests",
+    "gates"
+  ],
+  "properties": {
+    "task_id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "scenario": { "enum": ["ipp_to_vsipl", "windows_to_kylin", "cuda_to_ascend"] },
+    "level": { "enum": ["L1", "L2", "L3", "negative"] },
+    "fit": { "enum": ["A", "B", "C"] },
+    "title": { "type": "string" },
+    "negative": { "type": "boolean" },
+    "expected_api_removal": { "enum": ["pass", "fail"] },
+    "gold_kind": { "enum": ["implementation", "patch", "spec", "tutorial", "none"] },
+    "source": {
+      "type": "object",
+      "required": ["repo", "commit", "license"],
+      "properties": {
+        "repo": { "type": "string" },
+        "commit": { "type": "string" },
+        "tag": { "type": "string" },
+        "license": { "type": "string" },
+        "subdir": { "type": "string" },
+        "windows_files": { "type": "array", "items": { "type": "string" } },
+        "cuda_files": { "type": "array", "items": { "type": "string" } },
+        "ascend_files": { "type": "array", "items": { "type": "string" } },
+        "reference_files": { "type": "array", "items": { "type": "string" } },
+        "test_files": { "type": "array", "items": { "type": "string" } },
+        "spec_files": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "os": { "type": "string" },
+        "arch": { "type": "string" },
+        "toolchain": { "type": "string" },
+        "backend": { "type": "string" },
+        "soc": { "type": "string" },
+        "cann": { "type": "string" }
+      }
+    },
+    "spec": { "type": "string" },
+    "prepare": {
+      "type": "object",
+      "properties": {
+        "remove": { "type": "array", "items": { "type": "string" } },
+        "patch": { "type": ["string", "null"] }
+      }
+    },
+    "build": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string" },
+        "command": { "type": "string" },
+        "artifact": { "type": ["string", "array"] },
+        "timeout": { "type": "integer" }
+      }
+    },
+    "public_tests": {
+      "type": "object",
+      "properties": {
+        "command": { "type": "string" },
+        "visible_to_agent": { "type": "boolean" }
+      }
+    },
+    "hidden_tests": {
+      "type": "object",
+      "required": ["command"],
+      "properties": {
+        "command": { "type": "string" },
+        "visible_to_agent": { "type": "boolean" },
+        "cases": { "type": "array" }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "required": ["build", "api_removal", "behavior"],
+      "properties": {
+        "build": {},
+        "api_removal": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "properties": {
+                "symbol_regex": { "type": "string" },
+                "source_regex": { "type": "string" },
+                "source_dirs": { "type": "array", "items": { "type": "string" } },
+                "artifacts": { "type": "array", "items": { "type": "string" } },
+                "exclude_dirs": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          ]
+        },
+        "behavior": {},
+        "performance": {}
+      }
+    },
+    "tolerances": { "type": "object" }
+  }
+}

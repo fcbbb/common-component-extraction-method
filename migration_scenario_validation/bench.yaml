@@ -1,0 +1,85 @@
+# Single run configuration for the paired migration benchmark.
+#
+# Both arms read this one file.  Model, task budgets, images, judge and task
+# selection are shared so the two arms stay comparable.  The method arm is one
+# main agent that runs the fixed component-method workflow and then the same
+# migration task in the same session; it has no step limit.  A step budget
+# applies only to a separate extra task-execution agent, which the runner does
+# not start.
+#
+# Every value may use ${VAR} or ${VAR:-default}; the environment wins.
+
+schema: migration-bench-v1
+
+# The package that owns the DSH runtime and the component_method pipeline.
+# This directory now lives inside it, so the root is the parent directory.
+repository_root: ${MIGRATION_REPOSITORY_ROOT:-..}
+
+paths:
+  report_root: reports/bench
+  workspace_root: reports/bench/workspaces
+  cache: ${MIGRATION_BENCH_CACHE:-~/.cache/migration-bench}
+
+arms:
+  default:
+    # Plain DSH: the profile only inserts controlled-bash, no method plugins.
+    dsh_profile: ${BENCH_DEFAULT_DSH_PROFILE:-component-method}
+  method:
+    # One main agent with the method plugins; it prepares and migrates.
+    dsh_profile: ${BENCH_METHOD_DSH_PROFILE:-component-method-migration}
+    # Image for the preparation containers (source scan, extraction, review,
+    # retrieval).  They run on the benchmark host, not on the task host, so the
+    # image must exist locally.  Empty = the scenario image.  Remote MUSA needs
+    # an explicit value because migration/musa:* lives only on the MUSA box.
+    stage_image: ${METHOD_STAGE_IMAGE:-}
+
+# Model credentials are deliberately NOT configured here.  baseline_trial
+# resolves them in this order: CLI flag, .env at the repository root (../.env),
+# inherited environment; that .env is the project-owned route and must keep
+# winning over a stale shell export.  Put secrets in bench.env or ../.env.
+
+# Which task slates the run covers.  `--scenario` on the CLI overrides this.
+scenarios:
+  ipp_to_vsipl:
+    enabled: true
+    parent: ipp_vsipl_tasks
+    image: ${IPP_IMAGE:-migration/ipp:cpu}
+    # Required for this scenario.  Point VSIPL_ROOT at a jvsip tree that has
+    # include/vsip.h and lib/libvsip.a; there is no machine-specific default.
+    vsipl_root: ${VSIPL_ROOT:-}
+    build:
+      - ["docker", "build", "-f", "env/Dockerfile.ipp", "-t", "migration/ipp:cpu", "."]
+  windows_to_kylin:
+    enabled: true
+    parent: windows_to_kylin/tasks
+    image: ${KYLIN_IMAGE:-migration/kylin:sp3-p2}
+    build:
+      - ["docker", "build", "-f", "env/Dockerfile.kylin", "-t", "migration/kylin:sp3", "."]
+      - ["docker", "build", "-f", "env/Dockerfile.kylin-agent", "-t", "migration/kylin:sp3-p2", "."]
+  cuda_to_musa:
+    enabled: true
+    parent: cuda_to_musa/tasks
+    image: ${MUSA_IMAGE:-migration/musa:s4000}
+    transport: ${MUSA_TRANSPORT:-auto}
+    remote_config: ${MUSA_REMOTE_CONFIG:-env/remote.yaml}
+    # No reproducible build command yet: env/Dockerfile.musa needs vendor
+    # build args and a real MTT S4000.  `bench env` reports it as manual.
+    build: []
+
+budgets:
+  runs: 1
+  # Default (A) task budget.
+  step_limit: 150
+  context_window: 131072
+  max_output_tokens: 32768
+  command_timeout: 600
+  total_timeout: 5400
+  prepare_timeout: 1800
+  judge_timeout: 2400
+  # Method main agent: no step limit by default; this is only a wall-clock
+  # safety cap.  Set method_step_limit for a same-budget comparison.
+  method_main_timeout: 14400
+  method_step_limit: null
+  method_extraction_workers: 2
+  method_review_workers: 2
+  method_agent_timeout: 3600

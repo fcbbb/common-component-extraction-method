@@ -1,0 +1,8 @@
+# Python dependencies of the benchmark entry layer (tools/bench.py and the
+# shared harness).  Keep this list small: the heavy method package lives in
+# ../repository and is installed from its own pyproject.toml.
+PyYAML>=6.0
+
+# System dependencies that pip cannot install:
+#   docker (with a reachable daemon), git, ssh/rsync for the MUSA host,
+#   Node.js 24.9.0 + npm (for the pinned DSH runtime in ../repository/dsh).

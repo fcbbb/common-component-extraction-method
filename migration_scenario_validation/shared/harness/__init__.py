@@ -1,0 +1,1 @@
+"""Shared harness: task model, runner, API gate, case I/O, remote runner."""
