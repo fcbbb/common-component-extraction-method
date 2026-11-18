@@ -1,7 +1,9 @@
 import { registerTools } from "@component-method/dsh-method-shared";
 
 export const name = "component-method-signal-analysis";
-export const inject = ["tools"];
+// Embedding-corpus preparation runs as a background job, so `jobs` is a
+// required service.
+export const inject = ["tools", "jobs"];
 
 export function apply(ctx: any): void {
   registerTools(ctx, [

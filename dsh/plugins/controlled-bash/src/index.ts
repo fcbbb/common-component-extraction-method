@@ -95,8 +95,15 @@ export function submissionCheckerCommand(role: string): string {
   if (!checkerPath.startsWith("/") || !outputDirectory.startsWith("/")) {
     throw new Error("submission checker paths must be absolute container paths");
   }
+  // The checker is a Python script, but migration images are not guaranteed to
+  // ship a `python` shim (migration/ipp:cpu only has /usr/bin/python3).  A bare
+  // `python` made every method-arm submission fail after a full extraction.
+  const checkerPython = process.env.COMPONENT_DSH_CHECKER_PYTHON?.trim() || "python3";
+  if (!/^[A-Za-z0-9_./-]+$/.test(checkerPython)) {
+    throw new Error("COMPONENT_DSH_CHECKER_PYTHON is not a valid executable name");
+  }
   return [
-    "python",
+    checkerPython,
     shellQuote(checkerPath),
     "--role",
     shellQuote(role),

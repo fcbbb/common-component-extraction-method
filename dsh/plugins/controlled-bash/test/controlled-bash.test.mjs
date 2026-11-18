@@ -70,6 +70,21 @@ test("a controller-supplied checker command is parsed and shell quoted", () => {
   delete process.env.COMPONENT_DSH_CHECKER_COMMAND_JSON;
 });
 
+test("the default checker runs with python3, which migration images actually ship", () => {
+  delete process.env.COMPONENT_DSH_CHECKER_COMMAND_JSON;
+  delete process.env.COMPONENT_DSH_CHECKER_PYTHON;
+  delete process.env.COMPONENT_DSH_CHECKER_PATH;
+  delete process.env.COMPONENT_DSH_OUTPUT_DIRECTORY;
+  assert.equal(
+    submissionCheckerCommand("extraction"),
+    "python3 '/component-tools/check_output.py' --role 'extraction' --output '/component-output'",
+  );
+
+  process.env.COMPONENT_DSH_CHECKER_PYTHON = "python";
+  assert.match(submissionCheckerCommand("extraction"), /^python '\//);
+  delete process.env.COMPONENT_DSH_CHECKER_PYTHON;
+});
+
 
 test("invalid cwd can fall back explicitly to the configured container cwd", () => {
   process.env.COMPONENT_DSH_ALLOWED_CWDS = JSON.stringify(["/testbed"]);

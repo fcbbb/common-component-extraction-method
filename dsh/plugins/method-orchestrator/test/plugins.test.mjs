@@ -33,11 +33,8 @@ test("all stage plugins register their declared tools", () => {
   assert.deepEqual(names(retrieval), ["component_retrieval", "component_catalog", "component_validate_selection", "component_materialize_selection"]);
   assert.deepEqual(names(task), ["component_task"]);
   assert.deepEqual(names(report), ["component_report"]);
-  assert.deepEqual(names(orchestrator), [
-    "component_run_stage",
-    "component_pipeline_run",
-    "component_job_status",
-    "component_job_cancel",
-  ]);
+  // The orchestrator is the single stage entry; job control belongs to the
+  // built-in job runtime, not to this plugin.
+  assert.deepEqual(names(orchestrator), ["component_run_stage"]);
   assert.deepEqual(names(ops), ["component_prepare_workspace", "component_dataset_adapter"]);
 });

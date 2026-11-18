@@ -1,7 +1,8 @@
 import { registerTools } from "@component-method/dsh-method-shared";
 
 export const name = "component-method-component-build";
-export const inject = ["tools"];
+// Extraction runs as a background job, so `jobs` is a required service.
+export const inject = ["tools", "jobs"];
 
 export function apply(ctx: any): void {
   registerTools(ctx, [

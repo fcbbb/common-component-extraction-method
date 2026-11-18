@@ -1,7 +1,8 @@
 import { registerTools } from "@component-method/dsh-method-shared";
 
 export const name = "component-method-task-execution";
-export const inject = ["tools"];
+// Task execution runs as a background job, so `jobs` is a required service.
+export const inject = ["tools", "jobs"];
 
 export function apply(ctx: any): void {
   registerTools(ctx, [
