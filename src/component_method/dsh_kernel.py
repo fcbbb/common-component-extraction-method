@@ -22,6 +22,7 @@ from component_method.dsh_registry import RegistryError, load_registry, resolve_
 PROJECT = Path(__file__).resolve().parents[2]
 RUN_STAGE_MODULE = "component_method.workflow.run_stage"
 RUN_BATCH_MODULE = "component_method.workflow.run_batch"
+STAGE_LOCK_MODULE = "component_method.workflow.stage_lock"
 
 STAGE_TO_RUN_STAGE = {
     "source_scan": "prepare",
@@ -47,6 +48,11 @@ STAGE_OPTIONS = {
     "task": frozenset(),
     "report": frozenset(),
 }
+
+# Stages that are plain in-process Python calls rather than workflow
+# subprocesses.  They are reachable through the single ``run_stage`` entry so
+# the model sees one tool instead of one tool per step.
+IN_PROCESS_STAGES = frozenset({"catalog", "validate_selection", "materialize_selection"})
 
 DEFAULT_EMBEDDING_DIR = "offline_embedding_50tasks_20261024"
 
@@ -442,10 +448,85 @@ def _library_path() -> Path:
     return path
 
 
+def _stage_name(method: str, payload: Mapping[str, Any]) -> str | None:
+    """The stage the caller asked for, for the one-entry ``run_stage`` tool."""
+    requested = payload.get("stage")
+    if method == "run_stage" and isinstance(requested, str):
+        return requested
+    return None
+
+
+def _envelope(
+    *,
+    method: str,
+    status: str,
+    summary: Any = None,
+    artifacts: Any = None,
+    error_code: str | None = None,
+    error: str | None = None,
+    stage: str | None = None,
+    **extra: Any,
+) -> dict[str, Any]:
+    """The single result sheet every method tool returns.
+
+    Synchronous stages, background jobs, and failures all report the same four
+    fields, so the workflow prompt never has to switch parsers.
+    """
+    response: dict[str, Any] = {
+        "ok": status == "succeeded",
+        "status": status,
+        "method": method,
+        "summary": summary if isinstance(summary, dict) else {},
+        "artifacts": artifacts if isinstance(artifacts, dict) else {},
+        "error_code": error_code,
+    }
+    if stage is not None:
+        response["stage"] = stage
+    if error:
+        response["error"] = error
+    response.update(extra)
+    return response
+
+
+def _error_code_for(exc: BaseException) -> str:
+    """Map a Python exception onto the stable codes the prompt documents."""
+    if isinstance(exc, FileNotFoundError):
+        return "STAGE_INPUT_MISSING"
+    if isinstance(exc, KernelError):
+        message = str(exc)
+        if "not configured" in message or "does not exist" in message or "requires" in message:
+            return "STAGE_INPUT_MISSING"
+        return "BAD_REQUEST"
+    return "STAGE_FAILED"
+
+
+def _failure(
+    method: str,
+    error_code: str,
+    error: str,
+    *,
+    stage: str | None = None,
+    status: str = "failed",
+    **extra: Any,
+) -> dict[str, Any]:
+    return _envelope(
+        method=method,
+        status=status,
+        error_code=error_code,
+        error=error,
+        stage=stage,
+        **extra,
+    )
+
+
 def _catalog(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[str, Any]:
     from component_method.retrieval.service import build_component_catalog
 
-    return {"ok": True, "catalog": build_component_catalog(_library_path())}
+    return _envelope(
+        method="catalog",
+        status="succeeded",
+        summary=build_component_catalog(_library_path()),
+    )
 
 
 def _validate_selection(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[str, Any]:
@@ -458,13 +539,19 @@ def _validate_selection(payload: Mapping[str, Any], registry: dict[str, Any]) ->
         raise KernelError("COMPONENT_DSH_SELECTION_PATH is not configured")
     if not task_id:
         raise KernelError("COMPONENT_DSH_TASK_ID is not configured")
+    selection_path = Path(selection).expanduser().resolve()
     result = validate_selection(
         _library_path(),
-        Path(selection).expanduser().resolve(),
+        selection_path,
         expected_task_id=task_id,
         coverage_path=Path(coverage).expanduser().resolve() if coverage else None,
     )
-    return {"ok": True, "selection": result}
+    return _envelope(
+        method="validate_selection",
+        status="succeeded",
+        summary=result,
+        artifacts={"selection": str(selection_path)},
+    )
 
 
 def _materialize_selection(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[str, Any]:
@@ -481,7 +568,19 @@ def _materialize_selection(payload: Mapping[str, Any], registry: dict[str, Any])
         Path(selection).expanduser().resolve(),
         Path(destination).expanduser().resolve(),
     )
-    return {"ok": True, "materialized": result}
+    # ``materialize_selected_bundle`` returns a Path; the kernel answers in
+    # JSON, so the bundle location has to become text here.
+    bundle = str(result)
+    manifest = _json_if_file(Path(bundle) / "manifest.json") or {}
+    return _envelope(
+        method="materialize_selection",
+        status="succeeded",
+        summary={
+            "bundle": bundle,
+            "component_count": manifest.get("component_count"),
+        },
+        artifacts={"bundle": bundle, "manifest": str(Path(bundle) / "manifest.json")},
+    )
 
 
 def _check_patch(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[str, Any]:
@@ -518,7 +617,43 @@ def _status_job(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[st
     if not isinstance(job_id, str) or not job_id:
         raise KernelError("job_id is required")
     result = job_status(_job_root(), job_id, log_bytes=int(payload.get("log_bytes", 8000)))
-    result["ok"] = result.get("status") != "missing"
+    result.setdefault("summary", {})
+    result.setdefault("artifacts", {})
+    state = result.get("status")
+    if state == "missing":
+        result["ok"] = False
+        result["error_code"] = "JOB_MISSING"
+        return result
+    if state in {"failed", "cancelled"}:
+        result["ok"] = False
+        result["error_code"] = "STAGE_FAILED" if state == "failed" else "STAGE_CANCELLED"
+        result["error"] = (
+            result.get("error")
+            or f"job {job_id} finished with status {state}"
+        )
+    else:
+        result["ok"] = True
+
+    # Jobs outlive the kernel process, so their stage summary must be read from
+    # the task root recorded when the job started rather than from stdout.
+    context = result.get("context") or {}
+    task_root = context.get("task_root")
+    if task_root and state in {"succeeded", "failed"}:
+        try:
+            resolved = {
+                "run_root": context.get("run_root") or task_root,
+                "task_root": Path(task_root),
+                "task_id": context.get("task_id"),
+            }
+            summary = _stage_summary(str(result.get("method") or ""), payload, resolved)
+            artifacts = _stage_artifacts(str(result.get("method") or ""), payload, resolved)
+            if summary:
+                result["summary"] = summary
+            if artifacts:
+                result["artifacts"] = artifacts
+        except (OSError, ValueError):
+            pass
+    result.setdefault("error_code", None)
     return result
 
 
@@ -528,7 +663,23 @@ def _cancel_job(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[st
         raise KernelError("job_id is required")
     result = job_cancel(_job_root(), job_id)
     result["ok"] = result.get("status") != "missing"
+    result["error_code"] = None if result["ok"] else "JOB_MISSING"
+    result.setdefault("summary", {})
+    result.setdefault("artifacts", {})
     return result
+
+
+def _dispatch_run_stage(
+    payload: Mapping[str, Any],
+    registry: dict[str, Any],
+) -> dict[str, Any]:
+    """The single stage entry: subprocess stages and in-process stages."""
+    stage = payload.get("stage")
+    if isinstance(stage, str) and stage in IN_PROCESS_STAGES:
+        return _in_process_stage(stage, payload, registry)
+    return _run_command_result(
+        "run_stage", _run_stage_command(payload, registry), payload, registry
+    )
 
 
 METHODS: dict[str, Callable[[Mapping[str, Any], dict[str, Any]], dict[str, Any]]] = {
@@ -538,9 +689,7 @@ METHODS: dict[str, Callable[[Mapping[str, Any], dict[str, Any]], dict[str, Any]]
         ))
         for stage in ("source_scan", "extract", "curate", "prepare_reviews", "review", "finalize_review", "publish_library", "retrieval", "task", "report")
     },
-    "run_stage": lambda payload, registry: _run_command_result(
-        "run_stage", _run_stage_command(payload, registry), payload, registry
-    ),
+    "run_stage": _dispatch_run_stage,
     "signal_prepare": lambda payload, registry: _run_command_result(
         "signal_prepare", _signal_prepare_command(payload, registry), payload, registry
     ),
@@ -586,13 +735,241 @@ def _environment(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[s
         "MODEL_NAME",
         "OPENAI_API_BASE",
         "OPENAI_API_KEY",
+        # Stage agents build their own model route in this subprocess.  Without
+        # the budget variables they fall back to the runner defaults (16k
+        # output), and a long source-grounded reasoning turn ends on
+        # `max-tokens` before the agent writes its submission.
+        "COMPONENT_DSH_MAX_OUTPUT_TOKENS",
+        "COMPONENT_DSH_CONTEXT_WINDOW",
         "COMPONENT_DSH_RUN_REGISTRY",
         "COMPONENT_DSH_JOB_ROOT",
         "COMPONENT_DSH_PYTHON_BIN",
+        "COMPONENT_DSH_OFFLINE_TASKS",
+        "COMPONENT_METHOD_OFFLINE_TASKS",
+        "COMPONENT_DSH_COMPONENT_LIBRARY",
+        "COMPONENT_DSH_SELECTION_PATH",
+        "COMPONENT_DSH_COVERAGE_PATH",
+        "COMPONENT_DSH_BUNDLE_DESTINATION",
+        "COMPONENT_DSH_STAGE_RUNTIME",
+        "DOCKER_HOST",
     ):
         if os.environ.get(name):
             environment[name] = os.environ[name]
     return environment
+
+
+STAGE_METHODS = frozenset(
+    {
+        "source_scan",
+        "extract",
+        "curate",
+        "prepare_reviews",
+        "review",
+        "finalize_review",
+        "publish_library",
+        "retrieval",
+        "task",
+        "run_stage",
+    }
+)
+
+# The migration workspace runs the same extraction/review/publish pipeline as
+# the batch method: extraction, curation and the component review loop all run
+# inside the method task root.  Task execution and reporting must not run there
+# because the migration itself happens in the main agent's session.
+MIGRATION_UNSUPPORTED_STAGES = frozenset({"task", "report"})
+
+
+def _task_config(resolved: Mapping[str, Any]) -> dict[str, Any]:
+    task_root = resolved.get("task_root")
+    if task_root is None:
+        return {}
+    path = Path(task_root) / "config.json"
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _json_if_file(path: Path) -> dict[str, Any] | None:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _effective_stage(method: str, payload: Mapping[str, Any]) -> str:
+    if method == "run_stage":
+        requested = payload.get("stage")
+        if isinstance(requested, str):
+            return requested
+    return method
+
+
+def _stage_prerequisite(method: str, payload: Mapping[str, Any], resolved: Mapping[str, Any]) -> str | None:
+    """Return a stable error code when a stage would run before its inputs exist."""
+    method = _effective_stage(method, payload)
+    task_root = Path(resolved["task_root"]) if resolved.get("task_root") else None
+    if task_root is None:
+        return "STAGE_INPUT_MISSING"
+    config = _task_config(resolved)
+    if (
+        config.get("source_scan_mode") == "migration"
+        and method in MIGRATION_UNSUPPORTED_STAGES
+    ):
+        return "STAGE_UNSUPPORTED"
+    extraction_root = task_root / "runs" / str(config.get("task_id", "")) / "extraction_v1"
+    checks: dict[str, Path] = {
+        "extract": task_root / "inputs" / "focus_context_packets.json",
+        "curate": extraction_root / "summary.json",
+        "prepare_reviews": extraction_root / "curated" / "summary.json",
+        "review": task_root / "inputs" / "frozen_components.json",
+        "finalize_review": task_root / "runs" / str(config.get("task_id", "")) / "review_v1" / "summary.json",
+        "retrieval": task_root / "outputs" / "full_library" / "manifest.json",
+    }
+    if method == "publish_library":
+        if config.get("publish_mode") == "migration_direct":
+            checks[method] = extraction_root / "curated" / "summary.json"
+        else:
+            checks[method] = task_root / "runs" / str(config.get("task_id", "")) / "review_v1" / "summary.json"
+    path = checks.get(method)
+    if path is not None and not path.is_file():
+        return "STAGE_INPUT_MISSING"
+    return None
+
+
+def _stage_summary(method: str, payload: Mapping[str, Any], resolved: Mapping[str, Any]) -> dict[str, Any]:
+    """Read the stage's own manifest instead of making the caller parse stdout."""
+    method = _effective_stage(method, payload)
+    task_root = Path(resolved["task_root"]) if resolved.get("task_root") else None
+    if task_root is None:
+        return {}
+    config = _task_config(resolved)
+    task_id = str(config.get("task_id", ""))
+    try:
+        if method == "source_scan":
+            packets = _json_if_file(task_root / "inputs" / "focus_context_packets.json")
+            if packets:
+                return {
+                    "packet_count": packets.get("packet_count"),
+                    "source_file_count": packets.get("source_file_count"),
+                    "source_unit_count": packets.get("source_unit_count"),
+                    "language": packets.get("language"),
+                    "gaps": len(packets.get("gaps") or []),
+                }
+        if method == "extract":
+            summary = _json_if_file(task_root / "runs" / task_id / "extraction_v1" / "summary.json")
+            if summary:
+                return {
+                    key: summary.get(key)
+                    for key in (
+                        "status",
+                        "packet_count",
+                        "successful_packets",
+                        "invalid_packets",
+                        "failed_packets",
+                        "component_count",
+                        "extraction_api_calls",
+                        "extraction_input_tokens",
+                        "extraction_output_tokens",
+                        "extraction_reported_cost_usd",
+                    )
+                }
+        if method == "curate":
+            summary = _json_if_file(task_root / "runs" / task_id / "extraction_v1" / "curated" / "summary.json")
+            if summary:
+                return {
+                    key: summary.get(key)
+                    for key in ("status", "retained_component_count", "excluded_packet_count")
+                }
+        if method == "prepare_reviews":
+            frozen = _json_if_file(task_root / "inputs" / "frozen_components.json")
+            if frozen:
+                return {
+                    "component_count": frozen.get("component_count"),
+                    "component_ids": frozen.get("component_ids"),
+                }
+        if method == "review":
+            summary = _json_if_file(task_root / "runs" / task_id / "review_v1" / "summary.json")
+            if summary:
+                return {
+                    key: summary.get(key)
+                    for key in (
+                        "status",
+                        "successful_components",
+                        "failed_components",
+                        "published_components",
+                        "withheld_components",
+                        "max_repair_rounds",
+                        "review_api_calls",
+                        "review_reported_cost_usd",
+                    )
+                }
+        if method == "publish_library":
+            manifest = _json_if_file(task_root / "outputs" / "full_library" / "manifest.json")
+            if manifest:
+                return {
+                    "component_count": manifest.get("component_count"),
+                    "schema_version": manifest.get("schema_version"),
+                    "library": str(task_root / "outputs" / "full_library"),
+                }
+        if method == "retrieval":
+            attempt = str(config.get("retrieval_attempt") or "retrieval_v1")
+            result = _json_if_file(task_root / "attempts" / attempt / "result.json")
+            if result:
+                return {
+                    "selected_bundle_ids": result.get("selected_bundle_ids"),
+                    "coverage_file": str(task_root / "attempts" / attempt / "submission" / "coverage.json"),
+                }
+    except (OSError, ValueError):
+        return {}
+    return {}
+
+
+def _stage_artifacts(method: str, payload: Mapping[str, Any], resolved: Mapping[str, Any]) -> dict[str, str]:
+    method = _effective_stage(method, payload)
+    task_root = Path(resolved["task_root"]) if resolved.get("task_root") else None
+    if task_root is None:
+        return {}
+    config = _task_config(resolved)
+    task_id = str(config.get("task_id", ""))
+    candidates = {
+        "source_scan": task_root / "inputs" / "focus_context_packets.json",
+        "extract": task_root / "runs" / task_id / "extraction_v1" / "summary.json",
+        "curate": task_root / "runs" / task_id / "extraction_v1" / "curated" / "summary.json",
+        "prepare_reviews": task_root / "inputs" / "frozen_components.json",
+        "review": task_root / "runs" / task_id / "review_v1" / "summary.json",
+        "publish_library": task_root / "outputs" / "full_library" / "manifest.json",
+        "retrieval": task_root / "attempts" / str(config.get("retrieval_attempt") or "retrieval_v1") / "result.json",
+    }
+    path = candidates.get(method)
+    return {"manifest": str(path)} if path is not None and path.is_file() else {}
+
+
+def _try_stage_lock(run_root: Path):
+    """Take the run's stage lock without waiting; two stages must not race."""
+    path = run_root / ".dsh_stage.lock"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle = path.open("a+")
+    try:
+        import fcntl
+
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (BlockingIOError, OSError):
+        handle.close()
+        return None
+    return handle
+
+
+def _release_stage_lock(handle) -> None:
+    try:
+        import fcntl
+
+        fcntl.flock(handle, fcntl.LOCK_UN)
+    finally:
+        handle.close()
 
 
 def _run_command_result(
@@ -602,23 +979,100 @@ def _run_command_result(
     registry: dict[str, Any],
 ) -> dict[str, Any]:
     started = time.monotonic()
-    result = subprocess.run(
-        list(command),
-        cwd=str(PROJECT),
-        env=_environment(payload, registry),
-        capture_output=True,
-        text=True,
-        timeout=float(payload.get("timeout_seconds", 7200)),
-        shell=False,
+    stage = _stage_name(method, payload)
+    resolved: dict[str, Any] | None = None
+    lock = None
+    if method in STAGE_METHODS and payload.get("run_id"):
+        resolved = _run_root_from_payload(payload, registry)
+        error_code = _stage_prerequisite(method, payload, resolved)
+        if error_code is not None:
+            return _failure(
+                method,
+                error_code,
+                (
+                    "this stage is not available in a migration workspace; "
+                    "follow the fixed migration workflow"
+                    if error_code == "STAGE_UNSUPPORTED"
+                    else "required stage input is missing; run the preceding stage first"
+                ),
+                stage=stage,
+                elapsed_seconds=round(time.monotonic() - started, 2),
+            )
+        # Lock per task when the run has task roots, so separate migration tasks
+        # can still run concurrently; otherwise the whole run shares one lock.
+        lock_root = Path(resolved["task_root"] or resolved["run_root"])
+        lock = _try_stage_lock(lock_root)
+        if lock is None:
+            return _failure(
+                method,
+                "STAGE_BUSY",
+                "another component-method stage is already running in this run",
+                stage=stage,
+                elapsed_seconds=round(time.monotonic() - started, 2),
+            )
+    try:
+        result = subprocess.run(
+            list(command),
+            cwd=str(PROJECT),
+            env=_environment(payload, registry),
+            capture_output=True,
+            text=True,
+            timeout=float(payload.get("timeout_seconds", 7200)),
+            shell=False,
+        )
+    finally:
+        if lock is not None:
+            _release_stage_lock(lock)
+    ok = result.returncode == 0
+    response = _envelope(
+        method=method,
+        status="succeeded" if ok else "failed",
+        summary=_stage_summary(method, payload, resolved) if resolved is not None else {},
+        artifacts=_stage_artifacts(method, payload, resolved) if resolved is not None else {},
+        error_code=None if ok else "STAGE_FAILED",
+        error=(
+            None
+            if ok
+            else (result.stderr.strip() or result.stdout.strip() or f"stage exited with code {result.returncode}")[-2000:]
+        ),
+        stage=stage,
+        exit_code=result.returncode,
+        stdout=result.stdout[-20000:],
+        stderr=result.stderr[-20000:],
+        elapsed_seconds=round(time.monotonic() - started, 2),
     )
-    return {
-        "ok": result.returncode == 0,
-        "method": method,
-        "exit_code": result.returncode,
-        "stdout": result.stdout[-20000:],
-        "stderr": result.stderr[-20000:],
-        "elapsed_seconds": round(time.monotonic() - started, 2),
-    }
+    return response
+
+
+def _in_process_stage(
+    stage: str,
+    payload: Mapping[str, Any],
+    registry: dict[str, Any],
+) -> dict[str, Any]:
+    """Run a stage that is a plain Python call rather than a subprocess."""
+    started = time.monotonic()
+    try:
+        result = METHODS[stage](payload, registry)
+    except RegistryError as exc:
+        return _failure("run_stage", "RUN_NOT_REGISTERED", str(exc), stage=stage,
+                        elapsed_seconds=round(time.monotonic() - started, 2))
+    except (KernelError, OSError, ValueError, subprocess.SubprocessError) as exc:
+        return _failure(
+            "run_stage",
+            _error_code_for(exc),
+            f"{type(exc).__name__}: {exc}",
+            stage=stage,
+            elapsed_seconds=round(time.monotonic() - started, 2),
+        )
+    response = dict(result)
+    # Keep the method name stable for the one-entry tool while the inner
+    # method keeps its own identity in ``summary``.
+    response["method"] = "run_stage"
+    response["stage"] = stage
+    response["elapsed_seconds"] = round(time.monotonic() - started, 2)
+    return response
+
+
 
 
 def execute_method(
@@ -636,9 +1090,14 @@ def execute_method(
     try:
         return METHODS[method](payload, selected)
     except RegistryError as exc:
-        return {"ok": False, "method": method, "error": str(exc)}
+        return _failure(method, "RUN_NOT_REGISTERED", str(exc), stage=_stage_name(method, payload))
     except (KernelError, OSError, ValueError, subprocess.SubprocessError) as exc:
-        return {"ok": False, "method": method, "error": f"{type(exc).__name__}: {exc}"}
+        return _failure(
+            method,
+            _error_code_for(exc),
+            f"{type(exc).__name__}: {exc}",
+            stage=_stage_name(method, payload),
+        )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -659,13 +1118,40 @@ def main(argv: Sequence[str] | None = None) -> int:
             registry = load_registry()
             if args.method not in METHODS:
                 raise KernelError(f"unknown method: {args.method}")
+            resolved_for_job = None
+            if args.method in STAGE_METHODS and payload.get("run_id"):
+                resolved_for_job = _run_root_from_payload(payload, registry)
+                error_code = _stage_prerequisite(args.method, payload, resolved_for_job)
+                if error_code is not None:
+                    raise KernelError(
+                        f"{error_code}: "
+                        + (
+                            "this stage is not available in a migration workspace; "
+                            "follow the fixed migration workflow"
+                            if error_code == "STAGE_UNSUPPORTED"
+                            else "required stage input is missing; run the preceding stage first"
+                        )
+                    )
             command = _command_for_job(args.method, payload, registry)
+            context: dict[str, Any] = {}
+            if resolved_for_job is not None:
+                context = {
+                    "run_id": resolved_for_job.get("run_id"),
+                    "task_id": payload.get("task_id") or resolved_for_job.get("task_id"),
+                    "run_root": str(resolved_for_job["run_root"]),
+                    "task_root": (
+                        str(resolved_for_job["task_root"])
+                        if resolved_for_job.get("task_root") is not None
+                        else None
+                    ),
+                }
             status = start_job(
                 job_root=_job_root(),
                 method=args.method,
                 command=command,
                 cwd=PROJECT,
                 environment=_environment(payload, registry),
+                context=context,
             )
         except Exception as exc:
             print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}))
@@ -679,20 +1165,36 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def _command_for_job(method: str, payload: Mapping[str, Any], registry: dict[str, Any]) -> list[str]:
     if method == "run_stage":
-        return _run_stage_command(payload, registry)
-    if method in {"source_scan", "extract", "curate", "prepare_reviews", "review", "finalize_review", "publish_library", "retrieval", "task", "report"}:
-        return _stage_command(method, payload, registry)
-    if method == "signal_prepare":
-        return _signal_prepare_command(payload, registry)
-    if method == "signal_embed":
-        return _signal_embed_command(payload, registry)
-    if method == "protocol_build":
-        return _protocol_build_command(payload, registry)
-    if method == "pipeline":
-        return _pipeline_command(payload, registry)
-    if method == "ops":
-        return _ops_command(payload, registry)
-    raise KernelError(f"method does not support job mode: {method}")
+        command = _run_stage_command(payload, registry)
+    elif method in {"source_scan", "extract", "curate", "prepare_reviews", "review", "finalize_review", "publish_library", "retrieval", "task", "report"}:
+        command = _stage_command(method, payload, registry)
+    elif method == "signal_prepare":
+        command = _signal_prepare_command(payload, registry)
+    elif method == "signal_embed":
+        command = _signal_embed_command(payload, registry)
+    elif method == "protocol_build":
+        command = _protocol_build_command(payload, registry)
+    elif method == "pipeline":
+        command = _pipeline_command(payload, registry)
+    elif method == "ops":
+        command = _ops_command(payload, registry)
+    else:
+        raise KernelError(f"method does not support job mode: {method}")
+    if method in STAGE_METHODS and payload.get("run_id"):
+        # The job outlives this process; the wrapper holds the lock until the
+        # stage exits so background stages still serialize with sync calls.
+        resolved = _run_root_from_payload(payload, registry)
+        lock_root = Path(resolved["task_root"] or resolved["run_root"])
+        return [
+            _python(),
+            "-m",
+            STAGE_LOCK_MODULE,
+            "--lock-root",
+            str(lock_root),
+            "--",
+            *command,
+        ]
+    return command
 
 
 if __name__ == "__main__":

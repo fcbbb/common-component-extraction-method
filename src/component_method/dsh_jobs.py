@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 import signal
 import subprocess
-import threading
+import sys
 import time
 import uuid
 from typing import Any, Mapping, Sequence
@@ -53,6 +53,7 @@ def start_job(
     command: Sequence[str],
     cwd: Path,
     environment: Mapping[str, str] | None = None,
+    context: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Start a detached stage process and return its durable status record."""
     job_root = job_root.expanduser().resolve()
@@ -73,8 +74,22 @@ def start_job(
             "command": command,
             "cwd": str(cwd),
             "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "context": dict(context or {}),
         },
     )
+    # The caller is not durable: the DSH kernel prints the job id and exits, so
+    # a monitor thread here would die with it and the status would stay
+    # "running" forever.  The job runs under a supervisor that owns the status
+    # file instead.
+    supervised = [
+        sys.executable,
+        "-m",
+        "component_method.dsh_job_runner",
+        "--status",
+        str(status_path),
+        "--",
+        *command,
+    ]
     status = {
         "schema": JOB_SCHEMA,
         "job_id": job_id,
@@ -84,12 +99,13 @@ def start_job(
         "exit_code": None,
         "started_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "finished_at": None,
+        "context": dict(context or {}),
     }
     _write(status_path, status)
     try:
         with stdout.open("wb") as out, stderr.open("wb") as err:
             process = subprocess.Popen(
-                command,
+                supervised,
                 cwd=str(cwd),
                 env=dict(environment or {}),
                 stdin=subprocess.DEVNULL,
@@ -103,23 +119,6 @@ def start_job(
         return status
     status["pid"] = process.pid
     _write(status_path, status)
-
-    def monitor() -> None:
-        return_code = process.wait()
-        current = _read(status_path) or status
-        if current.get("status") == "cancelled":
-            current["exit_code"] = return_code
-            current["finished_at"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-            _write(status_path, current)
-            return
-        current.update(
-            status="succeeded" if return_code == 0 else "failed",
-            exit_code=return_code,
-            finished_at=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        )
-        _write(status_path, current)
-
-    threading.Thread(target=monitor, daemon=True).start()
     return status
 
 
