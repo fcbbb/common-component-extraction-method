@@ -58,6 +58,21 @@ from shared.harness import taskmodel  # noqa: E402
 
 COMPLETION_MARKER = "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
 AGENT_UID = 10001
+
+
+def _resource_args() -> List[str]:
+    """Cgroup limits so a runaway build cannot OOM the WSL VM."""
+    memory = os.environ.get("MIGRATION_CONTAINER_MEMORY", "4g")
+    cpus = os.environ.get("MIGRATION_CONTAINER_CPUS", "4")
+    return [
+        "--memory", memory,
+        "--memory-swap", memory,
+        "--cpus", cpus,
+        "--pids-limit", "2048",
+        "-e", "CMAKE_BUILD_PARALLEL_LEVEL=2",
+        "-e", "MAKEFLAGS=-j2",
+        "-e", "NINJAFLAGS=-j2",
+    ]
 ACTIVATION = (
     "export PATH=/opt/rh/gcc-toolset-13/root/usr/bin:$PATH; "
     "export LD_LIBRARY_PATH=/opt/rh/gcc-toolset-13/root/usr/lib64:/opt/gcc13-libs"
@@ -283,6 +298,7 @@ def _start_container(image: str, workspace: Path, name: str) -> Tuple[bool, str]
         [
             "docker", "run", "-d", "--name", name,
             "--network", "none",
+            *_resource_args(),
             "-v", f"{workspace}:/workspace",
             "-w", "/workspace",
             "--entrypoint", "sleep",
@@ -335,6 +351,7 @@ def _judge(
     cmd = [
         "docker", "run", "--rm", "--name", name,
         "--network", "none",
+        *_resource_args(),
         "--user", f"{AGENT_UID}:{AGENT_UID}",
         "-e", "HOME=/tmp",
         "-e", "PYTHONUNBUFFERED=1",

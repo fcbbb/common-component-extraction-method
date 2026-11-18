@@ -13,7 +13,7 @@
 
 - 源：仅 Windows 可编译的真实模块（`*_WIN32*.cpp`、`archive_*_windows.c`、
   `ngx_win32`、Schannel 等）。
-- 目标：麒麟 V10 SP3，x86_64，GCC 13.3，CMake 3.28。
+- 目标：麒麟 V10 SP3，x86_64，GCC 13.3，CMake 3.16.5。
 - gold：上游同一 commit 中已经存在的 POSIX/Unix 实现，`prepare.sh` 把它复制到
   evaluator-only 的 `gold/`，然后从 `work/` 删除。
 - 判分：构建 + 指定的上游测试 + API 清除门 + 一个负向对照。
@@ -121,7 +121,7 @@ windows_to_kylin/tasks/<task_id>/
 
 - 麒麟 V10 SP3 基础镜像需要由使用方提供（`ARG BASE_IMAGE`），仓库不假设公网
   一定有可拉取的麒麟镜像；
-- 需要 `gcc/g++ 13`、`cmake >= 3.28`、`ninja`、`perl`（nginx-tests）、
+- 需要 `gcc/g++ 13`、`cmake >= 3.16.5`、`ninja`、`perl`（nginx-tests）、
   `libssl-dev`、`zlib1g-dev`、`libgtk-3-dev`、`xvfb`、`curl`、`openssl`；
 - libuv 测试不允许以 root 运行（上游限制），镜像里创建普通用户 `bench`。
 

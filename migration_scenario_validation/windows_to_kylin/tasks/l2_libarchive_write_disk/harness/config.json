@@ -3,7 +3,7 @@
   "scenario": "windows_to_kylin",
   "level": "L2",
   "build": {
-    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_TAR=OFF -DENABLE_CPIO=OFF -DENABLE_CAT=OFF && cmake --build {build} -j",
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_TAR=OFF -DENABLE_CPIO=OFF -DENABLE_CAT=OFF && cmake --build {build} -j2",
     "artifact": "{build}/libarchive/libarchive.a"
   },
   "public_tests": null,
@@ -40,7 +40,7 @@
     "os": "kylin-v10-sp3",
     "arch": "x86_64",
     "toolchain": "gcc-13.3",
-    "cmake": "3.28"
+    "cmake": "3.16.5"
   },
   "placeholders": [
     "{root}",

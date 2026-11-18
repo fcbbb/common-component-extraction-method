@@ -57,7 +57,7 @@ scenarios:
       - ["docker", "build", "-f", "env/Dockerfile.kylin", "-t", "migration/kylin:sp3", "."]
       - ["docker", "build", "-f", "env/Dockerfile.kylin-agent", "-t", "migration/kylin:sp3-p2", "."]
   cuda_to_musa:
-    enabled: true
+    enabled: false
     parent: cuda_to_musa/tasks
     image: ${MUSA_IMAGE:-migration/musa:s4000}
     transport: ${MUSA_TRANSPORT:-auto}

@@ -8,7 +8,7 @@ target:
   os: kylin-v10-sp3
   arch: x86_64
   toolchain: gcc-13.3
-  cmake: '3.28'
+  cmake: '3.16.5'
 gates:
   build: configure and build the task target on Kylin V10
   api_removal:
@@ -65,7 +65,7 @@ harness:
   - tls_probe.sh
 build:
   command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=ON
-    -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF && cmake --build {build} -j
+    -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF && cmake --build {build} -j2
   artifact: '{build}/src/curl'
 hidden_tests:
   command: bash {root}/harness/tls_probe.sh --port 18444 --path {build}/src/curl

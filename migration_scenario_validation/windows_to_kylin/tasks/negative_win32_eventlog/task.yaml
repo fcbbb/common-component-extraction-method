@@ -8,7 +8,7 @@ target:
   os: kylin-v10-sp3
   arch: x86_64
   toolchain: gcc-13.3
-  cmake: '3.28'
+  cmake: '3.16.5'
 gates:
   build: 'not applicable: the module cannot be built on Kylin'
   api_removal:

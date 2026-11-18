@@ -96,6 +96,26 @@ import method_adapter as method_adapter_mod  # noqa: E402
 COMPLETION_MARKER = at.COMPLETION_MARKER
 AGENT_UID = at.AGENT_UID
 
+
+def _resource_args() -> List[str]:
+    """Keep an unbounded build inside a cgroup instead of killing WSL.
+
+    The WSL VM is small (8 GB here).  Docker-level limits make a runaway
+    ``cmake --build -j`` fail inside the container with an OOM-killed compiler,
+    while the host and the agent session stay alive.
+    """
+    memory = os.environ.get("MIGRATION_CONTAINER_MEMORY", "4g")
+    cpus = os.environ.get("MIGRATION_CONTAINER_CPUS", "4")
+    return [
+        "--memory", memory,
+        "--memory-swap", memory,
+        "--cpus", cpus,
+        "--pids-limit", "2048",
+        "-e", "CMAKE_BUILD_PARALLEL_LEVEL=2",
+        "-e", "MAKEFLAGS=-j2",
+        "-e", "NINJAFLAGS=-j2",
+    ]
+
 ARM_CONDITIONS = {
     "default": "baseline_direct",
     "method": "component_method",
@@ -448,6 +468,7 @@ def _start_container(
 ) -> Tuple[bool, str]:
     cmd = [
         "docker", "run", "-d", "--name", name, "--network", "none",
+        *_resource_args(),
         "-v", f"{workspace}:/workspace", "-w", "/workspace",
     ]
     for host, container in mounts:
@@ -503,6 +524,7 @@ def _judge_local(
     name = f"baseline-judge-{tag}-{uuid.uuid4().hex[:8]}"
     cmd = [
         "docker", "run", "--rm", "--name", name, "--network", "none",
+        *_resource_args(),
         "--user", f"{AGENT_UID}:{AGENT_UID}",
         "-e", "HOME=/tmp", "-e", "PYTHONUNBUFFERED=1",
     ]

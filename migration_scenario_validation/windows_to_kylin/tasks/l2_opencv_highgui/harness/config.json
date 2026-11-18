@@ -3,7 +3,7 @@
   "scenario": "windows_to_kylin",
   "level": "L2",
   "build": {
-    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_LIST=core,imgproc,imgcodecs,highgui,ts -DWITH_GTK=ON -DWITH_QT=OFF -DBUILD_TESTS=ON -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF && cmake --build {build} -j4",
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_LIST=core,imgproc,imgcodecs,highgui,ts -DWITH_GTK=ON -DWITH_QT=OFF -DBUILD_TESTS=ON -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF && cmake --build {build} -j2",
     "artifact": "{build}/lib/libopencv_highgui.a"
   },
   "public_tests": null,
@@ -40,7 +40,7 @@
     "os": "kylin-v10-sp3",
     "arch": "x86_64",
     "toolchain": "gcc-13.3",
-    "cmake": "3.28"
+    "cmake": "3.16.5"
   },
   "placeholders": [
     "{root}",

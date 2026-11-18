@@ -8,7 +8,7 @@ target:
   os: kylin-v10-sp3
   arch: x86_64
   toolchain: gcc-13.3
-  cmake: '3.28'
+  cmake: '3.16.5'
 gates:
   build: configure and build the task target on Kylin V10
   api_removal:
@@ -72,7 +72,7 @@ prepare:
 build:
   command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_LIST=core,imgproc,imgcodecs,highgui,ts
     -DWITH_GTK=ON -DWITH_QT=OFF -DBUILD_TESTS=ON -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_python3=OFF
-    && cmake --build {build} -j4
+    && cmake --build {build} -j2
   artifact: '{build}/lib/libopencv_highgui.a'
 hidden_tests:
   command: cd {build} && timeout 900 xvfb-run -a ./bin/opencv_test_highgui --gtest_filter=Highgui_GUI.*
