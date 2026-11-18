@@ -1,0 +1,131 @@
+# Task package: aubio spectral fft module (aubio, IPP backend).
+# Source state = src/fft_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l2_aubio_fft
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L2
+domain: audio
+difficulty: hard
+fit: A            # rcfft/crfft map directly; the work is in the conventions
+
+source:
+  repo: https://github.com/aubio/aubio.git            # 0.4.9, src/spectral/fft.c + fft_ipp.c
+  commit: "0.4.9"
+  license: GPL-3.0-or-later
+  vendored: true
+  files:
+    - src/fft_ipp.c            # Intel IPP backend of aubio's fft object
+    - include/aubio_fft.h      # fvec_t / cvec_t / aubio_fft_t subset
+    - CMakeLists.txt
+  loc: 260
+  ipp_apis:
+    - ippsFFTGetSize_R_32f
+    - ippsFFTInit_R_32f
+    - ippsFFTFwd_RToCCS_32f
+    - ippsFFTInv_CCSToR_32f
+    - ippsMulC_32f
+    - ippsAtan2_32f_A21
+    - ippsMalloc_8u
+    - ippsMalloc_32fc
+    - ippsFree
+  note: >-
+    This is one complete backend of aubio's spectral module, not a single
+    kernel: a create/destroy lifecycle, an unscaled real FFT pair, a packed
+    compspec layout, and four accessors that convert between the packed
+    spectrum and polar (norm/phas) form.  aubio deliberately asks IPP for
+    IPP_FFT_NODIV_BY_ANY and applies 1/winsize itself in the inverse, and it
+    uses ippAlgHintAccurate.  IPP reports sizeInit = 0 and sizeBuffer = 0 for
+    the smallest orders here, so those allocations must be skipped rather than
+    passed to ippsMalloc_8u(0) (which returns NULL).
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/fft_ipp.c implements aubio's fft object on top of Intel IPP.  Migrate it
+  off IPP while keeping include/aubio_fft.h and the observable behaviour
+  unchanged:
+
+    new_aubio_fft(winsize): NULL unless winsize is a power of two > 4;
+        otherwise an object that can transform frames of exactly winsize
+    del_aubio_fft(NULL) is a no-op
+    aubio_fft_do_complex(s, in, compspec):
+        compspec = [r0, r1, ..., r_{n/2}, i_{n/2-1}, ..., i2, i1]   (n floats)
+        unscaled forward DFT, X[k] = sum(t) x[t] exp(-2 pi i k t / n)
+    aubio_fft_do(s, in, spectrum): same spectrum in polar form
+        spectrum->norm[k] = |X[k]|
+        spectrum->phas[0] = pi if X[0] < 0 else 0
+        spectrum->phas[m-1] = pi if X[n/2] < 0 else 0     (m = n/2 + 1)
+        spectrum->phas[k] = atan2(Im X[k], Re X[k]) for 1 <= k <= n/2 - 1
+    aubio_fft_rdo_complex(s, compspec, out): inverse DFT divided by n
+    aubio_fft_rdo(s, spectrum, out): norm/phas -> compspec -> rdo_complex
+    aubio_fft_get_spectrum / get_realimag, get_phas / get_norm / get_imag /
+        get_real: the accessors, with the same layout and phase convention
+    no ipps*/ippi* symbol may remain in the built artifact.
+
+  VSIPL maps this to vsip_rcfftop_f / vsip_crfftop_f.  Watch the details: the
+  plan scale takes the 1/n that IPP leaves out (forward 1.0, inverse 1/n); the
+  half spectrum returned by vsip_rcfftop_f is the natural (re, im) sequence for
+  k = 0..n/2 and must be repacked into aubio's [re..., im reversed...] layout;
+  and the DC/Nyquist phases use the +pi convention rather than atan2.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libaubiofft.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c checks the constructor contract (1, 2, 3, 4, 5, 6, 12 and
+    1000 rejected) and, for winsize 8 / 16 / 32 / 64 / 256, compares
+    do_complex, do, get_realimag, rdo_complex and rdo against a direct
+    double-precision DFT and against the input frame.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l2_aubio_fft --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 41 cases"
+  visible_to_agent: false
+  cases:
+    - winsize 8, 16, 32, 64, 128, 256, 1024
+    - do_complex, get_spectrum (polar), round trip through norm/phas,
+      round trip through compspec, get_realimag for each winsize (35 cases)
+    - winsize 64 transformed over three consecutive frames with one object
+    - six invalid sizes (2, 4, 5, 6, 12, 1000) must return NULL
+  note: >-
+    Phase slots are compared modulo 2*pi; norm/real/imag slots use the usual
+    relative test.  The get_realimag cases have zero error for any correct
+    implementation because norm and phas come from the same stored payload.
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 1.0e-5}
+  note: >-
+    Reference migration matches IPP to 6.6e-7 worst relative across 41 cases.
+    Structural mistakes are far larger: a missing 1/n scales the inverse by n,
+    a wrong packing permutation mixes real and imaginary parts, and the DC or
+    Nyquist phase convention flips a sign.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libaubiofft.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 41 cases within tolerance)"
+
+gold_patch: gold/fft_vsipl.c
+gold_notes: >-
+  Verified reference: 41/41 cases, worst relative error 6.6e-6 (public test
+  passes too, worst 6.1e-6).  Mapping: vsip_rcfftop_create_f(n, 1.0) and
+  vsip_crfftop_create_f(n, 1.0) with an explicit vsip_svmul_f(1/n) after the
+  inverse (mirroring IPP_FFT_NODIV_BY_ANY + ippsMulC_32f); the packed
+  compspec is filled with vsip_cvget_f / vsip_cvput_f; the polar accessors use
+  vsip_vatan2_f and vsip_cvmag_f on short-lived views, with scalar
+  atan2f/sqrtf fallbacks.  The IPP artifact fails the API gate with 9 symbols
+  (ippsFFTGetSize_R_32f, ippsFFTInit_R_32f, ippsFFTFwd_RToCCS_32f,
+  ippsFFTInv_CCSToR_32f, ippsMulC_32f, ippsAtan2_32f_A21, ippsMalloc_8u,
+  ippsMalloc_32fc, ippsFree).

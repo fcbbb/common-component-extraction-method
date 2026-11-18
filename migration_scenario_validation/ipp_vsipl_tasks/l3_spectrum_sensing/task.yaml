@@ -1,0 +1,210 @@
+# Task package: cognitive-radio spectrum sensor (synthetic).
+# Source state = src/spectrum_sense_ipp.c + include/spectrum_sense.h (Intel IPP).
+# Target = VSIPL C (jvsip).
+task_id: l3_spectrum_sensing
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L3
+domain: spectrum
+difficulty: medium
+fit: B            # IPP gets this from three entry points (one real FFT, one
+                  # magnitude, one max-index) plus a plain C occupancy loop;
+                  # VSIPL only offers primitives, so the candidate has to
+                  # compose the frame loop, build the window by hand (jvsip's
+                  # window creator uses a different convention) and reduce the
+                  # detector to vlge + vsumval_bl
+
+source:
+  repo: synthetic (HPEC-style cognitive-radio sensing frontend)
+  commit: "-"
+  license: synthetic
+  vendored: true
+  files:
+    - include/spectrum_sense.h            # 64 lines, the whole contract
+    - src/spectrum_sense_ipp.c            # 202 lines, the component
+  loc: 266
+  note: >-
+    A Welch-periodogram energy detector in the shape of a cognitive-radio
+    sensing frontend: windowed frames, one real FFT per frame, a power
+    accumulation over the frames, then a noise-floor / peak / occupancy report
+    against a multiple of the mean power.  The slate estimated ~700 lines; the
+    actual component is 266 because every stage is a single IPP call -- the
+    L3 label describes the end-to-end shape (the hidden cases drive complete
+    captures across 8 FFT sizes), not the size.
+  scope_note: >-
+    The detector is deliberately stateless between calls: sens_analyze()
+    re-analyses the whole capture it is handed, so the hidden cases can vary
+    the capture length freely and the streaming bookkeeping of task 17 does not
+    come back.  What makes this package L3 is the number of conventions that
+    have to survive at once: the symmetric window, the unscaled transform, the
+    packed-versus-natural real-FFT layout, the first-maximum rule and the
+    threshold counting order.
+  ipp_apis:
+    - ippsFFTGetSize_R_32f
+    - ippsFFTInit_R_32f
+    - ippsFFTFwd_RToCCS_32f
+    - ippsWinHann_32f
+    - ippsSet_32f
+    - ippsCopy_32f
+    - ippsMul_32f
+    - ippsMagnitude_32fc
+    - ippsSqr_32f
+    - ippsAdd_32f
+    - ippsMulC_32f
+    - ippsMean_32f
+    - ippsMaxIndx_32f
+    - ippsMalloc_8u
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/spectrum_sense_ipp.c implements the sensor on top of Intel IPP.
+  Migrate it off IPP while keeping include/spectrum_sense.h and every
+  observable behaviour unchanged.  The header is the contract.
+
+  Configuration: sens_config{fft_len, frame_step, thr_scale}; fft_len must be a
+  power of two >= 8, frame_step > 0, thr_scale > 0.  sens_create() returns NULL
+  for a NULL config or a rejected configuration.  sens_nbin() returns
+  fft_len/2 + 1 (0 for a NULL state).
+
+  sens_analyze(st, x, n, psd, rep) analyses one capture:
+      nframes = (n >= N) ? 1 + (n - N)/frame_step : 0
+      frame f  = x[f*frame_step .. f*frame_step + N - 1]
+      w[i]     = 0.5*(1 - cos(2*pi*i/(N-1)))              i = 0 .. N-1
+      psd[k]   = (1/nframes) * sum_f |FFT_N(w * frame_f)[k]|^2
+                 for k = 0 .. N/2, with the unscaled transform
+                 X[k] = sum_n w[n]*frame[n]*exp(-2*pi*i*k*n/N)
+  The density is written to psd (room for fft_len/2+1 floats) and summarized in
+  rep:
+      noise_floor = mean_k psd[k]
+      peak_power  = max_k psd[k]
+      peak_bin    = the index of the first maximum
+      threshold   = thr_scale * noise_floor
+      occ_bins    = #{ k : psd[k] >= threshold }
+      occupancy   = occ_bins / (N/2 + 1)
+  sens_analyze() returns nframes.  n < fft_len returns 0 and leaves psd and rep
+  untouched.  A NULL state, input, density or report returns -1.
+
+  no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
+
+  VSIPL notes:
+    - vsip_rcfftop_f returns the natural complex sequence for k = 0 .. N/2,
+      i.e. exactly the bins the contract asks for.  The IPP packed CCS layout
+      (an N+2-float block with the Nyquist term at p[N]) has no counterpart and
+      does not need one.
+    - jvsip has no Hann window creator with the symmetric convention: its
+      vsip_vcreate_hanning_f uses the periodic 2*pi*(i+1)/(N+1).  The window
+      has to be built from the definition.
+    - the occupancy count has no direct vector counterpart in IPP either; in
+      VSIPL it is vsip_vlge_f plus vsip_vsumval_bl.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libspectrumsense.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c (25 checks) evaluates the periodogram definition directly in
+    double -- the window, then the DFT sum per bin -- for N=32/64/128 with
+    different frame steps, and compares the whole density peak-relative.  It
+    then checks the report against the density the same call returned (peak
+    matches its bin, noise floor is the mean, occupancy counts the bins at or
+    above the threshold), pins the unscaled transform and the window amplitude
+    with a pure tone (peak on its bin, energy = (sum w / 2)^2), checks the frame
+    count for every n from 0 to 299, and covers n < fft_len, the NULL arguments,
+    sens_nbin(NULL), the NULL config and four rejected configurations.  It never
+    calls into IPP and never uses a golden container.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l3_spectrum_sensing --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 8 cases"
+  visible_to_agent: false
+  cases:
+    - N 32 / step 16, 512 samples, thr 3.0 (31 frames, 17 bins)
+    - N 64 / step 32, 2048 samples, thr 4.0 (63 frames)
+    - N 64 / step 64, 1024 samples, thr 6.0 (non-overlapping frames)
+    - N 128 / step 32, 4096 samples, thr 5.0 (125 frames)
+    - N 256 / step 100, 3000 samples, thr 8.0 (frame step not a divisor)
+    - N 512 / step 512, 4096 samples, thr 10.0 (8 frames, 257 bins)
+    - N 1024 / step 256, 8192 samples, thr 12.0 (29 frames, 513 bins)
+    - N 128 / step 127, 1000 samples, thr 6.0 (overlapping by one, ragged tail)
+  note: >-
+    Each container carries the configuration, the capture, the baseline's
+    complete density and noise_floor / peak_power / peak_bin / occ_bins.  The
+    signals are deterministic three-tone-plus-noise captures with a different
+    seed and different bin placement per case, so a candidate cannot special-
+    case the input.  golden_gen refuses to emit a case whose threshold runs
+    within 1e-3 (peak-relative) of a bin -- occupancy would then be decided by
+    rounding -- or whose peak is not separated from the runner-up, so peak_bin
+    and occ_bins are safe to compare exactly.
+
+tolerances:
+  float32: {rtol: 1.0e-5, atol: 0.0, mode: peak-relative, floor: 1.0}
+  peak_bin: {mode: exact}
+  occ_bins: {mode: exact}
+  note: >-
+    Reference migration matches IPP to 2.51e-07 worst relative across 8 cases;
+    the IPP baseline reproduces its own goldens to 5.9e-10 (the residual is the
+    SIMD tail of ippsMean_32f changing with buffer alignment, not a semantic
+    difference).  The compared quantities are squared magnitudes of up to 1024
+    point FFTs, so the error budget is set by the transform implementation, not
+    by the migration: a packed-versus-natural layout mistake is O(1) on the
+    affected bins, a periodic instead of symmetric window skews every bin but
+    the DC one, a scaled transform misses by a factor of N, and an inclusive
+    versus exclusive threshold comparison moves occ_bins by whole counts.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libspectrumsense.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 8 cases within tolerance)"
+
+gold_patch: gold/spectrum_sense_vsipl.c
+gold_notes: >-
+  Verified reference: 8/8 cases, worst relative error 2.514e-07, public test
+  25/25, API gate clean.  Mapping: the window is a vsip_vramp_f ramp, a
+  vsip_svmul_f by 2*pi/(N-1), a vsip_vcos_f and a vsip_vsmsa_f(w, -0.5, 0.5) --
+  the definition, because jvsip's vsip_vcreate_hanning_f uses the periodic
+  convention; each frame is a view bound over the caller's capture, copied and
+  multiplied with vsip_vcopy_f_f / vsip_vmul_f, transformed with
+  vsip_rcfftop_f (created with scale 1.0 to match IPP_FFT_NODIV_BY_ANY), and
+  converted to power with vsip_cvmag_f + vsip_vsq_f; the accumulation is
+  vsip_vadd_f, the 1/nframes scaling vsip_svmul_f, the report is
+  vsip_vmeanval_f / vsip_vmaxval_f, and the occupancy is vsip_vlge_f against a
+  broadcast threshold (vsip_vramp_f(thr, 0.0f, ...)) plus vsip_vsumval_bl.
+  The IPP artifact fails the API gate with 14 symbols: ippsAdd_32f
+  ippsCopy_32f ippsFFTFwd_RToCCS_32f ippsFFTGetSize_R_32f ippsFFTInit_R_32f
+  ippsMagnitude_32fc ippsMalloc_8u ippsMaxIndx_32f ippsMean_32f ippsMulC_32f
+  ippsMul_32f ippsSet_32f ippsSqr_32f ippsWinHann_32f.
+  Things worth knowing, all of which cost time here:
+  (1) ippsFFTFwd_RToCCS_32f in this IPP build writes N+2 floats for a length-N
+  real transform -- p[0]=Re X[0], p[1]=Im X[0], p[2k]/p[2k+1] = Re/Im X[k] for
+  k=1..N/2-1, and Re X[N/2] at p[N].  That is not the compact Perm layout used
+  by ippsFFTFwd_RToPerm_64f (N floats, Nyquist in p[1]); sizing the destination
+  as N floats writes past the end and reads the wrong slot for bin N/2, and the
+  symptom is a Nyquist-only error of about 6e-5 peak-relative with no crash.
+  (2) jvsip's vsip_valldestroy_bl destroys the view *and* the block it was
+  bound to; following it with vsip_blockdestroy_bl double-frees (a segfault at
+  teardown, not at analysis time).
+  (3) Zeroing an accumulation view with vsip_svmul_f(0.0f, v, v) is not a
+  memset: it reads the freshly malloc'd plane, so a leftover inf or NaN bit
+  pattern becomes NaN and silently poisons every later bin.  Use
+  vsip_vfill_f.  The hidden test now treats NaN as a failure (`!(r <= RTOL)`
+  rather than `r > RTOL`), because the original comparison let a NaN bin pass.
+  (4) jvsip's vsip_vmaxval_f reports the index through its optional
+  vsip_index out parameter and scans with a strict greater-than, so it picks
+  the same first maximum as ippsMaxIndx_32f.
+  (5) The window convention is the subtle part of the migration: IPP's
+  ippsWinHann_32f and the contract both use 2*pi*i/(N-1), while jvsip's window
+  creators use 2*pi*(i+1)/(N+1).  Both "look like a Hann window" and both pass
+  a peak-on-the-right-bin test; only the comparison against the direct DFT
+  numerator catches the substitution.

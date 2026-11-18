@@ -1,0 +1,107 @@
+# Task package: HPEC-style dB magnitude kernel.
+# Source state = src/dbmag_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l1_vec_db_mag
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L1
+domain: radar
+difficulty: easy
+fit: A            # every IPP call has a direct VSIPL counterpart
+
+source:
+  repo: synthetic/hpec-db-kernel   # synthetic repo, the DB kernel from the HPEC
+                                   # Challenge signal-processing suite
+  commit: "synthetic-2026-11-14"
+  license: synthetic
+  vendored: true
+  files:
+    - src/dbmag_ipp.c
+    - include/dbmag.h
+    - CMakeLists.txt
+  loc: 120
+  ipp_apis:
+    - ippsMagnitude_32f
+    - ippsThreshold_LTVal_32f
+    - ippsLog10_32f_A21
+    - ippsMulC_32f
+    - ippsAddC_32f
+    - ippsMalloc_32f
+    - ippsFree
+  note: >-
+    ippsLog10_32f_A21 lives in libippvm, not libipps, so the baseline build
+    links three shared objects (ipps, ippvm, ippcore).  The floor clamp is done
+    with ippsThreshold_LTVal_32f because log10(0) = -inf would otherwise leak
+    into the output.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/dbmag_ipp.c converts a split real/imaginary pair to dB.  Migrate it off
+  Intel IPP while keeping include/dbmag.h and the observable behaviour
+  unchanged:
+
+  - out[i] = 20*log10(max(|x[i]|, floor_mag)) + offset
+    with |x[i]| = sqrt(re[i]^2 + im[i]^2)
+  - floor_mag must be > 0 (protects the logarithm at zeros and near-zeros)
+  - return 0 on success, -1 for NULL pointers, n < 1 or floor_mag <= 0
+  - no ipps*/ippi* symbol may remain in the built artifact
+
+  The natural VSIPL mapping is: vsip_vcmplx_f to build a complex view from the
+  split input, vsip_cvmag_f for the magnitude, vsip_vclip_f for the floor,
+  vsip_vlog10_f for the logarithm and vsip_svmul_f / vsip_svadd_f for the
+  scale and offset.  Bind the caller's arrays instead of copying them in.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libdbmag.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c recomputes the dB value in double precision from the
+    definition for a 96-sample vector that includes exact zeros and samples
+    below the floor, checks the 3+4i -> 20*log10(5) case, and checks the
+    argument contract.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l1_vec_db_mag --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 5 cases"
+  visible_to_agent: false
+  cases:
+    - {n: 64,   floor_mag: 1.0e-9,  offset: 0.0}
+    - {n: 1,    floor_mag: 1.0e-9,  offset: -10.0}
+    - {n: 1024, floor_mag: 1.0e-6,  offset: 0.0}
+    - {n: 257,  floor_mag: 1.0e-3,  offset: 100.0}
+    - {n: 33,   floor_mag: 1.0e-12, offset: -3.5}
+  note: >-
+    Every case injects exact zeros every 40 samples and 1e-12 samples every
+    97, and forces sample 0 to 3+4i.  Sample 0 therefore always has the
+    analytic value 20*log10(5) + offset, independent of the floor.
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 1.0e-5}
+  note: >-
+    Reference migration matches IPP to 1.0e-6 worst relative.  The floor makes
+    the mapping continuous, so samples sitting exactly at the floor do not
+    create a comparison hazard.  Forgetting the floor produces -inf/NaN on the
+    zero samples and fails immediately.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libdbmag.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 5 cases within tolerance)"
+
+gold_patch: gold/dbmag_vsipl.c
+gold_notes: >-
+  Verified reference: 5/5 cases, worst relative error 1.0e-6.  The inputs and
+  the output are bound onto the caller's buffers; only the complex view, the
+  magnitude view and the dB view are VSIPL-owned scratch.

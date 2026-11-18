@@ -1,0 +1,122 @@
+# Task package: frequency-domain FIR (overlap-save).
+# Source state = src/fdfir_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l2_fdfir_overlap_save
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L2
+domain: radar
+difficulty: medium
+fit: B            # no overlap-save object in VSIPL; composed from FFT + cvmul
+
+source:
+  repo: synthetic/hpec-fdfir    # HPEC Challenge FDFIR kernel, packaged as a
+                                # small repository module
+  commit: "synthetic-2026-11-14"
+  license: synthetic
+  vendored: true
+  files:
+    - src/fdfir_ipp.c
+    - include/fdfir.h
+    - CMakeLists.txt
+  loc: 400
+  ipp_apis:
+    - ippsFFTGetSize_C_32fc
+    - ippsFFTInit_C_32fc
+    - ippsFFTFwd_CToC_32fc
+    - ippsFFTInv_CToC_32fc
+    - ippsMalloc_8u
+    - ippsFree
+  note: >-
+    The IPP build keeps two IppsFFTSpec_C_32fc: one created with
+    IPP_FFT_NODIV_BY_ANY and one with IPP_FFT_DIV_INV_BY_N.  The scaling is a
+    property of the spec, not of the call site, so an implementation that
+    forgets the division flag silently produces nfft-scaled output.  The
+    per-bin product is written out by hand because the spectra are complex
+    (ippsMul_32f only handles reals).
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/fdfir_ipp.c implements a frequency-domain FIR filter (overlap-save) with a
+  create/apply/destroy lifecycle.  Migrate it off Intel IPP while keeping
+  include/fdfir.h and the observable behaviour unchanged:
+
+    fdfir_create(taps, ntaps, nfft): nfft is a power of two with nfft >= ntaps,
+        block = nfft - ntaps + 1; returns NULL on invalid arguments
+    fdfir_apply(f, x, nx, y): y[i] = sum(j) taps[j]*x[i-j], x[k]=0 for k<0,
+        any nx >= 1 (including nx < block), 0 on success / -1 on bad args
+    fdfir_destroy(NULL) is a no-op
+    no ipps*/ippi* symbol may remain in the built artifact.
+
+  VSIPL has no overlap-save object, so the algorithm is reproduced from
+  primitives: vsip_ccfftop_create_f / vsip_ccfftop_f for both directions and an
+  elementwise complex multiply for the spectra.  Two mapping details:
+    - the transform scale is an argument of vsip_ccfftop_create_f, which is
+      where IPP's IPP_FFT_DIV_INV_BY_N goes (create the inverse plan with
+      scale 1/nfft, the forward plan with 1.0);
+    - the elementwise complex product is vsip_cvmul_f.  vsip_vmmul_f is the
+      vector-by-matrix product and does not compile against complex vector
+      views; vsip_cmmul/cvmmul are matrix variants.
+  The window indexing is the part most likely to be wrong: the valid outputs of
+  the circular block are the last `block` samples, i.e.
+  y[pos+k] = time[ntaps-1+k].
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libfdfir.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c compares against a direct causal convolution in double for
+    seven (ntaps, nfft, nx) combinations -- one block, short input, exact
+    multiples, partial tail, block == 1, a single tap and block == 2 -- plus the
+    constructor/argument contract.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l2_fdfir_overlap_save --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 11 cases"
+  visible_to_agent: false
+  cases:
+    - ntaps=4  nfft=8   nx=5    (one full block)
+    - ntaps=4  nfft=8   nx=3    (shorter than one block)
+    - ntaps=4  nfft=8   nx=17   (block + partial tail)
+    - ntaps=4  nfft=8   nx=40   (exact multiple of the block)
+    - ntaps=16 nfft=32  nx=100
+    - ntaps=1  nfft=8   nx=32   (pure gain)
+    - ntaps=32 nfft=32  nx=20   (block == 1)
+    - ntaps=7  nfft=256 nx=1000
+    - ntaps=63 nfft=64  nx=64   (block == 2)
+    - ntaps=5  nfft=16  nx=1    (single sample, zero padding only)
+    - ntaps=2  nfft=4   nx=50
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 1.0e-6}
+  note: >-
+    Reference migration matches IPP to 4.8e-7 worst relative.  A missing inverse
+    scaling, an offset window or a swapped block boundary gives O(1) or O(nfft)
+    error, so the 1e-4 relative tolerance leaves several hundred times of
+    margin while still catching the structural mistakes.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libfdfir.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 11 cases within tolerance)"
+
+gold_patch: gold/fdfir_vsipl.c
+gold_notes: >-
+  Verified reference: 11/11 cases, worst relative error 4.8e-7 (public test
+  passes too, 1.8e-7).  Same algorithm as the IPP source: complex FFT of the
+  zero-padded kernel once at create, then per block forward / vsip_cvmul_f /
+  inverse-with-1/nfft, taking the last block samples.  IPP artifact fails the
+  API gate with 6 symbols (ippsFFTGetSize_C_32fc, ippsFFTInit_C_32fc,
+  ippsFFTFwd_CToC_32fc, ippsFFTInv_CToC_32fc, ippsMalloc_8u, ippsFree).

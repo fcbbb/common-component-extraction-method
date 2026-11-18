@@ -1,0 +1,127 @@
+# Task package: 1-D convolution and normalized cross-correlation.
+# Source state = src/conv_corr_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l1_conv_corr
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L1
+domain: generic
+difficulty: medium
+fit: B            # mapped one-to-one, except that jvsip's UNBIASED full-support
+                  # normalization is wrong when the kernel is longer than data
+
+source:
+  repo: synthetic/dsp-frontend    # synthetic repo, the convolution stage of a
+                                  # generic detection front end
+  commit: "synthetic-2026-11-14"
+  license: synthetic
+  vendored: true
+  files:
+    - src/conv_corr_ipp.c
+    - include/conv_corr.h
+    - CMakeLists.txt
+  loc: 180
+  ipp_apis:
+    - ippsConvolve_32f
+    - ippsConvolveGetBufferSize
+    - ippsCrossCorrNorm_32f
+    - ippsCrossCorrNormGetBufferSize
+    - ippsMalloc_8u
+    - ippsFree
+  note: >-
+    IPP 2021 does not expose a "same" region and has no biased/unbiased switch.
+    ippsConvolve_32f always returns the full result, so SAME is sliced out of it;
+    the unbiased correlation is divided by hand.  The lag order is the trap:
+    ippsCrossCorrNorm_32f evaluates sum(k) src1[k]*src2[k+lag] with the *first*
+    operand held in place, i.e. the mirror image of the natural correlation of
+    the kernel against the data, so the source passes h as src1 and x as src2
+    and gets y[0] at lag -(nh-1) directly.  Neither IPP call takes a stride, so
+    the strided entry point gathers first.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/conv_corr_ipp.c implements convolution and normalized cross-correlation.
+  Migrate it off Intel IPP while keeping include/conv_corr.h unchanged:
+
+    full[i] = sum(j) h[j] * x[i-j], i = 0 .. nh+nx-2
+    DSP_REGION_FULL -> y = full[0 .. nh+nx-2]
+    DSP_REGION_SAME -> y[i] = full[i + nh/2], i = 0 .. nx-1
+    dsp_convolve_strided reads x[k] = xbuf[offset + k*xstride]
+    dsp_correlate: y[i] = sum(j) h[j] * x[j + i - (nh-1)]
+        DSP_CORR_BIASED   raw sum
+        DSP_CORR_UNBIASED divided by the overlap count (the number of j with
+                          0 <= j+i-(nh-1) < nx); the kernel may be longer than
+                          the data
+    return 0 on success, -1 on invalid arguments
+    no ipps*/ippi* symbol may remain in the built artifact.
+
+  VSIPL has both operations directly: vsip_conv1d_create_f /
+  vsip_convolve1d_f with VSIP_SUPPORT_FULL or VSIP_SUPPORT_SAME, and
+  vsip_corr1d_create_f / vsip_correlate1d_f with VSIP_BIASED/VSIP_UNBIASED.
+  Two things must be checked rather than assumed:
+    - vsip_convolve1d_f's SAME region starts at full[nh/2] (integer division),
+      which is the contracted offset; an even kernel is the case that differs
+      from the textbook (nh-1)/2;
+    - jvsip's VSIP_UNBIASED full-support normalization is wrong once the kernel
+      is longer than the data: VI_vunbiasfull_f walks the rising/falling
+      overlap counts of the kernel and divides the plateau samples by nh
+      instead of nx (measured nh=8, nx=6: divisors 7 and 8 where 6 is right).
+      The reference falls back to VSIP_BIASED plus an explicit overlap-count
+      division for nh > nx.
+  Views bind the caller's arrays, so the strided entry point needs no gather
+  buffer on the VSIPL side (IPP did).
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libconvcc.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c recomputes everything in double: full and SAME convolution
+    (including the even-kernel offset), a strided convolution, biased and
+    unbiased correlation (including a kernel longer than the data and a
+    single-tap kernel), the nh=1 SAME identity, and the whole argument contract.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l1_conv_corr --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 15 cases"
+  visible_to_agent: false
+  cases:
+    - conv full 2x3, 5x11, 17x6 (kernel longer), 4x1000 (long input)
+    - conv same 4x20 (even kernel offset 2), 5x32
+    - conv strided full 7 taps stride 3 offset 2, same 6 taps stride 2 offset 1
+    - corr biased 3x5, 7x40, 40x7 (kernel longer)
+    - corr unbiased 7x40, 8x6 (jvsip trap), 1x9, 16x200
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 1.0e-5}
+  note: >-
+    Reference migration matches IPP to 7.2e-7 worst relative.  A lag run the
+    wrong way, a wrong SAME offset, or a wrong overlap divisor is O(1)
+    relative, not rounding: the naive VSIP_UNBIASED path lands at 2.9e-2 on
+    case 11, and the harness's non-symmetric kernels make a reversed lag
+    impossible to hide.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libconvcc.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 15 cases within tolerance)"
+
+gold_patch: gold/conv_corr_vsipl.c
+gold_notes: >-
+  Verified reference: 15/15 cases, worst relative error 7.2e-7 (public test
+  passes too, 1.4e-7).  Uses VSIP_SUPPORT_FULL/SAME for convolution and
+  VSIP_BIASED/VSIP_UNBIASED for correlation, with the nh > nx fallback
+  documented above.  The IPP artifact fails the API gate with 6 symbols
+  (ippsConvolve_32f, ippsConvolveGetBufferSize, ippsCrossCorrNorm_32f,
+  ippsCrossCorrNormGetBufferSize, ippsMalloc_8u, ippsFree).

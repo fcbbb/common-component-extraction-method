@@ -1,0 +1,106 @@
+# Task package: cell-averaging CFAR detector (HPEC CFAR kernel, reduced).
+# Source state = src/cfar_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l2_cfar_detector
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L2
+domain: radar
+difficulty: medium
+fit: B            # per-cell windows + mean + masked compare, built from primitives
+
+source:
+  repo: hpce-challenge/cfar           # synthetic reduction of the HPEC CFAR kernel
+  commit: "synthetic-2026-11-14"
+  license: synthetic
+  vendored: true
+  files:
+    - src/cfar_ipp.c
+    - include/cfar.h
+    - CMakeLists.txt
+  loc: 110
+  ipp_apis:
+    - ippsLn_32f
+    - ippsExp_32f
+    - ippsDivC_32f
+    - ippsMulC_32f
+    - ippsSubC_32f
+    - ippsAddC_32f
+    - ippsSum_32f
+    - ippsMalloc_32f
+    - ippsMalloc_8u
+    - ippsFree
+  note: >-
+    IPP has no element-wise compare that produces a mask (no ippsCmpGt in the
+    2021 headers), so the source loops over the thresholds in C.  VSIPL does
+    provide one (vsip_vlgt_f), so the migrated code can be stricter about
+    keeping the decision in-library.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/cfar_ipp.c implements a cell-averaging CFAR detector.  Migrate it to
+  VSIPL (jvsip, VSIPL 1.3 C) keeping include/cfar.h and the observable
+  behaviour unchanged:
+
+  - noise[i] is the mean of the training cells on both sides of cell i,
+    excluding nguard cells next to the cell under test, clipped at the ends;
+  - a cell is flagged when mag2[i] > alpha * noise[i] with
+    alpha = N0 * (pfa^(-1/N0) - 1), N0 = 2 * ntrain;
+  - a cell with no valid training cell is never flagged;
+  - cfar_detect returns the number of detected cells;
+  - no ipps*/ippi* symbol may remain in the built artifact.
+
+  Target library notes (jvsip): vsip_vlgt_f writes a boolean view
+  (vsip_vview_bl), which you can read with vsip_vget_bl.  vsip_blockadmit_f
+  returns 0 on success — the opposite of the other jvsip calls.  Release
+  subviews with vsip_vdestroy_f(), never vsip_valldestroy_f().
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libcfar.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c checks one 48-cell line against a double-precision reference
+    computed in the test itself.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l2_cfar_detector --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 5 cases"
+  visible_to_agent: false
+  cases:
+    - {nguard: 2, ntrain: 8,  n: 512,  pfa: 1.0e-3}
+    - {nguard: 0, ntrain: 4,  n: 257,  pfa: 1.0e-2}
+    - {nguard: 1, ntrain: 1,  n: 64,   pfa: 5.0e-1}
+    - {nguard: 4, ntrain: 16, n: 33,   pfa: 1.0e-4}
+    - {nguard: 0, ntrain: 64, n: 1024, pfa: 1.0e-6}
+  scoring: >-
+    Decisions are exact except for cells the generator marked ambiguous (the
+    sample lies within 1e-3 relative of a double-precision threshold).  On the
+    shipped cases there are no ambiguous cells.
+
+tolerances:
+  decisions: exact          # no numeric tolerance; ambiguity band is precomputed
+  float32:   {rtol: 0.0, atol: 0.0}
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libcfar.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 5 cases, 0 mismatches)"
+
+gold_patch: gold/cfar_vsipl.c
+gold_notes: >-
+  Verified reference: 5/5 cases, 0 mismatches, 0 ambiguous cells, detection
+  counts identical to the IPP baseline (5/4/33/0/3).  Binds the caller's
+  buffer with vsip_blockbind_f + vsip_blockadmit_f and decides with
+  vsip_vlgt_f.

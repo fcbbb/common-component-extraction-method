@@ -1,0 +1,115 @@
+# Task package: orthonormal DCT-II/III (aubio, IPP backend).
+# Source state = src/dct_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l1_aubio_dct
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L1
+domain: audio
+difficulty: medium
+fit: B            # no DCT in VSIPL; composed from a 2N complex FFT + rotation
+
+source:
+  repo: https://github.com/aubio/aubio.git            # 0.4.9, src/spectral/dct_ipp.c
+  commit: "0.4.9"
+  license: GPL-3.0-or-later
+  vendored: true
+  files:
+    - src/dct_ipp.c            # trimmed to the float32 DCT backend only
+    - include/aubio_dct.h      # fvec_t / aubio_dct_t subset of the public API
+    - CMakeLists.txt
+  loc: 150
+  ipp_apis:
+    - ippsDCTFwdGetSize_32f
+    - ippsDCTFwdInit_32f
+    - ippsDCTFwd_32f
+    - ippsDCTInvGetSize_32f
+    - ippsDCTInvInit_32f
+    - ippsDCTInv_32f
+    - ippsMalloc_8u
+    - ippsFree
+  note: >-
+    aubio's IPP backend is a thin wrapper: IPP's DCT is already orthonormal, so
+    the whole file is the spec lifecycle (GetSize -> Malloc -> Init ->
+    transform -> free).  The GetSize output can legitimately be zero, and the
+    original passes NULL in that case.  The hard part of the migration is not
+    the plumbing but reproducing the normalisation: the dct()/idct() pair must
+    stay orthonormal to match aubio's other backends.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/dct_ipp.c implements an orthonormal DCT-II (aubio_dct_do) and DCT-III
+  (aubio_dct_rdo) behind a create/destroy lifecycle.  Migrate it off Intel IPP
+  while keeping include/aubio_dct.h and the observable behaviour unchanged:
+
+    new_aubio_dct(size): works for every size >= 1 (powers of two not
+        required), NULL when size < 1
+    aubio_dct_do(s, in, out):  X[k] = c_k * sum(n) x[n] cos(pi k (2n+1) / 2N)
+        c_0 = sqrt(1/N), c_k = sqrt(2/N)                 (DCT-II)
+    aubio_dct_rdo(s, in, out): x[n] = sum(k) c_k X[k] cos(pi k (2n+1) / 2N)
+                                                         (DCT-III, the inverse)
+    del_aubio_dct(NULL) is a no-op
+    no ipps*/ippi* symbol may remain in the built artifact.
+
+  VSIPL has no DCT, so it is composed from a complex FFT of length M = 2N.  The
+  forward direction is the standard even extension: v = [x[0..N-1], x[N-1..0]],
+  Y = FFT_M(v), X[k] = (c_k/2) Re{ Y[k] exp(-i pi k / 2N) }.  The inverse has to
+  build the Hermitian spectrum by hand (weight by c_k, rotate by +i pi k / 2N,
+  mirror, B[N] = 0) and then apply the 1/M inverse scaling; the result needs
+  (M Re{idft[n]} + a[0]) / 2 because the mirror counts a[0] twice.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libaubiodct.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c checks both directions against the double-precision
+    definition for n = 2..8, the orthonormality round trip at n = 16 and
+    n = 100, the degenerate n = 1 identity, and the constructor contract
+    (new_aubio_dct(0) == NULL, del_aubio_dct(NULL)).
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l1_aubio_dct --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 44 cases"
+  visible_to_agent: false
+  cases:
+    - forward and inverse for every n in 1..17 (16 edge sizes, including n=1)
+    - n=32, n=64, n=100 (not a power of two)
+    - n=257 (odd and prime)
+    - n=1024
+    - 22 sizes x 2 directions = 44 cases
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 1.0e-5}
+  note: >-
+    Reference migration matches IPP to 8.3e-7 worst relative.  A wrong
+    normalisation is O(1) relative, a missing 1/M or factor of two is O(N), and
+    a sign error in the rotation mirrors the spectrum, so the 1e-4 relative
+    tolerance leaves two orders of margin while catching every structural
+    mistake.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libaubiodct.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 44 cases within tolerance)"
+
+gold_patch: gold/dct_vsipl.c
+gold_notes: >-
+  Verified reference: 44/44 cases, worst relative error 8.3e-7 (public test
+  passes too, 3.6e-7).  Composition: vsip_ccfftop_create_f with scale 1.0 for
+  the forward plan and 1/M for the inverse, even extension plus phase rotation
+  for DCT-II, hand-built Hermitian mirror for DCT-III.  The IPP artifact fails
+  the API gate with 8 symbols (ippsDCTFwdGetSize_32f, ippsDCTFwdInit_32f,
+  ippsDCTFwd_32f, ippsDCTInvGetSize_32f, ippsDCTInvInit_32f, ippsDCTInv_32f,
+  ippsMalloc_8u, ippsFree).

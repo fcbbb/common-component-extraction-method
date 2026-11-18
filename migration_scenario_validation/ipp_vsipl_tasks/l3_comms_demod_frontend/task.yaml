@@ -1,0 +1,196 @@
+# Task package: software-defined-radio demodulator frontend (synthetic).
+# Source state = src/demod_frontend_ipp.c + include/demod_frontend.h (Intel IPP).
+# Target = VSIPL C (jvsip).
+task_id: l3_comms_demod_frontend
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L3
+domain: comms
+difficulty: medium
+fit: A            # every IPP kernel has a one-call VSIPL counterpart
+                  # (cvmul / vdot / cvmag / vsq / vsumval / vmaxval); the
+                  # split-complex binding and the streaming bookkeeping are
+                  # plain C, not a gap in VSIPL's API surface
+
+source:
+  repo: synthetic (HPEC-style SDR receive chain)
+  commit: "-"
+  license: synthetic
+  vendored: true
+  files:
+    - include/demod_frontend.h            # 59 lines, the whole contract
+    - src/demod_frontend_ipp.c            # 277 lines, the component
+  loc: 336
+  note: >-
+    A receive-chain frontend in the shape of a real SDR component: a complex
+    NCO mixer, a decimating complex FIR, and per-block magnitude / power
+    statistics.  The state is streaming, so the output must not depend on how
+    the caller splits the input.  It is small on purpose -- 336 lines -- because
+    every stage is one vector call; the L3 label describes the end-to-end
+    streaming shape (the hidden cases drive complete sessions), not the size.
+  scope_note: >-
+    The slate planned this task around ippsResamplePolyphaseFixed_32f.  That
+    entry point is deliberately not part of the extraction: its filter
+    coefficients and its output timing come from IPP's internal
+    ippsResamplePolyphaseFixedInit, which is not specified in the public
+    headers, so a faithful reimplementation cannot be written from the
+    component alone -- any candidate would be graded against numbers it has no
+    way to reproduce.  The decimating FIR in this package is an ordinary
+    explicit-tap filter instead, and the polyphase/resampler work is carried by
+    task 19 (l3_audio_resampler).
+  ipp_apis:
+    - ippsRealToCplx_32f
+    - ippsCplxToReal_32fc
+    - ippsMul_32fc
+    - ippsDotProd_32f
+    - ippsMagnitude_32fc
+    - ippsSqr_32f
+    - ippsSum_32f
+    - ippsMaxIndx_32f
+    - ippsMalloc_8u
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/demod_frontend_ipp.c implements the frontend on top of Intel IPP.
+  Migrate it off IPP while keeping include/demod_frontend.h and every
+  observable behaviour unchanged.  The header is the contract.
+
+  Configuration: dem_config{nco_len, decim, ntaps}; the filter length is
+  T = decim * ntaps.  dem_create() copies both tables, so the caller may free
+  them; dem_destroy() releases everything.
+
+  Streaming contract, all arrays split into re/im planes:
+      y[j] = sum_{t=0}^{T-1} h[t] * x[j*decim - t]
+  where x is the input mixed sample by sample with the wrapping NCO table
+      x[n] = in[n] * (nco_re[n mod nco_len] + i*nco_im[n mod nco_len])
+  and where h is the complex tap table.  Sample j is produced once input
+  index j*decim has arrived (so the window is fully in the past), and only
+  while j*decim < (samples consumed).  dem_process() therefore emits a number
+  of outputs that depends only on the total input seen so far, never on how
+  it was blocked:
+
+      j0   = ceil((T-1)/decim)
+      jmax = (total-1)/decim
+      out  = max(0, jmax - j0 + 1)
+
+  dem_process() returns the number of complex samples it wrote; out_re/out_im
+  must have room for that many.  nin == 0 writes nothing.  The NCO phase
+  wraps across calls, and the filter history is continuous across calls.
+
+  dem_stats(re, im, n, mag, mean_power, peak, peak_index):
+      mag[i]        = |re[i] + i*im[i]|
+      mean_power    = (1/n) * sum_i |x[i]|^2
+      peak          = max_i mag[i]
+      peak_index    = the index of the first maximum
+  n <= 0 leaves mean_power = peak = 0 and peak_index = 0.
+
+  dem_create() returns NULL for a NULL config, a NULL table, or a
+  non-positive nco_len / decim / ntaps.
+
+  no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
+
+  VSIPL notes:
+    - VSIPL complex data is split (separate re/im planes), which is exactly the
+      layout the API already uses.  vsip_cblockbind_f over the caller's two
+      planes turns a block into one complex view, so the ippsRealToCplx_32f /
+      ippsCplxToReal_32fc round trip disappears rather than moving elsewhere.
+    - bound blocks are VSIP_USER_BLOCK: destroying them does not free the
+      wrapped memory.  Ownership stays with the state and with the caller.
+    - the taps have to be stored time-reversed for vsip_vdot_f, which walks an
+      ascending window.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libdemfront.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c (15 checks) compares whole sessions against the defining sum
+    evaluated directly in double -- the mixer, then the raw decimating
+    convolution -- for five configurations (M=4/T=32 twice with different
+    block sizes, M=3/T=15, M=1/T=16, M=2/T=64).  It then checks that the output
+    is bit-identical when the same stream is fed in one block, in 7-sample
+    blocks and sample by sample; that two interleaved states do not share
+    history; the magnitude / mean-power / peak-index contract on a hand-checked
+    vector; and the NULL config, zero dimension, nin == 0 and warm-up-block
+    edge cases.  It never calls into IPP and never uses a golden container.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l3_comms_demod_frontend --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 8 cases"
+  visible_to_agent: false
+  cases:
+    - nco 64 / decim 4 / taps 8, 512 samples, one block
+    - the same stream fed one sample at a time (block 1)
+    - the same stream in 37-sample blocks
+    - nco 7 / decim 1 / taps 16, 256 samples, block 64 (no decimation)
+    - nco 5 / decim 3 / taps 5, 301 samples, block 100 (odd lengths)
+    - nco 16 / decim 8 / taps 12, 1024 samples, block 128 (long session)
+    - nco 3 / decim 2 / taps 32, 200 samples, block 200 (NCO shorter than M*ntaps)
+    - nco 64 / decim 4 / taps 8, 100 samples, block 13 (few outputs, ragged tail)
+  note: >-
+    Each container carries the NCO table, the tap table, the input planes and
+    the baseline's complete output, plus mean_power / peak / peak_index of that
+    output.  The block size is part of the case, so a candidate whose result
+    depends on how the stream was cut fails the block-1 and block-37 variants
+    of the same session.  peak_index is stored as -1 when the two largest
+    magnitudes are within 0.01%, and the test then skips the index check;
+    otherwise the first-maximum rule is compared exactly.
+
+tolerances:
+  float32: {rtol: 1.0e-5, atol: 0.0, mode: peak-relative, floor: 1.0}
+  peak_index: {mode: exact, except when suppressed by the golden}
+  note: >-
+    Reference migration matches IPP to 3.58e-07 worst relative across 8 cases;
+    the IPP baseline is bit-exact against its own goldens.  The compared
+    quantities are float32 dot products of up to 32 taps, so the error budget is
+    set by summation order, not by the migration: a permutation of the window
+    or of the taps is O(1), a missing NCO wrap is O(1) on the wrapped segment,
+    an off-by-one in j0 shifts the whole output by one sample and fails the
+    count check, and a mixer with the wrong sign convention flips the imaginary
+    part everywhere.  The magnitude floor of 1.0 keeps the comparison meaningful
+    when an output block happens to be quiet.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libdemfront.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 8 cases within tolerance)"
+
+gold_patch: gold/demod_frontend_vsipl.c
+gold_notes: >-
+  Verified reference: 8/8 cases, worst relative error 3.576e-07, public test
+  15/15, API gate clean.  Mapping: the input planes and the mixed history are
+  bound with vsip_cblockbind_f(re, im, n, VSIP_MEM_NONE) +
+  vsip_cblockadmit_f(b, 0) + vsip_cvbind_f(b, off, 1, len), so one
+  vsip_cvmul_f per NCO segment is the whole mixer and the split back into the
+  history costs nothing; ippsRealToCplx_32f and ippsCplxToReal_32fc simply
+  disappear.  The FIR is four vsip_vdot_f calls (re-re, im-im, re-im, im-re)
+  over vsip_vbind_f windows on the two history planes, with the taps stored
+  time-reversed at create time -- vsip_vdot_f walks an ascending window, so the
+  reversal is what turns sum_i rev[i]*x[center-T+1+i] into sum_t h[t]*x[center-t]
+  (getting this backwards is the one silent mistake in this package: it still
+  produces a plausible filtered signal).  Stats: vsip_cvmag_f, vsip_vsq_f and
+  vsip_vsumval_f, and vsip_vmaxval_f -- jvsip does report the index through its
+  optional vsip_index out parameter, and its "strictly greater" scan gives the
+  same first-maximum answer as ippsMaxIndx_32f.  The history blocks are rebuilt
+  whenever the history is reallocated, because a bound block wraps the pointer
+  it was admitted with.  The IPP artifact fails the API gate with 9 symbols:
+  ippsCplxToReal_32fc ippsDotProd_32f ippsMagnitude_32fc ippsMalloc_8u
+  ippsMaxIndx_32f ippsMul_32fc ippsRealToCplx_32f ippsSqr_32f ippsSum_32f.
+  Things worth knowing: ippsDotProd_32f takes an Ipp32f* accumulator, not
+  Ipp64f* (declaring the four dot results as double silently writes only four
+  bytes and produces garbage -- it looked like an indexing bug for a while);
+  and jvsip's vsip_cvmag_f computes sqrt((r^2+i^2)/s^2)*s with s = |r| + |i|,
+  which is accurate but not bit-identical to IPP's hypot, hence the 1e-5
+  tolerance rather than 1e-7.

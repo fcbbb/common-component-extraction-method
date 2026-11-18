@@ -1,0 +1,134 @@
+# Task package: JUCE dsp FFT (IPP engine).
+# Source state = src/juce_FFT_ipp.cpp (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l1_juce_fft
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L1
+domain: audio
+difficulty: medium
+fit: A            # every IPP call has a VSIPL counterpart
+
+source:
+  repo: https://github.com/juce-framework/JUCE.git
+  commit: "d60b7a78030661574a615b586d9325ba7a7fa7dd"   # 9.0.5
+  license: AGPL-3.0-only
+  vendored: true
+  files:
+    - modules/juce_dsp/frequency/juce_FFT.h            # trimmed to the API
+    - modules/juce_dsp/frequency/juce_FFT.cpp          # IPP engine only
+    - include/juce_FFT.h
+    - src/juce_FFT_ipp.cpp
+    - CMakeLists.txt
+  loc: 1007                      # whole juce_FFT.cpp; the package keeps the
+                                 # IPP engine (about 130 lines)
+  ipp_apis:
+    - ippsFFTGetSize_C_32fc
+    - ippsFFTInit_C_32fc
+    - ippsFFTFwd_CToC_32fc
+    - ippsFFTInv_CToC_32fc
+    - ippsFFTGetSize_R_32f
+    - ippsFFTInit_R_32f
+    - ippsFFTFwd_RToCCS_32f_I
+    - ippsFFTInv_CCSToR_32f_I
+    - ippsMalloc_8u
+    - ippsFree
+  note: >-
+    JUCE's FFT is an engine registry with a scalar fallback; the package keeps
+    only the IPP engine (priority 9 in the original).  Two conventions live in
+    the engine and not in the public header: the inverse scale comes from
+    IPP_FFT_DIV_INV_BY_N baked into the plans, and the real forward transform
+    fills the negative-frequency half by hand as out[i] = conj(out[n - i]) for
+    i >= n/2.  On this IPP (2021) the in-place real forward writes the natural
+    interleaved half spectrum (n/2 + 1 complex values, n + 2 floats), not the
+    R0, R1, I1, ... CCS packing the function name suggests.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/juce_FFT_ipp.cpp implements juce::dsp::FFT for 2^order points with the
+  public header include/juce_FFT.h unchanged.  Migrate it off Intel IPP while
+  keeping the observable behaviour:
+
+    getSize() == 1 << order
+    perform(in, out, inverse): out-of-place complex transform of getSize()
+        points; the inverse is scaled by 1 / getSize()
+    performRealOnlyForwardTransform(d, ignoreNeg): d has 2*getSize() floats,
+        the first getSize() are the real samples.  On return the first
+        (size/2 + 1) complex values are the half spectrum; when ignoreNeg is
+        false the remaining complex values are filled with the conjugate
+        mirror out[i] = conj(out[size - i])
+    performRealOnlyInverseTransform(d): reads the first (size/2 + 1) complex
+        values, writes size real samples into the first half of d
+    performFrequencyOnlyForwardTransform(d, ignoreNeg): the same forward,
+        then the first (size or size/2 + 1) floats are replaced by magnitudes
+        and everything from float `limit` to 2*size is zeroed; a no-op when
+        size == 1
+    no ipps*/ippi* symbol may remain in the built artifact.
+
+  Mapping: vsip_ccfftop_create_f / vsip_ccfftop_f for the complex transforms,
+  vsip_rcfftop_create_f / vsip_rcfftop_f for the real forward,
+  vsip_crfftop_create_f / vsip_crfftop_f for the real inverse, with the
+  1/size inverse scaling passed as the create argument.
+
+  jvsip's plans fault for lengths below 4 (length 1 hangs in plan creation,
+  lengths 2 and 3 die in the twiddle setup), so sizes 1..3 -- order 0, 1 and 2
+  -- must be evaluated directly.  Orders 0..2 are all inside JUCE's contract.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libjucefft.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.cpp checks the order -> size map, the complex forward against a
+    double DFT and the complex round trip, the real forward against a double
+    DFT plus the conjugate-mirror property, both real round trips and the
+    half-only variant, and the magnitude transform (both flags, including the
+    zeroed tail and the size-1 no-op) for orders 0..5.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l1_juce_fft --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 63 cases"
+  visible_to_agent: false
+  cases:
+    - orders 0, 1, 2, 3, 4, 5, 6, 8, 10
+    - "per order: complex forward, complex inverse, real forward (full),
+      real forward (half), real inverse, magnitude (full), magnitude (half)"
+    - 9 orders x 7 operations = 63 cases
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 1.0e-5}
+  note: >-
+    Reference migration matches IPP to 1.24e-5 worst relative (order 10
+    complex forward; the offending samples are large-magnitude bins where
+    float32 accumulation differs by a few ulps).  Structural mistakes -- a
+    missing 1/N, an unmirrored negative half, the magnitude values written at
+    complex offsets -- are O(1) or O(N), so 1e-4 leaves about eight times of
+    margin on the worst observed case.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libjucefft.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 63 cases within tolerance)"
+
+gold_patch: gold/juce_FFT_vsipl.cpp
+gold_notes: >-
+  Verified reference: 63/63 cases, worst relative error 1.24e-5 (public test
+  passes too).  Complex transforms go through vsip_ccfftop with scale 1 and
+  1/n; the real transform through vsip_rcfftop / vsip_crfftop with the same
+  split, then JUCE's half-spectrum + mirror layout is rebuilt by hand.  Sizes
+  1..3 use a direct double-precision DFT because jvsip's plans fault below
+  length 4.  The IPP artifact fails the API gate with 10 symbols
+  (ippsFFTGetSize_C_32fc, ippsFFTInit_C_32fc, ippsFFTFwd_CToC_32fc,
+  ippsFFTInv_CToC_32fc, ippsFFTGetSize_R_32f, ippsFFTInit_R_32f,
+  ippsFFTFwd_RToCCS_32f_I, ippsFFTInv_CCSToR_32f_I, ippsMalloc_8u, ippsFree).

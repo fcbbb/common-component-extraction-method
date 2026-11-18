@@ -1,0 +1,226 @@
+# Task package: radar pulse-compression frontend (synthetic).
+# Source state = src/pulse_comp_ipp.c + include/pulse_comp.h (Intel IPP).
+# Target = VSIPL C (jvsip).
+task_id: l3_radar_pulse_compression
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L3
+domain: radar
+difficulty: medium
+fit: B            # IPP provides the whole chain (real FFT both ways, complex
+                  # multiply, magnitude, sum, mean, max-index, direct
+                  # convolution); VSIPL 1.3 provides the same primitives but no
+                  # single "matched filter" or "profile report" call, so the
+                  # candidate has to rebuild the CCS<->natural layout at the
+                  # transform boundary and derive the detection rule by hand
+
+source:
+  repo: synthetic (radar pulse-compression frontend)
+  commit: "-"
+  license: synthetic
+  vendored: true
+  files:
+    - include/pulse_comp.h                # 83 lines, the whole contract
+    - src/pulse_comp_ipp.c                # 313 lines, the component
+  loc: 396
+  note: >-
+    A range-compression frontend: windowed-LFM replica synthesis, one matched
+    filter per pulse through forward FFT / conjugate multiply / inverse FFT,
+    incoherent integration of the magnitudes, a causal moving-average range
+    profile, and a noise-floor / threshold / peak / detection report.  The
+    slate estimated ~600 lines; the actual component is 396 because each stage
+    is one IPP call -- the L3 label describes the end-to-end shape (eight
+    hidden cases drive complete captures from N=64 to N=4096 across five FIR
+    lengths), not the line count.
+  scope_note: >-
+    The replica is part of the contract (the header defines the waveform and
+    fixes it in double), so both backends synthesise the same float samples and
+    the comparison isolates the DSP chain.  What makes this L3 is the number of
+    conventions that have to survive at once: the packed CCS layout versus the
+    natural complex sequence (a repack in the IPP source, none in VSIPL), the
+    unscaled forward *and* inverse transform (the 1/(npulses*N) scaling lives
+    in the profile, not in the transforms), the non-negative-lag slice that
+    hides the autocorrelation's mirror lobe at N-d, and the causal FIR whose
+    warm-up bins are truncated.
+  ipp_apis:
+    - ippsFFTGetSize_R_32f
+    - ippsFFTInit_R_32f
+    - ippsFFTFwd_RToCCS_32f
+    - ippsFFTInv_CCSToR_32f
+    - ippsMul_32fc
+    - ippsAbs_32f
+    - ippsZero_32f
+    - ippsAdd_32f
+    - ippsMulC_32f
+    - ippsConvolveGetBufferSize
+    - ippsConvolve_32f
+    - ippsMean_32f
+    - ippsMaxIndx_32f
+    - ippsMalloc_8u
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/pulse_comp_ipp.c implements the frontend on top of Intel IPP.
+  Migrate it off IPP while keeping include/pulse_comp.h and every observable
+  behaviour unchanged.  The header is the contract.
+
+  Configuration: pc_config{fft_len, npulses, fir_len, chirp_rate,
+  threshold_scale}; fft_len must be a power of two >= 32, npulses >= 1,
+  fir_len odd and 1 .. 15, chirp_rate > 0, threshold_scale > 0.
+  pc_create() returns NULL for a NULL config or a rejected configuration.
+  pc_nrange() returns fft_len/2 + 1 (0 for a NULL state).
+
+  The replica is defined in the header and computed in double:
+      w[i] = 0.5*(1 - cos(2*pi*i/(N-1)))
+      u[i] = i - (N-1)/2
+      r[i] = w[i]*cos(pi*chirp_rate*u[i]^2/N)          i = 0 .. N-1
+
+  pc_process(st, x, n, profile, rep) analyses one capture of
+  n = npulses*fft_len samples, pulse-major.  For pulse p, with X_p the
+  unscaled N-point DFT of the pulse and R the unscaled DFT of the replica:
+      z_p[l] = sum_k X_p[k]*conj(R[k])*exp(+2*pi*i*k*l/N)
+      g[l]   = (1/(npulses*N)) * sum_p |z_p[l]|           l = 0 .. N/2
+      profile[l] = (1/fir_len) * sum_{j=0}^{fir_len-1} g[l-j],
+                   g[m] = 0 for m < 0
+  The report is derived from the profile:
+      noise_floor  = mean_l profile[l]
+      threshold    = threshold_scale * noise_floor
+      peak_value   = max_l profile[l]
+      peak_bin     = the first index of the maximum
+      n_detections = #{ l : profile[l] >= threshold,
+                          l == 0        or profile[l] >  profile[l-1],
+                          l == nrange-1 or profile[l] >= profile[l+1] }
+      first_bin, last_bin = first/last l in that set, or -1 when none
+  pc_process() returns npulses.  A NULL state, signal, profile or report, or
+  an n that is not npulses*fft_len, returns -1.
+
+  no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
+
+  VSIPL notes:
+    - vsip_rcfftop_f returns the natural complex sequence for k = 0 .. N/2 and
+      vsip_crfftop_f consumes exactly that layout, so the CCS packing and the
+      Ipp32fc repack of the IPP source disappear; with both plans created at
+      scale 1.0 the transforms stay unscaled, matching IPP_FFT_NODIV_BY_ANY.
+    - the causal moving average has no VSIPL filter call with truncated
+      boundary handling; the taps are constant (1/fir_len), so it reduces to
+      vsip_vsumval_f over a bound window for each lag, with the first
+      fir_len-1 windows clipped at lag 0.
+    - the detection rule needs neighbouring bins; it stays a plain C loop in
+      both backends.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libpulsecomp.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c (42 checks) evaluates the contract directly in double -- the
+    replica, then z_p[l] = sum_n x_p[n]*r[(n-l) mod N] per lag, the incoherent
+    mean and the causal FIR -- for N=64/128/256 at L=1/3/5, and compares the
+    whole profile peak-relative.  It then checks the report against the
+    profile the same call returned (noise floor is the mean, threshold is
+    scale*floor, peak value/bin, detection count and span, at least one
+    detection), pins the lag sign and the 1/N scaling with a single-target
+    delay test (peak on the target lag, peak level = sum(r^2)), checks
+    bit-identical repeated calls, and covers the argument/configuration
+    rejections (wrong n, NULL state/signal/profile/report, pc_nrange(NULL),
+    NULL config, seven rejected configurations).  It never calls into IPP and
+    never uses a golden container.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l3_radar_pulse_compression --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 8 cases"
+  visible_to_agent: false
+  cases:
+    - N 64 / 32 pulses / L 1 / chirp 0.80 / thr 3.0 (3 targets)
+    - N 128 / 16 pulses / L 3 / chirp 0.75 / thr 4.0
+    - N 256 / 16 pulses / L 3 / chirp 0.80 / thr 4.0
+    - N 512 / 8 pulses / L 5 / chirp 0.85 / thr 5.0
+    - N 1024 / 4 pulses / L 7 / chirp 0.90 / thr 6.0
+    - N 2048 / 8 pulses / L 5 / chirp 0.85 / thr 6.0
+    - N 4096 / 4 pulses / L 9 / chirp 0.90 / thr 10.0
+    - N 256 / 3 pulses / L 15 / chirp 0.80 / thr 3.0 (single target, the
+      long causal FIR shifts the profile peak by (L-1)/2)
+  note: >-
+    Each container carries the configuration, the capture, the baseline's
+    complete profile and the seven report numbers.  The signals are
+    deterministic shifted-replica captures with a different seed and a
+    different lag/amplitude set per case, so a candidate cannot special-case
+    the input.  golden_gen refuses to emit a case whose profile has a bin
+    within 1e-3 (peak-relative) of the threshold, whose peak is not separated
+    from the runner-up, or whose bins at/above the threshold contain an exact
+    tie, so peak_bin, n_detections and the detection span are safe to compare
+    exactly.
+
+tolerances:
+  float32: {rtol: 1.0e-5, atol: 0.0, mode: peak-relative, floor: 1.0}
+  peak_bin: {mode: exact}
+  n_detections: {mode: exact}
+  first_bin: {mode: exact}
+  last_bin: {mode: exact}
+  note: >-
+    Reference migration matches IPP to 7.05e-07 worst relative across 8 cases;
+    the IPP baseline reproduces its own goldens to 0.0 (identical code path).
+    The compared quantities are magnitudes of up to 4096-point matched-filter
+    outputs, so the error budget is set by the two transform implementations,
+    not by the migration: a CCS/natural mistake is O(1), a scaled transform
+    misses by a factor of N, a positive instead of negative lag puts the peak
+    at N-d (outside the compared range, so it shows up as a flat profile), and
+    a causal versus symmetric FIR shifts the peak by whole bins.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libpulsecomp.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 8 cases within tolerance)"
+
+gold_patch: gold/pulse_comp_vsipl.c
+gold_notes: >-
+  Verified reference: 8/8 cases, worst relative error 7.050e-07, public test
+  42/42, API gate clean.  Mapping: the replica is the header's double loop in
+  both backends; the forward transform is vsip_rcfftop_f and the inverse
+  vsip_crfftop_f (both scale 1.0, to match IPP_FFT_NODIV_BY_ANY); the
+  conjugate replica is formed once with vsip_cvconj_f and each pulse is one
+  vsip_cvmul_f; |z| is vsip_vmag_f over a view bound at offset 0 with length
+  N/2+1 (which drops the mirror lobe at N-d); the integration is vsip_vadd_f,
+  the 1/(npulses*N) scale vsip_svmul_f, the causal FIR is vsip_vsumval_f over
+  a clipped window times 1/L, the report is vsip_vmeanval_f and
+  vsip_vmaxval_f + vsip_vget_f, and the detection rule stays a C loop.
+  The IPP artifact fails the API gate with 14 symbols: ippsAbs_32f
+  ippsAdd_32f ippsConvolveGetBufferSize ippsConvolve_32f
+  ippsFFTFwd_RToCCS_32f ippsFFTGetSize_R_32f ippsFFTInit_R_32f
+  ippsFFTInv_CCSToR_32f ippsMalloc_8u ippsMaxIndx_32f ippsMean_32f
+  ippsMulC_32f ippsMul_32fc ippsZero_32f.
+  Things worth knowing, all of which cost time here:
+  (1) The profile's 1/N is *not* in the inverse transform.  The header's g
+  divides the unscaled inner sum by npulses*N, i.e. z_p[l] above is N times
+  the normalised correlation sum_n x[n]r[(n-l) mod N].  A reference that
+  forgets the factor of N is off by exactly N on every bin (the public test's
+  direct evaluator had this bug for one iteration: err = N-1).
+  (2) ippsFFTGetSize_R_32f reports sizeInit = 0 for this flag set; allocating
+  the init buffer only when the size is positive leaves a NULL that the
+  mandatory-non-NULL check rejects, so pc_create silently returns NULL for
+  every valid configuration.  Allocate with a minimum size of 1.
+  (3) The causal moving average shifts a symmetric correlation peak right by
+  about (L-1)/2 bins; the single-target case with L=15 lands on 40+7 = 47, and
+  that is the contract, not a bug.  The hidden cases keep the peak unambiguous
+  by requiring a clear runner-up gap and no exact ties at/above the threshold.
+  (4) The autocorrelation of an LFM with chirp_rate c has mainlobe width about
+  1/c samples and -13 dB sinc sidelobes.  With three targets the profile's
+  mean is dominated by those sidelobes (peak/mean is only 2-9), so a threshold
+  scale much above ~10 detects nothing; the cases use 3-10 and were chosen by
+  sweeping the profile, not by guessing.
+  (5) jvsip's vsip_vmaxval_f scans with a strict greater-than and reports the
+  index through its optional out parameter, so it picks the same first
+  maximum as ippsMaxIndx_32f.  Zeroing must be vsip_vfill_f, not a multiply
+  by zero, for the same NaN-propagation reason as the other packages.

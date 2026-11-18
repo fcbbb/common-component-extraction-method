@@ -1,0 +1,30 @@
+{
+  "task_id": "l3_iir_eq_negative",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic/audio-eq",
+  "commit": "synthetic-2026-11-14",
+  "license": "synthetic",
+  "vendored": true,
+  "snapshot": "ipp_vsipl_tasks/l3_iir_eq_negative",
+  "source_files": [
+    "src/iir_eq_ipp.c",
+    "include/iir_eq.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "gold/iir_eq_c.c"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/golden_gen.c",
+    "harness/hidden_test.c",
+    "harness/run_hidden.py"
+  ],
+  "golden_cases": 5,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/unify_ipp_tasks.py",
+  "generated_at": "2026-11-15T03:50:55Z"
+}

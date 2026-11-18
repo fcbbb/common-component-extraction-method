@@ -1,0 +1,30 @@
+{
+  "task_id": "l2_fdfir_overlap_save",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic/hpec-fdfir",
+  "commit": "synthetic-2026-11-14",
+  "license": "synthetic",
+  "vendored": true,
+  "snapshot": "ipp_vsipl_tasks/l2_fdfir_overlap_save",
+  "source_files": [
+    "src/fdfir_ipp.c",
+    "include/fdfir.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "gold/fdfir_vsipl.c"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/golden_gen.c",
+    "harness/hidden_test.c",
+    "harness/run_hidden.py"
+  ],
+  "golden_cases": 11,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/unify_ipp_tasks.py",
+  "generated_at": "2026-11-15T03:50:55Z"
+}

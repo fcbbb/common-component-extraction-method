@@ -1,0 +1,169 @@
+# Task package: CIL FBP projection filtering (CIL, IPP backend).
+# Source state = src/fbp_filtering_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l2_cil_fbp
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L2
+domain: imaging
+difficulty: medium
+fit: B            # complex FFT maps 1:1; the packing, the two layouts and the
+                  # odd-row tail have to be rebuilt around it (original A/B)
+
+source:
+  repo: https://github.com/TomographicImaging/CIL.git
+  commit: "b39f95799bf1af891a896fc4be704986284b593e"
+  license: Apache-2.0
+  vendored: true
+  files:
+    - src/Core/FBP_filtering.cpp            # 178 lines, the whole IPP kernel
+    - src/Core/include/FBP_filtering.h      # the two entry points
+    - Wrappers/Python/cil/recon/FBP.py      # caller: filter construction, shapes
+  loc: 178
+  ipp_apis:
+    - ippsFFTGetSize_C_32fc
+    - ippsFFTInit_C_32fc
+    - ippsFFTFwd_CToC_32fc
+    - ippsFFTInv_CToC_32fc
+    - ippsMul_32f32fc_I
+    - ippsMul_32f_I
+    - ippsSet_32fc
+    - ippsRealToCplx_32f
+    - ippsCplxToReal_32fc
+    - ippsReal_32fc
+    - ippsMalloc_32fc
+    - ippMalloc
+    - ippFree
+  note: >-
+    CIL's filtered-back-projection pre-filtering.  Every detector row is
+    transformed, multiplied by the real reconstruction filter and transformed
+    back; to halve the transform count two consecutive rows are packed as the
+    real and imaginary parts of one complex vector, zero padded to 2^order and
+    centred with an offset.  The source is C++ (it is called through ctypes);
+    the package reproduces it as C99 with an explicit `(Ipp32fc){...}`
+    aggregate and without the OpenMP pragmas.  Dropping parallelisation cannot
+    change the result: the `omp for` body filters one independent pair of rows
+    per iteration and the `omp single` block runs the odd tail row once.  The
+    original declares `int flag = IPP_FFT_NODIV_BY_ANY;` and never uses it --
+    both GetSize and Init are called with IPP_FFT_DIV_FWD_BY_N, i.e. the
+    forward transform carries the 1/N and the inverse is unscaled.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/fbp_filtering_ipp.c implements the two filter_projections_* entry points
+  of CIL on top of Intel IPP.  Migrate it off IPP while keeping
+  include/fbp_filtering.h and every observable behaviour unchanged:
+
+    filter_projections_avh(data, filter, weights, order, num_proj, pix_y, pix_x)
+        data is [num_proj][pix_y][pix_x], weights is [pix_y][pix_x], filter is
+        2^order long.  Filtered in place:
+          for each projection p, for each pair of rows (2j, 2j+1):
+            multiply both rows by their weights (weights rows 2j and 2j+1)
+            pack row 2j as the real parts and row 2j+1 as the imaginary parts
+              of a complex vector of length 2^order, zero filled except for
+              the pix_x samples starting at offset = (2^order - pix_x)/2
+            forward DFT, scaled by 1/2^order
+            multiply the spectrum pointwise by the real filter
+            inverse DFT, unscaled
+            write the real parts back into row 2j and the imaginary parts into
+              row 2j+1 (again only the pix_x samples at `offset`)
+          if pix_y is odd, the last row is filtered alone: it is packed as the
+            real parts with a zero imaginary part and only its real parts are
+            written back
+    filter_projections_vah(data, filter, weights, order, pix_y, num_proj, pix_x)
+        same operation with data stored as [pix_y][num_proj][pix_x]: the
+        outer loop runs over pix_y blocks, each block is num_proj rows, and
+        the single weights row weights[k] applies to every row of block k.
+        Note the argument order is different from avh on purpose.
+    no ipp*/ippi*/ippMalloc/ippFree symbol may remain in the built artifact.
+
+  VSIPL maps this to vsip_ccfftop_create_f / vsip_ccfftop_f (complex-to-
+  complex).  Watch these details:
+    - IPP's pair is "forward divided by N, inverse unscaled".  The reference
+      creates both plans with scale 1.0 and multiplies by filter[k]/N, which
+      is the same arithmetic in the same order.
+    - the real-part / imaginary-part packing is not a memcpy: the two source
+      rows are interleaved into the complex vector at `offset`, and the
+      result is de-interleaved again on the way out.
+    - the weights are a real multiply on the real data (vsip_vmul_f over a
+      bound view), not a complex one.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libfbp.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c (8 checks): with an all-ones filter both entry points must
+    return the weighted input (the 1/N forward and the unscaled inverse
+    cancel), for both layouts; and six small cases (avh with even rows, odd
+    pix_y and pix_y = 1; vah with even rows, odd num_proj and odd pix_x) are
+    compared against a double-precision direct DFT that applies the weights,
+    packs the rows, transforms, multiplies by the filter and transforms back.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l2_cil_fbp --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 10 cases"
+  visible_to_agent: false
+  cases:
+    - avh, order 6, 10 projections x 16 rows x 32 columns
+    - avh, order 6, 7 projections x 15 rows x 20 columns   (odd pix_y)
+    - avh, order 6, 1 projection x 20 rows x 24 columns    (single projection)
+    - avh, order 5, 5 projections x 8 rows x 12 columns    (2^5 = 32)
+    - avh, order 6, 4 projections x 1 row x 32 columns     (only the tail row)
+    - vah, order 6, 16 blocks x 10 projections x 32 columns
+    - vah, order 6, 16 blocks x 11 projections x 32 columns (odd num_proj)
+    - vah, order 6, 9 blocks x 1 projection x 24 columns
+    - vah, order 5, 8 blocks x 8 projections x 12 columns
+    - vah, order 6, 1 block x 32 projections x 32 columns
+  note: >-
+    Each case is graded relative to its own peak magnitude (floored at 1.0).
+    The filter is a smooth band-limited response (DC at index 0, positive
+    frequencies, then negative ones), not white noise: a random spectrum hides
+    a wrong packing order under its own dynamic range, a low-pass one does not.
+    The weights are positive and vary per row (avh) or per block (vah).
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 0.0, mode: peak-relative}
+  note: >-
+    Reference migration matches IPP to 2.12e-7 worst relative across 10 cases.
+    Structural mistakes are O(1) relative to the peak: a wrong row pairing
+    swaps real and imaginary outputs, a missing 1/N scales everything by
+    2^order, forgetting the weight multiply changes whole rows, and the odd
+    tail path (which uses only the real part) is covered by three cases.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libfbp.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 10 cases within tolerance)"
+
+gold_patch: gold/fbp_filtering_vsipl.c
+gold_notes: >-
+  Verified reference: 10/10 cases, worst relative error 2.124e-07; public test
+  8/8.  Mapping: vsip_ccfftop_create_f(2^order, 1.0, VSIP_FFT_FWD/INV, 1,
+  VSIP_ALG_SPACE) and a filter vector pre-divided by 2^order, multiplied into
+  the spectrum with vsip_rcvmul_f; the two rows are interleaved into the
+  complex vector with vsip_cvput_f and de-interleaved with vsip_cvget_f; the
+  weight multiply uses vsip_vmul_f over a view bound to the caller's buffer
+  (vsip_blockbind_f + vsip_blockadmit_f(block, 0), which leaves ownership with
+  the caller -- blockdestroy_f does not free a user block).  The IPP artifact
+  fails the API gate with 13 symbols (the 10 ipps entry points plus
+  ippsMalloc_32fc, ippMalloc and ippFree).  Things worth knowing: jvsip's
+  vsip_ccfftop_f does honour the plan scale (verified separately: a forward
+  plan with scale 0.5 followed by an inverse with scale 1.0 returns 0.5*N*x),
+  but the reference still avoids relying on it by folding the 1/N into the
+  filter; ippsRealToCplx_32f accepts a NULL imaginary source, which is how the
+  odd row gets a zero imaginary part; and the two entry points take their
+  dimensions in different orders (num_proj, pix_y, pix_x for avh versus
+  pix_y, num_proj, pix_x for vah), which is easy to get wrong when writing the
+  hidden cases.

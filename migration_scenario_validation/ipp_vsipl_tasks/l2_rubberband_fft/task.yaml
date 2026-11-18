@@ -1,0 +1,147 @@
+# Task package: rubberband FFT component (rubberband, IPP backend).
+# Source state = src/FFT_ipp.cpp (Intel IPP + built-in DFT fallback).
+# Target = VSIPL C++ (jvsip).
+task_id: l2_rubberband_fft
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L2
+domain: audio
+difficulty: hard
+fit: A            # rcfft/crfft map directly; the library's layered API is the work
+
+source:
+  repo: https://github.com/breakfastquay/rubberband.git  # src/common/FFT.cpp (3193 lines in the full file)
+  commit: "4.0.0"
+  license: GPL-2.0-or-later
+  vendored: true
+  files:
+    - src/FFT_ipp.cpp          # IPP backend + built-in DFT fallback + dispatcher
+    - include/FFT.h            # public RubberBand::FFT class, unchanged
+    - include/support.h        # trimmed sysutils/Allocators/VectorOpsComplex helpers
+    - CMakeLists.txt
+  loc: 932
+  ipp_apis:
+    - ippsFFTGetSize_R_32f
+    - ippsFFTInit_R_32f
+    - ippsFFTFwd_RToCCS_32f
+    - ippsFFTInv_CCSToR_32f
+    - ippsCartToPolar_32f
+    - ippsPolarToCart_32f
+    - ippsMagnitude_32f
+    - ippsCopy_32f
+    - ippsAddC_32f_I
+    - ippsLn_32f_I
+    - ippsFFTGetSize_R_64f
+    - ippsFFTInit_R_64f
+    - ippsFFTFwd_RToCCS_64f
+    - ippsFFTInv_CCSToR_64f
+    - ippsCartToPolar_64f
+    - ippsPolarToCart_64f
+    - ippsMagnitude_64f
+    - ippsCopy_64f
+    - ippsAddC_64f_I
+    - ippsLn_64f_I
+    - ippsMalloc_8u
+    - ippsMalloc_32f
+    - ippsMalloc_64f
+    - ippsFree
+  note: >-
+    The extracted component is one complete backend of rubberband's FFT
+    registry, not a single kernel: 16 entry points (8 float + 8 double),
+    lazy initialisation of the float and double plans, a direct-DFT fallback
+    for sizes the power-of-two backend cannot handle, and the dispatcher that
+    chooses between them.  Two properties of the original matter:
+    (1) ippsFFTFwd_RToCCS_32f/64f produce the natural interleaved half
+    spectrum on this IPP, so the pack/unpack helpers write complexOut[2k] =
+    Re, complexOut[2k+1] = Im (the public header says CCS; the observable
+    layout is what the tests pin down); (2) only even powers of two >= 4 go
+    to the IPP backend, every other size uses the in-file DFT fallback, so a
+    migration that only replaces the IPP calls must keep the dispatch
+    behaviour intact.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C++, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/FFT_ipp.cpp implements RubberBand::FFT on top of Intel IPP, with a
+  built-in direct DFT for sizes the IPP backend does not support.  Migrate it
+  off IPP while keeping include/FFT.h and the observable behaviour unchanged:
+
+    FFT(int size): throws InvalidSize when size < 2; even powers of two >= 4
+        use the FFT backend, every other size uses the direct DFT
+    getSize(), getSupportedPrecisions(), initFloat(), initDouble()
+    forward / forwardInterleaved / forwardPolar / forwardMagnitude, float and
+        double: unscaled real forward transform, half spectrum of n/2+1 bins
+    inverse / inverseInterleaved / inversePolar / inverseCepstral, float and
+        double: unscaled real inverse transform, n outputs
+    every pointer argument is checked: NULL throws NullArgument
+    no ipps*/ippi* symbol may remain in the built artifact.
+
+  The interleaved layout is complexOut[2k] = Re, complexOut[2k+1] = Im for
+  k = 0..n/2 (n+2 values).  forwardPolar/Magnitude use sqrt(re^2+im^2) and
+  atan2(im, re); inversePolar uses re = mag*cos(phase), im = mag*sin(phase);
+  inverseCepstral takes log(mag + 1e-6) as an all-real spectrum.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/librubberbandfft.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.cpp exercises every entry point against a direct
+    double-precision DFT for sizes 4/8/16 (float) and 4/12/100 (double, so
+    both the FFT backend and the DFT fallback), plus the exception contract
+    (InvalidSize for size 0 and 1, NullArgument for a null input pointer).
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l2_rubberband_fft --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 162 cases"
+  visible_to_agent: false
+  cases:
+    - sizes 2, 3, 4, 5, 6, 8, 16, 32, 100, 1024
+    - all eight transform entry points at float and double precision
+      (160 cases); sizes 2/3/5/6/100 exercise the DFT fallback, sizes >= 4
+      that are powers of two exercise the migrated backend
+    - two null-argument probes (float and double forward)
+  note: >-
+    Each case is graded relative to its own peak magnitude (rtol 1e-4 float,
+    1e-9 double), because the unscaled length-1024 inverse produces values of
+    order 1000 with float32 roundoff around 1e-4 absolute.  Phase slots of
+    forwardPolar are compared modulo 2*pi with an absolute tolerance.  The
+    DFT-fallback cases are bit-identical between baseline and reference, so a
+    migration that changes that path is visible immediately.
+
+tolerances:
+  float32: {rtol: 1.0e-4}
+  float64: {rtol: 1.0e-9}
+  note: >-
+    The reference migration matches IPP to 3.8e-6 of the case peak (float)
+    and 8.7e-15 relative (double).  A wrong interleaved layout, a swapped
+    re/im pack, a missing 1/n somewhere, or a broken sqrt/atan2 conversion
+    are all O(1) errors at the case scale.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/librubberbandfft.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 162 cases within tolerance)"
+
+gold_patch: gold/FFT_vsipl.cpp
+gold_notes: >-
+  Verified reference: 162/162 cases, worst relative error 3.8e-6 (float) and
+  8.7e-15 (double).  The VSIPL backend keeps the same D_DFT fallback and
+  wrapper and replaces only the IPP class: vsip_rcfftop_create_f/d with scale
+  1.0 and vsip_crfftop_create_f/d with scale 1.0 for the unscaled pair,
+  vsip_cvmag_f and vsip_vatan2_f for the polar conversion, vsip_vcos_f /
+  vsip_vsin_f / vsip_vmul_f for inversePolar, vsip_vlog_f for the cepstrum.
+  jvsip's vsip_vcopyfrom_user_* takes a non-const source pointer, so the
+  const inputs are cast through small helpers.  The IPP artifact fails the
+  API gate with 24 symbols (10 float, 10 double, 4 allocation).

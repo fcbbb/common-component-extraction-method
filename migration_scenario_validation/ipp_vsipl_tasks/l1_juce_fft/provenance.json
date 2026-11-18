@@ -1,0 +1,32 @@
+{
+  "task_id": "l1_juce_fft",
+  "scenario": "ipp_to_vsipl",
+  "repo": "https://github.com/juce-framework/JUCE.git",
+  "commit": "d60b7a78030661574a615b586d9325ba7a7fa7dd",
+  "license": "AGPL-3.0-only",
+  "vendored": true,
+  "snapshot": "ipp_vsipl_tasks/l1_juce_fft",
+  "source_files": [
+    "modules/juce_dsp/frequency/juce_FFT.h",
+    "modules/juce_dsp/frequency/juce_FFT.cpp",
+    "include/juce_FFT.h",
+    "src/juce_FFT_ipp.cpp",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "gold/juce_FFT_vsipl.cpp"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/golden_gen.cpp",
+    "harness/hidden_test.cpp",
+    "harness/run_hidden.py"
+  ],
+  "golden_cases": 63,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/unify_ipp_tasks.py",
+  "generated_at": "2026-11-15T03:50:55Z"
+}

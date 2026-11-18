@@ -1,0 +1,32 @@
+{
+  "task_id": "l2_saf_stft",
+  "scenario": "ipp_to_vsipl",
+  "repo": "https://github.com/leomccormack/Spatial_Audio_Framework.git",
+  "commit": "18fd5aba46e20787b51f28f7197a68506c965c07",
+  "license": "MIT",
+  "vendored": true,
+  "snapshot": "ipp_vsipl_tasks/l2_saf_stft",
+  "source_files": [
+    "framework/modules/saf_utilities/saf_utility_fft.c",
+    "framework/modules/saf_utilities/saf_utility_fft.h",
+    "framework/modules/saf_utilities/saf_support.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "gold/saf_utility_fft_vsipl.c"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/golden_gen.c",
+    "harness/hidden_test.c",
+    "harness/run_hidden.py",
+    "harness/saf_ops.h"
+  ],
+  "golden_cases": 66,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/unify_ipp_tasks.py",
+  "generated_at": "2026-11-15T03:50:55Z"
+}

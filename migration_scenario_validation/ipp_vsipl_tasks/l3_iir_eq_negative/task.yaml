@@ -1,0 +1,106 @@
+# Task package: cascaded biquad equaliser (negative control).
+# Source state = src/iir_eq_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l3_iir_eq_negative
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L3
+domain: audio
+difficulty: medium
+fit: C            # VSIPL has no IIR; the only correct migration is hand-written
+
+source:
+  repo: synthetic/audio-eq          # synthetic repo, biquad cascade in the style
+                                    # of steam-audio's EQ effects
+  commit: "synthetic-2026-11-14"
+  license: synthetic
+  vendored: true
+  files:
+    - src/iir_eq_ipp.c
+    - include/iir_eq.h
+    - CMakeLists.txt
+  loc: 130
+  ipp_apis:
+    - ippsIIRGetStateSize_BiQuad_32f
+    - ippsIIRInit_BiQuad_32f
+    - ippsIIR_32f
+    - ippsMalloc_8u
+    - ippsMalloc_32f
+    - ippsFree
+  note: >-
+    ippsIIRInit_BiQuad_32f takes six coefficients per section
+    (b0, b1, b2, a0, a1, a2); the public API in iir_eq.h uses the usual five
+    (a0 implicitly 1).  Verified against a hand-written difference equation:
+    with a0 = 1 the IPP impulse response matches exactly.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/iir_eq_ipp.c applies a cascade of `nsections` biquads to a continuous
+  stream.  Migrate it off Intel IPP while keeping include/iir_eq.h and the
+  observable behaviour unchanged:
+
+  - section m computes
+      y[n] = b0*x[n] + b1*x[n-1] + b2*x[n-2] - a1*y[n-1] - a2*y[n-2]
+    with {b0, b1, b2, a1, a2} = sos[m*5 .. m*5+4], sections in order;
+  - processing is block based: each call consumes exactly `block` samples and
+    continues the previous stream (state carries over);
+  - iir_eq_create/destroy keep their signatures and free everything they
+    allocate;
+  - no ipps*/ippi* symbol may remain in the built artifact.
+
+  This is the negative-control task: VSIPL (jvsip) has no IIR filter object
+  and no difference-equation primitive, so there is no library call to map
+  ippsIIR_32f onto.  Implement the recursion directly in C.  Linking VSIPL is
+  permitted but gives you nothing here; the evaluator does not require it.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libiireq.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c compares a two-block impulse response against the difference
+    equation written out in the test, so it also catches broken state
+    carry-over.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l3_iir_eq_negative --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 5 cases"
+  visible_to_agent: false
+  cases:
+    - {nsections: 1, block: 256, nblocks: 4}   # lowpass, several blocks
+    - {nsections: 1, block: 1,   nblocks: 8}   # one sample per call
+    - {nsections: 3, block: 128, nblocks: 3}   # peq -> shelf -> notch cascade
+    - {nsections: 2, block: 64,  nblocks: 5}   # lowpass + highpass
+    - {nsections: 1, block: 512, nblocks: 2}   # notch
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 1.0e-5}
+  note: >-
+    Reference migration matches IPP to 1.6e-6 worst relative; a wrong section
+    order or sign flips produces O(1) differences (the sign-flip probe in the
+    task notes diverges immediately).
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libiireq.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 5 cases within tolerance)"
+  negative_control: >-
+    Also recorded: whether the submission links VSIPL at all.  A C-fit task is
+    expected to pass without it; using VSIPL primitives where they add nothing
+    should not be rewarded.
+
+gold_patch: gold/iir_eq_c.c
+gold_notes: >-
+  Verified reference: 5/5 cases, worst relative error 1.6e-6.  Direct form II,
+  one (w1, w2) pair per section, no library calls.

@@ -1,0 +1,117 @@
+# Task package: Steam Audio FFT component (real + complex, pimpl class).
+# Source state = src/ipp_fft.cpp (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l1_steamaudio_fft
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L1
+domain: audio
+difficulty: easy
+fit: A            # IPP FFT plan family maps one-to-one onto the VSIPL FFT ops
+
+source:
+  repo: https://github.com/valveSoftware/steam-audio.git     # core/src/core
+  commit: "13.x (snapshot in ~/work/ipp_screening_20261114/src/steam-audio)"
+  license: Apache-2.0
+  vendored: true
+  files:
+    - include/fft.h                   # verbatim upstream
+    - src/ipp_fft.cpp                 # verbatim upstream
+    - support/platform.h
+    - support/types.h
+    - support/error.h
+    - support/log.h
+    - support/memory_allocator.h
+    - support/memory_allocator.cpp
+    - support/array.h
+    - support/math_functions.h
+    - support/math_functions.cpp
+    - support/globals.cpp             # extraction shim, see note
+  loc: 700
+  ipp_apis:
+    - ippsFFTGetSize_R_32f
+    - ippsFFTInit_R_32f
+    - ippsFFTFwd_RToCCS_32f
+    - ippsFFTInv_CCSToR_32f
+    - ippsFFTGetSize_C_32fc
+    - ippsFFTInit_C_32fc
+    - ippsFFTFwd_CToC_32fc
+    - ippsFFTInv_CToC_32fc
+  note: >-
+    Component extraction: fft.h and ipp_fft.cpp are unmodified upstream files.
+    The support headers are the upstream ones they include. Upstream defines
+    gLog()/gMemory() in context.cpp, which drags in the whole scene/HRTF
+    subsystem; support/globals.cpp replaces that with the same definitions so
+    the component links on its own.  Nothing else was changed.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/ipp_fft.cpp implements ipl::FFT, a plan-based FFT with four entry points
+  (forward/inverse x real/complex).  Migrate it to VSIPL (jvsip, VSIPL 1.3 C)
+  keeping include/fft.h and the observable behaviour unchanged:
+
+  - numRealSamples is the input size rounded up to the next power of two;
+  - real transforms are unnormalised, inverse transforms scale by 1/N
+    (IPP_FFT_DIV_INV_BY_N), so forward followed by inverse returns the input;
+  - the real spectrum is conjugate-even (CCS) with numRealSamples/2 + 1 values;
+  - the class keeps its pimpl layout and const member functions;
+  - no ipps*/ippi* symbol may remain in the built artifact.
+
+  Target library notes (jvsip): vsip_rcfftop_create_f / vsip_crfftop_create_f
+  take the scale factor up front, so pass 1.0f for the forward plan and 1/N
+  for the inverse plan.  Complex data is stored as split real/imaginary
+  arrays, so the interleaved std::complex<float> entry points must pack and
+  unpack with vsip_cvput_f / vsip_cvget_f.  vsip.h has no extern "C" guards:
+  include it inside extern "C" from C++.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libsafft.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.cpp checks size rounding, the impulse spectrum, and both round
+    trips.  No golden data.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l1_steamaudio_fft --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original component (golden_gen), 7 cases"
+  visible_to_agent: false
+  cases:
+    - {size: 64,   domain: real}
+    - {size: 100,  domain: real}      # rounds up to 128
+    - {size: 7,    domain: real}      # rounds up to 8
+    - {size: 300,  domain: real}      # rounds up to 512
+    - {size: 4,    domain: real}      # smallest size jvsip handles
+    - {size: 32,   domain: complex}
+    - {size: 1000, domain: complex}   # rounds up to 1024
+
+tolerances:
+  float32: {rtol: 1.0e-3, atol: 1.0e-4}
+  note: >-
+    Observed worst relative error of the reference migration is 1.0e-5
+    (1024-point complex), so the gate leaves two orders of magnitude of margin
+    while any structural error (missing 1/N, wrong direction, wrong packing)
+    is O(1).
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libsafft.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 7 cases within tolerance)"
+
+gold_patch: gold/fft_vsipl.cpp
+gold_notes: >-
+  Verified reference: 7/7 cases, worst relative error 1.0e-5.  Uses
+  vsip_rcfftop/crfftop plans with scale 1.0 and 1/N and vsip_ccfftop with
+  VSIP_FFT_FWD/VSIP_FFT_INV.  jvsip's rcfftop crashes with SIGFPE for N=2, so
+  the case set starts at N=4.

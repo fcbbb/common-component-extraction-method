@@ -1,0 +1,180 @@
+# Task package: Spatial_Audio_Framework FFT/STFT module (SAF, IPP backend).
+# Source state = src/saf_utility_fft_ipp.c (Intel IPP).  Target = VSIPL C (jvsip).
+task_id: l2_saf_stft
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L2
+domain: audio
+difficulty: hard
+fit: B            # real/complex FFT map to vsip_rcfftop/crfftop/ccfftop; STFT,
+                  # overlap-add, fftconv, fftfilt and hilbert are compositions
+
+source:
+  repo: https://github.com/leomccormack/Spatial_Audio_Framework.git   # v1.3.5
+  commit: "18fd5aba46e20787b51f28f7197a68506c965c07"
+  license: MIT
+  vendored: true
+  files:
+    - framework/modules/saf_utilities/saf_utility_fft.c   # 982 lines, IPP path only
+    - framework/modules/saf_utilities/saf_utility_fft.h   # public API + STFT layout enum
+    - framework/modules/saf_utilities/saf_support.h       # trimmed: allocators, windowing
+    - CMakeLists.txt
+  loc: 982
+  ipp_apis:
+    - ippsFFTGetSize_R_32f
+    - ippsFFTInit_R_32f
+    - ippsFFTFwd_RToCCS_32f
+    - ippsFFTInv_CCSToR_32f
+    - ippsFFTGetSize_C_32fc
+    - ippsFFTInit_C_32fc
+    - ippsFFTFwd_CToC_32fc
+    - ippsFFTInv_CToC_32fc
+    - ippsDFTGetSize_R_32f
+    - ippsDFTInit_R_32f
+    - ippsDFTFwd_RToCCS_32f
+    - ippsDFTInv_CCSToR_32f
+    - ippsDFTGetSize_C_32fc
+    - ippsDFTInit_C_32fc
+    - ippsDFTFwd_CToC_32fc
+    - ippsDFTInv_CToC_32fc
+    - ippMalloc
+    - ippFree
+  note: >-
+    SAF picks its transform engine from the size: powers of two take the
+    ippsFFT* API with IPP_FFT_DIV_INV_BY_N, every other even size takes the
+    ippsDFT* API with IPP_DFT_DIV_INV_BY_N.  Both paths share one create /
+    destroy lifecycle per object, and both allocate with ippMalloc/ippFree so
+    the IPP dependency is visible at link time.  Above the transform layer the
+    module is engine-agnostic: STFT forward/backward, the previous-hop history
+    used for overlapping windows, flushBuffers, channelChange, fftconv,
+    fftfilt and hilbert all operate on the plain float_complex*** arrays that
+    the transform pair produces.
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation
+  library: jvsip
+  allowed_extra_libs: [libm]
+
+spec: |
+  src/saf_utility_fft_ipp.c implements SAF's FFT/STFT utility module on Intel
+  IPP.  Migrate the transform engines off IPP while keeping include/
+  saf_utility_fft.h and every observable behaviour unchanged:
+
+    saf_rfft_forward(h, inputTD, outputFD): unscaled real DFT, half spectrum
+        written as the natural interleaved sequence [R0,I0,R1,I1,...,
+        R(N/2),I(N/2)] (N+2 floats)
+    saf_rfft_backward(h, inputFD, outputTD): inverse scaled by 1/N
+    saf_fft_forward/backward: the same two rules for complex data of size N
+    saf_rfft_create / saf_fft_create accept any even size; a size that is not
+        a power of two still has to produce the same numbers
+    saf_stft_create(win, hop, nchin, nchout, fmt): when win == hop the
+        transform is rectangular (no window, no history) and rawFrameSize must
+        be a multiple of hop; otherwise the window is a Hann window of length
+        win and the internal transform length is 2*win; the caller's frame
+        size is given to forward/backward and is processed one hop at a time
+    saf_stft_forward: one transform per hop; internal FFT length 2*win with
+        the hop zero-padded into the upper half; fd layout either
+        [hop][channel][band] or [band][channel][hop] as requested
+    saf_stft_backward: inverse transform, window, overlap-add, and the same
+        1/(2*win) normalisation the forward/inverse pair implies
+    saf_stft_flushBuffers / saf_stft_channelChange: reset history / change
+        the channel count between blocks
+    fftconv, fftfilt, hilbert, getUniformFreqVector: unchanged semantics
+    no ipp*/ippi*/ippMalloc/ippFree symbol may remain in the built artifact.
+
+  VSIPL maps the transforms to vsip_rcfftop_f / vsip_crfftop_f (real) and
+  vsip_ccfftop_f (complex).  Watch these details:
+    - jvsip ignores the plan scale for vsip_rcfftop_f / vsip_crfftop_f, so
+      the 1/N of the inverse must be applied by hand; the ccfft plan does
+      honour its scale, but the reference applies 1/N explicitly for both.
+    - vsip_rcfftop_f writes [R0,R1,...,R(N/2),I(N/2),...,I1], not the natural
+      interleaved order IPP writes.  The half spectrum has to be repacked.
+    - vsip_crfftop_f only has a defined result for a Hermitian spectrum: the
+      imaginary parts of bin 0 and bin N/2 must be zero, which the forward
+      transform always guarantees.  (IPP silently ignores them instead.)
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libsafft.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.c (13 checks) compares saf_rfft_forward/backward (n = 64, 100)
+    and saf_fft_forward/backward (n = 32, 100) against a double-precision
+    direct DFT and against the input frame; checks that each hop of a
+    rectangular STFT (win = hop = 64) equals the direct DFT of the zero-padded
+    hop and that a one-block round trip is the identity; runs fftconv against
+    a direct time-domain convolution; checks the hilbert envelope of a pure
+    tone; and checks getUniformFreqVector.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l2_saf_stft --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 66 cases"
+  visible_to_agent: false
+  cases:
+    - real FFT forward / inverse / round trip at n = 8, 64, 1024, 6, 100, 1000
+      (18 cases; 8/64/1024 take the ippsFFT path, 6/100/1000 the ippsDFT path)
+    - complex FFT forward / inverse / round trip at n = 4, 8, 32, 100, 1000,
+      1024 (18 cases)
+    - STFT forward / backward / round trip for win/hop/channels/format
+      {256,256,1/1,time-band}, {128,64,2/2,band-time}, {64,16,2/1,time-band},
+      {32,32,2/2,band-time}, {100,50,1/1,time-band} (15 cases)
+    - stateful overlap-add (fwd, bwd, bwd), flushBuffers (fwd, bwd, flush,
+      bwd) and channelChange (2ch round trip, change, 1ch round trip) on two
+      of the configurations (5 cases)
+    - fftconv with 2 channels / 1 channel (3 cases), fftfilt (2 cases)
+    - hilbert at n = 64, 100, 256 (3 cases); getUniformFreqVector at
+      n = 256/f = 48 kHz and n = 1000/f = 44.1 kHz (2 cases)
+  note: >-
+    Each case is graded relative to its own peak magnitude (floored at 1.0) so
+    that the unscaled transforms and the overlap-add gain of the STFT do not
+    dominate the comparison.  The inverse cases are only fed spectra that the
+    forward transform could have produced (imaginary parts of bin 0 and of the
+    Nyquist bin are zero), because a non-Hermitian spectrum is outside the
+    real-inverse contract: IPP drops those imaginary parts and jvsip returns a
+    different, arguably broken, result.
+
+tolerances:
+  float32: {rtol: 1.0e-4, atol: 0.0, mode: peak-relative}
+  note: >-
+    Reference migration matches IPP to 6.6e-7 worst relative across 66 cases.
+    Structural mistakes are orders of magnitude larger: a missing 1/N scales
+    the inverse by N, the wrong half-spectrum permutation mixes real and
+    imaginary parts, a window applied on the rectangular path changes every
+    band, and an overlap-add that ignores the previous-hop history shows up in
+    the second and third blocks of the stateful cases.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libsafft.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 66 cases within tolerance)"
+
+gold_patch: gold/saf_utility_fft_vsipl.c
+gold_notes: >-
+  Verified reference: 66/66 cases, worst relative error 6.557e-07; public test
+  13/13.  Mapping: vsip_rcfftop_create_f(N, 1.0, ...) / vsip_crfftop_create_f
+  (N, 1.0, ...) and vsip_ccfftop_create_f(N, 1.0, dir, 1, VSIP_ALG_SPACE) with
+  an explicit 1/N after every inverse; the natural interleaved half spectrum
+  is produced from the packed jvsip output by writing out[2k] = R[k],
+  out[2k+1] = I[k], and the inverse loads those pairs back into a cvview
+  before vsip_crfftop_f.  The STFT, overlap-add, fftconv, fftfilt, hilbert
+  and getUniformFreqVector code is byte-identical to the baseline, which is
+  the point of the extraction: the migration is confined to the two transform
+  engines behind saf_rfft_* and saf_fft_*.  The IPP artifact fails the API
+  gate with 18 symbols (the 16 ipps entry points plus ippMalloc and ippFree).
+  Traps found while building this package: (1) IPP 2021's
+  ippsFFTFwd_RToCCS_32f and ippsDFTFwd_RToCCS_32f both write the natural
+  interleaved spectrum, not the documented CCS packing, and
+  ippsFFTInv_CCSToR_32f reads it back that way; (2) jvsip ignores the plan
+  scale for the real forward/inverse plans; (3) the oversampled STFT path
+  reads a full window starting at the last hop of the frame, so the caller's
+  buffer is framesize + win long; (4) the 2-in/1-out STFT configuration writes
+  nchin channels, so the frequency-domain array must be allocated for
+  max(nchin, nchout).

@@ -1,0 +1,30 @@
+{
+  "task_id": "l1_vec_db_mag",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic/hpec-db-kernel",
+  "commit": "synthetic-2026-11-14",
+  "license": "synthetic",
+  "vendored": true,
+  "snapshot": "ipp_vsipl_tasks/l1_vec_db_mag",
+  "source_files": [
+    "src/dbmag_ipp.c",
+    "include/dbmag.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "gold/dbmag_vsipl.c"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/golden_gen.c",
+    "harness/hidden_test.c",
+    "harness/run_hidden.py"
+  ],
+  "golden_cases": 5,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/unify_ipp_tasks.py",
+  "generated_at": "2026-11-15T03:50:55Z"
+}

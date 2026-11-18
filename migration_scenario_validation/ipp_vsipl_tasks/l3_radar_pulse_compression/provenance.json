@@ -1,0 +1,29 @@
+{
+  "task_id": "l3_radar_pulse_compression",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic (radar pulse-compression frontend)",
+  "commit": "-",
+  "license": "synthetic",
+  "vendored": true,
+  "snapshot": "ipp_vsipl_tasks/l3_radar_pulse_compression",
+  "source_files": [
+    "include/pulse_comp.h",
+    "src/pulse_comp_ipp.c"
+  ],
+  "gold_files": [
+    "gold/pulse_comp_vsipl.c"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/golden_gen.c",
+    "harness/hidden_test.c",
+    "harness/run_hidden.py"
+  ],
+  "golden_cases": 8,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "hand-written (slate task 16)",
+  "generated_at": "2026-11-16T22:30:00Z"
+}

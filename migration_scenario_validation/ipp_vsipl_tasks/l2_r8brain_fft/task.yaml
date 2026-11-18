@@ -1,0 +1,203 @@
+# Task package: r8brain real-valued FFT wrapper (r8brain-free-src, IPP backend).
+# Source state = src/CDSPRealFFT_ipp.cpp + include/CDSPRealFFT.h (Intel IPP).
+# Target = VSIPL C++ (jvsip).
+task_id: l2_r8brain_fft
+scenario: ipp_to_vsipl
+source_kind: vendored-ipp-snapshot
+gold_kind: implementation
+level: L2
+domain: audio
+difficulty: hard
+fit: B            # the transform itself maps 1:1, but IPP's Perm block layout
+                  # is not VSIPL's, so every entry point needs a repack
+
+source:
+  repo: https://github.com/avaneev/r8brain-free-src.git
+  commit: "5792291ad66b04e87fd61a3d92606214632c6cfc"
+  license: MIT
+  vendored: true
+  files:
+    - CDSPRealFFT.h                        # 1099 lines, the whole component
+    - r8bbase.h                            # 1591 lines, helpers only
+    - r8bconf.h                            # 200 lines, macros only
+  loc: 1099
+  note: >-
+    r8brain's power-of-2 resampler does all of its filtering through this
+    wrapper: CDSPRealFFTSetup holds the transform specification for one block
+    length, CDSPRealFFT is the per-thread transform object (obtained from the
+    global pool through CDSPRealFFTKeeper), and calcMinPhaseTransform() is the
+    cepstrum-domain minimum-phase filter design built on top of it.  The
+    package extracts that component with the IPP backend (R8B_IPP=1): the
+    PFFFT, PFFFT DOUBLE and Ooura branches are dropped, the backend state
+    (IppsFFTSpec_R_64f, the specification buffer and the work buffer) moves
+    behind an opaque pointer so the header carries no IPP types, and the
+    upstream static linked list of pooled objects becomes a std::map plus a
+    std::mutex.  Those two are packaging changes only; the class API, the
+    algorithm and the arithmetic are unchanged.  r8bbase.h is trimmed to the
+    helpers the component uses (allocators, CFixedBuffer, getBitOccupancy,
+    calcFIRFilterResponse/GroupDelay), verbatim.
+  ipp_apis:
+    - ippsFFTGetSize_R_64f
+    - ippsFFTInit_R_64f
+    - ippsFFTFwd_RToPerm_64f
+    - ippsFFTInv_PermToR_64f
+    - ippsMulPerm_64f
+
+target:
+  api: VSIPL                   # VSIPL 1.3 C, jvsip implementation, from C++
+  library: jvsip
+  allowed_extra_libs: [libstdc++, libm]
+
+spec: |
+  src/CDSPRealFFT_ipp.cpp implements r8brain's real-valued FFT component on
+  top of Intel IPP.  Migrate it off IPP while keeping include/CDSPRealFFT.h
+  and every observable behaviour unchanged.  The header is the contract: the
+  class members, their signatures and the FFT block layout must stay exactly
+  as declared, because the resampler calls them directly.
+
+  FFT blocks (realfft_t = double) use the Perm layout, length N = 1 << LenBits:
+
+      p[0]        = Re X[0]
+      p[1]        = Re X[N/2]
+      p[2k]       = Re X[k]      k = 1 .. N/2-1
+      p[2k + 1]   = Im X[k]      k = 1 .. N/2-1
+
+  and neither transform applies a scale factor: forward is the plain DFT,
+  inverse is N times the plain IDFT.  getInvMulConst() returns 1/N; callers
+  multiply by it themselves, and calcMinPhaseTransform() uses it in the
+  middle of its cepstrum step, so the two must keep their current scales.
+
+  entry points:
+    CDSPRealFFTSetup(LenBits)   per-length setup, built once per length and
+                                kept in the pool; Len = 1 << LenBits,
+                                InvMulConst = 1.0 / Len
+    CDSPRealFFT::forward(p)     in-place, p is N doubles; on return p holds the
+                                Perm block; returns p
+    CDSPRealFFT::inverse(p)     in-place, p holds a valid Hermitian Perm block;
+                                on return p holds N real samples
+    getWorkBuf()                R8B_NULL (the transform is already in
+                                sequential order)
+    reorderForward/reorderInverse  pass-throughs, unchanged
+    setBinNyquist(p, v)         writes p[1] (the Nyquist bin in Perm order)
+    multiplyBlocks(ip1, ip2, op)   out-of-place complex product of two Perm
+                                blocks: p[0] and p[1] multiply as single reals,
+                                every (p[2k], p[2k+1]) as one complex value
+    multiplyBlocks(ip, op)      the same, in place on op
+    multiplyBlocksZP(ip, op)    plain element-wise real product (the "ip"
+                                block is a zero-phase response)
+    convertToZP(p)              sets p[2k+1] = p[2k] for k = 1 .. N/2-1
+    CDSPRealFFTKeeper           acquire/release from the global pool; init()
+                                switches lengths and releases what it held,
+                                reset() releases without acquiring, and the
+                                destructor releases.  Objects are never
+                                destroyed while the process lives.
+    calcMinPhaseTransform(...)  unchanged; it is expressed entirely through
+                                the class, so it needs no edit once the class
+                                is migrated.
+
+  no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
+
+  VSIPL maps this to vsip_rcfftop_d / vsip_crfftop_d.  Watch these details:
+    - VSIPL's real transforms produce the natural half spectrum: N/2+1
+      complex values C[0..N/2] with C[k] = X[k].  The Perm scatter/gather
+      between C and p is the actual migration work.
+    - both plans are created with scale 1.0; do not fold a 1/N in anywhere,
+      the callers already apply getInvMulConst().
+    - the transform must stay in place on the caller's buffer.
+
+prepare:
+  mode: vendored
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j'
+  artifact: '{build}/libr8bfft.a'
+  baseline_command: "cmake -S . -B build -DUSE_IPP=ON -DIPP_ROOT=$IPP_ROOT && cmake --build build -j"
+
+public_tests:
+  command: 'ctest --test-dir {build} --output-on-failure'
+  visible_to_agent: true
+  note: >-
+    public_test.cpp (17 checks) compares every entry point against
+    double-precision direct DFT sums, never against a second FFT: forward and
+    inverse for two lengths each, the round trip times InvMulConst, both
+    multiplyBlocks forms, convertToZP, multiplyBlocksZP, setBinNyquist,
+    calcMinPhaseTransform against a direct-DFT cepstrum reference (two kernel
+    lengths / multipliers, kernel and DC group delay), and the keeper's
+    reuse and length switching.
+
+hidden_tests:
+  command: 'python3 {root}/harness/run_hidden.py --task-root . --task-id l2_r8brain_fft --harness-dir {root}/harness --golden {golden} --build-dir {build}/hidden'
+  golden: "IPP build of the original source (golden_gen), 16 cases"
+  visible_to_agent: false
+  cases:
+    - forward, bits 4 and 10 (N = 16, 1024)
+    - inverse, bits 4, 8 and 12 (N = 16, 256, 4096)
+    - forward + inverse * InvMulConst, bits 6 and 12
+    - multiplyBlocks out-of-place, bits 8 and 3 (N = 256, 8)
+    - multiplyBlocks in-place, bits 5
+    - multiplyBlocksZP, bits 8 (payload carries the baseline's forward block
+      and its zero-phase kernel)
+    - convertToZP, bits 6
+    - setBinNyquist, bits 6
+    - calcMinPhaseTransform, kernel 24 / LenMult 2 / DoFinalMul true, and
+      kernel 40 / LenMult 4 / DoFinalMul false; the reported DC group delay is
+      part of the expectation
+    - "keeper reuse, bits 6: two keepers of the same length back to back, both
+      transforms compared"
+  note: >-
+    The inverse and block-product cases are fed the baseline's own forward
+    output, stored in the container, so a candidate is graded on exactly the
+    Perm block the baseline consumed.  The minimum-phase kernels are smooth
+    and keep |X(w)| away from zero: a kernel with a near-null bin would make
+    log|X| ill-conditioned and make the comparison measure the FFT's last bits
+    rather than the migration.
+
+tolerances:
+  float64: {rtol: 1.0e-9, atol: 0.0, mode: peak-relative}
+  group_delay: {atol: 1.0e-2, mode: absolute}
+  note: >-
+    Reference migration matches IPP to 7.77e-16 worst relative across 16 cases
+    (the IPP baseline itself is bit-exact against its own goldens).  The DC
+    group delay reported by calcMinPhaseTransform() is compared with an
+    absolute tolerance: it is a finite difference of two phases 2e-9 apart, so
+    it amplifies the last bits of the transform by ~1e9 and carries no extra
+    information about the kernel -- the reference differs by 2.98e-13.
+    Structural mistakes are O(1): a wrong Perm scatter produces a permuted
+    spectrum, a missing or extra 1/N scales a whole case by N, writing the
+    Nyquist bin at the natural-layout position (element N/2 instead of p[1])
+    changes one bin only and is caught by the setBinNyquist case, and a keeper
+    that returns an object of the wrong length fails the reuse case.
+
+gates:
+  build: "must configure and build with no IPP include path"
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libr8bfft.a'
+  behavior: 'hidden_test exits 0 on every golden case; no IPP symbol remains in the built artifact'
+  numeric: "hidden_test exits 0 (all 16 cases within tolerance)"
+
+gold_patch: gold/CDSPRealFFT_vsipl.cpp
+gold_notes: >-
+  Verified reference: 16/16 cases, worst relative error 7.772e-16, DC group
+  delay 2.98e-13 absolute; public test 17/17.  Mapping:
+  vsip_rcfftop_create_d(N, 1.0, 1, VSIP_ALG_SPACE) and
+  vsip_crfftop_create_d(N, 1.0, 1, VSIP_ALG_SPACE) per length, one
+  vsip_cvview_d of N/2+1 complex values per transform object, and the caller's
+  buffer bound with vsip_blockbind_d + vsip_blockadmit_d(b, 0) + vsip_vbind_d
+  so the transform stays in place (blockdestroy_f does not free a bound user
+  block, so ownership stays with the caller).  forward() runs the
+  real-to-complex plan and then scatters C into p[0], p[1], p[2k], p[2k+1];
+  inverse() gathers the Perm block into C (with C[0] and C[N/2] taking a zero
+  imaginary part) and runs the complex-to-real plan over the same buffer.
+  multiplyBlocks/multiplyBlocksZP/convertToZP are the same scalar loops as
+  before -- they are Perm arithmetic, not transform work, and there is nothing
+  for VSIPL to do.  The keeper pool is the same std::map + std::mutex as the
+  baseline.  The IPP artifact fails the API gate with 5 symbols:
+  ippsFFTFwd_RToPerm_64f ippsFFTGetSize_R_64f ippsFFTInit_R_64f
+  ippsFFTInv_PermToR_64f ippsMulPerm_64f.  Things worth knowing: jvsip ignores
+  the plan scale for the real transforms (verified separately: a rcfft plan
+  created with scale 0.5 still produces the unscaled DFT), so both plans are
+  created with 1.0 and no scaling is applied -- adding 1/N anywhere would
+  break the callers, which multiply by InvMulConst themselves; the natural
+  half spectrum from jvsip's double real FFT was checked against a direct DFT
+  for N = 16 (C[1] = 0.382683 - 0.923880 for an impulse at sample 3) before
+  the gold was written; and the DC group delay in calcMinPhaseTransform is
+  numerically much the loosest quantity in the component, which is why the
+  hidden test grades it separately from the kernel coefficients.

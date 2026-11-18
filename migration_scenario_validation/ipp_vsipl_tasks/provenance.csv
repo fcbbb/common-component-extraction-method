@@ -1,0 +1,20 @@
+scenario,task_id,level,fit,counted,source_kind,title,repo,commit,license
+ipp_to_vsipl,l1_aubio_dct,L1,B,true,vendored-ipp-snapshot,"orthonormal DCT-II/III (aubio, IPP backend)",https://github.com/aubio/aubio.git,0.4.9,GPL-3.0-or-later
+ipp_to_vsipl,l1_conv_corr,L1,B,true,vendored-ipp-snapshot,1-D convolution and normalized cross-correlation,synthetic/dsp-frontend,synthetic-2026-11-14,synthetic
+ipp_to_vsipl,l1_juce_fft,L1,A,true,vendored-ipp-snapshot,JUCE dsp FFT (IPP engine),https://github.com/juce-framework/JUCE.git,d60b7a78030661574a615b586d9325ba7a7fa7dd,AGPL-3.0-only
+ipp_to_vsipl,l1_steamaudio_fft,L1,A,true,vendored-ipp-snapshot,"Steam Audio FFT component (real + complex, pimpl class)",https://github.com/valveSoftware/steam-audio.git,13.x (snapshot in ~/work/ipp_screening_20261114/src/steam-audio),Apache-2.0
+ipp_to_vsipl,l1_vec_db_mag,L1,A,true,vendored-ipp-snapshot,HPEC-style dB magnitude kernel,synthetic/hpec-db-kernel,synthetic-2026-11-14,synthetic
+ipp_to_vsipl,l1_window_gen,L1,B,true,vendored-ipp-snapshot,symmetric analysis windows (Hann/Hamming/Blackman/Kaiser),synthetic/dsp-frontend,synthetic-2026-11-14,synthetic
+ipp_to_vsipl,l2_aubio_fft,L2,A,true,vendored-ipp-snapshot,"aubio spectral fft module (aubio, IPP backend)",https://github.com/aubio/aubio.git,0.4.9,GPL-3.0-or-later
+ipp_to_vsipl,l2_cfar_detector,L2,B,true,vendored-ipp-snapshot,"cell-averaging CFAR detector (HPEC CFAR kernel, reduced)",hpce-challenge/cfar,synthetic-2026-11-14,synthetic
+ipp_to_vsipl,l2_cil_fbp,L2,B,true,vendored-ipp-snapshot,"CIL FBP projection filtering (CIL, IPP backend)",https://github.com/TomographicImaging/CIL.git,b39f95799bf1af891a896fc4be704986284b593e,Apache-2.0
+ipp_to_vsipl,l2_dot_norm_stats,L2,A,true,vendored-ipp-snapshot,sliding-window summary statistics,synthetic/generic-dsp,synthetic-2026-11-14,synthetic
+ipp_to_vsipl,l2_fdfir_overlap_save,L2,B,true,vendored-ipp-snapshot,frequency-domain FIR (overlap-save),synthetic/hpec-fdfir,synthetic-2026-11-14,synthetic
+ipp_to_vsipl,l2_r8brain_fft,L2,B,true,vendored-ipp-snapshot,"r8brain real-valued FFT wrapper (r8brain-free-src, IPP backend)",https://github.com/avaneev/r8brain-free-src.git,5792291ad66b04e87fd61a3d92606214632c6cfc,MIT
+ipp_to_vsipl,l2_rubberband_fft,L2,A,true,vendored-ipp-snapshot,"rubberband FFT component (rubberband, IPP backend)",https://github.com/breakfastquay/rubberband.git,4.0.0,GPL-2.0-or-later
+ipp_to_vsipl,l2_saf_stft,L2,B,true,vendored-ipp-snapshot,"Spatial_Audio_Framework FFT/STFT module (SAF, IPP backend)",https://github.com/leomccormack/Spatial_Audio_Framework.git,18fd5aba46e20787b51f28f7197a68506c965c07,MIT
+ipp_to_vsipl,l2_tdfir_bank,L2,B,true,vendored-ipp-snapshot,"time-domain FIR filter bank (HPEC TDFIR kernel, reduced)",hpce-challenge/tdfir,synthetic-2026-11-14,synthetic
+ipp_to_vsipl,l3_audio_resampler,L3,B,true,vendored-ipp-snapshot,streaming sample-rate converter + output analyser (synthetic),synthetic (audio front-end: sample-rate conversion then a periodogram),-,synthetic
+ipp_to_vsipl,l3_comms_demod_frontend,L3,A,true,vendored-ipp-snapshot,software-defined-radio demodulator frontend (synthetic),synthetic (HPEC-style SDR receive chain),-,synthetic
+ipp_to_vsipl,l3_iir_eq_negative,L3,C,true,vendored-ipp-snapshot,cascaded biquad equaliser (negative control),synthetic/audio-eq,synthetic-2026-11-14,synthetic
+ipp_to_vsipl,l3_spectrum_sensing,L3,B,true,vendored-ipp-snapshot,cognitive-radio spectrum sensor (synthetic),synthetic (HPEC-style cognitive-radio sensing frontend),-,synthetic
