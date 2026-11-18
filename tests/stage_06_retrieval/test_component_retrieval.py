@@ -311,6 +311,49 @@ def test_retrieval_prompt_passes_path_not_inline_catalog(tmp_path):
     assert "<catalog-bundle-id-a>" in prompt
 
 
+def test_retrieval_prompt_renders_the_validator_concreteness_minimums(tmp_path):
+    # The thresholds live in submission.py and are rendered into the prompt,
+    # so the agent reads exactly the numbers the checker enforces.
+    from component_method.retrieval import submission
+
+    library = component_library(tmp_path / "library")
+    request = RetrievalRequest(
+        task_id="task-1",
+        problem_statement="Handle optional values.",
+        interface="method(value: T | None)",
+        component_library=library,
+        output_dir=tmp_path / "output",
+        image="fixture",
+    )
+    prompt = render_retrieval_task(request)
+    assert "{{concreteness_minimums}}" not in prompt
+    grouped: dict[int, list[str]] = {}
+    for field, minimum in submission.CONCRETENESS_MINIMUMS.items():
+        grouped.setdefault(minimum, []).append(field)
+    for minimum, fields in grouped.items():
+        assert f"{', '.join(fields)} need at least {minimum} characters" in prompt
+
+
+def test_retrieval_prompts_use_the_validator_vocabulary():
+    from component_method.retrieval import submission
+    from component_method.retrieval.service import PROMPT_DIR
+
+    text = (PROMPT_DIR / "retrieve_instance.txt").read_text(encoding="utf-8")
+    text += (PROMPT_DIR / "retrieve_system.txt").read_text(encoding="utf-8")
+    for values in (
+        submission.DELIVERY_MODES,
+        submission.RELATIONS,
+        submission.ASSESSMENT_DECISIONS,
+        submission.SHORTLIST_REVIEW_DECISIONS,
+        submission.COVERAGE_VERDICTS,
+        submission.CHANGE_KINDS,
+        submission.COVERAGE_SIGNALS,
+        submission.DIRECT_MATCH_SIGNALS,
+    ):
+        for value in sorted(values):
+            assert value in text, value
+
+
 def test_retrieval_mask_paths_follow_library_repository():
     assert _repository_mask_paths(
         {"repository": "example/alpha"},
@@ -326,7 +369,7 @@ def test_retrieval_mask_paths_follow_library_repository():
 
 def test_retrieval_checker_command_is_controller_owned():
     assert _retrieval_checker_command("task-1") == (
-        "python",
+        "python3",
         "/retrieval-tools/check_selection.py",
         "--library",
         "/component-library",

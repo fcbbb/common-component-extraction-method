@@ -20,8 +20,13 @@ from component_method.agent_runtime import (
     create_agent_backend,
     selected_backend_name,
 )
+from component_method.agent_runtime.stage_plane import (
+    HOST_STAGE_RUNTIME,
+    host_stage_profile,
+    stage_runtime,
+)
 
-from .submission import validate_selection
+from .submission import concreteness_minimums_text, validate_selection
 
 
 PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
@@ -154,6 +159,7 @@ def render_retrieval_task(request: RetrievalRequest) -> str:
         template.replace("{{task_id}}", request.task_id)
         .replace("{{problem_statement}}", request.problem_statement)
         .replace("{{interface}}", request.interface)
+        .replace("{{concreteness_minimums}}", concreteness_minimums_text())
     )
 
 
@@ -165,7 +171,7 @@ def _retrieval_system_prompt(task_id: str) -> str:
 
 def _retrieval_checker_command(task_id: str) -> tuple[str, ...]:
     return (
-        "python",
+        "python3",
         "/retrieval-tools/check_selection.py",
         "--library",
         "/component-library",
@@ -206,6 +212,19 @@ def _run_dsh_retrieval(
     mask_paths: tuple[str, ...],
     backend_name: str,
 ) -> dict[str, Any]:
+    if stage_runtime() == HOST_STAGE_RUNTIME:
+        return _run_host_retrieval(
+            request,
+            model_config=model_config,
+            library=library,
+            output=output,
+            submission_dir=submission_dir,
+            selection_path=selection_path,
+            task=task,
+            catalog_path=catalog_path,
+            mask_paths=mask_paths,
+            backend_name=backend_name,
+        )
     import docker
 
     if request.total_timeout_seconds < 1:
@@ -216,6 +235,11 @@ def _run_dsh_retrieval(
     safe_task = re.sub(r"[^A-Za-z0-9_-]+", "-", request.task_id)[:48]
     container_name = f"component-retrieval-{safe_task}-{uuid.uuid4().hex[:10]}"
     client = docker.from_env()
+    image_id = None
+    try:
+        image_id = client.images.get(request.image).id
+    except Exception:
+        image_id = None
     container = None
     backend_result = None
     validated = None
@@ -340,6 +364,153 @@ def _run_dsh_retrieval(
                 ),
                 "selection_validated": validated is not None,
                 "agent_backend": backend_name,
+                "runtime_image": request.image,
+                "container_image_id": image_id,
+                "session_id": backend_result.session_id if backend_result else None,
+                "error": error,
+            },
+        )
+        _write_json(output / "state.json", {"status": status})
+    return validated
+
+
+def _host_retrieval_paths(
+    library: Path, submission_dir: Path, catalog_path: Path
+) -> dict[str, str]:
+    """Map the retrieval container's mount points to host directories.
+
+    The retrieval prompts and validator commands are written against the
+    container layout.  On the host plane the same text has to name the real
+    directories, so one ordered substitution covers system prompt, task and
+    any command the agent copies from them.
+    """
+    mapping = {
+        "/component-library": str(library),
+        "/retrieval-tools/check_selection.py": str(CHECKER_PATH),
+        "/retrieval-tools/component_catalog.json": str(catalog_path),
+        "/component-output": str(submission_dir),
+    }
+    return {
+        key: mapping[key]
+        for key in sorted(mapping, key=len, reverse=True)
+    }
+
+
+def _translate_host_paths(text: str, paths: dict[str, str]) -> str:
+    for container_path, host_path in paths.items():
+        text = text.replace(container_path, host_path)
+    return text
+
+
+def _run_host_retrieval(
+    request: RetrievalRequest,
+    *,
+    model_config: dict[str, Any],
+    library: Path,
+    output: Path,
+    submission_dir: Path,
+    selection_path: Path,
+    task: str,
+    catalog_path: Path,
+    mask_paths: tuple[str, ...],
+    backend_name: str,
+) -> dict[str, Any]:
+    """Retrieval on the host plane: no container, no Docker API.
+
+    The frozen library stays where the caller put it and the agent's working
+    directory is that library.  Repository masking is a container mount
+    feature, so the host plane records that it is unavailable instead of
+    silently claiming it.
+    """
+    if request.total_timeout_seconds < 1:
+        raise ValueError("retrieval total_timeout_seconds must be positive")
+    if request.step_limit < 1:
+        raise ValueError("retrieval step_limit must be positive")
+    model, base_url, api_key = _model_route(model_config)
+    safe_task = re.sub(r"[^A-Za-z0-9_-]+", "-", request.task_id)[:48]
+    profile = host_stage_profile("retrieval")
+    paths = _host_retrieval_paths(library, submission_dir, catalog_path)
+    backend = create_agent_backend(
+        BackendSettings(
+            api_key=api_key,
+            base_url=base_url,
+            repository_root=REPOSITORY_ROOT,
+            options={"profile_name": profile},
+        ),
+        name=backend_name,
+    )
+    _write_json(output / "state.json", {"status": "running", "model_calls": 0})
+    started = time.monotonic()
+    status = "EnvironmentError"
+    error = None
+    validated = None
+    backend_result = None
+    try:
+        backend_result = backend.run(
+            AgentRunRequest(
+                run_id=safe_task,
+                role="retrieval",
+                model=model,
+                system_prompt=_translate_host_paths(
+                    _retrieval_system_prompt(request.task_id), paths
+                ),
+                task_prompt=_translate_host_paths(task, paths),
+                output_dir=output,
+                container_name=f"host-retrieval-{safe_task}-{uuid.uuid4().hex[:10]}",
+                container_cwd=str(library),
+                command_timeout_seconds=request.command_timeout_seconds,
+                total_timeout_seconds=request.total_timeout_seconds,
+                step_limit=request.step_limit,
+                # No controlled shell exists to write the completion record;
+                # the selection validator below is the authority.
+                submission_mode="none",
+                submission_role="retrieval",
+                profile_name=profile,
+                submission_directory=submission_dir,
+            )
+        )
+        status = backend_result.status
+        error = backend_result.error
+        if status not in {"Submitted", "NoValidatedSubmission"}:
+            raise RuntimeError(
+                "retrieval agent did not finish on the host plane "
+                f"(status={status}, error={error})"
+            )
+        status = "Submitted"
+        validated = validate_selection(
+            library,
+            selection_path,
+            expected_task_id=request.task_id,
+            coverage_path=submission_dir / "coverage.json",
+        )
+        _write_json(output / "result.json", validated)
+    except Exception as exc:
+        if status in {"EnvironmentError", "Submitted"}:
+            status = type(exc).__name__
+        if error is None:
+            error = str(exc)
+        raise
+    finally:
+        _write_json(
+            output / "metadata.json",
+            {
+                "status": status,
+                "elapsed_seconds": time.monotonic() - started,
+                "model_calls": backend_result.model_calls if backend_result else 0,
+                "input_tokens": backend_result.input_tokens if backend_result else None,
+                "output_tokens": backend_result.output_tokens if backend_result else None,
+                "reported_cost_usd": (
+                    backend_result.reported_cost_usd if backend_result else None
+                ),
+                "selection_validated": validated is not None,
+                "agent_backend": backend_name,
+                "stage_runtime": "host",
+                "stage_profile": profile,
+                "runtime_image": None,
+                "declared_runtime_image": request.image or None,
+                "container_image_id": None,
+                "repository_mask_paths": list(mask_paths),
+                "repository_masking": "unavailable on the host stage runtime",
                 "session_id": backend_result.session_id if backend_result else None,
                 "error": error,
             },
@@ -388,6 +559,14 @@ def run_retrieval_agent(
             ).hexdigest(),
             "component_count": len(manifest["components"]),
             "component_catalog_sha256": hashlib.sha256(catalog_path.read_bytes()).hexdigest(),
+            "retrieve_system_sha256": hashlib.sha256(
+                (PROMPT_DIR / "retrieve_system.txt").read_bytes()
+            ).hexdigest(),
+            "retrieve_instance_sha256": hashlib.sha256(
+                (PROMPT_DIR / "retrieve_instance.txt").read_bytes()
+            ).hexdigest(),
+            "runtime_image": request.image,
+            "stage_runtime": stage_runtime(),
             "agent_backend": backend_name,
             "step_limit": request.step_limit,
             "cost_limit": 0,

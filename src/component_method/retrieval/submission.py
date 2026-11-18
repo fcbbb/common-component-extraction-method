@@ -39,6 +39,50 @@ COVERAGE_SIGNALS = {
 }
 DIRECT_MATCH_SIGNALS = {"capability", "semantic_domain", "reuse_interface"}
 
+# Single source for the concreteness thresholds.  ``concreteness_minimums_text``
+# renders these numbers into the retrieval prompt, so the instruction the agent
+# reads and the check the validator applies cannot drift apart.
+CONCRETENESS_MINIMUMS = {
+    "change_model.changed_entities": 3,
+    "change_model.introduced_or_changed_variants": 3,
+    "change_model.change_kinds": 3,
+    "change_model.propagation_risks": 10,
+    "task_baseline.explicit_information": 10,
+    "task_baseline.obvious_scope": 10,
+    "component_coverage.direct_assessment.matched_entities": 3,
+    "component_coverage.direct_assessment.catalog_signals": 3,
+    "component_coverage.direct_assessment.reason": 25,
+    "component_coverage.direct_assessment.probe": 20,
+    "component_coverage.changed_entities": 3,
+    "component_coverage.catalog_signals": 3,
+    "component_coverage.path": 25,
+    "component_assessments.reason": 15,
+    "shortlist_reviews.marginal_value": 25,
+    "shortlist_reviews.boundary": 15,
+    "selected.task_overlap": 15,
+    "selected.boundary": 15,
+    "selected.usage": 20,
+    "selected.incremental_contribution": 25,
+    "propagation_checks.carrier": 15,
+    "propagation_checks.changed_variants": 3,
+    "propagation_checks.bundle_ids": 3,
+    "propagation_checks.symbols": 3,
+    "propagation_checks.argument_positions": 3,
+    "propagation_checks.invariant": 25,
+}
+
+
+def concreteness_minimums_text() -> str:
+    """Render the validator's concreteness thresholds for the agent prompt."""
+    grouped: dict[int, list[str]] = {}
+    for field, minimum in CONCRETENESS_MINIMUMS.items():
+        grouped.setdefault(minimum, []).append(field)
+    sentences = [
+        f"{', '.join(grouped[minimum])} need at least {minimum} characters"
+        for minimum in sorted(grouped)
+    ]
+    return "Concreteness minimums enforced by the validator: " + "; ".join(sentences) + "."
+
 
 def _inside(root: Path, relative: str) -> Path:
     if not relative or Path(relative).is_absolute():
@@ -89,12 +133,12 @@ def _normalize_change_model(
     changed_entities = _concrete_string_list(
         value.get("changed_entities"),
         "change_model.changed_entities",
-        minimum_length=3,
+        minimum_length=CONCRETENESS_MINIMUMS["change_model.changed_entities"],
     )
     change_kinds = _concrete_string_list(
         value.get("change_kinds"),
         "change_model.change_kinds",
-        minimum_length=3,
+        minimum_length=CONCRETENESS_MINIMUMS["change_model.change_kinds"],
     )
     unknown_kinds = set(change_kinds) - CHANGE_KINDS
     if unknown_kinds:
@@ -102,7 +146,7 @@ def _normalize_change_model(
     introduced_variants = _concrete_string_list(
         value.get("introduced_or_changed_variants", []),
         "change_model.introduced_or_changed_variants",
-        minimum_length=3,
+        minimum_length=CONCRETENESS_MINIMUMS["change_model.introduced_or_changed_variants"],
         allow_empty=True,
     )
     if require_introduced_variants and "representation" in change_kinds and not introduced_variants:
@@ -112,7 +156,7 @@ def _normalize_change_model(
     propagation_risks = _concrete_string_list(
         value.get("propagation_risks"),
         "change_model.propagation_risks",
-        minimum_length=10,
+        minimum_length=CONCRETENESS_MINIMUMS["change_model.propagation_risks"],
         allow_empty=True,
     )
     return {
@@ -217,7 +261,9 @@ def validate_coverage(
             matched_entities = _concrete_string_list(
                 raw_direct.get("matched_entities"),
                 f"component_coverage[{index}].direct_assessment.matched_entities",
-                minimum_length=3,
+                minimum_length=CONCRETENESS_MINIMUMS[
+                    "component_coverage.direct_assessment.matched_entities"
+                ],
                 allow_empty=True,
             )
             unknown_direct_entities = set(matched_entities) - changed_entity_set
@@ -229,7 +275,9 @@ def validate_coverage(
             direct_signals = _concrete_string_list(
                 raw_direct.get("catalog_signals"),
                 f"component_coverage[{index}].direct_assessment.catalog_signals",
-                minimum_length=3,
+                minimum_length=CONCRETENESS_MINIMUMS[
+                    "component_coverage.direct_assessment.catalog_signals"
+                ],
                 allow_empty=True,
             )
             unknown_direct_signals = set(direct_signals) - DIRECT_MATCH_SIGNALS
@@ -245,7 +293,11 @@ def validate_coverage(
                     f"signals: {sorted(unavailable_direct)}"
                 )
             direct_reason = raw_direct.get("reason")
-            if not isinstance(direct_reason, str) or len(direct_reason.strip()) < 25:
+            if (
+                not isinstance(direct_reason, str)
+                or len(direct_reason.strip())
+                < CONCRETENESS_MINIMUMS["component_coverage.direct_assessment.reason"]
+            ):
                 raise ValueError(
                     f"component_coverage[{index}].direct_assessment.reason must be concrete"
                 )
@@ -262,7 +314,11 @@ def validate_coverage(
                     f"component_coverage[{index}].direct_assessment.entrypoint must name "
                     f"a published entrypoint for {bundle_id}"
                 )
-            if not isinstance(probe, str) or len(probe.strip()) < 20:
+            if (
+                not isinstance(probe, str)
+                or len(probe.strip())
+                < CONCRETENESS_MINIMUMS["component_coverage.direct_assessment.probe"]
+            ):
                 raise ValueError(
                     f"component_coverage[{index}].direct_assessment.probe must be concrete"
                 )
@@ -304,7 +360,7 @@ def validate_coverage(
         changed_entities = _concrete_string_list(
             entry.get("changed_entities"),
             f"component_coverage[{index}].changed_entities",
-            minimum_length=3,
+            minimum_length=CONCRETENESS_MINIMUMS["component_coverage.changed_entities"],
             allow_empty=True,
         )
         unknown_entities = set(changed_entities) - changed_entity_set
@@ -316,7 +372,7 @@ def validate_coverage(
         catalog_signals = _concrete_string_list(
             entry.get("catalog_signals"),
             f"component_coverage[{index}].catalog_signals",
-            minimum_length=3,
+            minimum_length=CONCRETENESS_MINIMUMS["component_coverage.catalog_signals"],
             allow_empty=True,
         )
         unknown_signals = set(catalog_signals) - COVERAGE_SIGNALS
@@ -332,7 +388,10 @@ def validate_coverage(
                 f"{sorted(unavailable)}"
             )
         path = entry.get("path")
-        if not isinstance(path, str) or len(path.strip()) < 25:
+        if (
+            not isinstance(path, str)
+            or len(path.strip()) < CONCRETENESS_MINIMUMS["component_coverage.path"]
+        ):
             raise ValueError(f"component_coverage[{index}].path must be concrete")
         if relation == "none" and (changed_entities or catalog_signals):
             raise ValueError(
@@ -432,10 +491,13 @@ def validate_selection(
     normalized_explicit = _concrete_string_list(
         task_baseline.get("explicit_information"),
         "task_baseline.explicit_information",
-        minimum_length=10,
+        minimum_length=CONCRETENESS_MINIMUMS["task_baseline.explicit_information"],
     )
     obvious_scope = task_baseline.get("obvious_scope")
-    if not isinstance(obvious_scope, str) or len(obvious_scope.strip()) < 10:
+    if (
+        not isinstance(obvious_scope, str)
+        or len(obvious_scope.strip()) < CONCRETENESS_MINIMUMS["task_baseline.obvious_scope"]
+    ):
         raise ValueError("task_baseline.obvious_scope must be concrete")
 
     normalized_change_model = None
@@ -496,7 +558,12 @@ def validate_selection(
                     f"component_assessments[{index}].decision must be one of "
                     f"{sorted(ASSESSMENT_DECISIONS)}"
                 )
-            reason = _concrete_text(assessment, "reason", index, 15)
+            reason = _concrete_text(
+                assessment,
+                "reason",
+                index,
+                CONCRETENESS_MINIMUMS["component_assessments.reason"],
+            )
             if decision == "shortlist":
                 assessed_shortlist.append(bundle_id)
             normalized_assessments.append({
@@ -609,9 +676,17 @@ def validate_selection(
                             f"duplicate_of must be null unless coverage_verdict is duplicate: {bundle_id}"
                         )
                 marginal_value = _concrete_text(
-                    review, "marginal_value", review_index, 25
+                    review,
+                    "marginal_value",
+                    review_index,
+                    CONCRETENESS_MINIMUMS["shortlist_reviews.marginal_value"],
                 )
-                boundary = _concrete_text(review, "boundary", review_index, 15)
+                boundary = _concrete_text(
+                    review,
+                    "boundary",
+                    review_index,
+                    CONCRETENESS_MINIMUMS["shortlist_reviews.boundary"],
+                )
                 evidence = review.get("evidence")
                 if not isinstance(evidence, list) or not evidence:
                     raise ValueError(
@@ -729,12 +804,19 @@ def validate_selection(
             raise ValueError(
                 f"selected[{index}].delivery_mode must be one of {sorted(DELIVERY_MODES)}"
             )
-        task_overlap = _concrete_text(item, "task_overlap", index, 15)
-        incremental_contribution = _concrete_text(
-            item, "incremental_contribution", index, 25
+        task_overlap = _concrete_text(
+            item, "task_overlap", index, CONCRETENESS_MINIMUMS["selected.task_overlap"]
         )
-        usage = _concrete_text(item, "usage", index, 20)
-        boundary = _concrete_text(item, "boundary", index, 15)
+        incremental_contribution = _concrete_text(
+            item,
+            "incremental_contribution",
+            index,
+            CONCRETENESS_MINIMUMS["selected.incremental_contribution"],
+        )
+        usage = _concrete_text(item, "usage", index, CONCRETENESS_MINIMUMS["selected.usage"])
+        boundary = _concrete_text(
+            item, "boundary", index, CONCRETENESS_MINIMUMS["selected.boundary"]
+        )
 
         evidence = item.get("evidence")
         if not isinstance(evidence, list) or not evidence:
@@ -801,14 +883,17 @@ def validate_selection(
             if not isinstance(check, dict):
                 raise ValueError(f"propagation_checks[{check_index}] must be an object")
             carrier = check.get("carrier")
-            if not isinstance(carrier, str) or len(carrier.strip()) < 15:
+            if (
+                not isinstance(carrier, str)
+                or len(carrier.strip()) < CONCRETENESS_MINIMUMS["propagation_checks.carrier"]
+            ):
                 raise ValueError(
                     f"propagation_checks[{check_index}].carrier must be role-independent"
                 )
             variants = _concrete_string_list(
                 check.get("changed_variants"),
                 f"propagation_checks[{check_index}].changed_variants",
-                minimum_length=3,
+                minimum_length=CONCRETENESS_MINIMUMS["propagation_checks.changed_variants"],
             )
             unknown_variants = set(variants) - introduced_variants
             if unknown_variants:
@@ -819,7 +904,7 @@ def validate_selection(
             bundle_ids = _concrete_string_list(
                 check.get("bundle_ids"),
                 f"propagation_checks[{check_index}].bundle_ids",
-                minimum_length=3,
+                minimum_length=CONCRETENESS_MINIMUMS["propagation_checks.bundle_ids"],
             )
             unknown_bundles = set(bundle_ids) - seen
             if unknown_bundles:
@@ -830,15 +915,19 @@ def validate_selection(
             symbols = _concrete_string_list(
                 check.get("symbols"),
                 f"propagation_checks[{check_index}].symbols",
-                minimum_length=3,
+                minimum_length=CONCRETENESS_MINIMUMS["propagation_checks.symbols"],
             )
             argument_positions = _concrete_string_list(
                 check.get("argument_positions"),
                 f"propagation_checks[{check_index}].argument_positions",
-                minimum_length=3,
+                minimum_length=CONCRETENESS_MINIMUMS["propagation_checks.argument_positions"],
             )
             invariant = check.get("invariant")
-            if not isinstance(invariant, str) or len(invariant.strip()) < 25:
+            if (
+                not isinstance(invariant, str)
+                or len(invariant.strip())
+                < CONCRETENESS_MINIMUMS["propagation_checks.invariant"]
+            ):
                 raise ValueError(
                     f"propagation_checks[{check_index}].invariant must be concrete"
                 )

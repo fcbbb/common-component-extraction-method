@@ -136,11 +136,11 @@ The required workflow is:
 
 Use this coverage command:
 
-python /retrieval-tools/check_selection.py --library /component-library --coverage /component-output/coverage.json --task-id "$TASK_ID" --check-coverage
+python3 /retrieval-tools/check_selection.py --library /component-library --coverage /component-output/coverage.json --task-id "$TASK_ID" --check-coverage
 
 Use this final command after coverage succeeds:
 
-python /retrieval-tools/check_selection.py --library /component-library --coverage /component-output/coverage.json --selection /component-output/selection.json --task-id "$TASK_ID" --submit
+python3 /retrieval-tools/check_selection.py --library /component-library --coverage /component-output/coverage.json --selection /component-output/selection.json --task-id "$TASK_ID" --submit
 
 If either validation fails, repair the corresponding file and validate again. Do not print either
 marker yourself.

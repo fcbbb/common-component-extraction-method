@@ -240,3 +240,5 @@ eight IDs. Every selected bundle must first be shortlisted.
 Allowed delivery modes are direct_reuse and reference_pattern. Evidence paths are relative to
 /component-library. An empty selected list is valid when no component adds substantial information
 or reusable work beyond the task baseline. Do not propose a patch or modify the component library.
+
+{{concreteness_minimums}}
