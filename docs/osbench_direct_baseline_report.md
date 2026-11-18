@@ -188,7 +188,7 @@ work/osbench/direct_baseline/<task_id>/reference_eval/result.json
 
 ## 8. 结论
 
-1. 两个初始失败都不是 Agent patch 的逻辑失败，而是 OS-Bench 镜像/构建缓存问题：
+1. 两个初始失败均来自 OS-Bench 镜像/构建缓存，与 Agent patch 的逻辑无关：
    - leveldb：`/tmp` 权限；
    - cppcheck：build 树陈旧 `pathmatch.cpp`。
 2. 修复后 direct 和 reference 均为 **6/6 required 通过**。

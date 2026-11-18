@@ -246,7 +246,7 @@ protocol：4.5 s
 
 ## 7. 为什么 leveldb 更小却调用更多
 
-关键不是源码 byte 数，而是 Stage A 的 packet 和组件数量：
+决定调用量的是 Stage A 的 packet 和组件数量，源码 byte 数影响很小：
 
 ```text
 cereal：
