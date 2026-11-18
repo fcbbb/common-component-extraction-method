@@ -15,6 +15,11 @@ from component_method.protocol_candidates import (  # noqa: E402
 
 def main() -> None:
     config = load_json(ROOT / "config.json")
+    if config.get("source_scan_mode") == "migration" or "candidate_file" not in config:
+        from component_method.source_scan.prepare_migration_inputs import main as migration_main
+
+        migration_main()
+        return
     source_path = PROJECT / config["candidate_file"]
     if sha256(source_path) != config["candidate_sha256"]:
         raise RuntimeError("frozen FFSIM V2 candidate file hash changed")

@@ -30,6 +30,9 @@ class AgentRunRequest:
     profile_name: str | None = None
     submission_directory: Path | None = None
     repository: Path | None = None
+    method_registry: Path | None = None
+    method_task_id: str | None = None
+    method_offline_tasks: Path | None = None
 
 
 @dataclass(frozen=True)

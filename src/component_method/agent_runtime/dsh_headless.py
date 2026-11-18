@@ -190,6 +190,8 @@ class DshHeadlessBackend:
             "DSH_TELEMETRY_MODE": "DISABLED",
             "OPENAI_API_KEY": self.api_key,
             "OPENAI_BASE_URL": self.base_url,
+            "OPENAI_API_BASE": self.base_url,
+            "MODEL_NAME": request.model,
             "COMPONENT_DSH_MODEL": request.model,
             "COMPONENT_DSH_REQUEST_TIMEOUT_MS": str(self.request_timeout_ms),
             "COMPONENT_DSH_MAX_RETRIES": str(self.max_retries),
@@ -214,6 +216,16 @@ class DshHeadlessBackend:
             "COMPONENT_DSH_JOB_ROOT": str(request.output_dir / "method_jobs"),
             "PYTHONUNBUFFERED": "1",
         }
+        if request.method_registry is not None:
+            environment["COMPONENT_DSH_RUN_REGISTRY"] = str(
+                request.method_registry.expanduser().resolve()
+            )
+        if request.method_task_id:
+            environment["COMPONENT_DSH_TASK_ID"] = request.method_task_id
+        if request.method_offline_tasks is not None:
+            environment["COMPONENT_DSH_OFFLINE_TASKS"] = str(
+                request.method_offline_tasks.expanduser().resolve()
+            )
         if request.submission_directory is not None:
             environment["COMPONENT_DSH_OUTPUT_HOST_DIR"] = str(
                 request.submission_directory.expanduser().resolve()

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import runpy
 import sys
 from pathlib import Path
@@ -32,8 +33,14 @@ def main() -> int:
     task_root = args.task_root.resolve()
     experiment_common.ROOT = task_root
     experiment_common.PROJECT = batch_common.PROJECT
-    sys.argv = [STAGES[args.stage], *stage_args]
-    runpy.run_module(STAGES[args.stage], run_name="__main__")
+    module = STAGES[args.stage]
+    if args.stage == "publish":
+        config_path = task_root / "config.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        if config.get("publish_mode") == "migration_direct":
+            module = "component_method.library_publish.publish_migration"
+    sys.argv = [module, *stage_args]
+    runpy.run_module(module, run_name="__main__")
     return 0
 
 

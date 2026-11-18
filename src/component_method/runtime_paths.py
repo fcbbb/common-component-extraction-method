@@ -30,7 +30,20 @@ def resolve_release_path(value: str | Path) -> Path:
 
 
 def offline_task_root(task_id: str) -> Path:
-    root = release_root() / "offline_artifacts" / "tasks" / task_id
+    """Resolve an offline task document.
+
+    The default layout is ``<release_root>/offline_artifacts/tasks/<task_id>``.
+    Hosts that adapt their own task packages (e.g. the migration benchmark) can
+    point ``COMPONENT_DSH_OFFLINE_TASKS`` (or its direct-kernel alias
+    ``COMPONENT_METHOD_OFFLINE_TASKS``) at a directory with the same shape.
+    """
+    configured = os.environ.get("COMPONENT_DSH_OFFLINE_TASKS") or os.environ.get(
+        "COMPONENT_METHOD_OFFLINE_TASKS"
+    )
+    if configured:
+        root = Path(configured).expanduser().resolve() / task_id
+    else:
+        root = release_root() / "offline_artifacts" / "tasks" / task_id
     if not root.is_dir():
         raise RuntimeError(f"offline task does not exist: {task_id}")
     return root
