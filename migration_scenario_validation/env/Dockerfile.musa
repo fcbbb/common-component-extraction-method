@@ -1,0 +1,68 @@
+# MUSA test image for Scenario B (CUDA -> Moore Threads MUSA).
+#
+# The MUSA SDK base image and the torch_musa wheel are NOT vendored here.
+# Provide the vendor image tag for MUSA SDK 5.2.0 and the matching wheel:
+#
+#   docker build -f env/Dockerfile.musa \
+#     --build-arg BASE_IMAGE=<musa-sdk-5.2.0-image> \
+#     --build-arg TORCH_VERSION=2.11.0 \
+#     --build-arg TORCH_MUSA_WHEEL=<torch_musa-2.11.0.post1-...whl or URL> \
+#     -t migration/musa:s4000 .
+#
+# torch_musa wheels are published on the project's GitHub Releases page; there
+# is no stable public pip index.  Pin the exact wheel and record its hash.
+#
+# The container needs the S4000 device nodes and the host driver.  Device
+# visibility is verified on the target host with `musaInfo`, not at build time.
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+SHELL ["/bin/bash", "-c"]
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+
+ARG TORCH_VERSION=2.11.0
+ARG TORCH_MUSA_WHEEL=""
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential cmake ninja-build git curl ca-certificates \
+      python3 python3-pip python3-venv \
+      libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# The vendor base image normally ships torch + torch_musa already.  Install
+# only when missing, and never let pip silently choose a torch_musa version:
+# torch and torch_musa minor versions must match.
+RUN if python3 -c "import torch_musa" >/dev/null 2>&1; then \
+      echo "torch_musa already present in base image"; \
+    else \
+      if [ -z "${TORCH_MUSA_WHEEL}" ]; then \
+        echo "torch_musa is missing and TORCH_MUSA_WHEEL is empty" >&2; \
+        exit 1; \
+      fi; \
+      python3 -m pip install --no-cache-dir --upgrade pip && \
+      python3 -m pip install --no-cache-dir "torch==${TORCH_VERSION}" && \
+      python3 -m pip install --no-cache-dir "${TORCH_MUSA_WHEEL}"; \
+    fi
+
+# `uv` is used by some upstream tooling; harmless if unused.
+RUN python3 -m pip install --no-cache-dir uv
+
+RUN useradd --create-home --shell /bin/bash bench \
+    && mkdir -p /work /cache \
+    && chown -R bench:bench /work /cache
+USER bench
+WORKDIR /work
+ENV MIGRATION_BENCH_CACHE=/cache/migration-bench
+
+# Build-time checks are limited to what works without a driver.  Importing
+# torch_musa on a host without the S4000 driver can fail even when the image is
+# correct, so `torch.musa.is_available()` and `musaInfo` are checked on the
+# target host.
+RUN python3 -c "import torch; print('torch', torch.__version__)" \
+    && python3 -c "import torch_musa; print('torch_musa', torch_musa.__version__)" \
+    && (command -v mcc || true) \
+    && (command -v musaInfo || true)
+
+CMD ["/bin/bash"]

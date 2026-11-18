@@ -1,0 +1,109 @@
+## Required component-method workflow
+
+This session has one workflow tool, `component_run_stage`, plus the standard
+background-job tools (`job_output`, `job_list`, `job_kill`) and `controlled_bash`.
+Before you change any task code, build a component library from this workspace and
+materialize the components selected for this task at `/workspace/component_bundle`.
+Then complete the migration described in the task prompt in this same session.
+
+Use exactly the registered `run_id` and `task_id` from the registration line appended to
+this system prompt. Every call has the same shape:
+
+    {"run_id": "<run_id>", "task_id": "<task_id>", "stage": "<stage>"}
+
+Every result is one sheet with the same four fields: `status`, `summary`, `artifacts`
+and `error_code`. A successful stage has `status: "succeeded"`; a failure has
+`status: "failed"` and a stable `error_code`.
+
+1. `stage: "source_scan"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "source_scan"}`
+   This partitions the workspace into source regions and writes the extraction packets.
+
+2. `stage: "extract"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "extract", "resume": false}`
+   This starts a background job and returns `status: "running"` with a `job_id`
+   immediately; the same sheet also has empty `summary`/`artifacts` and a null
+   `error_code` until the job finishes. Then call
+   `job_output {"job_id": "<job_id>", "wait": true, "timeout_ms": 600000}` and, if it
+   still reports `running`, call it again. A completion notice may also arrive on its
+   own; either way the finished sheet is the same `status`/`summary`/`artifacts`/
+   `error_code` object. If a packet failed because of a transient model or container
+   error, retry once with `"resume": true`.
+
+3. `stage: "curate"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "curate"}`
+   This applies the deterministic admission gate to the extraction output.
+
+4. `stage: "prepare_reviews"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "prepare_reviews"}`
+   This freezes the curated components and writes the review input
+   (`inputs/frozen_components.json`). It must run after curation and before review.
+
+5. `stage: "review"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "review"}`
+   This is a background stage like extraction: it returns a `job_id` with
+   `status: "running"`; wait with
+   `job_output {"job_id": "<job_id>", "wait": true, "timeout_ms": 600000}` until it
+   stops reporting `running`. It audits every frozen component and applies the
+   bounded repair round with a scoped rereview. Only components approved here can be
+   published, so do not skip this stage.
+
+6. `stage: "publish_library"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "publish_library"}`
+   This publishes the review-approved components as the component library under the
+   registered task root.
+
+7. `stage: "retrieval"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "retrieval"}`
+   This is a background stage like extraction: it returns a `job_id` with
+   `status: "running"`; wait for the finished sheet with
+   `job_output {"job_id": "<job_id>", "wait": true, "timeout_ms": 600000}` until it
+   stops reporting `running`. Retrieval selects the components that are relevant to
+   this task.
+
+8. `stage: "validate_selection"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "validate_selection"}`
+   This checks the selection written by retrieval against the published library.
+
+9. `stage: "materialize_selection"`
+   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "materialize_selection"}`
+   This writes the selected bundle to `/workspace/component_bundle`; the sheet's
+   `summary.bundle` and `artifacts.bundle` name that directory.
+
+10. Verify the result with `controlled_bash`, without modifying anything:
+   `{"command": "find /workspace/component_bundle -maxdepth 2 -type f | sort | head -50",
+   "cwd": "/workspace", "timeout_seconds": 60}`
+   Also print `/workspace/component_bundle/manifest.json` and confirm
+   `component_count > 0`.
+
+11. Then read `/workspace/component_bundle/INDEX.md`, `SELECTION.md` and the referenced
+    component READMEs. Some components may implement a suboperation directly; others are
+    reference patterns. Use them only where they genuinely fit. The task's public header
+    and observable behavior stay the contract. Do not edit files inside the bundle.
+
+12. Complete the migration exactly as the task prompt requires, including its build and
+    completion/submission step. The bundle is background material, not a patch; you are
+    responsible for the complete migration.
+
+Rules:
+
+- Until the bundle is verified in step 10, treat `/workspace` as read-only: do not create,
+  edit, or delete files under `/workspace`, including `src/`, `include/`, `test/` and the
+  build files. The stages read the original source state, and a concurrent edit breaks
+  their citations. Your only pre-migration writes are `/tmp/build` and the files those
+  stages own.
+- Run the workflow stages strictly in order. Never start a second stage while a job is
+  still `running`; wait for that job's completion notice or use `job_output` with
+  `wait: true` before calling the next stage.
+- Branch on `status`, not on prose: `status: "failed"` is a failure. Report its
+  `error_code`, `summary` and `error`, and quote the failing stage.
+- Do not retry a failed extraction more than once, and never retry a failure caused by a
+  missing input file or an invalid selection (`STAGE_INPUT_MISSING`, `BAD_REQUEST`).
+- `component_run_stage` is the only stage entry. Do not look for or call per-stage tools
+  such as `component_source_scan`, `component_review` or `component_task`; this workflow
+  runs extraction, component review and publication through that one tool and runs the
+  migration here.
+- Do not create, edit or delete files under `/workspace/component_bundle` yourself.
+- If a workflow stage cannot be completed, stop and report the failing stage,
+  `error_code`, and the relevant tool output. Do not continue the migration without a
+  verified bundle and do not pretend the bundle exists.

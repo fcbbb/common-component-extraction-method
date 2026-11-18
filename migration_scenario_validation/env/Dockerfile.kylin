@@ -1,0 +1,91 @@
+# Kylin V10 SP3 build/test image for Scenario A (Windows -> Kylin).
+#
+# Verified base image (2026-11-15):
+#   macrosan/kylin:v10-sp3-2403
+#   sha256:6ea227917f9df303813a2582f9f013e7287776cf7aa011adaa3ede6b2a70c3a6
+#   /etc/.productinfo: V10 SP3 2403/(Halberd)-x86_64-Build20/20240426
+#
+# The stock image is RPM/dnf based and ships gcc 7.3.0, cmake 3.16.5,
+# python 3.7.9 and glibc 2.28.  The benchmark needs a C++17-capable compiler
+# (POCO 1.13 fails to build with GCC 7.3), so this file installs the
+# AlmaLinux 8 gcc-toolset-13 (GCC 13.3.1) under /opt/rh.  The toolset is
+# self-contained and targets glibc 2.28, so it runs on Kylin unchanged.  Two
+# AlmaLinux runtime libraries are missing on Kylin: libmpfr.so.4 (Kylin ships
+# .so.6) and libjansson.so.4 (needed by the toolset's ld); both are copied out
+# of their AlmaLinux RPMs into /opt/gcc13-libs.
+#
+# Build (network needed for the dnf repositories):
+#   docker build -f env/Dockerfile.kylin -t migration/kylin:sp3 .
+#
+# Then run the benchmark as user `bench`:
+#   docker run --rm -it -v "$PWD":/work migration/kylin:sp3
+
+ARG BASE_IMAGE=macrosan/kylin:v10-sp3-2403
+ARG ALMALINUX_IMAGE=almalinux:8
+
+# ---------------------------------------------------------------------------
+# Stage 1: fetch the GCC 13 toolset RPMs from AlmaLinux 8 AppStream.
+# ---------------------------------------------------------------------------
+FROM ${ALMALINUX_IMAGE} AS gcc13-rpms
+RUN dnf -y -q install dnf-plugins-core >/dev/null \
+    && mkdir -p /rpms \
+    && dnf download --destdir /rpms --arch x86_64 --arch noarch \
+         gcc-toolset-13-runtime \
+         gcc-toolset-13-binutils \
+         gcc-toolset-13-gcc \
+         gcc-toolset-13-gcc-c++ \
+         gcc-toolset-13-libstdc++-devel \
+         mpfr jansson
+
+# ---------------------------------------------------------------------------
+# Stage 2: Kylin V10 SP3 with the benchmark toolchain and runtime libraries.
+# ---------------------------------------------------------------------------
+FROM ${BASE_IMAGE}
+
+SHELL ["/bin/bash", "-c"]
+ENV LANG=C.UTF-8
+
+RUN dnf -y install \
+      gcc gcc-c++ make cmake ninja-build pkgconf-pkg-config \
+      git curl ca-certificates patch perl which file tar gzip xz bzip2 cpio \
+      openssl openssl-devel zlib-devel pcre2-devel \
+      xz-devel bzip2-devel libxml2-devel lz4-devel zstd-devel \
+      gtk3-devel glib2-devel xorg-x11-server xorg-x11-xauth \
+      python3 python3-pyyaml \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+COPY --from=gcc13-rpms /rpms /tmp/rpms
+RUN rpm -ivh --nodeps --noscripts \
+      /tmp/rpms/gcc-toolset-13-runtime-*.rpm \
+      /tmp/rpms/gcc-toolset-13-binutils-*.x86_64.rpm \
+      /tmp/rpms/gcc-toolset-13-gcc-13*.rpm \
+      /tmp/rpms/gcc-toolset-13-gcc-c++-13*.rpm \
+      /tmp/rpms/gcc-toolset-13-libstdc++-devel-*.x86_64.rpm \
+    && mkdir -p /opt/gcc13-libs \
+    && cd /tmp \
+    && (rpm2cpio /tmp/rpms/mpfr-*.x86_64.rpm | cpio -idm --quiet './usr/lib64/libmpfr.so.4*') \
+    && (rpm2cpio /tmp/rpms/jansson-*.x86_64.rpm | cpio -idm --quiet './usr/lib64/libjansson.so.4*') \
+    && cp -a /tmp/usr/lib64/libmpfr.so.4* /tmp/usr/lib64/libjansson.so.4* /opt/gcc13-libs/ \
+    && rm -rf /tmp/rpms /tmp/usr
+
+ENV PATH=/opt/rh/gcc-toolset-13/root/usr/bin:$PATH
+ENV LD_LIBRARY_PATH=/opt/rh/gcc-toolset-13/root/usr/lib64:/opt/gcc13-libs
+
+# libuv and several test suites refuse to run as root; everything else works
+# as `bench`.  /cache is mounted from the host to reuse prepare.sh clones.
+RUN useradd --create-home --shell /bin/bash bench \
+    && mkdir -p /work /cache \
+    && chown -R bench:bench /work /cache
+USER bench
+WORKDIR /work
+ENV MIGRATION_BENCH_CACHE=/cache/migration-bench
+
+RUN gcc --version | head -1
+RUN g++ --version | head -1
+RUN ld --version >/dev/null && echo "ld: $(ld --version | head -1)"
+RUN cmake --version | head -1
+RUN python3 --version
+RUN gcc -dumpmachine
+
+CMD ["/bin/bash"]

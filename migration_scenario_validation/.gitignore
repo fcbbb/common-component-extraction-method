@@ -1,0 +1,23 @@
+# Local-only evaluator assets
+env/remote.yaml
+
+# Materialized by prepare.sh: upstream checkouts, build outputs, and the
+# evaluator-only reference implementation (gold/ is regenerated on prepare).
+*/tasks/*/work/
+*/tasks/*/build*/
+*/tasks/*/gold/
+ipp_vsipl_tasks/*/work/
+ipp_vsipl_tasks/*/build*/
+ipp_vsipl_tasks/*/gold/
+archive/**/work/
+archive/**/build*/
+archive/**/gold/
+
+# Local run configuration and evidence.  Reports stay on the machine that ran
+# them; ship them separately if needed.
+bench.env
+reports/
+
+# Python
+__pycache__/
+*.pyc

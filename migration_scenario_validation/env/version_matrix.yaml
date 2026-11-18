@@ -1,0 +1,171 @@
+# Pinned environment matrix for the three migration scenarios.
+#
+# Everything here is a *requirement to reproduce*.  As of 2026-11-16 the WSL
+# dev box has a working Kylin V10 SP3 image (Docker Desktop) with GCC 13.3.1
+# and CMake 3.16.5; all 19 Windows->Kylin positive gold controls
+# (L1 5/5, L2 10/10, L3 4/4) and the P1 negative controls have run inside it,
+# and the P2 agent trial passes judging on the two Kylin-level tasks.  The WSL
+# box still has no MUSA toolkit and no S4000; MUSA execution was performed on a
+# rented MTT S4000 host over SSH.  See "verification" below for exactly which
+# gates were executed and which were not.
+
+version: 1
+updated: "2026-11-16"
+
+scenarios:
+  ipp_to_vsipl:
+    status: unified-gold-verified-on-host
+    notes: >
+      20 vendored packages on the shared schema (scenario, provenance.json,
+      prepare.sh, {root}/{work}/{build}/{golden} placeholders).  prepare.sh
+      copies the in-package snapshot; it never touches the network.
+    target:
+      os: linux-x86_64
+      toolchain: gcc-13.3
+      cmake: ">=3.10 (3.16.5 on Kylin, 4.4.5 on the WSL host)"
+    runtime:
+      vsipl_root: "evaluator-supplied VSIPL/VSIPL++ implementation"
+    verification: "gold_sanity.py 20/20 pass on WSL host with jvsip (reports/gold_sanity_ipp20/)"
+
+  windows_to_kylin:
+    status: gold-verified-19-of-19-positive
+    base_image:
+      ref: macrosan/kylin:v10-sp3-2403
+      digest: "sha256:6ea227917f9df303813a2582f9f013e7287776cf7aa011adaa3ede6b2a70c3a6"
+      product: "V10 SP3 2403/(Halberd)-x86_64-Build20/20240426"
+      package_manager: dnf
+    stock_toolchain:
+      gcc: "7.3.0"
+      gcc_cxx: "7.3.0"
+      cmake: "3.16.5"
+      python: "3.7.9"
+      glibc: "2.28"
+    toolchain_install:
+      source: "AlmaLinux 8 gcc-toolset-13"
+      gcc: "13.3.1"
+      prefix: /opt/rh/gcc-toolset-13
+      extra_libs: ["libmpfr.so.4", "libjansson.so.4"]
+    target:
+      os: kylin-v10-sp3
+      arch: x86_64
+      libc: glibc
+      toolchain: gcc-13.3
+      cmake: "3.16.5 (stock Kylin; tasks do not need 3.28 features)"
+      generator: ninja
+    packages:
+      build: [build-essential, cmake, ninja-build, pkg-config, git, patch]
+      nginx: [libpcre2-dev, zlib1g-dev, libssl-dev, perl]
+      curl: [libssl-dev, zlib1g-dev, ca-certificates, openssl]
+      opencv_highgui: [libgtk-3-dev, libglib2.0-dev, xvfb, xauth]
+      libarchive: [zlib1g-dev, liblzma-dev, libbz2-dev, libxml2-dev, liblz4-dev, libzstd-dev]
+    upstream_pins:
+      poco: "see provenance.json per task"
+      libgit2: "see provenance.json per task"
+      libarchive: "see provenance.json per task"
+      curl: "see provenance.json per task"
+      opencv: "see provenance.json per task"
+      nginx: "1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5 (release-1.26.3)"
+      nginx-tests: "c0b7894063022fb86d5b5ad732c08507ea03aa78"
+      libuv: "e9f29cb984231524e3931aa0ae2c5dae1a32884e"
+    notes:
+      - "Base image macrosan/kylin:v10-sp3-2403 is public on Docker Hub; the digest above is the one actually pulled and inspected."
+      - "Stock GCC 7.3 cannot compile POCO 1.13 (Thread_POSIX.cpp); gcc-toolset-13 13.3.1 is installed from AlmaLinux 8 and works on Kylin's glibc 2.28."
+      - "The Kylin dnf repositories have no gcc-13 / gcc-toolset packages; do not try to install GCC 13 from them."
+      - "libuv refuses to run its test suite as root; the image creates user 'bench'."
+      - "OpenCV highgui tests run under xvfb-run; no physical display is assumed."
+
+  cuda_to_musa:
+    status: positive-controls-verified-20-of-20
+    target:
+      gpu: mtt-s4000
+      backend: musa-sdk-5.2.0
+      toolchain: mcc
+      arch: x86_64
+    profile:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      python:
+        torch: 2.11.0.post1
+        torch_musa: 2.11.0.post1+b431668
+        python: "3.10.12 (matches MultiKernelBench's upstream recommendation)"
+        os: "Ubuntu 22.04.5 LTS"
+      musa_sdk: "5.2.0 (torch_musa 2.11.0.post1 declares SDK 5.1/5.2 support)"
+      driver: "5.2.0-server (runtime 5.2)"
+      alt_profile:
+        python:
+          torch: 2.9.1
+          torch_musa: 2.9.1.post1
+        note: "2.9.1.post1 also adds explicit SDK 5.2.0 support; use it if the image is built on the 2.9 line"
+    executed_on:
+      host: autodl-container-p5m4fn65fq-5452d775
+      date: "2026-11-16"
+      gpu: "MTT S4000, 47.90 GB, compute capability 2.2, 56 SMs"
+      mcc: "5.2.0 (clang 14.0.0)"
+      environment_snapshot: reports/gold_sanity/musa_environment.txt
+      results:
+        - "b_l1_leaky_relu upstream gold: PASS (166.8s first run, 98.2s final packages)"
+        - "b_l1_mse_loss upstream gold: PASS (185.8s first run, 121.2s final packages)"
+        - "b_l2_layer_norm project-authored control: PASS (90.9s first run, 25.0s final packages)"
+        - "b_l2_layer_norm upstream sample: FAIL, compiled=True correct=False (2-D vs 4-D contract)"
+        - "b_l1_relu / b_l1_sigmoid / b_l1_swish project-authored controls: PASS (musa_batch1 3/3)"
+        - "b_l1_softmax / b_l2_cumsum project-authored controls: PASS (musa_batch2 2/7 at the time; the other five were control defects fixed before batch4, or the rms_norm memory block)"
+        - "b_l2_sum_reduce / b_l2_argmax / b_l2_gather / b_l2_cross_entropy_loss / b_l3_standard_matmul / b_l3_gqa / b_l3_sdpa / b_l3_matmul_gelu_softmax / b_l3_kv_cached_attention project-authored controls: PASS (musa_batch4 9/10)"
+        - "b_l3_conv2d project-authored control: PASS 42.6s after pinning muDNN to fp32 (musa_batch5 1/1); the batch4 run failed because the reference nn.Conv2d uses muDNN TF32 by default"
+        - "b_l2_cosine_similarity_loss / b_l3_conv2d_batch_norm_scaling project-authored controls: PASS (musa_batch6 2/2, 79.1s / 105.9s, worst_rel=0); these two replace b_l2_rms_norm and b_l3_group_norm in the slate"
+        - "b_l2_rms_norm / b_l3_group_norm: removed from the slate on 2026-11-16 and archived under archive/cuda_to_musa_blocked_oom/. The evaluator's torch.allclose could not compare their 8.59 GB tensors on a 47.90 GB card (42 GiB allocated while requesting 8 GiB; an in-place aliasing submission also OOMs at 44 GiB). They are not counted as passes and are in no denominator. Evidence kept at reports/gold_sanity/musa_allclose_oom/"
+        - "replacement run musa_batch6: SUMMARY pass=2 fail=0 skip=0 error=0. Evidence: reports/gold_sanity/musa_batch6/"
+        - "final combined 18-task run musa_all18 (one command, 2026-11-16 21:09-21:30): SUMMARY pass=18 fail=0 skip=0 error=0, GOLD_SANITY_RC=0; every task reports tests=pass, api_removal=pass and MUSA_SUBMISSION=PASS. Evidence: reports/gold_sanity/musa_all18/"
+        - "final combined run musa_gold_final: pass=3 fail=0 skip=0 error=0"
+        - "batch totals: musa_batch1 3/3, musa_batch2 2/7, musa_batch3 0/7, musa_batch4 9/10, musa_batch5 1/1, musa_batch6 2/2; 20/20 tasks of the current slate verified (2 upstream gold + 18 project-authored)"
+    notes:
+      - "The MUSA image in env/Dockerfile.musa has not been built; the results above ran directly on the rented host."
+      - "torch_musa wheels are GitHub Releases artifacts, not a stable pip index; pin the exact wheel and record its hash."
+      - "torch and torch_musa minor versions must match; do not let pip upgrade either one inside the image."
+      - "torch_musa has no CPU execution path; every hidden test requires a real MTT S4000."
+      - "The upstream evaluator times ModelNew, but performance is not a pass/fail gate in this scenario."
+      - "The MTT S4000 is the only target for which MCCL is quoted in the torch_musa README; MCCL is not used by these tasks."
+      - "torch.backends.mudnn.allow_tf32 defaults to True on this build while torch.backends.musa.matmul.allow_tf32 is False. Reference convolutions therefore use TF32 (~5e-4 off true fp32, past the 1e-4 tolerance); the b_l3_conv2d control pins muDNN to fp32 at import. See reports/gold_sanity/conv2d_tf32/."
+      - "The evaluator's torch.allclose cannot compare 2.1e9-element fp32 tensors on a 47.90 GB card; This is why b_l2_rms_norm and b_l3_group_norm were archived instead of shipped; estimate evaluator comparison memory before adding a task."
+
+  archived_cuda_to_ascend:
+    status: archived-hardware-unavailable
+    path: archive/cuda_to_ascend
+    notes:
+      - "The CUDA -> Ascend C/CANN scenario is kept only as a historical artifact."
+      - "It was statically validated (20 packages, 3 upstream gold, 17 judge-only) but never executed: no Ascend NPU and no CANN toolkit were available."
+      - "Do not count it in the current three-scenario totals; cuda_to_musa replaces it."
+
+verification:
+  static:
+    done:
+      - "python3 tools/verify_task.py over all 60 packages (20 IPP + 40 A/B): PASS"
+      - "python3 tools/check_pins.py --offline over all 60: ok=60, fail=0, judge_only=18 (layer_norm declares no upstream gold)"
+      - "IPP gold_sanity 20/20 pass on the WSL host (GCC 13.3 + jvsip): reports/gold_sanity_ipp20/"
+      - "IPP negative control: l1_vec_db_mag in its un-migrated Intel IPP state fails the build (ipp.h missing), runner rc=1"
+      - "Kylin base image pulled and inspected; env/Dockerfile.kylin builds with GCC 13.3.1"
+      - "prepare.sh materialized for all 20 IPP packages, POCO, nginx and all 20 cuda_to_musa packages"
+      - "gold separation checked on pilots and all IPP packages"
+      - "cuda_to_musa: every work/ tree has zero prompts/musa_new_model_*.py; only 2 task packages keep an upstream gold sample, and layer_norm keeps the nonconforming sample under upstream_nonconforming/ (never in work/)"
+      - "check_musa_submission.py and api_removal.py PASS on the 2 upstream MUSA gold files and all 16 project-authored controls"
+      - "MUSA gold_sanity on the rented S4000: b_l1_leaky_relu PASS (166.8s), b_l1_mse_loss PASS (185.8s), b_l2_layer_norm project-authored control PASS (90.9s); all three passed mcc build, 5 numerical trials, anti-cheat, API gate and kernel-presence gate. Evidence: reports/gold_sanity/musa_{smoke,gold2,authored}/"
+      - "MUSA gold_sanity final combined run on the final task packages (python3 fix): SUMMARY pass=3 fail=0 skip=0 error=0, GOLD_SANITY_RC=0; leaky_relu 98.2s, mse_loss 121.2s, layer_norm 25.0s (timings lower than the first runs because the torch_extensions build cache was warm). Evidence: reports/gold_sanity/musa_gold_final/"
+      - "MUSA positive controls, remaining batches: musa_batch1 3/3 (relu, sigmoid, swish), musa_batch2 2/7 (softmax, cumsum), musa_batch3 0/7, musa_batch4 9/10 (sum_reduce, argmax, gather, cross_entropy_loss, standard_matmul, gqa, sdpa, matmul_gelu_softmax, kv_cached_attention), musa_batch5 1/1 (conv2d after pinning muDNN to fp32), musa_batch6 2/2 (cosine_similarity_loss, conv2d_batch_norm_scaling). All 20 tasks of the current slate have a verified control. Evidence: reports/gold_sanity/musa_batch{1,2,3,4,5,6}/"
+      - "MUSA archived (not passes, not in the slate): b_l2_rms_norm and b_l3_group_norm OOM inside the evaluator's torch.allclose at their 8.59 GB shape; packages, probes and a reduced-shape supplementary check (max abs diff 3.6e-7-6.0e-7, not the evaluator contract) are in archive/cuda_to_musa_blocked_oom/ and reports/gold_sanity/musa_allclose_oom/"
+      - "MUSA final combined run (musa_all18) executed the one-command 18-task command end to end: SUMMARY pass=18 fail=0 skip=0 error=0, GOLD_SANITY_RC=0, 20.7 minutes, every task tests=pass / api_removal=pass / MUSA_SUBMISSION=PASS. Evidence: reports/gold_sanity/musa_all18/"
+      - "MUSA upstream layer_norm sample recorded as nonconforming: compiled=True, correct=False (85.8s). Evidence: reports/gold_sanity/musa_gold2/b_l2_layer_norm.json"
+      - "API gate positive/negative checks, including expect_fail negative control"
+      - "check_result.py tested with clean / not-compiled / incorrect / cheating results"
+      - "Kylin gold_sanity L1 5/5 pass inside migration/kylin:sp3 (GCC 13.3.1): POCO Thread/File/Path/RWLock+Semaphore/SharedLibrary"
+      - "Kylin gold_sanity L2 10/10 pass inside migration/kylin:sp3: curl TLS, libarchive x2, libgit2 x2, libuv x3, nginx files, OpenCV highgui"
+      - "Kylin gold_sanity L3 4/4 pass inside migration/kylin:sp3: curl build, libgit2 full, nginx full, POCO foundation full"
+      - "Kylin negative controls (empty implementation must fail the build): l1_poco_thread and l2_libuv_thread both build=fail, runner rc=1"
+      - "P2 agent trial (DSH 0.2.2-rc.1 + controlled-bash, model deepseek-v4.1-flash-1017, image migration/kylin:sp3-p2): l1_poco_thread x3 and l2_libuv_thread x3, judge pass 6/6 (build + hidden tests + API gate); diffs touch only the target implementation files. l1 run1/run3 were LimitsExceeded at the 150-step cap even though the judged workspace passed - counted separately from clean submissions. Evidence: reports/agent_trial/p2_kylin/"
+      - "Task-level negative negative_win32_eventlog ran in the Kylin container: a correct non-portability note passes (build skipped, hidden test pass, expect_fail API gate pass), while a fabricated stub that removes the Windows APIs fails the API gate (runner rc=1). Evidence: reports/negative_win32_eventlog/"
+      - "check_pins.py gold-leak rule now flags the declared gold path or identical file content, not any same-basename file; re-run after the fix: 60/60 PASS (the old rule false-positived on libuv src/win/thread.c)"
+    not_done:
+      - "b_l2_rms_norm and b_l3_group_norm are archived, not shipped: the evaluator's torch.allclose cannot judge their 8.59 GB shape at 47.90 GB. Restoring them needs >48 GB usable VRAM or an upstream evaluator change; never count them as passes."
+      - "b_l3_conv2d's 1e-4 tolerance interacts with the default muDNN TF32 mode; the control pins muDNN to fp32, but harness-level handling (for agents, not just controls) is an open decision."
+      - "P2 MUSA half: the 4 tasks x 3 runs agent gate has not started, even though the S4000 host is available."
+      - "env/Dockerfile.musa has not been built; MUSA execution used the rented host's preinstalled torch/torch_musa."
+      - "No performance measurement (performance is not a pass/fail gate in this scenario)."
+  claim_policy: "A gate is reported pass only when the corresponding command ran and returned 0."

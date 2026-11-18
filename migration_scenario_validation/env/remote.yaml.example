@@ -1,0 +1,25 @@
+# Copy to env/remote.yaml (gitignored by the repository's top-level ignore
+# rules if present) and fill in your own MUSA host.  Never commit real hosts,
+# usernames or keys.
+#
+# Used by:
+#   python3 shared/harness/run_remote.py --config env/remote.yaml \
+#       --local-dir cuda_to_musa/tasks/b_l1_leaky_relu/work \
+#       --remote-dir b_l1_leaky_relu/work \
+#       --command "python3 /data/migration-bench/harness/run_task.py --task-root /data/migration-bench/b_l1_leaky_relu"
+#
+# run_remote.py rsyncs --local-dir to <remote_root>/<remote-dir> and then runs
+# --command from that directory over ssh.  For this repository it is usually
+# simpler to rsync the whole migration_scenario_validation/ tree once, because
+# each task's harness/ wrapper searches upward for shared/harness/.
+
+host: 10.0.0.20
+user: ubuntu
+port: 22
+remote_root: /data/migration-bench
+ssh_opts:
+  - "-o"
+  - "StrictHostKeyChecking=accept-new"
+  - "-o"
+  - "ConnectTimeout=10"
+rsync: true

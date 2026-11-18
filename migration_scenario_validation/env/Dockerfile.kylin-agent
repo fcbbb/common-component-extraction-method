@@ -1,0 +1,26 @@
+# Agent-trial layer over the pinned Kylin image.
+#
+# Why this exists:
+#   * `controlled-bash` (the DSH tool the component-method pipeline pins) hard
+#     codes `User: 10001:10001` for docker exec.  The base image only has
+#     `bench` (uid 1000), so every login shell printed
+#     "cannot find name for user ID 10001" before the command's own output and
+#     the completion-marker protocol could never validate.
+#   * /etc/profile.d/system-info.sh prints an error line to stderr on every
+#     `bash -lc` because /sbin/ip is absent; the tool merges stdout and stderr,
+#     so the first effective output line was never the marker.
+#
+# Removing that cosmetic profile script and adding uid 10001 as a real user
+# changes nothing about the toolchain (GCC 13.3.1, CMake 3.16.5, Python 3.7.9)
+# or the library set.  Gold controls and agent trials therefore still share the
+# same compiler and test environment.
+FROM migration/kylin:sp3
+
+USER root
+RUN rm -f /etc/profile.d/system-info.sh \
+    && groupadd --gid 10001 agent \
+    && useradd --uid 10001 --gid 10001 --create-home --shell /bin/bash agent
+
+USER bench
+WORKDIR /work
+CMD ["/bin/bash"]
