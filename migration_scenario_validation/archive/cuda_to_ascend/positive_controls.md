@@ -73,7 +73,7 @@
 | 负向题 | 1 | 0 | `negative_win32_eventlog`：正确答案是写不可移植说明，不是移植代码 |
 | **合计** | **20** | **19** | |
 
-所以麒麟侧要做的不是“补 gold”，而是“把已有的 gold 真正跑一遍”。见 [RUNBOOK.md](../RUNBOOK.md)。
+所以麒麟侧要做的是把已有的 gold 真正跑一遍。见 [RUNBOOK.md](../RUNBOOK.md)。
 
 ---
 
@@ -107,7 +107,7 @@
   - `experimental/math/exp/op_kernel/exp.h`
   - `experimental/math/exp/op_host/`
   - `math/exp/op_kernel/exp_apt.cpp`（完整算子实现）
-- **注意**：本次看到的 `math/exp/op_host/config/` 只有 `ascend350` / `ascend950` / `ascend960*`，没有 `ascend910b`。910B2 上能否直接编译需要实测；更稳妥的做法是从 `examples/aclnn_launch_example` 的 Sqrt 模板改一个 Exp，而不是直接搬这个算子库。
+- **注意**：本次看到的 `math/exp/op_host/config/` 只有 `ascend350` / `ascend950` / `ascend960*`，没有 `ascend910b`。910B2 上能否直接编译需要实测；更稳妥的做法是从 `examples/aclnn_launch_example` 的 Sqrt 模板改一个 Exp，直接搬这个算子库风险较高。
 
 ### 5.2 `cann/ops-nn`（Softmax / RMSNorm 候选）
 

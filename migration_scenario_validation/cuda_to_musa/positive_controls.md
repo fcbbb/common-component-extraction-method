@@ -4,8 +4,8 @@
 **范围**：[cuda_to_musa/tasks/](tasks/) 的 20 个任务包  
 **结论**：**20/20 正控已在真机验证通过**——2 份来自上游 MultiKernelBench
 （`leaky_relu`、`mse_loss`），18 份是项目自写（evaluator-only）。
-原 slate 的 `b_l2_rms_norm`、`b_l3_group_norm` 不是实现问题，而是被判卷器的
-`torch.allclose` 内存需求挡住：8.59 GB 的 fp32 张量在 48 GB 卡上无法完成
+原 slate 的 `b_l2_rms_norm`、`b_l3_group_norm` 被 `torch.allclose` 的内存需求挡住
+（实现本身无问题）：8.59 GB 的 fp32 张量在 48 GB 卡上无法完成
 `atol=rtol=1e-4` 比较（实测与复现脚本见
 [reports/gold_sanity/musa_allclose_oom/](../reports/gold_sanity/musa_allclose_oom/README.md)）。
 2026-11-16 这两题连同证据移入
@@ -20,7 +20,7 @@ unverified`，也没有 BLOCKED。
 > **项目自写正控** = 上游没有可用样例时，由本项目按 reference 契约实现的
 > evaluator-only 提交；它可以证明判卷器可用，但**不能算作上游 gold**。  
 > **BLOCKED** = 正控存在、且能编译并通过结构门，但判卷器在该硬件上无法
-> 完成数值比较；不是“通过”，也不是“未验证”。
+> 完成数值比较；该状态不能记为通过或未验证。
 
 ---
 
@@ -94,8 +94,8 @@ evaluator 不是我们写的。如果不先用标准答案跑通，可能出现�
 | 合计 | 20 | **20** | 0 | 无 `judge-only` 题，无 BLOCKED 题 |
 
 `check_pins.py --offline` 的 `judge_only=18` 是**按“是否声明上游 gold 文件”
-统计的**：18 道自写正控题没有 `source.gold_files`，所以仍计入。它与本表的
-“正控已验证”不是一个口径，不要混用。
+统计的**：18 道自写正控题没有 `source.gold_files`，所以仍计入。`judge_only`
+与本表的“正控已验证”是两种口径，报告中不要混用。
 
 每题的 `status=pass` 都要求 `runner` 里 `tests=pass` 且 `api_removal=pass`，
 且本地 `check_musa_submission.py` 对 20 份正控全部 `MUSA_SUBMISSION=PASS`
@@ -123,7 +123,7 @@ pinned commit 里 `layer_norm` 存在两套契约：
 
 上游 MUSA 样例按二维写（`rows = x.size(0)`, `cols = x.size(1)`），在四维
 reference 下只写入 `64 x 64` 个值，其余保持 `zeros_like`。真机结果是
-`compiled=True, correct=False, cheating=False`——不是环境问题，而是样例
+`compiled=True, correct=False, cheating=False`，失败原因是样例
 与 evaluator 契约不一致。
 
 因此：
@@ -140,7 +140,7 @@ reference 下只写入 `64 x 64` 个值，其余保持 `zeros_like`。真机结�
 ## 5. 批次历史与修掉的题目包缺陷
 
 四批实测的通过数：batch1 3/3、batch2 2/7、batch3 0/7、batch4 9/10、
-batch5 1/1（conv2d 重跑）。失败都不是环境问题，逐条记录如下。
+batch5 1/1（conv2d 重跑）。失败原因均与运行环境无关，逐条记录如下。
 
 ### 5.1 正控文件名必须等于 `op_name`（batch2/batch3，共 7 题）
 

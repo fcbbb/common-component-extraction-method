@@ -7,7 +7,7 @@
 PyTorch `reference/` 的 `Model` / `get_inputs` / `get_init_inputs`，以及
 MultiKernelBench 自带的 `prompts/cuda_model_*.py`。
 
-判分不靠“看代码像不像”，而是调用**上游自己的 evaluator**：
+判分调用**上游自己的 evaluator**：
 `eval_single_runner.py --language musa` 在 `musa:0` 上导入提交、构建 MUSA
 扩展、跑参考与 `ModelNew` 的五次数值比对，再做 100 次计时。我们只在其上补
 统一的 API 清除门、kernel 结构门和结果解析。
@@ -28,8 +28,8 @@ MultiKernelBench 自带的 `prompts/cuda_model_*.py`。
 - 判分：上游 compile / correctness / anti-cheat + CUDA API 残留门 +
   MUSA kernel 结构门。
 
-与已归档的 `cuda_to_ascend` 场景相比，这个场景的真正难点不是“换一套编程
-模型”，而是**在同一套 CUDA-like 编程模型内做 API 与运行时替换**：MUSA
+与已归档的 `cuda_to_ascend` 场景相比，这个场景的难点是**在同一套 CUDA-like
+编程模型内做 API 与运行时替换**：MUSA
 保留了 `__global__`、`threadIdx`、`__shared__`、`<<<...>>>`，所以迁移的
 核心是 `cuda*` → `musa*`、`torch.cuda` → `torch.musa`、`nvcc` → `mcc`、
 以及 `torch_musa.utils.musa_extension.load_inline` 的构建路径。
@@ -126,7 +126,7 @@ L1/L2/L3 是本仓库的课程难度标定，不是上游目录结构。
    （见 §5.1），不进入 `gold/`，原文件保留在
    `tasks/b_l2_layer_norm/upstream_nonconforming/` 作为证据。关键修正：
    **每个题包的 `prepare.sh` 都删除 `work/prompts/musa_new_model_*.py`
-   全量 6 个文件**，而不仅是本题那一个。原因见 §5。
+   全量 6 个文件**（含本题之外的 5 个）。原因见 §5。
 7. **项目自写正控**：18 道没有可用上游样例的题各写了一份
    `gold_authored/<op_name>_submission.py`，由 `gold_sanity.py` 在无上游
    gold 时自动还原（`layer_norm` 是其中第一份）。它们只用于证明“判卷器会
@@ -184,8 +184,8 @@ pinned commit 里 `layer_norm` 存在两套契约：
 
 上游 MUSA 样例按二维写（`rows = x.size(0)`, `cols = x.size(1)`），在四维
 reference 下只写入 `64 x 64` 个值，其余保持 `zeros_like`。S4000 实测为
-`compiled=True, correct=False, cheating=False`，因此它不是“环境问题”，
-而是样例本身与 evaluator 契约不一致。该样例已移到
+`compiled=True, correct=False, cheating=False`，失败原因是样例本身与
+evaluator 契约不一致。该样例已移到
 `tasks/b_l2_layer_norm/upstream_nonconforming/`，不参与任何正控统计。
 
 ## 6. 为什么选 MultiKernelBench
@@ -336,4 +336,4 @@ python3 tools/gold_sanity.py --parent cuda_to_musa/tasks \
   若要加性能门，必须固定硬件、SDK 和驱动后单独设计。
 - **CUDA API 正则的边界**：`cuda[A-Z]\w*\s*\(` 会匹配 `cudaMalloc(` 等
   runtime API，但不会匹配 `musaMalloc(`；若上游样例里出现合法的
-  “CUDA 兼容层”包装，应按实际代码调整正则，而不是关掉整条门。
+  “CUDA 兼容层”包装，应按实际代码调整正则；关闭整条门会丢掉这项检查。

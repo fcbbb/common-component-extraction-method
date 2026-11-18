@@ -6,13 +6,13 @@
 2. **Windows/MSVC C++ → 麒麟 V10 + GCC/CMake**——`windows_to_kylin/`
 3. **NVIDIA CUDA → 摩尔线程 MUSA**——`cuda_to_musa/`（原 `cuda_to_ascend/` 已归档）
 
-## 先明确一件事
+## 目标
 
-这里要做的不是“找公开数据集”，而是**构建代码迁移 benchmark**：
+构建代码迁移 benchmark：
 
 > 给 agent 一个源仓库（或其中一部分）和迁移要求，看它能否产出可编译、行为等价、通过隐藏测试的目标实现；用同一批任务配对比较“先做组件抽取再迁移”与“直接让 agent 迁移”。
 
-公开数据集、性能基准套件、厂商样例都只是**题目素材**或**判卷环境**，不是 benchmark 本身。
+公开数据集、性能基准套件、厂商样例提供**题目素材**和**判卷环境**。
 
 ## 入口
 
@@ -60,7 +60,7 @@ python3 tools/bench.py compare --default-label default_v1 --method-label method_
 | 源仓库（IPP 项目 / Windows 模块 / CUDA kernel） | 待迁移代码 | **题目** |
 | 目标运行时（VSIPL 实现 / 麒麟 + GCC / MUSA SDK） | 编译运行环境 | **考场** |
 | 隐藏测试 + 参考解 + golden 输出 | 判分依据 | **判卷标准** |
-| 公开数据集 / 基准套件（RadioML、HeCBench、Rodinia 等） | 输入样本或性能基线 | **题目素材**，不是题库 |
+| 公开数据集 / 基准套件（RadioML、HeCBench、Rodinia 等） | 输入样本或性能基线 | **题目素材** |
 
 ```text
 benchmark      = 考试题库
@@ -83,7 +83,7 @@ benchmark      = 考试题库
 
 ## 共用设计原则
 
-1. **任务 = 代码迁移，不是算法研究**：判分看编译、数值等价、API 清除、隐藏测试。
+1. **任务 = 代码迁移**：判分看编译、数值等价、API 清除、隐藏测试。
 2. **golden 来自源程序或上游参考**：不从 agent 的迁移结果反推“正确答案”。
 3. **隐藏测试与参考解**：agent 只能看规格、公开测试和上游参考实现；目标实现放 evaluator-only 的 `gold/`。
 4. **跨仓库重复模式**：组件抽取只在多个仓库共享相似结构时才有价值。
@@ -93,7 +93,7 @@ benchmark      = 考试题库
 
 ## 已知限制：题目规模
 
-当前 slate 是**组件级**迁移 benchmark，不是**仓库级**：IPP 20 题每题可见源码是一个 `.c` + 一个 `.h`（`src/` 36–932 行）；Kylin 的 `work/` 是完整上游仓库（如 poco 4747 个文件 / 71 MB），但范围内改动通常只有 1 个文件，多文件 diff 只出现在 L3（`l3_poco_foundation_full` 17 个文件、`l3_nginx_full` 整个 `src/os/unix`）；MUSA 提交物是单个 Python 文件。
+当前 slate 为**组件级**迁移 benchmark。IPP 20 题每题可见源码是一个 `.c` + 一个 `.h`（`src/` 36–932 行）；Kylin 的 `work/` 是完整上游仓库（如 poco 4747 个文件 / 71 MB），但范围内改动通常只有 1 个文件，多文件 diff 只出现在 L3（`l3_poco_foundation_full` 17 个文件、`l3_nginx_full` 整个 `src/os/unix`）；MUSA 提交物是单个 Python 文件。
 
 成因（IPP 闭源无官方样例、开源仓库里 IPP 只是可选后端、设计上 L3 只定义到 500–3000 LOC）、对外部效度的影响、补题方案，以及需要向客户确认的问题清单，见 [docs/task_scale_limitations.md](docs/task_scale_limitations.md)。
 
@@ -101,7 +101,7 @@ benchmark      = 考试题库
 
 ## 任务包约定
 
-场景 A/B 的每个任务都是 recipe，而不是把上游源码抄进本仓库。IPP 场景是例外：
+场景 A/B 的每个任务包只记录来源（repo / commit / 可见文件）和准备步骤，上游源码由 `prepare.sh` 在任务物化时拉取。IPP 场景是例外：
 它的 20 个任务把源快照 vendored 在包内（`source.vendored: true`），
 `prepare.sh` 只做本地复制，不联网：
 

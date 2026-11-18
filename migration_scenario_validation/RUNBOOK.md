@@ -461,7 +461,7 @@ find cuda_to_musa/tasks/b_l1_leaky_relu/gold -name 'musa_new_model_*'
 ```
 
 20 个题包的 `prepare.sh` 都通过 `remove_globs: prompts/musa_new_model_*.py`
-删除**全部 6 份**上游 MUSA 样例，而不只是本题那份。MUSA 与 CUDA 源级兼容，
+删除**全部 6 份**上游 MUSA 样例（含本题之外的 5 份）。MUSA 与 CUDA 源级兼容，
 留下其他算子的样例等于把 `load_inline(musa_sources=...)` 的写法直接送给
 agent。详见 [cuda_to_musa/design.md](cuda_to_musa/design.md) §5。
 
@@ -507,8 +507,8 @@ python3 tools/gold_sanity.py --parent cuda_to_musa/tasks --only <task> --label m
 
 ### 4.4 受阻题怎么标记
 
-`b_l2_rms_norm`、`b_l3_group_norm` 不是缺正控，也不是实现错误，而是判卷器
-在 48 GB 卡上无法完成 `torch.allclose`。2026-11-16 起这两题已从 slate 中移出，
+`b_l2_rms_norm`、`b_l3_group_norm` 受阻于判卷器在 48 GB 卡上无法完成
+`torch.allclose`，与正控和实现无关。2026-11-16 起这两题已从 slate 中移出，
 归档在 `archive/cuda_to_musa_blocked_oom/`，由两道同难度、内存可控的题补位；
 它们不再出现在任何统计里。若将来恢复，报告里必须写：
 
@@ -562,7 +562,7 @@ python3 shared/harness/runner.py \
 
 - 退出码为 `1`；
 - JSON 中 `build=fail`；
-- 日志里能看到失败来自缺少 `Thread_POSIX.cpp` / pthread 实现，而不是缺依赖或 CMake 配置错误。
+- 日志里能看到失败来自缺少 `Thread_POSIX.cpp` / pthread 实现，依赖与 CMake 配置均正常。
 
 同样的负控至少再做一道 L2（例如 `l2_libuv_thread`），确认长构建题也不会“空实现也能过”。
 
@@ -595,8 +595,7 @@ python3 shared/harness/runner.py \
   --build-dir /tmp/neg_b_l1_leaky_relu
 ```
 
-验收：`status=fail`，`build=fail`，日志表明是缺少提交文件或导入失败，而不是
-MUSA 不可用。
+验收：`status=fail`，`build=fail`，日志表明是缺少提交文件或导入失败，与 MUSA 是否可用无关。
 
 另外两条可以在无 GPU 的机器上预检：
 
@@ -718,7 +717,7 @@ python3 shared/harness/api_removal.py --source-dir /tmp/leak.py \
 ### 7.4 执行方式（已实现，2026-11-15）
 
 驱动脚本：[tools/agent_trial.py](tools/agent_trial.py)。它复用
-`repository/` 里的 DeepSeek Harness（DSH）生产后端，而不是另写一个 agent：
+`repository/` 里的 DeepSeek Harness（DSH）生产后端：
 
 1. `prepare.sh` 物化 `work/`（gold 留在 `gold/`，不进 agent 工作区）；
 2. 把 `work/` 复制到 `reports/agent_trial/<label>/<task>/run<N>/workspace`，
@@ -784,7 +783,7 @@ python3 tools/agent_trial.py --parent windows_to_kylin/tasks \
    所以现在只能说“麒麟半场通过”，不能说“P2 通过”或“4 题 × 3 次通过”。
 
 **扩量前要处理的问题**：`l1` 两次截断说明 150 步对这类“从零重写一个
-~700 行平台层”的题偏紧，且 agent 不在构建成功后立即提交、而是继续打磨。
+~700 行平台层”的题偏紧，且 agent 会在构建成功后继续打磨、不立即提交。
 扩到全量 40 题之前应先定一个明确口径：是提高步数预算并重跑，还是把
 “截断但产物完整”单列一类。这个决定会影响所有后续比较，不能边走边改。
 

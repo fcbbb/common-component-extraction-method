@@ -170,8 +170,8 @@ run_stage(stage=source_scan)
 `component_job_status` / `component_job_cancel` 已删除，等待、通知、唤醒都由 DSH
 内置作业运行时提供。
 
-迁移仍然是任务提示要求的那一套：改源码、构建、提交完成标记。bundle 只是参考
-材料，不是补丁；agent 仍然对完整迁移负责，且不得修改 bundle 内的文件。
+迁移仍然是任务提示要求的那一套：改源码、构建、提交完成标记。bundle 只作为参考
+材料；agent 仍然对完整迁移负责，且不得修改 bundle 内的文件。
 
 kernel 会为这些阶段做额外保护：
 
@@ -179,8 +179,8 @@ kernel 会为这些阶段做额外保护：
   不启动子进程；`run_stage` 按请求的 `stage` 字段检查同一套条件。
 - **并发锁**：同一任务根的阶段互斥。同步调用在锁被占用时返回
   `error_code=STAGE_BUSY`；`extract`/`retrieval` 这类作业阶段由
-  `component_method.workflow.stage_lock` 包装进程持有同一把锁，作业会排队等待
-  而不是与同步阶段并发写同一个任务根。不同迁移任务各有自己的任务根，因此仍可
+  `component_method.workflow.stage_lock` 包装进程持有同一把锁，作业会排队等待，
+  不与同步阶段并发写同一个任务根。不同迁移任务各有自己的任务根，因此仍可
   并行。
 - **迁移工作区限制阶段**：当 `config.json` 的 `source_scan_mode` 为 `migration`
   时，kernel 拒绝 `task`/`report`（`error_code=STAGE_UNSUPPORTED`）。迁移任务由主

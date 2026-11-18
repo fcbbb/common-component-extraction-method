@@ -7,7 +7,7 @@
 
 ## 1. 结论
 
-当前三场景共 60 题，本质是**组件级迁移 benchmark**，不是**仓库级迁移 benchmark**。
+当前三场景共 60 题，覆盖**组件级迁移**。
 
 - 它测的是：API 识别与替换、数值/缩放/布局约定、目标库缺口下的分解重组、构建与调试。
 - 它**不测**：在数千文件里定位改动点、跨模块重构、多模块依赖与构建系统手术、长上下文维持。
@@ -58,14 +58,14 @@
 | L2 | 模块/小链路 |
 | **L3** | **500–3000 LOC 的“小仓库端到端”** |
 
-即“仓库级”在原始设计里指 500–3000 行，而不是数万行的真实工程。`docs/ipp_to_vsipl_task_slate.md` §7.10 也写明：“L3 指的是整链端到端的形态，不是体量。”
+原始设计里的“仓库级”指 500–3000 行。`docs/ipp_to_vsipl_task_slate.md` §7.10 也写明：“L3 指的是整链端到端的形态，不是体量。”
 
 ## 3. 为什么没有仓库级 IPP 任务
 
 ### 3.1 已记录的原因
 
-1. **IPP 闭源，没有官方样例仓库。** 二进制 + 头文件分发，samples 随安装包发布；`intel/ipp-samples` 在 GitHub 上 404 且无 Wayback 快照（`docs/ipp_to_vsipl_migration_data_survey.md`）。
-2. **公开仓库里 IPP 只是可选后端，调用面天然很薄。** `docs/ipp_to_vsipl_build_screening.md` 实测 11 个仓库，只有 7 个能在打开 IPP 开关后编译（aubio、rubberband、SAF、steam-audio、JUCE、CIL、r8brain），其中只有 aubio 的测试能跑。报告原文：“差距不是因为找不到代码，而是因为大部分 IPP 调用点没有可运行的测试/构建路径。”
+1. **IPP 闭源，没有官方样例仓库。** 二进制 + 头文件分发，samples 随安装包发布；`intel/ipp-samples` 在 GitHub 上 404 且无 Wayback 快照（数据调研报告属过程材料，不随仓库分发）。
+2. **公开仓库里 IPP 只是可选后端，调用面天然很薄。** 按构建筛选报告实测 11 个仓库，只有 7 个能在打开 IPP 开关后编译（aubio、rubberband、SAF、steam-audio、JUCE、CIL、r8brain），其中只有 aubio 的测试能跑。报告的结论是：差距来自大部分 IPP 调用点缺少可运行的测试/构建路径，代码本身容易找到。
 3. **设计不要求大仓库。** 见 §2.4。
 
 ### 3.2 推断（未在仓库其他文档中记录）
@@ -114,7 +114,5 @@
 ## 6. 相关文档
 
 - `docs/migration_benchmark_design.md` §3（分层定义）、§6.2（Patch 规模指标）、§10（风险表）
-- `docs/ipp_to_vsipl_build_screening.md`（7 个可编译源、被阻塞项原因）
-- `docs/ipp_to_vsipl_migration_data_survey.md`（IPP 闭源、无官方 samples）
 - `docs/ipp_to_vsipl_task_slate.md` §7.10（“L3 不是体量”）
-- `docs/two_scenario_benchmark_plan.md`（分层报告、L3 应用/构建题规划）
+- 过程材料（不随仓库分发）：IPP 数据调研、IPP 构建筛选、两场景 v1 方案

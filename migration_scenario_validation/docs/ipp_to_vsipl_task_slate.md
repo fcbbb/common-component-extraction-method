@@ -2,9 +2,8 @@
 
 日期：2026-11-14
 上游依据：
-- `ipp_to_vsipl_migration_data_survey.md`（数据与库调查）
 - `migration_benchmark_design.md`（任务/评分/实验设计）
-- `ipp_to_vsipl_build_screening.md`（2026-11-14 构建筛选）
+- IPP 数据调研与构建筛选（过程材料，不随仓库分发）
 
 本文件只回答一件事：**这 20 个任务分别是什么，源在哪，映射到什么 VSIPL API，怎么判分。**
 
@@ -12,7 +11,7 @@
 
 ## 1. 选型前先确认的能力边界
 
-任务不是凭想象切的，先实测了两端：
+任务按两端实测能力切分：
 
 **IPP 侧（`ipp-static` 2021 / 2026，静态库 + 头文件）**
 
@@ -326,7 +325,7 @@ IPP 的 DCT 本身就是正交归一（等于 MATLAB `dct()`/`idct()`），而 V
 
 **任务 5 `l1_window_gen`（fit B，9/9，worst_rel 1.37e-6）**
 
-9 个隐藏用例加上公开自检，把 IPP 的窗口约定钉死在实测上，而不是照文档假设：
+9 个隐藏用例加上公开自检，按实测确定 IPP 的窗口约定：
 
 1. Blackman 是 `(0.5+a/2) − 0.5cos(t) − (a/2)cos(2t)`——教科书中 `+a/2` 的那一项在 IPP 里是**反号**的
    （a=0 时退化成 Hann，所以只在 a≠0 的用例上暴露）；
@@ -373,7 +372,7 @@ jvsip 自带的窗口生成器一个都用不了：`vcreate_hanning_f` 是 `0.5(
 
 ### 7.5 任务 7 `l2_aubio_fft` 详情
 
-aubio 0.4.9 的 IPP 后端不是单个内核，而是整个 `fft` 对象：create/destroy 生命周期、一对不缩放的实数 FFT、
+aubio 0.4.9 的 IPP 后端是整个 `fft` 对象：create/destroy 生命周期、一对不缩放的实数 FFT、
 `compspec` 打包布局，以及 `do/do_complex/rdo/rdo_complex/get_spectrum/get_realimag/get_phas/get_norm/get_imag/get_real`
 十个入口。三条门全部验证：
 
@@ -420,7 +419,7 @@ rubberband 4.0.0 的 `src/common/FFT.cpp` 是 3193 行的多后端文件（IPP /
 | API 移除 | `check_api_removal.sh librubberbandfft.a` | 迁移版 PASS；IPP 版 FAIL（24 个 `ipps*` 符号） |
 | 默认（未迁移）构建 | 无 IPP include 路径 | 按预期失败：`ipps.h` 不可用 |
 
-这个包的价值在于"组件"而不只是"内核"：
+这个包的价值在"组件"：
 
 1. **注册表 + 兜底**：只有"偶数、2 的幂、且 ≥4"的尺寸走 FFT 后端，其余（2/3/5/6/100 …）走同文件里的直接 DFT。
    隐藏用例两类尺寸都覆盖；直接 DFT 那 80 个用例在基线/参考解之间逐位相同——迁移时误改这条路径会立刻暴露。
@@ -495,7 +494,7 @@ CIL 的 `src/Core/FBP_filtering.cpp`（178 行）是 FBP 重建前的投影滤�
 | 默认（未迁移）构建 | 无 IPP include 路径 | 按预期失败：`ipp.h` 不可用 |
 
 10 个隐藏用例覆盖 avh / vah 两种数据布局各 5 个：常规尺寸、奇数行数（走尾行路径）、单投影、
-`2^5` 的小变换、以及 `pix_y=1` 只剩尾行的情况。滤波器不是白噪声，而是"DC 在前、正频率在后、负频率最后"的低通响应——
+`2^5` 的小变换、以及 `pix_y=1` 只剩尾行的情况。滤波器是"DC 在前、正频率在后、负频率最后"的低通响应——
 随机谱的动态范围会把打包顺序错误掩盖掉，低通不会。权重为正且逐行（avh）或逐块（vah）变化。
 
 值得记下的约定：
@@ -532,7 +531,7 @@ r8brain 的 `CDSPRealFFT.h`（1099 行）是幂次重采样器的变换底座：
 `multiplyBlocks` 出-of-place（bits 8/3）与原地（bits 5）、`multiplyBlocksZP`（bits 8）、`convertToZP`、
 `setBinNyquist`、`calcMinPhaseTransform`（kernel 24 / LenMult 2 / DoFinalMul true 与 kernel 40 / LenMult 4 / false，
 含它输出的 DC 群延迟）、以及 keeper 复用（同长度连着取两次，两次变换都要对）。
-inverse 和块乘法用例的输入不是随机数，而是基线自己的 forward 输出并原样存进容器，候选拿到的就是基线消费的那个 Perm 块。
+inverse 和块乘法用例的输入取自基线自己的 forward 输出，原样存进容器；候选拿到的就是基线消费的那个 Perm 块。
 
 值得记下的约定：
 
@@ -574,16 +573,16 @@ L3 指的是"整链端到端"的形态（隐藏用例跑完整 session），不�
 
 **范围决策**：原计划把 `ippsResamplePolyphaseFixed_32f` 放进这道题，实际做的时候去掉了。
 它的滤波器系数和输出时序由 IPP 内部 `ippsResamplePolyphaseFixedInit` 决定，公开头文件里没有规定，
-所以候选没有任何办法复现那组数字——这样的用例测的不是迁移，而是猜。这里换成显式抽头的抽取 FIR，
+所以候选没有任何办法复现那组数字——这样的用例只能考猜测。这里换成显式抽头的抽取 FIR，
 多相/重采样的活留给任务 19。`task.yaml` 的 `source.scope_note` 记了这条。
 
 值得记下的约定：
 
-1. **fit 从 B 改判为 A**：9 个 IPP 符号里，`ippsRealToCplx_32f` / `ippsCplxToReal_32fc` 在 VSIPL 侧不是"另一个调用"，
-   而是根本不需要——VSIPL 本来就是分离实虚部，`vsip_cblockbind_f` 往调用方的两个平面上绑一个 cblock 就完事；
+1. **fit 从 B 改判为 A**：9 个 IPP 符号里，`ippsRealToCplx_32f` / `ippsCplxToReal_32fc` 在 VSIPL 侧根本不需要——
+   VSIPL 本来就是分离实虚部，`vsip_cblockbind_f` 往调用方的两个平面上绑一个 cblock 就完事；
    其余 `ippsMul_32fc` / `ippsDotProd_32f` / `ippsMagnitude_32fc` / `ippsSqr_32f` / `ippsSum_32f` / `ippsMaxIndx_32f`
    一一对应 `vsip_cvmul_f` / `vsip_vdot_f` / `vsip_cvmag_f` / `vsip_vsq_f` / `vsip_vsumval_f` / `vsip_vmaxval_f`。
-   流式历史、抽取相位这些是纯 C 记账，不属于 VSIPL 的能力缺口，所以这道题测的是 API 识别而不是分解组合。
+   流式历史、抽取相位这些是纯 C 记账，不属于 VSIPL 的能力缺口，所以这道题只考 API 识别。
 2. **抽头必须倒序存**：`vsip_vdot_f` 走的是升序窗口，把 h 倒序存才能让
    `sum_i rev[i]*x[center-T+1+i]` 等于契约里的 `sum_t h[t]*x[center-t]`。写反了不报错、不崩溃，
    仍然输出一个"看起来像滤波过"的信号——这是本包唯一一个安静的错。公开测试就是把它抓出来的。
@@ -593,7 +592,7 @@ L3 指的是"整链端到端"的形态（隐藏用例跑完整 session），不�
    与 `ippsMaxIndx_32f` 的"首个最大值"语义一致，所以峰值索引可以精确比对（两个最大值相差不到 0.01% 时
    golden 侧存 -1，测试跳过该检查）。
 5. **历史缓冲重分配后必须重绑 block**：bound block 包的是 admit 时的那个指针，历史扩容搬家以后旧 block 指向已释放内存。
-6. **容差 1e-5 而不是 1e-7**：`vsip_cvmag_f` 用 `sqrt((r²+i²)/s²)*s`（s=|r|+|i|），精度够但与 IPP 的 hypot 不逐位相同；
+6. **容差取 1e-5**：`vsip_cvmag_f` 用 `sqrt((r²+i²)/s²)*s`（s=|r|+|i|），精度够但与 IPP 的 hypot 不逐位相同；
    加上 float32 点积的求和顺序差异，参考解落在 3.576e-7。
 
 ### 7.11 任务 18 `l3_spectrum_sensing` 详情
@@ -638,7 +637,7 @@ L3 指的是"整链端到端"的形态（隐藏用例跑完整 session），不�
    `vramp → vsmul → vcos → vsmsa` 手工搭窗。
 6. **`vsip_vmaxval_f` 的索引语义可用**：它通过可选 `vsip_index*` 出参报告索引，"严格大于"扫描给出与
    `ippsMaxIndx_32f` 相同的首个最大值，所以 peak_bin 精确比对。
-7. **容差 1e-5（峰值相对）**：被比的是最长 1024 点 FFT 的平方幅度，误差预算由变换实现决定而不是迁移本身；
+7. **容差 1e-5（峰值相对）**：被比的是最长 1024 点 FFT 的平方幅度，误差预算由变换实现决定；
    参考解落在 2.514e-7。基线自检的 5.9e-10 残差来自 `ippsMean_32f` 按缓冲区对齐走不同 SIMD 尾处理，
    不是语义差异。
 
@@ -694,7 +693,7 @@ m·down/up"定义，所以输出必须只取决于累计输入量，与调用方
    数学上等价、只差舍入，这是逐元素误差落在 1e-7 量级而不是 1e-8 的原因。
 8. **分析器是第二份独立契约**：矩形窗（不要用 `vsip_vcreate_hanning_f`）、非重叠分帧、
    不缩放变换、且吃的是**转换后**的流；`nframes = 1+(n-N)/N`，不完整的尾帧**丢弃而不补零**
-   （最后一个用例 216 样本 / N=64 得 3 帧而非 4，补零会把整张密度缩到 3/4）。
+   （最后一个用例 216 样本 / N=64 得 3 帧；补零得到 4 帧，但整张密度会缩到 3/4）。
 
 ### 7.13 剩余任务
 

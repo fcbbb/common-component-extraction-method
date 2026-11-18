@@ -3,13 +3,13 @@
 - **文档日期**：2026-11-12
 - **目标读者**：本项目组（不要求读者具备信号处理或 VSIPL 背景）
 - **文档定位**：这是本目录的**主报告**。它回答“如何构建一个 benchmark，衡量 agent 把 IPP 代码迁移到 VSIPL 的成功率，并比较组件抽取方法与直接迁移方法”。
-- **配套文档**：[ipp_to_vsipl_migration_data_survey.md](ipp_to_vsipl_migration_data_survey.md) 是支撑资源调研（目标运行时、公开信号数据、生成工具、API 映射草案），不是 benchmark 本身。
+- **配套文档**：IPP 数据与运行时调研（目标运行时、公开信号数据、生成工具、API 映射草案）属于过程材料，不随仓库分发；本文定义 benchmark 本体。
 
 ---
 
-## 0. 一句话结论
+## 0. 目标
 
-**你要的不是“信号数据集”，而是一个代码迁移 benchmark。**
+构建代码迁移 benchmark。
 
 每个任务给 agent 一个 IPP 仓库（或其中一部分）和迁移要求，看它能否产出：
 
@@ -142,7 +142,7 @@ gold_patch: gold/patch.diff   # evaluator-only
 - 使用一组稳定的 IPP API（FFT、FIR、卷积、相关、向量算术、统计、重采样）；
 - 有 `CMakeLists.txt` 或 `Makefile`；
 - 有自己的公开测试；
-- 有真实感的 DSP 链路，而不是玩具函数；
+- 有真实感的 DSP 链路，覆盖成组的 IPP 调用，避免孤立玩具函数；
 - **共享一套脚手架**（见 4.3）。
 
 建议的仓库族：
@@ -377,7 +377,6 @@ component_reuse   = tasks_using_at_least_one_component / total_tasks
 migration_scenario_validation/
 ├── README.md
 ├── migration_benchmark_design.md
-├── ipp_to_vsipl_migration_data_survey.md
 └── benchmark/
     ├── corpus/                       # 组件抽取语料（task-blind）
     │   ├── radar_pipeline/
@@ -427,7 +426,7 @@ migration_scenario_validation/
 | 测试过拟合 | agent 改测试或硬编码 | 隐藏测试；评测时重置测试文件；静态检查 |
 | 数值容差定错 | 正确解被判错/错误解被判对 | 用参考解误差分布定阈值；多实现交叉验证 |
 | 公开数据不可达 | L3 任务缺输入 | L1/L2 用合成向量；L3 用自生成数据 |
-| 题目规模偏小（组件级而非仓库级） | 外部效度：无法预测大仓库上的迁移表现 | 分层报告并单独列出 Patch 规模；补整仓构建题与合成仓库族；见 `task_scale_limitations.md` |
+| 题目规模偏小（组件级） | 外部效度：无法预测大仓库上的迁移表现 | 分层报告并单独列出 Patch 规模；补整仓构建题与合成仓库族；见 `task_scale_limitations.md` |
 
 ---
 

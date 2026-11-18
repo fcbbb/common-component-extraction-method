@@ -20,7 +20,7 @@
 
 ## 2. 任务包结构
 
-每个任务是一个 **recipe**（不是把上游源码抄进仓库）：
+每个任务是一个 **recipe**（只记录来源与准备步骤，上游源码在物化时拉取）：
 
 ```text
 windows_to_kylin/tasks/<task_id>/
@@ -67,7 +67,7 @@ windows_to_kylin/tasks/<task_id>/
 - **L2 真实子系统**：一个平台层文件被抽掉，但上层调用方、构建、测试都在。
 - **L3 整仓库/构建**：删一个目录或整套构建系统，考跨文件耦合与构建迁移。
 - **负向对照**：`Poco::EventLogChannel` 在麒麟上没有行为等价物。正确结果是
-  写出不可移植性报告，而不是伪造一个静默丢弃日志的 stub。该题的 API 门
+  写出不可移植性报告；伪造一个静默丢弃日志的 stub 会被判错。该题的 API 门
   `expect_fail: true`，只有确实检测到 Win32 调用才算“预期行为成立”。
 
 ## 4. 判分设计
@@ -110,7 +110,7 @@ windows_to_kylin/tasks/<task_id>/
 | 候选 | 未入选原因 |
 |---|---|
 | LLVM `Support/Windows` → `Support/Unix` | 单体构建过重，单题构建时间不可控；上游测试依赖大量目标文件 |
-| SQLite `os_win.c` → `os_unix.c` | 目标实现与 Windows 版并非一一对应，TCL 测试夹具重；易变成“重写整个 VFS” |
+| SQLite `os_win.c` → `os_unix.c` | 目标实现与 Windows 版不一一对应，TCL 测试夹具重；易变成“重写整个 VFS” |
 | FFmpeg `dshow` → `v4l2` | 需要真实摄像头/设备节点，CI 里不可重复 |
 | curl `lib/system_win32.c` → `lib/system.c` | 没有严格的一对一 POSIX 文件，删除后构建失败点分散，判分不稳 |
 

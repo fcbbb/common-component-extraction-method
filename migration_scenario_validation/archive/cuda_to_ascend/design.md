@@ -7,7 +7,7 @@
 PyTorch `golden.py`、`proto.yaml`、`desc.md` 和测试用例；MKBench 的部分算子
 还保留了上游的 CUDA 模型与 AscendC 样例对。
 
-判分不靠“看代码像不像”，而是调用**上游自己的 evaluator**：编译提交、在 NPU
+判分调用**上游自己的 evaluator**：编译提交、在 NPU
 上跑上游参考、比对每个用例。我们只在其上补统一的 API 清除门和结果解析。
 
 - 源：CUDA/PyTorch 语义（MKBench 提供 CUDA model + PyTorch reference；
@@ -92,7 +92,7 @@ L1/L2/L3 是**课程难度标定**，不逐条照抄上游目录。
    - CANN Bench 没有统一的反作弊器，因此靠“必须编译出 AscendC 算子 + NPU
      实跑用例 + 源码 CUDA 残留门”约束。**这是一个已知缺口**：理论上仍可在
      kernel 里调用 PyTorch 算子。若需要更严格，应在目标环境给 CANN Bench
-     补一个类似 MKBench 的 detector，而不是在文档里假装已有。
+     补一个类似 MKBench 的 detector；文档里不能写成已有。
 4. **API 清除门**：在 `work/submission/` 上扫
    `__global__|__shared__|threadIdx|blockIdx|<<<|cudaXxx(|#include <cuda...>|nvcc`。
    这条门只覆盖提交物，不扫上游仓库——上游本身就包含 CUDA 参考实现和
