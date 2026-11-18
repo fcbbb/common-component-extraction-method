@@ -93,9 +93,6 @@
 - id: tool-pwsh
   disabled: true
 
-- id: tool-jobs
-  disabled: true
-
 - id: tool-fs
   disabled: true
 
