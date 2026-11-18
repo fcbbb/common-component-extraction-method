@@ -838,7 +838,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--command-timeout", type=int, default=600)
     ap.add_argument("--total-timeout", type=int, default=5400)
     ap.add_argument("--step-limit", type=int, default=150)
-    ap.add_argument("--context-window", type=int, default=131072)
+    ap.add_argument("--context-window", type=int, default=262144)
     ap.add_argument("--max-output-tokens", type=int, default=32768)
     ap.add_argument("--judge-timeout", type=int, default=2400)
     ap.add_argument("--keep-containers", action="store_true")

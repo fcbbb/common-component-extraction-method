@@ -86,7 +86,7 @@ class RemoteDshBackend:
         request_timeout_ms: int = 600_000,
         max_retries: int = 2,
         compatibility: Mapping[str, Any] | None = None,
-        context_window: int = 131_072,
+        context_window: int = 262_144,
         max_output_tokens: int = 8_192,
         runtime_activation: str = "",
     ) -> None:

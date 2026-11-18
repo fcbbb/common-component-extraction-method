@@ -70,7 +70,7 @@ budgets:
   runs: 1
   # Default (A) task budget.
   step_limit: 150
-  context_window: 131072
+  context_window: 262144
   max_output_tokens: 32768
   command_timeout: 600
   total_timeout: 5400
