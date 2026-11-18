@@ -1,0 +1,68 @@
+scenario: cuda_to_ascend
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  soc: ascend-910b2
+  backend: cann-9.1.0
+  toolchain: bisheng
+gates:
+  build: the upstream evaluator compiles the submission for Ascend
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: __global__|__shared__|threadIdx|blockIdx|<<<|cuda[A-Z]\w*\(|#include\s*[<"]cuda|nvcc
+    exclude_globs: []
+  behavior: upstream numerical reference matches within the task tolerance
+build:
+  mode: none
+  command: ''
+  artifact: ''
+id: b_l1_exp
+level: L1
+domain: elementwise
+difficulty: easy
+title: 'Exp: CUDA elementwise kernel -> Ascend C'
+source:
+  repo: https://gitcode.com/cann/cann-bench.git
+  commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+  license: CANN-OSL-2.0
+  source_files:
+  - tasks/level1/exp/golden.py
+  - tasks/level1/exp/desc.md
+  spec_files:
+  - tasks/level1/exp/proto.yaml
+  test_files:
+  - tasks/level1/exp/cases.yaml
+  - tasks/level1/exp/cases.csv
+  gold_files: []
+spec: 'Implement operator `Exp` for Ascend 910B/CANN 9.1 as an AscendC kernel.
+
+
+  Read `tasks/level1/exp/proto.yaml` for the interface and
+
+  `tasks/level1/exp/desc.md` for the required semantics; `golden.py` is the
+
+  PyTorch reference the judge uses.  Put the operator source tree in
+
+  `work/submission/` with a `build.sh` at its root (start from
+
+  `examples/aclnn_launch_example/`).
+
+
+  The kernel must compute exp elementwise over the declared dtypes and
+
+  shapes, handle unaligned tails, and not fall back to PyTorch ops.  The
+
+  upstream evaluator compiles/installs the submission and checks every
+
+  case in `cases.yaml` on the NPU.
+
+  '
+hidden_tests:
+  command: cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level1/exp
+    --operator Exp --device npu --no-perf --reports-dir {build}/reports
+task_id: b_l1_exp

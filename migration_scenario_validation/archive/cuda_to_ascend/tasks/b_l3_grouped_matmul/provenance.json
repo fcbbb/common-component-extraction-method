@@ -1,0 +1,32 @@
+{
+  "task_id": "b_l3_grouped_matmul",
+  "scenario": "cuda_to_ascend",
+  "repo": "https://gitcode.com/cann/cann-bench.git",
+  "commit": "53ea611a1b88da922b82812f2721dd0b2fa33476",
+  "tag": null,
+  "license": "CANN-OSL-2.0",
+  "source_kind": "upstream-kernel-benchmark",
+  "source_files": [
+    "tasks/level3/grouped_matmul/golden.py",
+    "tasks/level3/grouped_matmul/desc.md"
+  ],
+  "gold_files": [],
+  "reference_files": [],
+  "spec_files": [
+    "tasks/level3/grouped_matmul/proto.yaml"
+  ],
+  "test_files": [
+    "tasks/level3/grouped_matmul/cases.yaml"
+  ],
+  "copied": {
+    "source_files": [],
+    "gold_files": [],
+    "reference_files": [],
+    "spec_files": [],
+    "test_files": []
+  },
+  "gold_kind": "benchmark-judge",
+  "materialized": true,
+  "generated_by": "tools/extract_migrate_task.py",
+  "generated_at": "2026-11-15T01:45:46Z"
+}

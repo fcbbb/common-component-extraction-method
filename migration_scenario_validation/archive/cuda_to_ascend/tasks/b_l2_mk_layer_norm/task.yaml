@@ -1,0 +1,63 @@
+scenario: cuda_to_ascend
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  soc: ascend-910b2
+  backend: cann-9.1.0
+  toolchain: bisheng
+gates:
+  build: the upstream evaluator compiles the submission for Ascend
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: __global__|__shared__|threadIdx|blockIdx|<<<|cuda[A-Z]\w*\(|#include\s*[<"]cuda|nvcc
+    exclude_globs: []
+  behavior: upstream numerical reference matches within the task tolerance
+build:
+  mode: none
+  command: ''
+  artifact: ''
+id: b_l2_mk_layer_norm
+level: L2
+domain: normalization
+difficulty: medium
+title: 'MultiKernelBench layer_norm: CUDA model -> AscendC submission'
+source:
+  repo: https://github.com/wzzll123/MultiKernelBench.git
+  commit: 460a972c9be7ce18035984321d38b910e27df95f
+  license: MIT
+  source_files:
+  - prompts/cuda_model_layer_norm.py
+  - reference/normalization/layer_norm.py
+  gold_files:
+  - prompts/ascendc_new_model_layer_norm.py
+  test_files:
+  - utils/correctness.py
+spec: 'Migrate layer norm, including the gamma/beta affine parameters and the
+
+  epsilon convention used by the upstream sample.  The CUDA sample and the
+
+  PyTorch reference stay visible; the AscendC sample was removed.
+
+
+  Write `work/submission/layer_norm_submission.py` with the six backend
+
+  strings.  `model_src` must expose `ModelNew` with the same constructor
+
+  signature as the reference (normalized shape) and must call the custom
+
+  operator, not `torch.nn.functional`.
+
+  '
+prepare:
+  remove:
+  - prompts/ascendc_new_model_layer_norm.py
+hidden_tests:
+  command: cd {work} && python eval_single_runner.py --input {work}/submission/layer_norm_submission.py
+    --op layer_norm --language ascendc --result {build}/result.json && python {root}/harness/check_result.py
+    {build}/result.json --require-compiled --require-correct --forbid-cheating
+task_id: b_l2_mk_layer_norm

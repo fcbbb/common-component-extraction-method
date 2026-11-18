@@ -1,0 +1,54 @@
+scenario: cuda_to_ascend
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  soc: ascend-910b2
+  backend: cann-9.1.0
+  toolchain: bisheng
+gates:
+  build: the upstream evaluator compiles the submission for Ascend
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: __global__|__shared__|threadIdx|blockIdx|<<<|cuda[A-Z]\w*\(|#include\s*[<"]cuda|nvcc
+    exclude_globs: []
+  behavior: upstream numerical reference matches within the task tolerance
+build:
+  mode: none
+  command: ''
+  artifact: ''
+id: b_l2_mk_cumsum
+level: L2
+domain: scan
+difficulty: medium
+title: 'MultiKernelBench cumsum: CUDA scan -> AscendC submission'
+source:
+  repo: https://github.com/wzzll123/MultiKernelBench.git
+  commit: 460a972c9be7ce18035984321d38b910e27df95f
+  license: MIT
+  source_files:
+  - reference/math/cumsum.py
+  gold_files: []
+  test_files:
+  - utils/correctness.py
+spec: 'Implement `cumsum` (inclusive prefix sum) along the dimension used by
+
+  `reference/math/cumsum.py`.  A naive per-row loop is acceptable as a
+
+  starting point; the judge checks values, dtype and shape.
+
+
+  Write `work/submission/cumsum_submission.py` with the six backend
+
+  strings.
+
+  '
+hidden_tests:
+  command: cd {work} && python eval_single_runner.py --input {work}/submission/cumsum_submission.py --op
+    cumsum --language ascendc --result {build}/result.json && python {root}/harness/check_result.py {build}/result.json
+    --require-compiled --require-correct --forbid-cheating
+task_id: b_l2_mk_cumsum

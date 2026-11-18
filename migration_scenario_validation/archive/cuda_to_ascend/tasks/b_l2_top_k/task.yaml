@@ -1,0 +1,54 @@
+scenario: cuda_to_ascend
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  soc: ascend-910b2
+  backend: cann-9.1.0
+  toolchain: bisheng
+gates:
+  build: the upstream evaluator compiles the submission for Ascend
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: __global__|__shared__|threadIdx|blockIdx|<<<|cuda[A-Z]\w*\(|#include\s*[<"]cuda|nvcc
+    exclude_globs: []
+  behavior: upstream numerical reference matches within the task tolerance
+build:
+  mode: none
+  command: ''
+  artifact: ''
+id: b_l2_top_k
+level: L2
+domain: sorting
+difficulty: medium
+title: 'TopK: CUDA selection kernel -> Ascend C'
+source:
+  repo: https://gitcode.com/cann/cann-bench.git
+  commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+  license: CANN-OSL-2.0
+  source_files:
+  - tasks/level3/top_k/golden.py
+  - tasks/level3/top_k/desc.md
+  spec_files:
+  - tasks/level3/top_k/proto.yaml
+  test_files:
+  - tasks/level3/top_k/cases.yaml
+  gold_files: []
+spec: 'Implement `TopK` returning values and indices for the largest `k`
+
+  elements along the declared dimension.  The judge checks index validity
+
+  as well as values, and includes `k` values close to the axis size.
+
+
+  Submission root: `work/submission/` with `build.sh`.
+
+  '
+hidden_tests:
+  command: cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level3/top_k
+    --operator TopK --device npu --no-perf --reports-dir {build}/reports
+task_id: b_l2_top_k

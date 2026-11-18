@@ -1,0 +1,54 @@
+scenario: cuda_to_ascend
+fit: C
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  soc: ascend-910b2
+  backend: cann-9.1.0
+  toolchain: bisheng
+gates:
+  build: the upstream evaluator compiles the submission for Ascend
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: __global__|__shared__|threadIdx|blockIdx|<<<|cuda[A-Z]\w*\(|#include\s*[<"]cuda|nvcc
+    exclude_globs: []
+  behavior: upstream numerical reference matches within the task tolerance
+build:
+  mode: none
+  command: ''
+  artifact: ''
+id: b_l3_selective_scan
+level: L3
+domain: sequence
+difficulty: hard
+title: 'Selective scan: Mamba S6 -> Ascend C'
+source:
+  repo: https://gitcode.com/cann/cann-bench.git
+  commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+  license: CANN-OSL-2.0
+  source_files:
+  - tasks/level4/selective_scan/golden.py
+  - tasks/level4/selective_scan/desc.md
+  spec_files:
+  - tasks/level4/selective_scan/proto.yaml
+  test_files:
+  - tasks/level4/selective_scan/cases.yaml
+  gold_files: []
+spec: 'Implement the Mamba selective scan recurrence for the input layouts and
+
+  dtypes in `cases.yaml`: per-step delta/A/B/C/D updates, variable sequence
+
+  lengths and the final-state output.
+
+
+  Submission root: `work/submission/` with `build.sh`.
+
+  '
+hidden_tests:
+  command: cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level4/selective_scan
+    --operator SelectiveScan --device npu --no-perf --reports-dir {build}/reports
+task_id: b_l3_selective_scan

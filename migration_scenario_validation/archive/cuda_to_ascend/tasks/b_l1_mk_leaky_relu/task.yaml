@@ -1,0 +1,77 @@
+scenario: cuda_to_ascend
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  soc: ascend-910b2
+  backend: cann-9.1.0
+  toolchain: bisheng
+gates:
+  build: the upstream evaluator compiles the submission for Ascend
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: __global__|__shared__|threadIdx|blockIdx|<<<|cuda[A-Z]\w*\(|#include\s*[<"]cuda|nvcc
+    exclude_globs: []
+  behavior: upstream numerical reference matches within the task tolerance
+build:
+  mode: none
+  command: ''
+  artifact: ''
+id: b_l1_mk_leaky_relu
+level: L1
+domain: activation
+difficulty: easy
+title: 'MultiKernelBench leaky_relu: CUDA model -> AscendC submission'
+source:
+  repo: https://github.com/wzzll123/MultiKernelBench.git
+  commit: 460a972c9be7ce18035984321d38b910e27df95f
+  license: MIT
+  source_files:
+  - prompts/cuda_model_leaky_relu.py
+  - reference/activation/leaky_relu.py
+  gold_files:
+  - prompts/ascendc_new_model_leaky_relu.py
+  test_files:
+  - utils/correctness.py
+  - utils/cheating_detection.py
+spec: '`prompts/cuda_model_leaky_relu.py` is the CUDA/AscendC sample pair
+
+  upstream ships; the AscendC sample has been removed and only the CUDA
+
+  side plus the PyTorch reference remain.
+
+
+  Write `work/submission/leaky_relu_submission.py` defining the six
+
+  strings the AscendC backend consumes:
+
+  `project_json_src`, `host_tiling_src`, `host_operator_src`,
+
+  `kernel_src`, `python_bind_src`, `model_src`
+
+  (the shape used by the removed sample and by the other
+
+  `prompts/ascendc_new_model_*.py` files).
+
+
+  The evaluator (`eval_single_runner.py --language ascendc`) runs msopgen,
+
+  builds and installs the operator, executes the reference
+
+  `reference/activation/leaky_relu.py` against `ModelNew`, and applies the
+
+  anti-cheat detector.
+
+  '
+prepare:
+  remove:
+  - prompts/ascendc_new_model_leaky_relu.py
+hidden_tests:
+  command: cd {work} && python eval_single_runner.py --input {work}/submission/leaky_relu_submission.py
+    --op leaky_relu --language ascendc --result {build}/result.json && python {root}/harness/check_result.py
+    {build}/result.json --require-compiled --require-correct --forbid-cheating
+task_id: b_l1_mk_leaky_relu

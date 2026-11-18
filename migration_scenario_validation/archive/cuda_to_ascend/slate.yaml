@@ -1,0 +1,596 @@
+# Scenario B: NVIDIA CUDA / Triton -> Ascend C / CANN.
+#
+# Both upstream benchmarks are used as *judges*: the agent writes an Ascend
+# implementation into `work/submission/`, and the pinned upstream evaluator
+# compiles it, runs the upstream PyTorch reference and reports compile /
+# correctness / anti-cheat.  The reference implementations stay visible on
+# purpose (they define the contract); the corresponding AscendC sample, when
+# the upstream repo ships one, is removed from `work/` and kept in `gold/`.
+scenario: cuda_to_ascend
+
+defaults:
+  scenario: cuda_to_ascend
+  fit: B
+  counted: true
+  layout: repo
+  gold_kind: benchmark-judge
+  source_kind: upstream-kernel-benchmark
+  tolerances: {}
+  target:
+    soc: ascend-910b2
+    backend: cann-9.1.0
+    toolchain: bisheng
+  gates:
+    build: "the upstream evaluator compiles the submission for Ascend"
+    api_removal:
+      source_dirs:
+        - submission
+      source_regex: "__global__|__shared__|threadIdx|blockIdx|<<<|cuda[A-Z]\\w*\\(|#include\\s*[<\"]cuda|nvcc"
+      exclude_globs: []
+    behavior: "upstream numerical reference matches within the task tolerance"
+  build:
+    mode: none
+    command: ""
+    artifact: ""
+
+tasks:
+  # ------------------------------------------------------------------ L1 ---
+  - id: b_l1_exp
+    level: L1
+    domain: elementwise
+    difficulty: easy
+    title: "Exp: CUDA elementwise kernel -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level1/exp/golden.py
+        - tasks/level1/exp/desc.md
+      spec_files:
+        - tasks/level1/exp/proto.yaml
+      test_files:
+        - tasks/level1/exp/cases.yaml
+        - tasks/level1/exp/cases.csv
+      gold_files: []
+    spec: |
+      Implement operator `Exp` for Ascend 910B/CANN 9.1 as an AscendC kernel.
+
+      Read `tasks/level1/exp/proto.yaml` for the interface and
+      `tasks/level1/exp/desc.md` for the required semantics; `golden.py` is the
+      PyTorch reference the judge uses.  Put the operator source tree in
+      `work/submission/` with a `build.sh` at its root (start from
+      `examples/aclnn_launch_example/`).
+
+      The kernel must compute exp elementwise over the declared dtypes and
+      shapes, handle unaligned tails, and not fall back to PyTorch ops.  The
+      upstream evaluator compiles/installs the submission and checks every
+      case in `cases.yaml` on the NPU.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level1/exp --operator Exp --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l1_swi_glu
+    level: L1
+    domain: fused-activation
+    difficulty: easy
+    title: "SwiGLU: CUDA fused activation -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level1/swi_glu/golden.py
+        - tasks/level1/swi_glu/desc.md
+      spec_files:
+        - tasks/level1/swi_glu/proto.yaml
+      test_files:
+        - tasks/level1/swi_glu/cases.yaml
+        - tasks/level1/swi_glu/cases.csv
+      gold_files: []
+    spec: |
+      Implement operator `SwiGlu` in AscendC.  SwiGLU is the fused
+      `silu(x1) * x2` gate used in transformer MLPs; the judge checks the
+      split/alignment rules and the dtype mix in `cases.yaml`.
+
+      Submission root: `work/submission/` with `build.sh`.  Use the CANN
+      vector instructions (or aclnn composition) rather than a Python
+      fallback; the evaluator's anti-cheat checks that the submitted kernel is
+      what runs.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level1/swi_glu --operator SwiGlu --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l1_mk_leaky_relu
+    level: L1
+    domain: activation
+    difficulty: easy
+    title: "MultiKernelBench leaky_relu: CUDA model -> AscendC submission"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - prompts/cuda_model_leaky_relu.py
+        - reference/activation/leaky_relu.py
+      gold_files:
+        - prompts/ascendc_new_model_leaky_relu.py
+      test_files:
+        - utils/correctness.py
+        - utils/cheating_detection.py
+    spec: |
+      `prompts/cuda_model_leaky_relu.py` is the CUDA/AscendC sample pair
+      upstream ships; the AscendC sample has been removed and only the CUDA
+      side plus the PyTorch reference remain.
+
+      Write `work/submission/leaky_relu_submission.py` defining the six
+      strings the AscendC backend consumes:
+      `project_json_src`, `host_tiling_src`, `host_operator_src`,
+      `kernel_src`, `python_bind_src`, `model_src`
+      (the shape used by the removed sample and by the other
+      `prompts/ascendc_new_model_*.py` files).
+
+      The evaluator (`eval_single_runner.py --language ascendc`) runs msopgen,
+      builds and installs the operator, executes the reference
+      `reference/activation/leaky_relu.py` against `ModelNew`, and applies the
+      anti-cheat detector.
+    prepare:
+      remove:
+        - prompts/ascendc_new_model_leaky_relu.py
+    hidden_tests:
+      command: "cd {work} && python eval_single_runner.py --input {work}/submission/leaky_relu_submission.py --op leaky_relu --language ascendc --result {build}/result.json && python {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating"
+
+  - id: b_l1_mk_mse_loss
+    level: L1
+    domain: loss
+    difficulty: easy
+    title: "MultiKernelBench mse_loss: CUDA model -> AscendC submission"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - prompts/cuda_model_mse_loss.py
+        - reference/loss/mse_loss.py
+      gold_files:
+        - prompts/ascendc_new_model_mse_loss.py
+      test_files:
+        - utils/correctness.py
+    spec: |
+      Migrate the mean-squared-error kernel.  The CUDA sample and the PyTorch
+      reference (`reference/loss/mse_loss.py`) are visible; the upstream
+      AscendC sample was removed.
+
+      Write `work/submission/mse_loss_submission.py` with the six source
+      strings described in the MultiKernelBench AscendC backend.  The kernel
+      must reduce over all elements, match the reference's mean convention and
+      dtype promotion, and pass the anti-cheat detector.
+    prepare:
+      remove:
+        - prompts/ascendc_new_model_mse_loss.py
+    hidden_tests:
+      command: "cd {work} && python eval_single_runner.py --input {work}/submission/mse_loss_submission.py --op mse_loss --language ascendc --result {build}/result.json && python {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating"
+
+  - id: b_l1_mk_sum_reduction
+    level: L1
+    domain: reduction
+    difficulty: easy
+    title: "MultiKernelBench sum reduction over a dimension"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/reduce/sum_reduction_over_a_dimension.py
+      gold_files: []
+      test_files:
+        - utils/correctness.py
+    spec: |
+      Implement `sum_reduction_over_a_dimension` as an AscendC operator.  The
+      reference is `reference/reduce/sum_reduction_over_a_dimension.py`; the
+      reference signature (including the `dim` and `keepdim` arguments) is the
+      contract.
+
+      Write `work/submission/sum_reduction_over_a_dimension_submission.py`
+      with the six backend strings.  Handle non-contiguous reduction axes by
+      tiling rather than by materialising a transposed tensor through PyTorch.
+    hidden_tests:
+      command: "cd {work} && python eval_single_runner.py --input {work}/submission/sum_reduction_over_a_dimension_submission.py --op sum_reduction_over_a_dimension --language ascendc --result {build}/result.json && python {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating"
+
+  - id: b_l1_softmax
+    level: L1
+    domain: normalization
+    difficulty: medium
+    title: "Softmax: CUDA row softmax -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level2/softmax/golden.py
+        - tasks/level2/softmax/desc.md
+      spec_files:
+        - tasks/level2/softmax/proto.yaml
+      test_files:
+        - tasks/level2/softmax/cases.yaml
+      gold_files: []
+    spec: |
+      Implement `Softmax` in AscendC.  The interesting cases are the large
+      `dim` sizes and the fp16/bf16 inputs where a naive exp overflows; the
+      judge compares against `golden.py` with the tolerance in `cases.yaml`.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level2/softmax --operator Softmax --device npu --no-perf --reports-dir {build}/reports"
+
+  # ------------------------------------------------------------------ L2 ---
+  - id: b_l2_mk_layer_norm
+    level: L2
+    domain: normalization
+    difficulty: medium
+    title: "MultiKernelBench layer_norm: CUDA model -> AscendC submission"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - prompts/cuda_model_layer_norm.py
+        - reference/normalization/layer_norm.py
+      gold_files:
+        - prompts/ascendc_new_model_layer_norm.py
+      test_files:
+        - utils/correctness.py
+    spec: |
+      Migrate layer norm, including the gamma/beta affine parameters and the
+      epsilon convention used by the upstream sample.  The CUDA sample and the
+      PyTorch reference stay visible; the AscendC sample was removed.
+
+      Write `work/submission/layer_norm_submission.py` with the six backend
+      strings.  `model_src` must expose `ModelNew` with the same constructor
+      signature as the reference (normalized shape) and must call the custom
+      operator, not `torch.nn.functional`.
+    prepare:
+      remove:
+        - prompts/ascendc_new_model_layer_norm.py
+    hidden_tests:
+      command: "cd {work} && python eval_single_runner.py --input {work}/submission/layer_norm_submission.py --op layer_norm --language ascendc --result {build}/result.json && python {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating"
+
+  - id: b_l2_rms_norm
+    level: L2
+    domain: normalization
+    difficulty: medium
+    title: "RMSNorm: CUDA kernel -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level2/rms_norm/golden.py
+        - tasks/level2/rms_norm/desc.md
+      spec_files:
+        - tasks/level2/rms_norm/proto.yaml
+      test_files:
+        - tasks/level2/rms_norm/cases.yaml
+      gold_files: []
+    spec: |
+      Implement `RmsNorm` in AscendC: no mean subtraction, epsilon inside the
+      square root, optional weight.  Match the dtype and shape cases in
+      `tasks/level2/rms_norm/cases.yaml`.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level2/rms_norm --operator RmsNorm --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l2_gather
+    level: L2
+    domain: index
+    difficulty: medium
+    title: "Gather: CUDA index kernel -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level2/gather/golden.py
+        - tasks/level2/gather/desc.md
+      spec_files:
+        - tasks/level2/gather/proto.yaml
+      test_files:
+        - tasks/level2/gather/cases.yaml
+      gold_files: []
+    spec: |
+      Implement `Gather` along the axis declared in `proto.yaml`.  Index
+      tensors are int32/int64 and may be large; out-of-range handling must
+      match the reference.  The judge compares every case in `cases.yaml`.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level2/gather --operator Gather --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l2_cross_entropy_loss
+    level: L2
+    domain: loss
+    difficulty: medium
+    title: "CrossEntropyLoss: CUDA fused loss -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level2/cross_entropy_loss/golden.py
+        - tasks/level2/cross_entropy_loss/desc.md
+      spec_files:
+        - tasks/level2/cross_entropy_loss/proto.yaml
+      test_files:
+        - tasks/level2/cross_entropy_loss/cases.yaml
+      gold_files: []
+    spec: |
+      Implement `CrossEntropyLoss` (log-softmax + NLL, with the reduction modes,
+      ignore index and optional weight from `proto.yaml`).  Numerical stability
+      for fp16 logits is part of the test.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level2/cross_entropy_loss --operator CrossEntropyLoss --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l2_arg_max
+    level: L2
+    domain: reduction
+    difficulty: medium
+    title: "ArgMax: CUDA arg-reduction -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level2/arg_max/golden.py
+        - tasks/level2/arg_max/desc.md
+      spec_files:
+        - tasks/level2/arg_max/proto.yaml
+      test_files:
+        - tasks/level2/arg_max/cases.yaml
+      gold_files: []
+    spec: |
+      Implement `ArgMax` with the axis/keepdim/tie-breaking rules of the
+      reference.  Ties must resolve to the first index, as PyTorch does.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level2/arg_max --operator ArgMax --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l2_top_k
+    level: L2
+    domain: sorting
+    difficulty: medium
+    title: "TopK: CUDA selection kernel -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level3/top_k/golden.py
+        - tasks/level3/top_k/desc.md
+      spec_files:
+        - tasks/level3/top_k/proto.yaml
+      test_files:
+        - tasks/level3/top_k/cases.yaml
+      gold_files: []
+    spec: |
+      Implement `TopK` returning values and indices for the largest `k`
+      elements along the declared dimension.  The judge checks index validity
+      as well as values, and includes `k` values close to the axis size.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level3/top_k --operator TopK --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l2_mk_standard_matmul
+    level: L2
+    domain: matmul
+    difficulty: medium
+    title: "MultiKernelBench standard matrix multiplication"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/matmul/standard_matrix_multiplication.py
+      gold_files: []
+      test_files:
+        - utils/correctness.py
+    spec: |
+      Implement `standard_matrix_multiplication` as an AscendC operator using
+      the cube unit or a vector-tiled fallback.  The reference
+      (`reference/matmul/standard_matrix_multiplication.py`) defines the
+      transpose flags, dtypes and bias handling.
+
+      Write `work/submission/standard_matrix_multiplication_submission.py`
+      with the six backend strings.  The anti-cheat detector rejects a
+      submission whose `ModelNew` calls `torch.matmul`.
+    hidden_tests:
+      command: "cd {work} && python eval_single_runner.py --input {work}/submission/standard_matrix_multiplication_submission.py --op standard_matrix_multiplication --language ascendc --result {build}/result.json && python {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating"
+
+  - id: b_l2_mk_cumsum
+    level: L2
+    domain: scan
+    difficulty: medium
+    title: "MultiKernelBench cumsum: CUDA scan -> AscendC submission"
+    source:
+      repo: https://github.com/wzzll123/MultiKernelBench.git
+      commit: 460a972c9be7ce18035984321d38b910e27df95f
+      license: MIT
+      source_files:
+        - reference/math/cumsum.py
+      gold_files: []
+      test_files:
+        - utils/correctness.py
+    spec: |
+      Implement `cumsum` (inclusive prefix sum) along the dimension used by
+      `reference/math/cumsum.py`.  A naive per-row loop is acceptable as a
+      starting point; the judge checks values, dtype and shape.
+
+      Write `work/submission/cumsum_submission.py` with the six backend
+      strings.
+    hidden_tests:
+      command: "cd {work} && python eval_single_runner.py --input {work}/submission/cumsum_submission.py --op cumsum --language ascendc --result {build}/result.json && python {root}/harness/check_result.py {build}/result.json --require-compiled --require-correct --forbid-cheating"
+
+  # ------------------------------------------------------------------ L3 ---
+  - id: b_l3_conv_2d
+    level: L3
+    domain: convolution
+    difficulty: hard
+    title: "Conv2D: cuDNN-style convolution -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level3/conv_2d/golden.py
+        - tasks/level3/conv_2d/desc.md
+      spec_files:
+        - tasks/level3/conv_2d/proto.yaml
+      test_files:
+        - tasks/level3/conv_2d/cases.yaml
+      gold_files: []
+    fit: C
+    spec: |
+      Implement `Conv2D` for the shapes in `cases.yaml`: stride, padding,
+      dilation, groups and bias.  The cube unit is expected; a correct
+      vectorised direct convolution is acceptable if it passes every case.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level3/conv_2d --operator Conv2D --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l3_nms
+    level: L3
+    domain: detection
+    difficulty: hard
+    title: "NMS: CUDA non-max suppression -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level3/nms/golden.py
+        - tasks/level3/nms/desc.md
+      spec_files:
+        - tasks/level3/nms/proto.yaml
+      test_files:
+        - tasks/level3/nms/cases.yaml
+      gold_files: []
+    fit: C
+    spec: |
+      Implement `NMS` with the IoU threshold, score threshold and
+      max-output rules in `proto.yaml`.  A stable sort and deterministic tie
+      handling are required because the judge compares index outputs.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level3/nms --operator NMS --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l3_grouped_matmul
+    level: L3
+    domain: matmul
+    difficulty: hard
+    title: "GroupedMatmul: MoE grouped GEMM -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level3/grouped_matmul/golden.py
+        - tasks/level3/grouped_matmul/desc.md
+      spec_files:
+        - tasks/level3/grouped_matmul/proto.yaml
+      test_files:
+        - tasks/level3/grouped_matmul/cases.yaml
+      gold_files: []
+    fit: C
+    spec: |
+      Implement `GroupedMatmul` for the variable-length expert groups in
+      `cases.yaml`.  Group boundaries, per-group transposes and bias must match
+      the reference.  This is the MoE hot path in inference stacks.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level3/grouped_matmul --operator GroupedMatmul --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l3_gqa
+    level: L3
+    domain: attention
+    difficulty: hard
+    title: "GQA: grouped-query attention decode -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level4/gqa/golden.py
+        - tasks/level4/gqa/desc.md
+      spec_files:
+        - tasks/level4/gqa/proto.yaml
+      test_files:
+        - tasks/level4/gqa/cases.yaml
+      gold_files: []
+    fit: C
+    spec: |
+      Implement grouped-query attention for the decode shapes in
+      `cases.yaml`: query heads grouped over KV heads, causal masking,
+      softmax scaling and the output layout used by the reference.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level4/gqa --operator GQA --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l3_lstm
+    level: L3
+    domain: sequence
+    difficulty: hard
+    title: "LSTM: cuDNN RNN cell -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level4/lstm/golden.py
+        - tasks/level4/lstm/desc.md
+      spec_files:
+        - tasks/level4/lstm/proto.yaml
+      test_files:
+        - tasks/level4/lstm/cases.yaml
+      gold_files: []
+    fit: C
+    spec: |
+      Implement the LSTM operator (single/multi-layer and bidirectional modes
+      from `proto.yaml`) with the gate ordering and initial-state semantics of
+      the PyTorch reference.  Sequence lengths vary per case.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level4/lstm --operator LSTM --device npu --no-perf --reports-dir {build}/reports"
+
+  - id: b_l3_selective_scan
+    level: L3
+    domain: sequence
+    difficulty: hard
+    title: "Selective scan: Mamba S6 -> Ascend C"
+    source:
+      repo: https://gitcode.com/cann/cann-bench.git
+      commit: 53ea611a1b88da922b82812f2721dd0b2fa33476
+      license: CANN-OSL-2.0
+      source_files:
+        - tasks/level4/selective_scan/golden.py
+        - tasks/level4/selective_scan/desc.md
+      spec_files:
+        - tasks/level4/selective_scan/proto.yaml
+      test_files:
+        - tasks/level4/selective_scan/cases.yaml
+      gold_files: []
+    fit: C
+    spec: |
+      Implement the Mamba selective scan recurrence for the input layouts and
+      dtypes in `cases.yaml`: per-step delta/A/B/C/D updates, variable sequence
+      lengths and the final-state output.
+
+      Submission root: `work/submission/` with `build.sh`.
+    hidden_tests:
+      command: "cd {work} && bash scripts/run_evaluation.sh --source-dir {work}/submission --task-dir {work}/tasks/level4/selective_scan --operator SelectiveScan --device npu --no-perf --reports-dir {build}/reports"
