@@ -66,55 +66,14 @@ OPS_ARGUMENTS: dict[str, dict[str, bool]] = {
         "--refresh": False,
         "--materialize-sources": False,
     },
-    "prepare_osbench": {
-        "--dataset": True,
-        "--workspace": True,
-        "--project-root": True,
-        "--image-prefix": True,
-        "--task": True,
-        "--expect-count": True,
-        "--no-materialize-sources": False,
-        "--compile-commands": True,
-        "--api-base": True,
-        "--refresh": False,
-        "--check": False,
-        "--require-model-env": False,
-        "--run-scan": False,
-        "--scan-limit": True,
-    },
-    "prepare_osbench_direct": {
-        "--workspace": True,
-        "--output-root": True,
-        "--task": True,
-        "--model": True,
-        "--api-base": True,
-        "--official-image": False,
-    },
-    "run_osbench_direct": {
-        "--workspace": True,
-        "--output-root": True,
-        "--task": True,
-        "--skip-completed": False,
-        "--evaluate-only": False,
-        "--agent-timeout": True,
-        "--evaluation-timeout": True,
-    },
     "preflight": {
         "--task": True,
         "--config": True,
-        "--workspace": True,
-        "--run-scan": False,
-        "--scan-limit": True,
         "--require-model-env": False,
     },
     "verify_release": {"--skip-hashes": False},
     "refresh_manifests": {},
     "compare_backend": {"--revision": True},
-    "clean_runtime": {
-        "--workspace": True,
-        "--task": True,
-        "--image-prefix": True,
-    },
 }
 
 
@@ -368,14 +327,10 @@ def _ops_command(payload: Mapping[str, Any], registry: dict[str, Any]) -> list[s
     module = payload.get("module")
     allowed = {
         "prepare_workspace": "tools.prepare_workspace",
-        "prepare_osbench": "tools.prepare_osbench",
-        "prepare_osbench_direct": "tools.prepare_osbench_direct",
-        "run_osbench_direct": "tools.run_osbench_direct",
         "preflight": "tools.preflight",
         "verify_release": "tools.verify_release",
         "refresh_manifests": "tools.refresh_manifests",
         "compare_backend": "tools.compare_python_backend",
-        "clean_runtime": "tools.clean_osbench_runtime",
     }
     if module not in allowed:
         raise KernelError(f"unsupported ops module: {module!r}")

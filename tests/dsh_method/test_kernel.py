@@ -114,11 +114,11 @@ def test_ops_arguments_are_allow_listed_per_module(tmp_path, monkeypatch):
     monkeypatch.setattr(dsh_kernel.subprocess, "run", fake_run)
     result = dsh_kernel.execute_method(
         "ops",
-        {"module": "preflight", "args": ["--task", "task-a", "--run-scan"]},
+        {"module": "preflight", "args": ["--task", "task-a"]},
         registry=registry,
     )
     assert result["ok"] is True
-    assert captured["command"][-3:] == ["--task", "task-a", "--run-scan"]
+    assert captured["command"][-2:] == ["--task", "task-a"]
     for rejected in (["--output", "/tmp/x"], ["/bin/sh"]):
         result = dsh_kernel.execute_method(
             "ops", {"module": "preflight", "args": rejected}, registry=registry

@@ -11,11 +11,5 @@ export function apply(ctx: any): void {
       method: "ops",
       parameters: {"module": {"type": "string", "required": true}, "args": {"type": "array", "items": {"type": "string"}}, "run_id": {"type": "string"}},
     },
-    {
-      name: "component_dataset_adapter",
-      description: "Run the OS-Bench adapter.",
-      method: "ops",
-      parameters: {"module": {"type": "string", "required": true}, "args": {"type": "array", "items": {"type": "string"}}, "run_id": {"type": "string"}},
-    },
   ]);
 }

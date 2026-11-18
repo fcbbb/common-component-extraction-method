@@ -36,5 +36,5 @@ test("all stage plugins register their declared tools", () => {
   // The orchestrator is the single stage entry; job control belongs to the
   // built-in job runtime, not to this plugin.
   assert.deepEqual(names(orchestrator), ["component_run_stage"]);
-  assert.deepEqual(names(ops), ["component_prepare_workspace", "component_dataset_adapter"]);
+  assert.deepEqual(names(ops), ["component_prepare_workspace"]);
 });
