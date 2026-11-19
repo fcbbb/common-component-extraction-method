@@ -26,14 +26,19 @@
 
 **执行顺序、正控/负控命令和记录模板见 [RUNBOOK.md](RUNBOOK.md)。**
 
-## 统一入口（两臂）
+## 统一入口（三臂）
 
-配对实验的两个条件各有一条一键入口，共享同一份配置 [bench.yaml](bench.yaml)、同一套任务包和同一个判分器：
+三个条件各有一条一键入口，共享同一份配置 [bench.yaml](bench.yaml)、同一套任务包和同一个判分器：
 
 | 入口 | 条件 | DSH profile | 会话 |
 |---|---|---|---|
 | `./run-default.sh` | A：直接迁移（默认 DSH） | `component-method` | 1 |
 | `./run-method.sh` | B：组件方法 DSH | `component-method-migration`（单主 agent，仅方法工具） | 1 |
+| `./run-origin.sh` | Origin：单次上下文直调大模型 | 无 DSH | 无 |
+
+`run-origin.sh` 不是 Agent：它把任务 spec、文件树和预算内的源码打包成一个 prompt，
+只调用一次 `/chat/completions`，把返回的文件写入 workspace，然后交给同一个 judge。
+它用于和 DSH 基线/组件方法区分“模型单次生成能力”与“Agent 环境闭环能力”。
 
 B 臂由同一个主 agent 先在工作区里完成组件扫描、抽取、发布、检索和物化
 （`/workspace/component_bundle/`），然后**在同一会话里**完成迁移。主 agent 默认
@@ -48,10 +53,12 @@ python3 tools/bench.py doctor             # 环境/DSH/插件/镜像/凭据自�
 ./run-method.sh                           # 方法臂 smoke
 ./run-default.sh --all --runs 3 --label default_v1
 ./run-method.sh  --all --runs 3 --label method_v1
+./run-origin.sh  --scenario ipp_to_vsipl --only l1_aubio_dct \
+  --model DeepSeek-V4.1-Flash-1017 --label origin_smoke
 python3 tools/bench.py compare --default-label default_v1 --method-label method_v1
 ```
 
-`bench.py` 另有 `verify`、`env`、`gold`、`report` 子命令。两臂的差异、预算口径、一致性保证和后续工作项见 [docs/unified_entry.md](docs/unified_entry.md)；接收者需要自备的镜像、Node、网络、凭据和磁盘条件见 [REQUIREMENTS.md](REQUIREMENTS.md)。
+`bench.py` 另有 `verify`、`env`、`gold`、`report` 子命令。各臂的差异、预算口径、一致性保证和后续工作项见 [docs/unified_entry.md](docs/unified_entry.md)；接收者需要自备的镜像、Node、网络、凭据和磁盘条件见 [REQUIREMENTS.md](REQUIREMENTS.md)。
 
 ## 三类东西的关系
 
