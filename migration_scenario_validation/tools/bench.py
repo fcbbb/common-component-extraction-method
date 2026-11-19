@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Unified entry point for the paired migration benchmark.
 
-One config (``bench.yaml``) and two arms over the same task packages, judge,
+One config (``bench.yaml``) and three arms over the same task packages, judge,
 model and budgets:
 
 * ``--arm default`` -- plain DSH (profile ``component-method``): the agent gets
@@ -290,7 +290,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         report.print()
         return 2
 
-    _check_dsh(report, repo, args.arm)
+    if args.arm != "origin":
+        _check_dsh(report, repo, args.arm)
     if os.environ.get("COMPONENT_DSH_PROFILE"):
         report.warn(
             "COMPONENT_DSH_PROFILE",
@@ -432,9 +433,82 @@ def cmd_gold(args: argparse.Namespace) -> int:
     return rc
 
 
+def _run_origin(args: argparse.Namespace, cfg: Dict[str, Any]) -> int:
+    scenarios = _enabled_scenarios(cfg, args.scenario)
+    if args.all:
+        scenarios = _enabled_scenarios(cfg, [])
+    if args.smoke:
+        # origin does not support the MUSA remote execution plane.
+        scenarios = [name for name in scenarios if name != "cuda_to_musa"]
+        args.only = ["l2_rubberband_fft", "l2_libuv_thread"]
+        if args.runs is None:
+            args.runs = 1
+    label = args.label or ("origin-smoke" if args.smoke else "origin-all")
+    report_root = _config_path(cfg, "report_root", "reports/bench")
+    workspace_root = _config_path(cfg, "workspace_root", "reports/bench/workspaces")
+    report_dir = report_root / label
+    workspaces = workspace_root / label
+    argv: List[str] = [
+        sys.executable,
+        str(ROOT / "tools" / "origin_trial.py"),
+        "--label", label,
+        "--report-dir", str(report_dir),
+        "--workspace-root", str(workspaces),
+        "--repository-root", str(_repo_path(cfg)),
+    ]
+    for name in scenarios:
+        argv.extend(["--parent", TASK_PARENTS[name]])
+    for task in args.only or []:
+        argv.extend(["--only", task])
+    for task in args.exclude or []:
+        argv.extend(["--exclude", task])
+    for level in args.level or []:
+        argv.extend(["--level", level])
+    budgets = dict(cfg.get("budgets") or {})
+    for flag, key in (
+        ("--runs", "runs"),
+        ("--context-window", "context_window"),
+        ("--prepare-timeout", "prepare_timeout"),
+        ("--judge-timeout", "judge_timeout"),
+    ):
+        value = args.__dict__.get(key)
+        if value is None:
+            value = budgets.get(key)
+        if value is not None:
+            argv.extend([flag, str(value)])
+    if args.origin_context_chars is not None:
+        argv.extend(["--origin-context-chars", str(args.origin_context_chars)])
+    if args.origin_max_output_tokens is not None:
+        argv.extend(["--origin-max-output-tokens", str(args.origin_max_output_tokens)])
+    if args.command_timeout is not None:
+        argv.extend(["--timeout", str(args.command_timeout)])
+    if args.model:
+        argv.extend(["--model", args.model])
+    if args.api_base:
+        argv.extend(["--api-base", args.api_base])
+    if args.api_key:
+        argv.extend(["--api-key", args.api_key])
+    if args.dry_run:
+        argv.append("--dry-run")
+    ipp = _scenario_cfg(cfg, "ipp_to_vsipl")
+    if ipp.get("image"):
+        argv.extend(["--ipp-image", str(ipp["image"])])
+    if ipp.get("vsipl_root"):
+        argv.extend(["--vsipl-root", str(Path(str(ipp["vsipl_root"])).expanduser())])
+    kylin = _scenario_cfg(cfg, "windows_to_kylin")
+    if kylin.get("image"):
+        argv.extend(["--kylin-image", str(kylin["image"])])
+    if args.dry_run:
+        print("DRY  " + " ".join(argv))
+    print(f"RUN arm=origin profile=(none) label={label} scenarios={','.join(scenarios)}", flush=True)
+    return subprocess.call(argv, cwd=str(ROOT))
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     cfg = load_config(Path(args.config).resolve())
     arm = args.arm
+    if arm == "origin":
+        return _run_origin(args, cfg)
     arm_cfg = dict((cfg.get("arms") or {}).get(arm) or {})
     profile = args.dsh_profile or str(arm_cfg.get("dsh_profile") or "")
     if not profile:
@@ -701,7 +775,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     doctor = sub.add_parser("doctor", help="check both arms' prerequisites")
-    doctor.add_argument("--arm", choices=["default", "method"])
+    doctor.add_argument("--arm", choices=["default", "method", "origin"])
     doctor.add_argument("--scenario", action="append", default=[])
     doctor.add_argument("--allow-missing", action="store_true",
                         help="missing credentials/images warn instead of fail")
@@ -727,7 +801,7 @@ def build_parser() -> argparse.ArgumentParser:
     gold.set_defaults(func=cmd_gold)
 
     run = sub.add_parser("run", help="run one arm over the selected tasks")
-    run.add_argument("--arm", choices=["default", "method"], required=True)
+    run.add_argument("--arm", choices=["default", "method", "origin"], required=True)
     run.add_argument("--scenario", action="append", default=[])
     run.add_argument("--all", action="store_true", help="all enabled scenarios")
     run.add_argument("--smoke", action="store_true",
@@ -758,6 +832,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--fake-model", action="store_true")
     run.add_argument("--dry-run", action="store_true")
     run.add_argument("--seed-gold", action="store_true")
+    run.add_argument("--origin-context-chars", type=int, default=None)
+    run.add_argument("--origin-max-output-tokens", type=int, default=None)
     run.add_argument("--keep-containers", action="store_true")
     run.add_argument("--musa-transport", choices=["auto", "ssh", "local"])
     run.set_defaults(func=cmd_run)

@@ -335,3 +335,155 @@ migration_scenario_validation/reports/bench/kylin_baseline_full/report.md
 ```text
 docs/migration_benchmark_baseline_results.md
 ```
+
+---
+
+## 8. Origin one-shot baseline
+
+项目新增第三种基线：
+
+```text
+arm = origin
+condition = origin_one_shot
+```
+
+它不启动 DSH，也不是 Agent。流程是：
+
+```text
+prepare task
+→ 收集任务 spec、文件树、预算内源码
+→ 直接调用一次 /chat/completions
+→ 解析返回的文件映射
+→ 写入 workspace
+→ 交给同一个 build/tests/API judge
+```
+
+没有工具调用、没有构建反馈、没有重试、没有多轮修复。
+
+### 8.1 入口
+
+```bash
+./run-origin.sh --scenario ipp_to_vsipl --only l1_aubio_dct \
+  --runs 1 --model DeepSeek-V4.1-Flash-1017 --label origin_aubio
+```
+
+统一入口：
+
+```text
+migration_scenario_validation/run-origin.sh
+migration_scenario_validation/tools/origin_trial.py
+migration_scenario_validation/tools/bench.py --arm origin
+```
+
+### 8.2 单题 smoke 结果
+
+任务：
+
+```text
+scenario: ipp_to_vsipl
+task: l1_aubio_dct
+label: origin_aubio_real1
+```
+
+结果：
+
+```text
+status: pass
+agent_status: OneShot
+agent_model_calls: 1
+agent_tokens: input=5,331 output=15,303
+origin.context_chars: 15,248
+origin.context_files: 6
+build/tests/API: ok/pass/pass
+duration: 95.1s
+```
+
+模型返回的文件操作：
+
+```text
+src/dct_vsipl.c   写入
+src/dct_ipp.c     删除
+```
+
+这说明 origin 路径已经能完成：
+
+```text
+上下文打包
+→ 单次模型调用
+→ 文件解析与应用
+→ judge
+```
+
+当前只做了单题 smoke，没有做 20 题全量 origin 结果，因此不能把单题通过当成该方法在全部任务上的成功率。
+
+### 8.3 与其他基线的关系
+
+```text
+origin
+  = plain LLM / one-shot
+  = 只有模型生成能力，没有环境闭环
+
+default
+  = minimal agent
+  = 有 controlled_bash 和多轮构建/测试反馈
+
+method
+  = component-method agent
+  = 在 default 基础上增加组件抽取、review、retrieval 和 bundle
+```
+
+因此三者分别回答：
+
+```text
+origin: 一次生成能写出什么
+default: 有最小工具闭环时能做到什么
+method: 有组件复用和工具闭环时能做到什么
+```
+
+### 8.4 限制
+
+```text
+origin 只支持 ipp_to_vsipl 和 windows_to_kylin
+cuda_to_musa 需要远端执行面，当前不作为 origin 支持范围
+一次性模型响应的 JSON/文件路径必须可解析
+长仓库可能因上下文预算丢文件
+```
+
+结果目录：
+
+```text
+migration_scenario_validation/reports/bench/origin_ipp_full/l1_aubio_dct/run1/
+```
+
+### 8.5 IPP origin 全量结果
+
+后续已对 `ipp_to_vsipl` 的 20 题运行 origin 全量；`l1_aubio_dct` 复用单题结果，剩余 19 题通过单次上下文调用完成，4 个截断 error 用 65536 输出预算修复重跑。
+
+canonical 结果：
+
+```text
+PASS=12  FAIL=8  ERROR=0  SKIP=0
+model_calls=20
+inputTokens=170,614
+outputTokens=498,670
+totalTokens=669,284
+totalSeconds=2805.0
+```
+
+8 个失败全部停在 build，主要是 jvsip API 签名/执行函数名错误；没有进入 hidden tests/API gate。
+
+完整逐题结果和分析见：
+
+```text
+../tmp/IPP_to_VSIPL_origin_全量结果.md
+migration_scenario_validation/reports/bench/origin_ipp_full/
+```
+
+与 direct 基线对比：
+
+```text
+direct: 20/20 pass, 853 canonical calls, 9362.1s
+origin: 12/20 pass, 20 canonical calls, 2805.0s
+```
+
+origin 的成本明显更低，但缺少编译器反馈，失败集中在目标 API 签名错误。当前 origin 的上下文包只包含 workspace 文件，没有包含 `/opt/vsipl/include/vsip.h`。
