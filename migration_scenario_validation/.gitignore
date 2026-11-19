@@ -1,8 +1,9 @@
 # Local-only evaluator assets
 env/remote.yaml
 
-# Materialized by prepare.sh: upstream checkouts, build outputs, and the
-# evaluator-only reference implementation (gold/ is regenerated on prepare).
+# Materialized by prepare.sh: upstream checkouts and build outputs.
+# Kylin gold is copied out of the upstream checkout by prepare.sh; IPP gold
+# is evaluator-only and is not shipped in this checkout.
 */tasks/*/work/
 */tasks/*/build*/
 */tasks/*/gold/

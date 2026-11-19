@@ -140,6 +140,12 @@ def run_command(
 ) -> Tuple[int, str]:
     """Run a shell command and return ``(returncode, combined_output)``."""
     merged = os.environ.copy()
+    # WSL has a small fixed RAM budget; an unbounded `cmake --build -j`
+    # can OOM the whole VM.  Callers may override these, but the safe
+    # default is deliberately low.
+    merged.setdefault("CMAKE_BUILD_PARALLEL_LEVEL", "2")
+    merged.setdefault("MAKEFLAGS", "-j2")
+    merged.setdefault("NINJAFLAGS", "-j2")
     if env:
         merged.update({str(k): str(v) for k, v in env.items()})
     try:

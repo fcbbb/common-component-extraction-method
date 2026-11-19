@@ -8,7 +8,7 @@ target:
   os: kylin-v10-sp3
   arch: x86_64
   toolchain: gcc-13.3
-  cmake: '3.28'
+  cmake: '3.16.5'
 gates:
   build: configure and build the task target on Kylin V10
   api_removal:
@@ -61,7 +61,7 @@ prepare:
   - src/unix/process.c
 build:
   command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON
-    && cmake --build {build} -j
+    && cmake --build {build} -j2
   artifact: '{build}/libuv.a'
 hidden_tests:
   command: cd {work} && {build}/uv_run_tests_a spawn_stdout && {build}/uv_run_tests_a spawn_stdin && {build}/uv_run_tests_a

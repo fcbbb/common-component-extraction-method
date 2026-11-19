@@ -8,7 +8,7 @@ target:
   os: kylin-v10-sp3
   arch: x86_64
   toolchain: gcc-13.3
-  cmake: '3.28'
+  cmake: '3.16.5'
 gates:
   build: configure and build the task target on Kylin V10
   api_removal:
@@ -63,7 +63,7 @@ prepare:
   - src/util/unix
 build:
   command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF
-    -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j
+    -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j2
   artifact: '{build}/libgit2.a'
 hidden_tests:
   command: cd {build} && ./util_tests -v -sfilebuf -sftruncate -sstat -spath::core

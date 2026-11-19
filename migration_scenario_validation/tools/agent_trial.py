@@ -58,6 +58,21 @@ from shared.harness import taskmodel  # noqa: E402
 
 COMPLETION_MARKER = "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
 AGENT_UID = 10001
+
+
+def _resource_args() -> List[str]:
+    """Cgroup limits so a runaway build cannot OOM the WSL VM."""
+    memory = os.environ.get("MIGRATION_CONTAINER_MEMORY", "4g")
+    cpus = os.environ.get("MIGRATION_CONTAINER_CPUS", "4")
+    return [
+        "--memory", memory,
+        "--memory-swap", memory,
+        "--cpus", cpus,
+        "--pids-limit", "2048",
+        "-e", "CMAKE_BUILD_PARALLEL_LEVEL=2",
+        "-e", "MAKEFLAGS=-j2",
+        "-e", "NINJAFLAGS=-j2",
+    ]
 ACTIVATION = (
     "export PATH=/opt/rh/gcc-toolset-13/root/usr/bin:$PATH; "
     "export LD_LIBRARY_PATH=/opt/rh/gcc-toolset-13/root/usr/lib64:/opt/gcc13-libs"
@@ -207,6 +222,10 @@ def _task_prompt(task: Dict[str, Any], root: Path) -> str:
         "The repository snapshot is at /workspace. The reference implementation was removed;",
         "other platform backends and the public headers are still present for orientation.",
         "",
+        "The task spec may use a `work/` prefix for paths. In this container the task",
+        "package's `work/` directory is mounted as `/workspace`; therefore `work/foo`",
+        "means `/workspace/foo`. Do not create a nested `work/` directory.",
+        "",
         "## Build command",
         "",
         "The evaluator runs this exact command from /workspace:",
@@ -283,6 +302,7 @@ def _start_container(image: str, workspace: Path, name: str) -> Tuple[bool, str]
         [
             "docker", "run", "-d", "--name", name,
             "--network", "none",
+            *_resource_args(),
             "-v", f"{workspace}:/workspace",
             "-w", "/workspace",
             "--entrypoint", "sleep",
@@ -335,6 +355,7 @@ def _judge(
     cmd = [
         "docker", "run", "--rm", "--name", name,
         "--network", "none",
+        *_resource_args(),
         "--user", f"{AGENT_UID}:{AGENT_UID}",
         "-e", "HOME=/tmp",
         "-e", "PYTHONUNBUFFERED=1",
@@ -488,7 +509,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--command-timeout", type=int, default=600)
     ap.add_argument("--total-timeout", type=int, default=5400)
     ap.add_argument("--step-limit", type=int, default=150)
-    ap.add_argument("--context-window", type=int, default=131072)
+    ap.add_argument("--context-window", type=int, default=262144)
     ap.add_argument("--max-output-tokens", type=int, default=32768)
     ap.add_argument("--judge-timeout", type=int, default=2400)
     ap.add_argument("--keep-containers", action="store_true")

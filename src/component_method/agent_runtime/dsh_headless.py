@@ -67,7 +67,7 @@ class DshHeadlessBackend:
         max_retries: int = 2,
         profile_name: str | None = None,
         compatibility: Mapping[str, Any] | None = None,
-        context_window: int = 131_072,
+        context_window: int = 262_144,
         max_output_tokens: int = 8_192,
         runtime_activation: str = "",
     ) -> None:

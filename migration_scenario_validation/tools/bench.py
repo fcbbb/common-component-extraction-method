@@ -103,6 +103,20 @@ def _run(argv: List[str], *, timeout: int = 60, cwd: Optional[Path] = None) -> T
     return completed.returncode, (completed.stdout or "") + (completed.stderr or "")
 
 
+def _load_local_env() -> None:
+    """Make `bench.py` see the same non-secret settings as run-*.sh.
+
+    ``bench.env`` is sourced by the shell entry points.  The direct Python
+    commands used to require a manual `set -a; . ./bench.env`, which made
+    `doctor` report a missing VSIPL_ROOT even when the file was correct.
+    Empty values are ignored so an empty credential line cannot mask an
+    inherited or repository-level value.
+    """
+    for key, value in _dotenv(ROOT / "bench.env").items():
+        if value:
+            os.environ.setdefault(key, value)
+
+
 def _dotenv(path: Path) -> Dict[str, str]:
     values: Dict[str, str] = {}
     if not path.is_file():
@@ -761,6 +775,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    _load_local_env()
     parser = build_parser()
     args = parser.parse_args(argv)
     return int(args.func(args))

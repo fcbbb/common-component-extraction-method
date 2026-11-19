@@ -96,6 +96,26 @@ import method_adapter as method_adapter_mod  # noqa: E402
 COMPLETION_MARKER = at.COMPLETION_MARKER
 AGENT_UID = at.AGENT_UID
 
+
+def _resource_args() -> List[str]:
+    """Keep an unbounded build inside a cgroup instead of killing WSL.
+
+    The WSL VM is small (8 GB here).  Docker-level limits make a runaway
+    ``cmake --build -j`` fail inside the container with an OOM-killed compiler,
+    while the host and the agent session stay alive.
+    """
+    memory = os.environ.get("MIGRATION_CONTAINER_MEMORY", "4g")
+    cpus = os.environ.get("MIGRATION_CONTAINER_CPUS", "4")
+    return [
+        "--memory", memory,
+        "--memory-swap", memory,
+        "--cpus", cpus,
+        "--pids-limit", "2048",
+        "-e", "CMAKE_BUILD_PARALLEL_LEVEL=2",
+        "-e", "MAKEFLAGS=-j2",
+        "-e", "NINJAFLAGS=-j2",
+    ]
+
 ARM_CONDITIONS = {
     "default": "baseline_direct",
     "method": "component_method",
@@ -448,6 +468,7 @@ def _start_container(
 ) -> Tuple[bool, str]:
     cmd = [
         "docker", "run", "-d", "--name", name, "--network", "none",
+        *_resource_args(),
         "-v", f"{workspace}:/workspace", "-w", "/workspace",
     ]
     for host, container in mounts:
@@ -503,6 +524,7 @@ def _judge_local(
     name = f"baseline-judge-{tag}-{uuid.uuid4().hex[:8]}"
     cmd = [
         "docker", "run", "--rm", "--name", name, "--network", "none",
+        *_resource_args(),
         "--user", f"{AGENT_UID}:{AGENT_UID}",
         "-e", "HOME=/tmp", "-e", "PYTHONUNBUFFERED=1",
     ]
@@ -816,7 +838,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--command-timeout", type=int, default=600)
     ap.add_argument("--total-timeout", type=int, default=5400)
     ap.add_argument("--step-limit", type=int, default=150)
-    ap.add_argument("--context-window", type=int, default=131072)
+    ap.add_argument("--context-window", type=int, default=262144)
     ap.add_argument("--max-output-tokens", type=int, default=32768)
     ap.add_argument("--judge-timeout", type=int, default=2400)
     ap.add_argument("--keep-containers", action="store_true")
@@ -1041,7 +1063,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         ok, prep_log = at._prepare(root, args.prepare_timeout, False)
         if not ok:
             print(f"ERROR {task_id}: prepare.sh failed", file=sys.stderr)
-            results.append({"task": task_id, "status": "error", "detail": "prepare.sh failed"})
+            for run in range(1, args.runs + 1):
+                results.append(
+                    {
+                        "task": task_id,
+                        "scenario": scenario,
+                        "arm": arm,
+                        "condition": condition,
+                        "level": task.get("level"),
+                        "run": run,
+                        "status": "error",
+                        "detail": "prepare.sh failed",
+                    }
+                )
             continue
         reference = root / "work"
         if scenario == "ipp_to_vsipl":

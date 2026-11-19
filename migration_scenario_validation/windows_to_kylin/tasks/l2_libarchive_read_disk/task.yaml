@@ -8,7 +8,7 @@ target:
   os: kylin-v10-sp3
   arch: x86_64
   toolchain: gcc-13.3
-  cmake: '3.28'
+  cmake: '3.16.5'
 gates:
   build: configure and build the task target on Kylin V10
   api_removal:
@@ -61,7 +61,7 @@ prepare:
   - libarchive/archive_read_disk_posix.c
 build:
   command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_TAR=OFF -DENABLE_CPIO=OFF
-    -DENABLE_CAT=OFF && cmake --build {build} -j
+    -DENABLE_CAT=OFF && cmake --build {build} -j2
   artifact: '{build}/libarchive/libarchive.a'
 hidden_tests:
   command: mkdir -p {build}/test-run && cd {build}/test-run && ../bin/libarchive_test -r {work}/libarchive/test
