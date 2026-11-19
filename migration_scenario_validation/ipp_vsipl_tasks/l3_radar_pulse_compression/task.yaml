@@ -100,19 +100,6 @@ spec: |
   an n that is not npulses*fft_len, returns -1.
 
   no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
-
-  VSIPL notes:
-    - vsip_rcfftop_f returns the natural complex sequence for k = 0 .. N/2 and
-      vsip_crfftop_f consumes exactly that layout, so the CCS packing and the
-      Ipp32fc repack of the IPP source disappear; with both plans created at
-      scale 1.0 the transforms stay unscaled, matching IPP_FFT_NODIV_BY_ANY.
-    - the causal moving average has no VSIPL filter call with truncated
-      boundary handling; the taps are constant (1/fir_len), so it reduces to
-      vsip_vsumval_f over a bound window for each lag, with the first
-      fir_len-1 windows clipped at lag 0.
-    - the detection rule needs neighbouring bins; it stays a plain C loop in
-      both backends.
-
 prepare:
   mode: vendored
 build:

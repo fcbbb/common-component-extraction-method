@@ -55,12 +55,17 @@ source:
   - tests/util/process/start.c
   - tests/libgit2/threads/basic.c
   - tests/libgit2/threads/tlsdata.c
-spec: "The POSIX process spawner and the pthread wrapper header were removed.\nRecreate `src/util/unix/process.c`,\
-  \ `pthread.h` and `posix.h` with the\nsame interfaces the rest of libgit2 uses:\n  - git__process_init\
-  \ / git__process_cleanup\n  - git__spawn with the stdout/stderr redirection and environment\n    hooks\
-  \ used by the process tests\n  - thread, mutex, rwlock, cond and TLS wrappers including timed waits\n\
-  \    and the cleanup destructors\nThe Win32 files remain as the behavioural reference; do not change\
-  \ the\ncall sites under src/.\n"
+spec: |
+  The POSIX process spawner and the pthread wrapper header were removed.
+  Recreate `src/util/unix/process.c`, `pthread.h` and `posix.h` with the
+  same interfaces the rest of libgit2 uses:
+    - git__process_init / git__process_cleanup
+    - git__spawn with the stdout/stderr redirection and environment
+      hooks
+    - thread, mutex, rwlock, cond and TLS wrappers including timed waits
+      and the cleanup destructors
+  The Win32 files remain as the behavioural reference; do not change the
+  call sites under src/.
 prepare:
   remove:
   - src/util/unix/process.c

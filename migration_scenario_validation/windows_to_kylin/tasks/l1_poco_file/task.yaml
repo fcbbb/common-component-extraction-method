@@ -48,11 +48,12 @@ source:
   - Foundation/src/File_UNIX.cpp
   test_files:
   - Foundation/testsuite/src/FileTest.cpp
-spec: "Recreate `Foundation/src/File_UNIX.cpp`.  The Windows file uses\nCreateFileW and 64-bit file pointers;\
-  \ the POSIX version must use\nopen/stat/lstat/mkdir/rmdir/rename/link/symlink/readlink/utime and keep\n\
-  the same Poco::File observable behaviour:\n  - exists(), isFile(), isDirectory(), isLink(), canRead/canWrite\n\
-  \  - sizes, timestamps, permissions (mode bits mapping)\n  - copyTo/moveTo across directories, symbolic\
-  \ and hard links\n  - directory iteration and the usual ENOENT/EEXIST error mapping\n"
+spec: |
+  Recreate `Foundation/src/File_UNIX.cpp`.  Keep the same Poco::File observable behaviour:
+    - exists(), isFile(), isDirectory(), isLink(), canRead/canWrite
+    - sizes, timestamps, permissions (mode bits mapping)
+    - copyTo/moveTo across directories, symbolic and hard links
+    - directory iteration and the usual ENOENT/EEXIST error mapping
 prepare:
   remove:
   - Foundation/src/File_UNIX.cpp

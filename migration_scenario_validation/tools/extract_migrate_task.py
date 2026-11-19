@@ -127,8 +127,7 @@ def _prepare_script(task: Dict[str, Any]) -> str:
             lines.append(f'rm -f "$ROOT/work"/{pattern}')
         lines += [
             "",
-            'if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$ROOT/work/TASK.md"; fi',
-            'printf "%s\\n" "$COMMIT" > "$ROOT/work/.source_commit"',
+                'printf "%s\\n" "$COMMIT" > "$ROOT/work/.source_commit"',
             'echo "prepared $ROOT/work from $REPO_URL@$COMMIT"',
         ]
         return "\n".join(lines) + "\n"
@@ -166,7 +165,6 @@ def _prepare_script(task: Dict[str, Any]) -> str:
             "fi",
         ]
     lines += [
-        'if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$ROOT/work/TASK.md"; fi',
         'printf "%s\\n" "$COMMIT" > "$ROOT/work/.source_commit"',
         'echo "prepared $ROOT/work from $REPO_URL@$COMMIT"',
     ]
@@ -216,12 +214,6 @@ def _readme(task: Dict[str, Any], provenance: Dict[str, Any]) -> str:
             "## Workspace",
             "",
             *workspace,
-            "",
-            "## Hidden tests",
-            "",
-            "```bash",
-            str((task.get("hidden_tests") or {}).get("command", "")),
-            "```",
             "",
         ]
     )

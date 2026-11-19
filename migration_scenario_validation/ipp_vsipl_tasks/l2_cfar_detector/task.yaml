@@ -43,7 +43,7 @@ target:
 
 spec: |
   src/cfar_ipp.c implements a cell-averaging CFAR detector.  Migrate it to
-  VSIPL (jvsip, VSIPL 1.3 C) keeping include/cfar.h and the observable
+  VSIPL (VSIPL 1.3 C) keeping include/cfar.h and the observable
   behaviour unchanged:
 
   - noise[i] is the mean of the training cells on both sides of cell i,
@@ -53,12 +53,6 @@ spec: |
   - a cell with no valid training cell is never flagged;
   - cfar_detect returns the number of detected cells;
   - no ipps*/ippi* symbol may remain in the built artifact.
-
-  Target library notes (jvsip): vsip_vlgt_f writes a boolean view
-  (vsip_vview_bl), which you can read with vsip_vget_bl.  vsip_blockadmit_f
-  returns 0 on success — the opposite of the other jvsip calls.  Release
-  subviews with vsip_vdestroy_f(), never vsip_valldestroy_f().
-
 prepare:
   mode: vendored
 build:

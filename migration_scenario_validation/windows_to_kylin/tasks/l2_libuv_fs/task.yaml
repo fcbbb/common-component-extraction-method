@@ -51,12 +51,17 @@ source:
   - test/test-fs-event.c
   - test/test-fs-poll.c
   - test/test-fs-readdir.c
-spec: "`src/unix/fs.c` was removed.  Reimplement libuv's POSIX file-system\nbackend against the public\
-  \ `uv_fs_*` API and the internal loop/req\ncontracts:\n  - sync and async open/read/write/close, stat/lstat/fstat,\
-  \ mkdir,\n    rmdir, unlink, rename, link, symlink, readlink, chmod, chown,\n    utime, truncate, copyfile,\
-  \ sendfile, access and mkdtemp;\n  - the thread-pool work/after-work split, req->result, uv_fs_t.path\n\
-  \    ownership and the documented error mapping;\n  - directory scanning (uv_fs_scandir) and the fs-event/fs-poll\n\
-  \    integration expected by the tests.\n"
+spec: |
+  `src/unix/fs.c` was removed.  Reimplement libuv's POSIX file-system
+  backend against the public `uv_fs_*` API and the internal loop/req
+  contracts:
+    - sync and async open/read/write/close, stat/lstat/fstat, mkdir,
+      rmdir, unlink, rename, link, symlink, readlink, chmod, chown,
+      utime, truncate, copyfile, sendfile, access and mkdtemp;
+    - the thread-pool work/after-work split, req->result, uv_fs_t.path
+      ownership and the documented error mapping;
+    - directory scanning (uv_fs_scandir) and the fs-event/fs-poll
+      integration.
 prepare:
   remove:
   - src/unix/fs.c

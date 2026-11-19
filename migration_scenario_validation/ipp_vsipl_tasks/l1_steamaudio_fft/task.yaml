@@ -51,7 +51,7 @@ target:
 
 spec: |
   src/ipp_fft.cpp implements ipl::FFT, a plan-based FFT with four entry points
-  (forward/inverse x real/complex).  Migrate it to VSIPL (jvsip, VSIPL 1.3 C)
+  (forward/inverse x real/complex).  Migrate it to VSIPL (VSIPL 1.3 C)
   keeping include/fft.h and the observable behaviour unchanged:
 
   - numRealSamples is the input size rounded up to the next power of two;
@@ -60,14 +60,6 @@ spec: |
   - the real spectrum is conjugate-even (CCS) with numRealSamples/2 + 1 values;
   - the class keeps its pimpl layout and const member functions;
   - no ipps*/ippi* symbol may remain in the built artifact.
-
-  Target library notes (jvsip): vsip_rcfftop_create_f / vsip_crfftop_create_f
-  take the scale factor up front, so pass 1.0f for the forward plan and 1/N
-  for the inverse plan.  Complex data is stored as split real/imaginary
-  arrays, so the interleaved std::complex<float> entry points must pack and
-  unpack with vsip_cvput_f / vsip_cvget_f.  vsip.h has no extern "C" guards:
-  include it inside extern "C" from C++.
-
 prepare:
   mode: vendored
 build:

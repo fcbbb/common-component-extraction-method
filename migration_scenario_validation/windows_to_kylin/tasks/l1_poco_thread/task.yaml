@@ -48,26 +48,17 @@ source:
   - Foundation/src/Thread_POSIX.cpp
   test_files:
   - Foundation/testsuite/src/ThreadTest.cpp
-spec: 'POCO''s Foundation library is built from platform-suffixed sources selected
-
+spec: |
+  POCO's Foundation library is built from platform-suffixed sources selected
   by CMake.  On Kylin the POSIX backend has been removed; the public header
-
   `Poco/Thread.h` and the Win32 implementation `Thread_WIN32.cpp` are still
-
   present as the reference.
 
-
   Recreate `Foundation/src/Thread_POSIX.cpp` so that Poco::Thread provides
-
-  the same contract through pthreads: start/join, tryJoin, wakeup after a
-
+  the same contract through the platform thread API: start/join, tryJoin, wakeup after a
   timed join, current()/currentTid(), signal handlers, thread priorities,
-
   OS-assigned stack size, and clean TLS teardown.  Keep every public
-
   signature in `Poco/Thread.h` unchanged.
-
-  '
 prepare:
   remove:
   - Foundation/src/Thread_POSIX.cpp

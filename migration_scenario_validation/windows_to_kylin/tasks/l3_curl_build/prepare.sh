@@ -57,6 +57,5 @@ copy_gold CMake
 rm -rf "$ROOT/work"/CMakeLists.txt
 rm -rf "$ROOT/work"/CMake
 
-if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$ROOT/work/TASK.md"; fi
 printf "%s\n" "$COMMIT" > "$ROOT/work/.source_commit"
 echo "prepared $ROOT/work from $REPO_URL@$COMMIT"

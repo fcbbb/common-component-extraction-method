@@ -28,6 +28,7 @@ import json
 import os
 import shutil
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -38,7 +39,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
-from shared.harness import taskmodel  # noqa: E402
+from shared.harness import agent_view, taskmodel  # noqa: E402
 import agent_trial as at  # noqa: E402
 import baseline_trial as bt  # noqa: E402
 
@@ -116,14 +117,30 @@ def _iter_workspace_files(work: Path) -> List[Path]:
     return files
 
 
-def build_context(task_root: Path, task: Dict[str, Any], max_chars: int) -> Dict[str, Any]:
+def build_context(
+    task_root: Path,
+    task: Dict[str, Any],
+    max_chars: int,
+    *,
+    work_view: Optional[Path] = None,
+) -> Dict[str, Any]:
     """Build a deterministic, budgeted context packet.
 
     Metadata-listed source files and build files are included first, then the
     rest of the workspace in path order. The tree is always included so the
     model knows what exists even when file bodies are truncated.
     """
-    work = task_root / "work"
+    # The origin prompt must see the same filtered workspace as an agent, not
+    # the evaluator's full work tree.  Callers that already copied a filtered
+    # view pass it in; standalone callers get a temporary filtered copy.
+    if work_view is not None:
+        return _build_context_from_work(Path(work_view), task, max_chars)
+    with tempfile.TemporaryDirectory(prefix="origin-view-") as tmp:
+        agent_view.copy_agent_view(task_root / "work", Path(tmp), task)
+        return _build_context_from_work(Path(tmp), task, max_chars)
+
+
+def _build_context_from_work(work: Path, task: Dict[str, Any], max_chars: int) -> Dict[str, Any]:
     source = task.get("source") or {}
     preferred: List[str] = []
     for key in ("files", "windows_files", "test_files"):
@@ -170,6 +187,8 @@ def build_context(task_root: Path, task: Dict[str, Any], max_chars: int) -> Dict
         used += len(header) + len(text)
         included.append(rel)
 
+    build_meta = dict(task.get("build") or {})
+    build_meta["command"] = taskmodel.agent_build_command(task) or build_meta.get("command", "")
     task_meta = json.dumps(
         {
             "task_id": task.get("task_id") or task.get("id"),
@@ -178,11 +197,9 @@ def build_context(task_root: Path, task: Dict[str, Any], max_chars: int) -> Dict
             "fit": task.get("fit"),
             "title": task.get("title"),
             "target": task.get("target"),
-            "build": task.get("build"),
-            "public_tests": task.get("public_tests"),
-            "hidden_tests": task.get("hidden_tests"),
-            "gates": task.get("gates"),
+            "build": build_meta,
             "negative": task.get("negative"),
+            # Hidden test cases and gate regexes are evaluator-only.
         },
         ensure_ascii=False,
         indent=2,
@@ -405,7 +422,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--context-window", type=int, default=262144)
     parser.add_argument("--origin-max-output-tokens", type=int, default=65536,
                         help="output budget for the single origin response (reasoning + JSON)")
-    parser.add_argument("--origin-context-chars", type=int, default=700000)
+    parser.add_argument("--origin-context-chars", type=int, default=200000)
     parser.add_argument("--timeout", type=int, default=600)
     parser.add_argument("--prepare-timeout", type=int, default=1800)
     parser.add_argument("--judge-timeout", type=int, default=2400)
@@ -503,8 +520,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 print(f"DRY  {tag}")
                 continue
             try:
-                at._copy_workspace(reference, workspace, image)
-                ctx = build_context(root, task, args.origin_context_chars)
+                at._copy_workspace(reference, workspace, image, task)
+                ctx = build_context(root, task, args.origin_context_chars, work_view=workspace)
                 (attempt_dir / "prompt.txt").write_text(ctx["prompt"], encoding="utf-8")
                 record["origin"] = {
                     "context_chars": ctx["chars"],

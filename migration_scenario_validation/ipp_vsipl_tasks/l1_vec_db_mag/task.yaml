@@ -49,12 +49,6 @@ spec: |
   - floor_mag must be > 0 (protects the logarithm at zeros and near-zeros)
   - return 0 on success, -1 for NULL pointers, n < 1 or floor_mag <= 0
   - no ipps*/ippi* symbol may remain in the built artifact
-
-  The natural VSIPL mapping is: vsip_vcmplx_f to build a complex view from the
-  split input, vsip_cvmag_f for the magnitude, vsip_vclip_f for the floor,
-  vsip_vlog10_f for the logarithm and vsip_svmul_f / vsip_svadd_f for the
-  scale and offset.  Bind the caller's arrays instead of copying them in.
-
 prepare:
   mode: vendored
 build:

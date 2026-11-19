@@ -53,13 +53,10 @@ source:
   test_files:
   - Foundation/testsuite/src/RWLockTest.cpp
   - Foundation/testsuite/src/SemaphoreTest.cpp
-spec: "Recreate both POSIX backends.  RWLock must support read/write lock,\ntryReadLock/tryWriteLock,\
-  \ unlock and the timeout variants; Semaphore must\nsupport wait, tryWait, wait(timeout) and set, with\
-  \ EINTR retry loops.\nThe Windows implementations use SRWLOCK and HANDLE-based semaphores;\npthread_rwlock_t\
-  \ and sem_t are not drop-in equivalents:\n  - pthread semaphores use unsigned counts and reject negative\
-  \ initial\n    values that Poco accepts;\n  - timed waits use CLOCK_REALTIME on Linux and must convert\
-  \ Poco's\n    millisecond Timeout to an absolute timespec;\n  - writer starvation policy differs, so\
-  \ do not \"optimise\" the upstream\n    implementation away.\n"
+spec: |
+  Recreate both POSIX backends.  RWLock must support read/write lock,
+  tryReadLock/tryWriteLock, unlock and the timeout variants; Semaphore must
+  support wait, tryWait, wait(timeout) and set, with EINTR retry loops.
 prepare:
   remove:
   - Foundation/src/RWLock_POSIX.cpp

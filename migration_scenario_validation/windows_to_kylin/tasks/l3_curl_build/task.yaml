@@ -50,12 +50,17 @@ source:
   test_files:
   - tests/data/test3000
   - tests/data/test3001
-spec: "The top-level CMake build system was removed; only the Visual Studio\nprojects and the nmake `winbuild/`\
-  \ files remain.  Produce a CMake build\nfor Kylin that:\n  - builds libcurl and the `curl` tool with\
-  \ OpenSSL, zlib and the\n    bundled content;\n  - generates `curl_config.h` (or an equivalent) with\
-  \ the feature macros\n    the source expects;\n  - accepts `-DCURL_USE_OPENSSL=ON -DBUILD_SHARED_LIBS=OFF`\
-  \ and installs\n    headers/libraries;\n  - runs the small TLS smoke test.\nDo not vendor a prebuilt\
-  \ libcurl; the build must compile from this tree.\n"
+spec: |
+  The top-level CMake build system was removed; only the Visual Studio
+  projects and the nmake `winbuild/` files remain.  Produce a CMake build
+  for Kylin that:
+    - builds libcurl and the `curl` tool with the target TLS/zlib dependencies
+      and the bundled content;
+    - generates `curl_config.h` (or an equivalent) with the feature macros
+      the source expects;
+    - accepts the target TLS backend and static/shared options and installs
+      headers/libraries;
+  Do not vendor a prebuilt libcurl; the build must compile from this tree.
 prepare:
   remove:
   - CMakeLists.txt

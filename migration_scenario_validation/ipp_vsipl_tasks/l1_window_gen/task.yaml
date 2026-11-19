@@ -52,19 +52,6 @@ spec: |
     accepts any n >= 1, and requires b <= 38;
   - return 0 on success, -1 on invalid arguments;
   - no ipps*/ippi* symbol may remain in the built artifact.
-
-  VSIPL nominally has window generators, but none of them is a drop-in
-  replacement and using them blindly is the trap:
-    - vsip_vcreate_hanning_f is 0.5*(1 - cos(2*pi*(n+1)/(N+1))), neither the
-      symmetric nor the periodic Hann;
-    - vsip_vcreate_blackman_f is the textbook 0.42/0.5/0.08 window, which
-      matches IPP only when alpha == 0;
-    - vsip_vcreate_kaiser_f takes the raw beta (so it needs the rescale) and
-      its single-precision Bessel series overflows to NaN for beta > ~20.
-  The reference therefore writes the window out and uses vsip_vmul_f for the
-  one operation VSIPL does provide: the elementwise product of the window view
-  and the bound input view.
-
 prepare:
   mode: vendored
 build:

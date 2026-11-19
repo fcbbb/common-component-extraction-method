@@ -69,7 +69,7 @@ spec: |
   observable behaviour unchanged.  The header is the contract; it also *defines*
   the prototype filter, so the numbers are reproducible from it alone:
 
-      L  = up*ntaps
+  L  = up*ntaps
       c  = (L-1)/2
       h[j]      = 2*fc*sinc(2*fc*(j-c)) * 0.5*(1 - cos(2*pi*j/(L-1)))
       hp[p][k]  = h[p + k*up] / sum_k' h[p + k'*up]        (branch sums to 1)
@@ -100,19 +100,6 @@ spec: |
   returns -1.
 
   no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
-
-  VSIPL notes:
-    - vsip_vdot_f(a, b) returns the scalar directly; a view bound over the
-      history with vsip_vbind_f is enough to do the branch filter, provided the
-      taps are stored time-reversed (the contract's window descends as k grows).
-    - vsip_rcfftop_f returns the natural complex sequence for k = 0 .. N/2, so
-      the packed-CCS bookkeeping of the IPP side disappears; vsip_cvmag_f
-      covers every bin.
-    - the analysis frames are non-overlapping, so a view can be bound at
-      f*fft_len over the caller's buffer instead of copying frame by frame.
-    - the state's own planes are realloc'd only in the input path; any block
-      bound over them has to be rebuilt when the plane moves.
-
 prepare:
   mode: vendored
 build:

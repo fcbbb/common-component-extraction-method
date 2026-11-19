@@ -38,7 +38,7 @@ target:
 
 spec: |
   src/tdfir_ipp.c implements a bank of `nfilters` FIR filters over a
-  continuous block-based stream.  Migrate it to VSIPL (jvsip, VSIPL 1.3 C)
+  continuous block-based stream.  Migrate it to VSIPL (VSIPL 1.3 C)
   while keeping include/tdfir.h and the observable behaviour unchanged:
 
   - out[m * n + i] is filter m applied to in[i], with coefficients
@@ -49,14 +49,6 @@ spec: |
   - tdfir_create/tdfir_destroy keep their signatures and must free
     everything they allocate;
   - no ipps*/ippi* symbol may remain in the built artifact.
-
-  The library to target is jvsip (rrjudd/jvsip).  Note that jvsip's
-  vsip_firflt_f() is not usable (it builds its overlap view on the kernel
-  block); implement the filter with primitives that work, e.g. vsip_vdot_f
-  over an extended input buffer, or vsip_conv1d/conv1d_create_f.  If you take
-  a subview, release it with vsip_vdestroy_f(), not vsip_valldestroy_f() —
-  the latter destroys the parent block.
-
 prepare:
   mode: vendored
 build:

@@ -47,7 +47,7 @@ spec: |
   src/conv_corr_ipp.c implements convolution and normalized cross-correlation.
   Migrate it off Intel IPP while keeping include/conv_corr.h unchanged:
 
-    full[i] = sum(j) h[j] * x[i-j], i = 0 .. nh+nx-2
+  full[i] = sum(j) h[j] * x[i-j], i = 0 .. nh+nx-2
     DSP_REGION_FULL -> y = full[0 .. nh+nx-2]
     DSP_REGION_SAME -> y[i] = full[i + nh/2], i = 0 .. nx-1
     dsp_convolve_strided reads x[k] = xbuf[offset + k*xstride]
@@ -58,23 +58,6 @@ spec: |
                           the data
     return 0 on success, -1 on invalid arguments
     no ipps*/ippi* symbol may remain in the built artifact.
-
-  VSIPL has both operations directly: vsip_conv1d_create_f /
-  vsip_convolve1d_f with VSIP_SUPPORT_FULL or VSIP_SUPPORT_SAME, and
-  vsip_corr1d_create_f / vsip_correlate1d_f with VSIP_BIASED/VSIP_UNBIASED.
-  Two things must be checked rather than assumed:
-    - vsip_convolve1d_f's SAME region starts at full[nh/2] (integer division),
-      which is the contracted offset; an even kernel is the case that differs
-      from the textbook (nh-1)/2;
-    - jvsip's VSIP_UNBIASED full-support normalization is wrong once the kernel
-      is longer than the data: VI_vunbiasfull_f walks the rising/falling
-      overlap counts of the kernel and divides the plateau samples by nh
-      instead of nx (measured nh=8, nx=6: divisors 7 and 8 where 6 is right).
-      The reference falls back to VSIP_BIASED plus an explicit overlap-count
-      division for nh > nx.
-  Views bind the caller's arrays, so the strided entry point needs no gather
-  buffer on the VSIPL side (IPP did).
-
 prepare:
   mode: vendored
 build:

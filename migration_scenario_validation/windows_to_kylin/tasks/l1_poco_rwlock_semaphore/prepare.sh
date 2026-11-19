@@ -57,6 +57,5 @@ copy_gold Foundation/src/Semaphore_POSIX.cpp
 rm -rf "$ROOT/work"/Foundation/src/RWLock_POSIX.cpp
 rm -rf "$ROOT/work"/Foundation/src/Semaphore_POSIX.cpp
 
-if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$ROOT/work/TASK.md"; fi
 printf "%s\n" "$COMMIT" > "$ROOT/work/.source_commit"
 echo "prepared $ROOT/work from $REPO_URL@$COMMIT"

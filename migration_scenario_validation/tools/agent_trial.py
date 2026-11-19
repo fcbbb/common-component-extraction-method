@@ -54,7 +54,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from shared.harness import taskmodel  # noqa: E402
+from shared.harness import agent_view, taskmodel  # noqa: E402
 
 COMPLETION_MARKER = "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
 AGENT_UID = 10001
@@ -204,7 +204,7 @@ def _iter_task_roots(args: argparse.Namespace) -> List[Path]:
 def _task_prompt(task: Dict[str, Any], root: Path) -> str:
     spec = str(task.get("spec") or "").strip()
     source = task.get("source") or {}
-    build = taskmodel.command_of(task, "build") or ""
+    build = taskmodel.agent_build_command(task) or ""
     build = taskmodel.expand_command(
         build, root=root, work=Path("/workspace"), build=Path("/tmp/build"),
         golden=Path("/workspace"),
@@ -274,9 +274,12 @@ def _remove_tree(path: Path, image: str) -> None:
         shutil.rmtree(path, ignore_errors=True)
 
 
-def _copy_workspace(source: Path, target: Path, image: str) -> None:
+def _copy_workspace(source: Path, target: Path, image: str, task: Optional[Dict[str, Any]] = None) -> None:
     _remove_tree(target, image)
-    shutil.copytree(source, target, symlinks=True)
+    if task is None:
+        shutil.copytree(source, target, symlinks=True)
+    else:
+        agent_view.copy_agent_view(source, target, task)
     for path in target.rglob("*"):
         if path.is_dir():
             path.chmod(0o755)
@@ -366,6 +369,7 @@ def _judge(
         "python3", "/bench/shared/harness/runner.py",
         "--task-root", f"/bench/{rel}",
         "--work-dir", "/workspace",
+        "--base-work-dir", f"/bench/{rel}/work",
         "--build-dir", f"/tmp/judge-build-{tag}",
         "--timeout", str(timeout),
     ]
@@ -618,7 +622,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
             started = time.time()
             try:
-                _copy_workspace(reference, workspace, args.image)
+                _copy_workspace(reference, workspace, args.image, task)
             except OSError as exc:
                 record["detail"] = f"cannot copy workspace: {exc}"
                 results.append(record)

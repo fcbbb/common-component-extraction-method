@@ -103,6 +103,34 @@ def command_of(task: Dict[str, Any], section: str) -> Optional[str]:
     return None
 
 
+_AGENT_BUILD_REPLACEMENTS = (
+    ("-DENABLE_TESTS=ON", "-DENABLE_TESTS=OFF"),
+    ("-DBUILD_TESTS=ON", "-DBUILD_TESTS=OFF"),
+    ("-DBUILD_TESTING=ON", "-DBUILD_TESTING=OFF"),
+    ("-DENABLE_TESTING=ON", "-DENABLE_TESTING=OFF"),
+    ("-DENABLE_TEST=ON", "-DENABLE_TEST=OFF"),
+)
+
+
+def agent_build_command(task: Dict[str, Any]) -> Optional[str]:
+    """Return the build command shown to the agent.
+
+    The judge build may compile upstream tests; the agent-visible tree has
+    those tests removed.  Tasks can supply an explicit ``agent_build.command``;
+    otherwise the common CMake test switches are turned off.
+    """
+    explicit = task.get("agent_build")
+    if isinstance(explicit, str):
+        command = explicit
+    elif isinstance(explicit, dict) and explicit.get("command"):
+        command = str(explicit["command"])
+    else:
+        command = command_of(task, "build") or ""
+    for old, new in _AGENT_BUILD_REPLACEMENTS:
+        command = command.replace(old, new)
+    return command
+
+
 def expand_command(
     command: str,
     *,

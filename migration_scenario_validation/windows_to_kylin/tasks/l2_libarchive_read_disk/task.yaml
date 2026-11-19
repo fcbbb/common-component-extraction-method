@@ -50,12 +50,15 @@ source:
   - libarchive/test/test_read_disk.c
   - libarchive/test/test_read_disk_directory_traversals.c
   - libarchive/test/test_read_disk_entry_from_file.c
-spec: "`archive_read_disk_posix.c` was removed.  Reimplement the disk reader\nfor Kylin while keeping\
-  \ `archive_read_disk_windows.c` as the reference\nand `archive_read_disk_private.h` unchanged:\n  -\
-  \ ACL/xattr entry metadata (where supported), nlink, inode, device,\n    symlink target and hardlink\
-  \ detection;\n  - directory traversal with the documented visit order and the\n    `descend`/`can_descend`\
-  \ callback contract;\n  - sparse-file and file-type handling used by the write-disk tests.\nThe selected\
-  \ tests are the upstream read-disk tests, which run entirely\non local fixtures.\n"
+spec: |
+  `archive_read_disk_posix.c` was removed.  Reimplement the disk reader
+  for Kylin while keeping `archive_read_disk_windows.c` as the reference
+  and `archive_read_disk_private.h` unchanged:
+    - ACL/xattr entry metadata (where supported), nlink, inode, device,
+      symlink target and hardlink detection;
+    - directory traversal with the documented visit order and the
+      `descend`/`can_descend` callback contract;
+    - sparse-file and file-type handling.
 prepare:
   remove:
   - libarchive/archive_read_disk_posix.c

@@ -203,7 +203,6 @@ for entry in src include test CMakeLists.txt support; do
     cp -a "$ROOT/$entry" "$WORK/"
   fi
 done
-if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$WORK/TASK.md"; fi
 
 printf '%s\\n' "$COMMIT" > "$WORK/.source_commit"
 printf 'vendored: %s @ %s\\n' "$REPO" "$COMMIT" > "$WORK/.source_origin"

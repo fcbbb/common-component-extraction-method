@@ -90,18 +90,6 @@ spec: |
   untouched.  A NULL state, input, density or report returns -1.
 
   no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
-
-  VSIPL notes:
-    - vsip_rcfftop_f returns the natural complex sequence for k = 0 .. N/2,
-      i.e. exactly the bins the contract asks for.  The IPP packed CCS layout
-      (an N+2-float block with the Nyquist term at p[N]) has no counterpart and
-      does not need one.
-    - jvsip has no Hann window creator with the symmetric convention: its
-      vsip_vcreate_hanning_f uses the periodic 2*pi*(i+1)/(N+1).  The window
-      has to be built from the definition.
-    - the occupancy count has no direct vector counterpart in IPP either; in
-      VSIPL it is vsip_vlge_f plus vsip_vsumval_bl.
-
 prepare:
   mode: vendored
 build:

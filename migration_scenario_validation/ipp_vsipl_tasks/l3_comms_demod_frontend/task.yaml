@@ -74,7 +74,7 @@ spec: |
   of outputs that depends only on the total input seen so far, never on how
   it was blocked:
 
-      j0   = ceil((T-1)/decim)
+  j0   = ceil((T-1)/decim)
       jmax = (total-1)/decim
       out  = max(0, jmax - j0 + 1)
 
@@ -93,17 +93,6 @@ spec: |
   non-positive nco_len / decim / ntaps.
 
   no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
-
-  VSIPL notes:
-    - VSIPL complex data is split (separate re/im planes), which is exactly the
-      layout the API already uses.  vsip_cblockbind_f over the caller's two
-      planes turns a block into one complex view, so the ippsRealToCplx_32f /
-      ippsCplxToReal_32fc round trip disappears rather than moving elsewhere.
-    - bound blocks are VSIP_USER_BLOCK: destroying them does not free the
-      wrapped memory.  Ownership stays with the state and with the caller.
-    - the taps have to be stored time-reversed for vsip_vdot_f, which walks an
-      ascending window.
-
 prepare:
   mode: vendored
 build:

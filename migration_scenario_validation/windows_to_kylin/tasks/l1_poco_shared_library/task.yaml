@@ -48,17 +48,11 @@ source:
   - Foundation/src/SharedLibrary_UNIX.cpp
   test_files:
   - Foundation/testsuite/src/SharedLibraryTest.cpp
-spec: 'Recreate `Foundation/src/SharedLibrary_UNIX.cpp`: load/UNLOAD shared
-
-  objects with dlopen/dlsym/dlclose, map Poco''s Poco::SharedLibrary
-
-  exceptions onto dlerror(), expose prefix/suffix helpers, and keep the
-
+spec: |
+  Recreate `Foundation/src/SharedLibrary_UNIX.cpp`: load/UNLOAD shared objects, map Poco's Poco::SharedLibrary
+  exceptions onto the target loader error API, expose prefix/suffix helpers, and keep the
   symbol lookup semantics (missing symbol must throw
-
   Poco::SharedLibrary::SymbolNotFoundException, not return null).
-
-  '
 prepare:
   remove:
   - Foundation/src/SharedLibrary_UNIX.cpp

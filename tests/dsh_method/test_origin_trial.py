@@ -54,3 +54,23 @@ def test_origin_context_includes_metadata_files(tmp_path):
     assert "src/main.c" in ctx["included"]
     assert "int main(void)" in ctx["prompt"]
     assert "## OUTPUT CONTRACT" in ctx["prompt"]
+
+
+def test_origin_context_does_not_expose_hidden_tests(tmp_path):
+    task_root = tmp_path / "task"
+    work = task_root / "work"
+    (work / "src").mkdir(parents=True)
+    (work / "src" / "main.c").write_text("int main(void) { return 0; }\n", encoding="utf-8")
+    task = {
+        "task_id": "x",
+        "scenario": "ipp_to_vsipl",
+        "level": "L1",
+        "spec": "migrate main",
+        "hidden_tests": {"cases": ["SECRET_HIDDEN_CASE"]},
+        "gates": {"api_removal": {"symbol_regex": "SECRET_GATE"}},
+        "source": {"files": ["src/main.c"]},
+        "build": {"command": "true"},
+    }
+    ctx = origin_trial.build_context(task_root, task, 100_000)
+    assert "SECRET_HIDDEN_CASE" not in ctx["prompt"]
+    assert "SECRET_GATE" not in ctx["prompt"]
