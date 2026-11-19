@@ -1063,7 +1063,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         ok, prep_log = at._prepare(root, args.prepare_timeout, False)
         if not ok:
             print(f"ERROR {task_id}: prepare.sh failed", file=sys.stderr)
-            results.append({"task": task_id, "status": "error", "detail": "prepare.sh failed"})
+            for run in range(1, args.runs + 1):
+                results.append(
+                    {
+                        "task": task_id,
+                        "scenario": scenario,
+                        "arm": arm,
+                        "condition": condition,
+                        "level": task.get("level"),
+                        "run": run,
+                        "status": "error",
+                        "detail": "prepare.sh failed",
+                    }
+                )
             continue
         reference = root / "work"
         if scenario == "ipp_to_vsipl":
