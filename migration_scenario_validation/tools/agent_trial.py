@@ -105,6 +105,7 @@ def _run(
             cwd=str(cwd) if cwd else None,
             capture_output=True,
             text=True,
+            errors="replace",
             timeout=timeout,
             env=env,
         )

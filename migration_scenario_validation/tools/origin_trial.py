@@ -59,6 +59,33 @@ workspace. For a negative/non-portable task, write the requested report file ins
 inventing a target implementation. Do not modify tests or evaluator files.
 """
 
+def origin_system_prompt(task: Dict[str, Any]) -> str:
+    """Return the target-aware system prompt for the one-shot arm.
+
+    Direct has a scenario-specific system prompt.  Origin previously had only
+    the generic one-shot instruction, so a Kylin/IPP model could ignore the
+    target platform and submit a portable fallback.  Keep the output contract
+    generic but make the target requirement explicit.
+    """
+    scenario = str(task.get("scenario") or "")
+    if scenario == "ipp_to_vsipl":
+        target = (
+            "You are a software engineer migrating a C/C++ component from Intel IPP to VSIPL (jvsip).\n"
+            "The submitted implementation must use the VSIPL C API and link against libvsip; "
+            "a portable fallback is not accepted."
+        )
+    elif scenario == "windows_to_kylin":
+        target = (
+            "You are a software engineer porting one component to Kylin V10 SP3 with GCC 13.\n"
+            "The submitted implementation must use the target Kylin/Linux platform APIs required "
+            "by the task; a portable Windows-independent fallback that avoids the target platform "
+            "is not accepted."
+        )
+    else:
+        target = "Use the target platform required by the task."
+    return target + "\n\n" + ORIGIN_SYSTEM
+
+
 IGNORED_DIRS = {
     ".git", ".venv", "venv", "__pycache__", "build", "build-release",
     "cmake-build-debug", "component_bundle", "node_modules", "gold",
@@ -142,6 +169,7 @@ def build_context(
 
 def _build_context_from_work(work: Path, task: Dict[str, Any], max_chars: int) -> Dict[str, Any]:
     source = task.get("source") or {}
+    system = origin_system_prompt(task)
     preferred: List[str] = []
     for key in ("files", "windows_files", "test_files"):
         value = source.get(key) if isinstance(source, dict) else None
@@ -160,17 +188,24 @@ def _build_context_from_work(work: Path, task: Dict[str, Any], max_chars: int) -
     # Build files next, then source-like files.
     for p in all_files:
         rel = _rel(p, work)
-        if rel not in ordered and p.name in {
+        if rel not in ordered and "/" not in rel and p.name in {
             "CMakeLists.txt", "Makefile", "makefile", "configure",
             "configure.ac", "meson.build", "BUILD", "BUILD.bazel",
         }:
             ordered.append(rel)
-    for p in all_files:
-        rel = _rel(p, work)
-        if rel not in ordered and (p.suffix.lower() in TEXT_SUFFIXES or _is_text_file(p)):
-            ordered.append(rel)
+    # Do not add the whole repository.  One-shot origin has no tools/feedback;
+    # dumping every text file makes the request enormous and still leaves the
+    # model to guess which files matter.  ``preferred`` already contains the
+    # task's source/windows/test files; build files were added above.
 
-    tree_lines = [rel for rel in sorted(by_rel)]
+    tree_all = [rel for rel in sorted(by_rel)]
+    # The tree is useful orientation, but a 700-file repository can consume
+    # more context than the code itself.  Keep a bounded tree alongside the
+    # selected file bodies.
+    tree_limit = 200
+    tree_lines = tree_all[:tree_limit]
+    if len(tree_all) > tree_limit:
+        tree_lines.append(f"... ({len(tree_all) - tree_limit} more paths omitted)")
     chunks: List[str] = []
     used = 0
     included: List[str] = []
@@ -226,7 +261,7 @@ def _build_context_from_work(work: Path, task: Dict[str, Any], max_chars: int) -
             f"Omitted {len(omitted)} files because of the context budget.",
             "",
             "## OUTPUT CONTRACT",
-            ORIGIN_SYSTEM,
+            system,
         ]
     )
     return {
@@ -236,6 +271,7 @@ def _build_context_from_work(work: Path, task: Dict[str, Any], max_chars: int) -
         "omitted": omitted,
         "chars": len(prompt),
         "content_chars": used,
+        "system": system,
     }
 
 
@@ -252,7 +288,7 @@ def _extract_json(text: str) -> Dict[str, Any]:
     end = text.rfind("}")
     if start < 0 or end < start:
         raise ValueError("response contains no JSON object")
-    value = json.loads(text[start : end + 1])
+    value = json.loads(text[start : end + 1], strict=False)
     if not isinstance(value, dict):
         raise ValueError("response JSON is not an object")
     return value
@@ -310,12 +346,13 @@ def call_chat(
     prompt: str,
     max_tokens: int,
     timeout: int,
+    system_prompt: str = ORIGIN_SYSTEM,
 ) -> Tuple[str, Dict[str, Any], Dict[str, Any]]:
     url = api_base.rstrip("/") + "/chat/completions"
     body = {
         "model": model,
         "messages": [
-            {"role": "system", "content": ORIGIN_SYSTEM},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt},
         ],
         "temperature": 0,
@@ -510,6 +547,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "build": None,
                 "tests": None,
                 "api_removal": None,
+                "target_api": None,
                 "judge": None,
                 "detail": "",
             }
@@ -528,6 +566,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     "context_files": len(ctx["included"]),
                     "omitted_files": len(ctx["omitted"]),
                     "prompt_sha256": hashlib.sha256(ctx["prompt"].encode()).hexdigest(),
+                    "system_sha256": hashlib.sha256(ctx["system"].encode()).hexdigest(),
                 }
                 if args.fake_response:
                     response = Path(args.fake_response).read_text(encoding="utf-8")
@@ -556,6 +595,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 record["build"] = report.get("build")
                 record["tests"] = report.get("tests")
                 record["api_removal"] = report.get("api_removal")
+                record["target_api"] = report.get("target_api")
                 record["status"] = "pass" if (judge.get("rc") == 0 and report.get("status") == "pass") else "fail"
                 record["finished_at"] = _now()
                 record["duration_s"] = round(time.time() - started, 1)

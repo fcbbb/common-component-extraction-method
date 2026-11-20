@@ -106,6 +106,7 @@ def run(
         "public_tests": "skipped",
         "tests": "skipped",
         "api_removal": "skipped",
+        "target_api": "skipped",
         "log": "",
     }
 
@@ -204,6 +205,30 @@ def run(
                     result["status"] = "fail"
                     return result
                 if api_result["status"] == "error":
+                    result["status"] = "error"
+                    return result
+
+            target_gate = taskmodel.target_api_gate(task)
+            if isinstance(target_gate, dict):
+                target_dirs = target_gate.get("source_dirs") or ["src"]
+                target_result = api_removal.scan(
+                    artifacts=_artifacts(task, work, build),
+                    symbol_regex=target_gate.get("symbol_regex"),
+                    source_dirs=[
+                        str((work / p).resolve()) if not Path(p).is_absolute() else p
+                        for p in target_dirs
+                    ],
+                    source_regex=target_gate.get("source_regex"),
+                    exclude_dirs=target_gate.get("exclude_dirs"),
+                    exclude_globs=target_gate.get("exclude_globs"),
+                    positive=True,
+                )
+                result["target_api"] = target_result["status"]
+                result["target_detail"] = target_result
+                if target_result["status"] == "fail":
+                    result["status"] = "fail"
+                    return result
+                if target_result["status"] == "error":
                     result["status"] = "error"
                     return result
 
