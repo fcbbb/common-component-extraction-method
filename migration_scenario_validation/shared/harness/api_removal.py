@@ -130,6 +130,7 @@ def scan(
     exclude_dirs: Optional[Iterable[str]] = None,
     exclude_globs: Optional[Iterable[str]] = None,
     expect_fail: bool = False,
+    positive: bool = False,
     max_hits: int = 200,
 ) -> Dict[str, Any]:
     result: Dict[str, Any] = {
@@ -141,11 +142,16 @@ def scan(
         "source_hits": [],
         "exclude_globs": list(exclude_globs or []),
         "expect_fail": bool(expect_fail),
+        "positive": bool(positive),
         "errors": [],
     }
     if not symbol_regex and not source_regex:
         result["status"] = "error"
         result["errors"].append("at least one of symbol_regex/source_regex is required")
+        return result
+    if positive and expect_fail:
+        result["status"] = "error"
+        result["errors"].append("positive and expect_fail are mutually exclusive")
         return result
 
     artifact_list = list(artifacts or [])
@@ -219,7 +225,15 @@ def scan(
                 break
 
     hits = bool(result["symbols"] or result["source_hits"])
-    if expect_fail:
+    if positive:
+        # Positive target-API gate: the migration must actually use the
+        # requested target library/API, not merely remove the source API.
+        if hits:
+            result["status"] = "pass"
+        else:
+            result["status"] = "fail"
+            result["errors"].append("required target API was not found")
+    elif expect_fail:
         # Negative control: the platform API is expected to remain, because
         # there is no behaviour-preserving equivalent on the target OS.
         if hits:
@@ -255,6 +269,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="negative control: pass only when removed-API hits are present",
     )
+    parser.add_argument(
+        "--positive",
+        action="store_true",
+        help="positive target gate: pass only when target-API hits are present",
+    )
     parser.add_argument("--max-hits", type=int, default=200)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
@@ -267,6 +286,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         exclude_dirs=args.exclude_dir,
         exclude_globs=args.exclude_glob,
         expect_fail=args.expect_fail,
+        positive=args.positive,
         max_hits=args.max_hits,
     )
 

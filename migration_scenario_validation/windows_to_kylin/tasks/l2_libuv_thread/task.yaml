@@ -51,19 +51,13 @@ source:
   - test/test-thread-equal.c
   - test/test-thread-priority.c
   - test/test-threadpool.c
-spec: '`src/unix/thread.c` was removed.  Reimplement libuv''s threading layer
-
-  with pthreads: uv_thread_create/join/equal/self, thread names and
-
+spec: |
+  `src/unix/thread.c` was removed.  Reimplement libuv's threading layer
+  with the target thread API: uv_thread_create/join/equal/self, thread names and
   affinity/priority, uv_mutex/uv_rwlock/uv_sem/uv_cond/uv_barrier,
-
   uv_once, TLS keys and the thread-pool (uv_queue_work /
-
   uv_cancel).  Preserve the documented return codes and the
-
   EAGAIN-on-exhaustion behaviour.
-
-  '
 prepare:
   remove:
   - src/unix/thread.c

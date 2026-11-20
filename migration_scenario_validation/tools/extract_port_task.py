@@ -163,7 +163,6 @@ def _prepare_script(task: Dict[str, Any], provenance: Dict[str, Any]) -> str:
         ]
     lines += [
         "",
-        'if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$ROOT/work/TASK.md"; fi',
         'printf "%s\\n" "$COMMIT" > "$ROOT/work/.source_commit"',
         'echo "prepared $ROOT/work from $REPO_URL@$COMMIT"',
     ]
@@ -203,18 +202,6 @@ def _readme(task: Dict[str, Any], provenance: Dict[str, Any]) -> str:
         "```bash",
         str((task.get("build") or {}).get("command", "")),
         "```",
-        "",
-        "## Hidden tests",
-        "",
-        "```bash",
-        str((task.get("hidden_tests") or {}).get("command", "")),
-        "```",
-        "",
-        "## Gold",
-        "",
-        f"Gold kind: `{provenance.get('gold_kind', 'implementation')}`.  "
-        "The reference files are listed in `provenance.json` and are **not** "
-        "part of the agent-visible `work/` tree.",
         "",
     ]
     return "\n".join(lines)

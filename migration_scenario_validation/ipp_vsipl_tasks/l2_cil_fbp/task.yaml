@@ -58,7 +58,7 @@ spec: |
   of CIL on top of Intel IPP.  Migrate it off IPP while keeping
   include/fbp_filtering.h and every observable behaviour unchanged:
 
-    filter_projections_avh(data, filter, weights, order, num_proj, pix_y, pix_x)
+  filter_projections_avh(data, filter, weights, order, num_proj, pix_y, pix_x)
         data is [num_proj][pix_y][pix_x], weights is [pix_y][pix_x], filter is
         2^order long.  Filtered in place:
           for each projection p, for each pair of rows (2j, 2j+1):
@@ -80,18 +80,6 @@ spec: |
         the single weights row weights[k] applies to every row of block k.
         Note the argument order is different from avh on purpose.
     no ipp*/ippi*/ippMalloc/ippFree symbol may remain in the built artifact.
-
-  VSIPL maps this to vsip_ccfftop_create_f / vsip_ccfftop_f (complex-to-
-  complex).  Watch these details:
-    - IPP's pair is "forward divided by N, inverse unscaled".  The reference
-      creates both plans with scale 1.0 and multiplies by filter[k]/N, which
-      is the same arithmetic in the same order.
-    - the real-part / imaginary-part packing is not a memcpy: the two source
-      rows are interleaved into the complex vector at `offset`, and the
-      result is de-interleaved again on the way out.
-    - the weights are a real multiply on the real data (vsip_vmul_f over a
-      bound view), not a complex one.
-
 prepare:
   mode: vendored
 build:

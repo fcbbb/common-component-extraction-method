@@ -88,6 +88,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 from shared.harness import taskmodel  # noqa: E402
 import agent_trial as at  # noqa: E402
+from shared.harness import agent_view  # noqa: E402
 import gold_sanity as gs  # noqa: E402
 import remote_setup as rs  # noqa: E402
 from remote_dsh import RemoteDshBackend  # noqa: E402
@@ -538,6 +539,7 @@ def _judge_local(
         "python3", "/bench/shared/harness/runner.py",
         "--task-root", f"/bench/{rel}",
         "--work-dir", "/workspace",
+        "--base-work-dir", f"/bench/{rel}/work",
         "--build-dir", f"/tmp/judge-build-{tag}",
         "--timeout", str(timeout),
     ]
@@ -745,7 +747,7 @@ def _task_prompt(task: Dict[str, Any], task_root: Path, scenario: str) -> str:
     ]
     if scenario == "ipp_to_vsipl":
         build = taskmodel.expand_command(
-            taskmodel.command_of(task, "build") or "",
+            taskmodel.agent_build_command(task) or "",
             root=Path("/workspace"), work=Path("/workspace"),
             build=Path("/tmp/build"), golden=Path("/workspace"),
         )
@@ -1148,6 +1150,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "agent_status": None,
                 "agent_error": None,
                 "judge": None,
+                "build": None,
+                "tests": None,
+                "api_removal": None,
+                "target_api": None,
                 "detail": "",
             }
             if args.dry_run:
@@ -1161,10 +1167,10 @@ def main(argv: Optional[List[str]] = None) -> int:
             if scenario == "cuda_to_musa":
                 if workspace.exists():
                     shutil.rmtree(workspace, ignore_errors=True)
-                shutil.copytree(reference, workspace, symlinks=True)
+                agent_view.copy_agent_view(reference, workspace, task)
             else:
                 try:
-                    at._copy_workspace(reference, workspace, image)
+                    at._copy_workspace(reference, workspace, image, task)
                 except OSError as exc:
                     record["detail"] = f"cannot copy workspace: {exc}"
                     results.append(record)
@@ -1631,6 +1637,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                         f"cd {shlex.quote(remote_bench)} && python3 shared/harness/runner.py "
                         f"--task-root {shlex.quote(remote_bench + '/' + rel)} "
                         f"--work-dir {shlex.quote(remote_ws)} "
+                        f"--base-work-dir {shlex.quote(remote_bench + '/' + rel + '/work')} "
                         f"--build-dir {shlex.quote('/tmp/judge-build-' + tag)} "
                         f"--timeout {args.judge_timeout}"
                     )
@@ -1646,6 +1653,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 record["build"] = report.get("build")
                 record["tests"] = report.get("tests")
                 record["api_removal"] = report.get("api_removal")
+                record["target_api"] = report.get("target_api")
                 if judge["rc"] == 0 and report.get("status") == "pass":
                     record["status"] = "pass"
                 elif record["agent_status"] is None:

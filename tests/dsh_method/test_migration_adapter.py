@@ -94,7 +94,7 @@ def test_build_workspace_registers_migration_task_for_preparation(tmp_path):
     task_doc = json.loads((output_root / "tasks" / "task-a" / "task.json").read_text())
     assert task_doc["instance_id"] == "task-a"
     assert task_doc["problem_statement"].startswith("migrate add()")
-    assert task_doc["interface"] == "add must stay unchanged"
+    assert task_doc["interface"] == "Match the observable behavior in the task spec."
     assert task_doc["component_bundle"] == entry["bundle_destination"]
     assert (output_root / "offline_tasks" / "task-a" / "task.json").is_file()
 

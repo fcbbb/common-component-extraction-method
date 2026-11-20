@@ -45,26 +45,12 @@ spec: |
   create/apply/destroy lifecycle.  Migrate it off Intel IPP while keeping
   include/fdfir.h and the observable behaviour unchanged:
 
-    fdfir_create(taps, ntaps, nfft): nfft is a power of two with nfft >= ntaps,
+  fdfir_create(taps, ntaps, nfft): nfft is a power of two with nfft >= ntaps,
         block = nfft - ntaps + 1; returns NULL on invalid arguments
     fdfir_apply(f, x, nx, y): y[i] = sum(j) taps[j]*x[i-j], x[k]=0 for k<0,
         any nx >= 1 (including nx < block), 0 on success / -1 on bad args
     fdfir_destroy(NULL) is a no-op
     no ipps*/ippi* symbol may remain in the built artifact.
-
-  VSIPL has no overlap-save object, so the algorithm is reproduced from
-  primitives: vsip_ccfftop_create_f / vsip_ccfftop_f for both directions and an
-  elementwise complex multiply for the spectra.  Two mapping details:
-    - the transform scale is an argument of vsip_ccfftop_create_f, which is
-      where IPP's IPP_FFT_DIV_INV_BY_N goes (create the inverse plan with
-      scale 1/nfft, the forward plan with 1.0);
-    - the elementwise complex product is vsip_cvmul_f.  vsip_vmmul_f is the
-      vector-by-matrix product and does not compile against complex vector
-      views; vsip_cmmul/cvmmul are matrix variants.
-  The window indexing is the part most likely to be wrong: the valid outputs of
-  the circular block are the last `block` samples, i.e.
-  y[pos+k] = time[ntaps-1+k].
-
 prepare:
   mode: vendored
 build:

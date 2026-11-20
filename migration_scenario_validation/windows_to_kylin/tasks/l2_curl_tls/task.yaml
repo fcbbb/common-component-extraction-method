@@ -50,13 +50,16 @@ source:
   test_files:
   - tests/data/test3000
   - tests/data/test3001
-spec: "The OpenSSL vtls backend was removed; the Schannel backend and the\ngeneric `vtls` interface stay\
-  \ visible.  Implement `lib/vtls/openssl.c`\nagainst the OpenSSL 3.x API:\n  - the `Curl_ssl` backend\
-  \ vtable and version reporting;\n  - certificate and hostname verification, SNI, ALPN, session reuse;\n\
-  \  - blocking and non-blocking handshakes with the curl connect state\n    machine, including the \"\
-  want read/want write\" return codes;\n  - client certificates, CRL and pinned public key hooks used\
-  \ by the\n    curl test suite.\n\nThe hidden test builds curl with `CURL_USE_OPENSSL=ON`, then checks\
-  \ a\nreal TLS handshake against a local `openssl s_server`.\n"
+spec: |
+  The target TLS vtls backend was removed; the Schannel backend and the
+  generic `vtls` interface stay visible.  Implement `lib/vtls/openssl.c`
+  against the target TLS backend:
+    - the `Curl_ssl` backend vtable and version reporting;
+    - certificate and hostname verification, SNI, ALPN, session reuse;
+    - blocking and non-blocking handshakes with the curl connect state
+      machine, including the "want read/want write" return codes;
+    - client certificates, CRL and pinned public key hooks used by the
+      curl callers.
 prepare:
   remove:
   - lib/vtls/openssl.c

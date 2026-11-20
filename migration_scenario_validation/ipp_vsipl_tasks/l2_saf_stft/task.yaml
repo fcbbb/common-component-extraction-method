@@ -61,7 +61,7 @@ spec: |
   IPP.  Migrate the transform engines off IPP while keeping include/
   saf_utility_fft.h and every observable behaviour unchanged:
 
-    saf_rfft_forward(h, inputTD, outputFD): unscaled real DFT, half spectrum
+  saf_rfft_forward(h, inputTD, outputFD): unscaled real DFT, half spectrum
         written as the natural interleaved sequence [R0,I0,R1,I1,...,
         R(N/2),I(N/2)] (N+2 floats)
     saf_rfft_backward(h, inputFD, outputTD): inverse scaled by 1/N
@@ -82,18 +82,6 @@ spec: |
         the channel count between blocks
     fftconv, fftfilt, hilbert, getUniformFreqVector: unchanged semantics
     no ipp*/ippi*/ippMalloc/ippFree symbol may remain in the built artifact.
-
-  VSIPL maps the transforms to vsip_rcfftop_f / vsip_crfftop_f (real) and
-  vsip_ccfftop_f (complex).  Watch these details:
-    - jvsip ignores the plan scale for vsip_rcfftop_f / vsip_crfftop_f, so
-      the 1/N of the inverse must be applied by hand; the ccfft plan does
-      honour its scale, but the reference applies 1/N explicitly for both.
-    - vsip_rcfftop_f writes [R0,R1,...,R(N/2),I(N/2),...,I1], not the natural
-      interleaved order IPP writes.  The half spectrum has to be repacked.
-    - vsip_crfftop_f only has a defined result for a Hermitian spectrum: the
-      imaginary parts of bin 0 and bin N/2 must be zero, which the forward
-      transform always guarantees.  (IPP silently ignores them instead.)
-
 prepare:
   mode: vendored
 build:

@@ -59,6 +59,5 @@ rm -rf "$ROOT/work"/src/util/unix/process.c
 rm -rf "$ROOT/work"/src/util/unix/pthread.h
 rm -rf "$ROOT/work"/src/util/unix/posix.h
 
-if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$ROOT/work/TASK.md"; fi
 printf "%s\n" "$COMMIT" > "$ROOT/work/.source_commit"
 echo "prepared $ROOT/work from $REPO_URL@$COMMIT"

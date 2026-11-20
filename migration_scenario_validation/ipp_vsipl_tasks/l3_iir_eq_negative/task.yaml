@@ -51,12 +51,6 @@ spec: |
   - iir_eq_create/destroy keep their signatures and free everything they
     allocate;
   - no ipps*/ippi* symbol may remain in the built artifact.
-
-  This is the negative-control task: VSIPL (jvsip) has no IIR filter object
-  and no difference-equation primitive, so there is no library call to map
-  ippsIIR_32f onto.  Implement the recursion directly in C.  Linking VSIPL is
-  permitted but gives you nothing here; the evaluator does not require it.
-
 prepare:
   mode: vendored
 build:

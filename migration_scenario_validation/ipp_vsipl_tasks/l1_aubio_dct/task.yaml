@@ -46,7 +46,7 @@ spec: |
   (aubio_dct_rdo) behind a create/destroy lifecycle.  Migrate it off Intel IPP
   while keeping include/aubio_dct.h and the observable behaviour unchanged:
 
-    new_aubio_dct(size): works for every size >= 1 (powers of two not
+  new_aubio_dct(size): works for every size >= 1 (powers of two not
         required), NULL when size < 1
     aubio_dct_do(s, in, out):  X[k] = c_k * sum(n) x[n] cos(pi k (2n+1) / 2N)
         c_0 = sqrt(1/N), c_k = sqrt(2/N)                 (DCT-II)
@@ -54,14 +54,6 @@ spec: |
                                                          (DCT-III, the inverse)
     del_aubio_dct(NULL) is a no-op
     no ipps*/ippi* symbol may remain in the built artifact.
-
-  VSIPL has no DCT, so it is composed from a complex FFT of length M = 2N.  The
-  forward direction is the standard even extension: v = [x[0..N-1], x[N-1..0]],
-  Y = FFT_M(v), X[k] = (c_k/2) Re{ Y[k] exp(-i pi k / 2N) }.  The inverse has to
-  build the Hermitian spectrum by hand (weight by c_k, rotate by +i pi k / 2N,
-  mirror, B[N] = 0) and then apply the 1/M inverse scaling; the result needs
-  (M Re{idft[n]} + a[0]) / 2 because the mirror counts a[0] twice.
-
 prepare:
   mode: vendored
 build:

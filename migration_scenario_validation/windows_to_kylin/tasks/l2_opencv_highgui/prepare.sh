@@ -55,6 +55,5 @@ copy_gold modules/highgui/src/window_gtk.cpp
 # Remove the target-platform implementation from the agent-visible tree.
 rm -rf "$ROOT/work"/modules/highgui/src/window_gtk.cpp
 
-if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$ROOT/work/TASK.md"; fi
 printf "%s\n" "$COMMIT" > "$ROOT/work/.source_commit"
 echo "prepared $ROOT/work from $REPO_URL@$COMMIT"

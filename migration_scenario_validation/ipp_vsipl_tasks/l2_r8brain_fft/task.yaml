@@ -17,9 +17,9 @@ source:
   license: MIT
   vendored: true
   files:
-    - CDSPRealFFT.h                        # 1099 lines, the whole component
-    - r8bbase.h                            # 1591 lines, helpers only
-    - r8bconf.h                            # 200 lines, macros only
+    - src/CDSPRealFFT_ipp.cpp              # IPP backend being migrated
+    - include/CDSPRealFFT.h                # 1099 lines, the whole component
+    - include/r8bbase.h                    # 1591 lines, helpers only
   loc: 1099
   note: >-
     r8brain's power-of-2 resampler does all of its filtering through this
@@ -57,7 +57,7 @@ spec: |
 
   FFT blocks (realfft_t = double) use the Perm layout, length N = 1 << LenBits:
 
-      p[0]        = Re X[0]
+  p[0]        = Re X[0]
       p[1]        = Re X[N/2]
       p[2k]       = Re X[k]      k = 1 .. N/2-1
       p[2k + 1]   = Im X[k]      k = 1 .. N/2-1
@@ -96,15 +96,6 @@ spec: |
                                 is migrated.
 
   no ipp*/ippi*/ippvm*/ippcore symbol may remain in the built artifact.
-
-  VSIPL maps this to vsip_rcfftop_d / vsip_crfftop_d.  Watch these details:
-    - VSIPL's real transforms produce the natural half spectrum: N/2+1
-      complex values C[0..N/2] with C[k] = X[k].  The Perm scatter/gather
-      between C and p is the actual migration work.
-    - both plans are created with scale 1.0; do not fold a 1/N in anywhere,
-      the callers already apply getInvMulConst().
-    - the transform must stay in place on the caller's buffer.
-
 prepare:
   mode: vendored
 build:

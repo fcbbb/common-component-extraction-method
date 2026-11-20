@@ -49,7 +49,7 @@ spec: |
   off IPP while keeping include/aubio_fft.h and the observable behaviour
   unchanged:
 
-    new_aubio_fft(winsize): NULL unless winsize is a power of two > 4;
+  new_aubio_fft(winsize): NULL unless winsize is a power of two > 4;
         otherwise an object that can transform frames of exactly winsize
     del_aubio_fft(NULL) is a no-op
     aubio_fft_do_complex(s, in, compspec):
@@ -65,13 +65,6 @@ spec: |
     aubio_fft_get_spectrum / get_realimag, get_phas / get_norm / get_imag /
         get_real: the accessors, with the same layout and phase convention
     no ipps*/ippi* symbol may remain in the built artifact.
-
-  VSIPL maps this to vsip_rcfftop_f / vsip_crfftop_f.  Watch the details: the
-  plan scale takes the 1/n that IPP leaves out (forward 1.0, inverse 1/n); the
-  half spectrum returned by vsip_rcfftop_f is the natural (re, im) sequence for
-  k = 0..n/2 and must be repacked into aubio's [re..., im reversed...] layout;
-  and the DC/Nyquist phases use the +pi convention rather than atan2.
-
 prepare:
   mode: vendored
 build:

@@ -83,7 +83,10 @@ def _problem_statement(task: Mapping[str, Any]) -> str:
     if isinstance(gates, dict) and gates:
         lines = []
         for name, value in gates.items():
-            if name == "api_removal" or (isinstance(value, dict) and "symbol_regex" in value):
+            # Hidden-test descriptions and API regexes are evaluator-only.
+            if name in {"api_removal", "behavior"} or (
+                isinstance(value, dict) and "symbol_regex" in value
+            ):
                 continue
             lines.append(f"- {name}: {value}")
         if lines:
@@ -92,12 +95,9 @@ def _problem_statement(task: Mapping[str, Any]) -> str:
 
 
 def _interface(task: Mapping[str, Any]) -> str:
-    gates = task.get("gates") or {}
-    if isinstance(gates, dict):
-        behavior = gates.get("behavior")
-        if isinstance(behavior, str) and behavior.strip():
-            return behavior.strip()
-    return ""
+    # The observable contract is in ``spec``; gate descriptions often name
+    # upstream test suites and must not be shown to the model.
+    return "Match the observable behavior in the task spec."
 
 
 def _sanitize_run_id(value: str) -> str:

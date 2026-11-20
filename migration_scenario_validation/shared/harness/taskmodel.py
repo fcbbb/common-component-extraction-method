@@ -103,6 +103,90 @@ def command_of(task: Dict[str, Any], section: str) -> Optional[str]:
     return None
 
 
+_AGENT_BUILD_REPLACEMENTS = (
+    ("-DENABLE_TESTS=ON", "-DENABLE_TESTS=OFF"),
+    ("-DBUILD_TESTS=ON", "-DBUILD_TESTS=OFF"),
+    ("-DBUILD_TESTING=ON", "-DBUILD_TESTING=OFF"),
+    ("-DENABLE_TESTING=ON", "-DENABLE_TESTING=OFF"),
+    ("-DENABLE_TEST=ON", "-DENABLE_TEST=OFF"),
+)
+
+
+def agent_build_command(task: Dict[str, Any]) -> Optional[str]:
+    """Return the build command shown to the agent.
+
+    The judge build may compile upstream tests; the agent-visible tree has
+    those tests removed.  Tasks can supply an explicit ``agent_build.command``;
+    otherwise the common CMake test switches are turned off.
+    """
+    explicit = task.get("agent_build")
+    if isinstance(explicit, str):
+        command = explicit
+    elif isinstance(explicit, dict) and explicit.get("command"):
+        command = str(explicit["command"])
+    else:
+        command = command_of(task, "build") or ""
+    for old, new in _AGENT_BUILD_REPLACEMENTS:
+        command = command.replace(old, new)
+    return command
+
+
+def target_api_gate(task: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Return the positive target-API gate for a task.
+
+    A negative ``api_removal`` gate only says what must disappear.  Without a
+    positive gate a one-shot model can replace the target implementation with
+    a portable fallback and still pass.  The gate is task-specific because the
+    target API differs across scenarios.
+    """
+    gates = task.get("gates") or {}
+    if isinstance(gates, dict) and isinstance(gates.get("target_api"), dict):
+        return dict(gates["target_api"])
+
+    scenario = str(task.get("scenario") or "")
+    task_id = str(task.get("task_id") or "")
+    if scenario == "ipp_to_vsipl":
+        # fit C means VSIPL has no matching primitive (for example the IIR
+        # negative-control task); a hand-written implementation is the task.
+        if str(task.get("fit") or "") == "C" or task_id == "l3_iir_eq_negative":
+            return None
+        return {
+            "symbol_regex": r"^vsip_",
+            "source_dirs": ["src"],
+            "source_regex": r"\bvsip_[A-Za-z0-9_]+\b",
+            "min_hits": 1,
+        }
+
+    if scenario == "windows_to_kylin":
+        if task_id == "negative_win32_eventlog":
+            return None
+        api = gates.get("api_removal") if isinstance(gates, dict) else None
+        dirs = list(api.get("source_dirs") or []) if isinstance(api, dict) else []
+        if not dirs:
+            dirs = ["src"]
+        if task_id == "l3_curl_build":
+            regex = r"(?i)\b(?:cmake|configure|make)\b"
+        elif "curl_tls" in task_id:
+            regex = r"\b(?:SSL_|OPENSSL_|EVP_)[A-Za-z0-9_]+"
+        elif "opencv" in task_id:
+            regex = r"\b(?:gtk_|gdk_)[A-Za-z0-9_]+"
+        elif "nginx" in task_id:
+            regex = r"\bngx_[A-Za-z0-9_]+"
+        else:
+            # POSIX layer used by Poco/libarchive/libgit2/libuv.
+            regex = (
+                r"\b(?:pthread_[A-Za-z0-9_]+|dlopen|dlsym|dlclose|"
+                r"open|read|write|stat|unlink|mkdir|rename|opendir|readdir|"
+                r"fork|execve|epoll_[A-Za-z0-9_]+|sem_[A-Za-z0-9_]+)"
+            )
+        return {
+            "source_dirs": dirs,
+            "source_regex": regex,
+            "min_hits": 1,
+        }
+    return None
+
+
 def expand_command(
     command: str,
     *,

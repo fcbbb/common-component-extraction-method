@@ -55,6 +55,5 @@ copy_gold src/unix/fs.c
 # Remove the target-platform implementation from the agent-visible tree.
 rm -rf "$ROOT/work"/src/unix/fs.c
 
-if [ -f "$ROOT/README.md" ]; then cp "$ROOT/README.md" "$ROOT/work/TASK.md"; fi
 printf "%s\n" "$COMMIT" > "$ROOT/work/.source_commit"
 echo "prepared $ROOT/work from $REPO_URL@$COMMIT"

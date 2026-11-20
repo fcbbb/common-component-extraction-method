@@ -48,24 +48,13 @@ source:
   test_files:
   - modules/highgui/test/test_gui.cpp
   - modules/highgui/test/test_main.cpp
-spec: 'The GTK window backend was removed.  Reimplement
-
+spec: |
+  The target GUI backend was removed.  Reimplement
   `modules/highgui/src/window_gtk.cpp` so that the backend-facing
-
   functions declared in `modules/highgui/src/window.hpp` behave as on
-
   Windows: named windows, imshow, waitKey/waitKeyEx, trackbars, mouse and
-
   keyboard callbacks, window resizing and destruction, and the
-
   `cvGetWindowHandle`/`cvGetWindowName` contract.
-
-
-  The hidden test runs the upstream highgui test binary under Xvfb with
-
-  GTK, so no physical display is required.
-
-  '
 prepare:
   remove:
   - modules/highgui/src/window_gtk.cpp

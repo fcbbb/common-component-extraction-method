@@ -58,19 +58,6 @@ spec: |
   - out->vmax / out->vmin: NaN samples ignored, +-Inf are ordinary values
   - return 0 on success, -1 for NULL pointers, n < 1, stride < 1, offset < 0
   - no ipps*/ippi* symbol may remain in the built artifact
-
-  This is the task where VSIPL is strictly better than IPP: bind the caller's
-  buffer once (vsip_blockbind_f + vsip_blockadmit_f) and slice it with
-  vsip_vbind_f(block, offset, stride, n).  The strided window then costs
-  nothing -- no gather, no scratch buffer.  vsip_vmeanval_f, vsip_vdot_f,
-  vsip_vsumsqval_f, vsip_vmaxval_f and vsip_vminval_f each do one statistic;
-  stddev is the only composition (vsip_svsub_f of the mean, then
-  vsip_vsumsqval_f).
-
-  Note that the reference still calls vsip_blockrelease_f + vsip_blockdestroy_f
-  on the bound block: jvsip's blockdestroy only frees the data array for blocks
-  VSIPL allocated itself, so the caller's memory is never touched.
-
 prepare:
   mode: vendored
 build:

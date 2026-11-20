@@ -51,11 +51,14 @@ source:
   - test/test-process-title.c
   - test/test-process-title-threadsafe.c
   - test/test-process-priority.c
-spec: "`src/unix/process.c` was removed.  Reimplement process spawning with\nfork/exec and the pipe/stdio\
-  \ machinery the tests expect:\n  - uv_spawn argument and environment construction, PATH lookup,\n  \
-  \  executable validation and the ENOENT/EACCES error paths;\n  - stdio inheritance, uv_pipe_t and fd\
-  \ remapping, detached processes,\n    process groups, uid/gid switches and windows-hide semantics;\n\
-  \  - uv_process_kill, uv_kill, exit/close callbacks, reaping and\n    process-title helpers.\n"
+spec: |
+  `src/unix/process.c` was removed.  Reimplement process spawning with the target process-spawn API and the pipe/stdio machinery:
+    - uv_spawn argument and environment construction, PATH lookup,
+      executable validation and the ENOENT/EACCES error paths;
+    - stdio inheritance, uv_pipe_t and fd remapping, detached processes,
+      process groups, uid/gid switches and windows-hide semantics;
+    - uv_process_kill, uv_kill, exit/close callbacks, reaping and
+      process-title helpers.
 prepare:
   remove:
   - src/unix/process.c

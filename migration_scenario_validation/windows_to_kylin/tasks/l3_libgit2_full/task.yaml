@@ -47,17 +47,11 @@ source:
   - src/util/unix
   test_files:
   - tests/util
-spec: 'The complete `src/util/unix/` directory was removed (process, map,
-
-  realpath and the pthread/posix wrapper headers).  Rebuild libgit2''s
-
-  POSIX utility layer so the library and its clar test suite compile and
-
-  run on Kylin.  Public libgit2 headers and call sites are unchanged; the
-
+spec: |
+  The complete `src/util/unix/` directory was removed (process, map,
+  realpath and the pthread/posix wrapper headers).  Rebuild libgit2's
+  POSIX utility layer so the library compiles and runs on Kylin.  Public libgit2 headers and call sites are unchanged; the
   Win32 layer (`src/util/win32/`) stays visible as the reference.
-
-  '
 prepare:
   remove:
   - src/util/unix
