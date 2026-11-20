@@ -1150,6 +1150,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "agent_status": None,
                 "agent_error": None,
                 "judge": None,
+                "build": None,
+                "tests": None,
+                "api_removal": None,
+                "target_api": None,
                 "detail": "",
             }
             if args.dry_run:
@@ -1649,6 +1653,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 record["build"] = report.get("build")
                 record["tests"] = report.get("tests")
                 record["api_removal"] = report.get("api_removal")
+                record["target_api"] = report.get("target_api")
                 if judge["rc"] == 0 and report.get("status") == "pass":
                     record["status"] = "pass"
                 elif record["agent_status"] is None:

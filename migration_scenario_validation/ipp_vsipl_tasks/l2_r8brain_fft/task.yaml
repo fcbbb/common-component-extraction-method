@@ -17,9 +17,9 @@ source:
   license: MIT
   vendored: true
   files:
-    - CDSPRealFFT.h                        # 1099 lines, the whole component
-    - r8bbase.h                            # 1591 lines, helpers only
-    - r8bconf.h                            # 200 lines, macros only
+    - src/CDSPRealFFT_ipp.cpp              # IPP backend being migrated
+    - include/CDSPRealFFT.h                # 1099 lines, the whole component
+    - include/r8bbase.h                    # 1591 lines, helpers only
   loc: 1099
   note: >-
     r8brain's power-of-2 resampler does all of its filtering through this

@@ -246,3 +246,76 @@ def test_kylin_judge_overlay_keeps_pristine_cmake(tmp_path):
     assert (full / "CMakeLists.txt").read_text() == pristine
     assert (full / "src" / "impl.c").read_text() == "new\n"
     assert "CMakeLists.txt" in result["omitted"]
+
+
+def test_positive_target_api_gate_requires_target(tmp_path):
+    from migration_scenario_validation.shared.harness import api_removal
+
+    source = tmp_path / "src"
+    source.mkdir()
+    (source / "impl.c").write_text("int f(void) { return 0; }\n", encoding="utf-8")
+    miss = api_removal.scan(
+        source_dirs=[str(source)],
+        source_regex=r"\bvsip_[A-Za-z0-9_]+\b",
+        positive=True,
+    )
+    assert miss["status"] == "fail"
+
+    (source / "impl.c").write_text("int f(void) { return vsip_init(0); }\n", encoding="utf-8")
+    hit = api_removal.scan(
+        source_dirs=[str(source)],
+        source_regex=r"\bvsip_[A-Za-z0-9_]+\b",
+        positive=True,
+    )
+    assert hit["status"] == "pass"
+
+
+def test_runner_target_api_gate_blocks_portable_fallback(tmp_path):
+    task_root = tmp_path / "task"
+    work = task_root / "src"
+    work.mkdir(parents=True)
+    # A full work tree is the task root for this direct source-only test.
+    (task_root / "work").mkdir()
+    (task_root / "work" / "src").mkdir()
+    (task_root / "work" / "src" / "impl.c").write_text("int f(void) { return 0; }\n", encoding="utf-8")
+    task = {
+        "task_id": "target_gate_demo",
+        "scenario": "ipp_to_vsipl",
+        "level": "L1",
+        "source": {"repo": "synthetic", "commit": "-", "license": "synthetic"},
+        "target": {"api": "VSIPL"},
+        "fit": "B",
+        "spec": "migrate",
+        "build": {"mode": "none", "command": ""},
+        "hidden_tests": {"command": "true"},
+        "gates": {
+            "build": "none",
+            "api_removal": "true",
+            "target_api": {
+                "source_dirs": ["src"],
+                "source_regex": r"\bvsip_[A-Za-z0-9_]+\b",
+            },
+        },
+    }
+    import yaml
+    (task_root / "task.yaml").write_text(yaml.safe_dump(task, sort_keys=False), encoding="utf-8")
+    result = runner.run(
+        str(task_root),
+        work_dir=str(task_root / "work"),
+        skip_build=True,
+        skip_api=False,
+    )
+    assert result["status"] == "fail"
+    assert result["target_api"] == "fail"
+
+    (task_root / "work" / "src" / "impl.c").write_text(
+        "int f(void) { return vsip_init(0); }\n", encoding="utf-8"
+    )
+    result = runner.run(
+        str(task_root),
+        work_dir=str(task_root / "work"),
+        skip_build=True,
+        skip_api=False,
+    )
+    assert result["status"] == "pass"
+    assert result["target_api"] == "pass"
