@@ -22,9 +22,16 @@ from component_method.workflow.batch_common import (
     tasks,
     write_json,
 )
+from component_method.workflow.blocks import (
+    artifacts as block_artifacts,
+    resolve_block,
+)
 
 
-STAGES = ("curate", "prepare_reviews", "review", "publish", "retrieval", "task")
+# Continuation starts after first-pass extraction, so every block it can run is
+# a suffix of the normal per-task sequence.
+BLOCKS = ("build", "audit", "publish", "retrieval", "task")
+LEGACY_STAGES = ("curate", "prepare_reviews", "review", "publish", "retrieval", "task")
 
 
 def task_record(task_id: str) -> dict[str, Any]:
@@ -38,33 +45,31 @@ def pipeline_python(task: dict[str, Any]) -> Path:
     return Path(sys.executable)
 
 
-def completed(root: Path, task_id: str, stage: str) -> bool:
-    paths = {
-        "curate": root / "runs" / task_id / "extraction_v1" / "curated" / "summary.json",
-        "prepare_reviews": root / "inputs" / "frozen_components.json",
-        "review": root / "runs" / task_id / "review_v1" / "summary.json",
-        "publish": root / "outputs" / "full_library" / "manifest.json",
-        "retrieval": root / "attempts" / "retrieval_01" / "metadata.json",
-        "task": root / "task_attempts" / "task_01" / "run_manifest.json",
-    }
-    path = paths[stage]
+def _block_config(root: Path, task_id: str) -> dict[str, Any]:
+    path = root / "config.json"
+    return load_json(path) if path.is_file() else {"task_id": task_id}
+
+
+def completed(root: Path, task_id: str, block: str) -> bool:
+    path = block_artifacts(root, _block_config(root, task_id))[resolve_block(block).produces]
     if not path.is_file():
         return False
-    if stage in {"curate", "review", "task"}:
+    if block in {"audit", "task"}:
         return load_json(path).get("status") == "completed"
     return True
 
 
-def run_stage(
+def run_block(
     task: dict[str, Any],
     root: Path,
-    stage: str,
+    block: str,
     *,
     resume: bool,
     review_workers: int,
 ) -> None:
     task_id = task["instance_id"]
-    if stage == "review" and resume:
+    block = resolve_block(block).name
+    if block == "audit" and resume:
         admission = admit_review_component_failures(root, task_id)
         if admission is not None:
             print(
@@ -73,10 +78,10 @@ def run_stage(
                 f"for {task_id}",
                 flush=True,
             )
-    if resume and completed(root, task_id, stage):
-        print(f"[continuation] skip {task_id} {stage}", flush=True)
+    if resume and completed(root, task_id, block):
+        print(f"[continuation] skip {task_id} {block}", flush=True)
         return
-    if stage == "review" and resume:
+    if block == "audit" and resume:
         archived = archive_failed_review_outputs(root, task_id)
         if archived is not None:
             print(
@@ -91,24 +96,24 @@ def run_stage(
         "--task-root",
         str(root),
         "--stage",
-        stage,
+        block,
     ]
-    if stage == "review":
-        if resume:
-            command.append("--resume")
+    if resume:
+        command.append("--resume")
+    if block == "audit":
         command.extend(("--workers", str(review_workers)))
     env = os.environ.copy()
     cfg = config()
     env["MODEL_NAME"] = cfg["model"]
     env["OPENAI_API_BASE"] = cfg["api_base"]
-    print(f"[continuation] start {task_id} {stage}", flush=True)
+    print(f"[continuation] start {task_id} {block}", flush=True)
     result = subprocess.run(command, cwd=PROJECT, env=env, check=False)
     if result.returncode:
-        if stage == "review":
+        if block == "audit":
             admission = admit_review_component_failures(root, task_id)
             if admission is not None:
                 print(
-                    f"[continuation] accept {task_id} review with "
+                    f"[continuation] accept {task_id} audit with "
                     f"{len(admission['quarantined_components'])} quarantined components",
                     flush=True,
                 )
@@ -116,24 +121,36 @@ def run_stage(
                 result.check_returncode()
         else:
             result.check_returncode()
-    print(f"[continuation] done {task_id} {stage}", flush=True)
+    print(f"[continuation] done {task_id} {block}", flush=True)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--task", action="append", required=True)
     parser.add_argument("--name", default="initial_admission")
-    parser.add_argument("--from-stage", choices=STAGES, default="review")
-    parser.add_argument("--through-stage", choices=STAGES, default="task")
+    parser.add_argument("--from-block", choices=BLOCKS, default="audit")
+    parser.add_argument("--through-block", choices=BLOCKS, default="task")
+    parser.add_argument(
+        "--from-stage",
+        choices=LEGACY_STAGES,
+        help="retired alias for --from-block",
+    )
+    parser.add_argument(
+        "--through-stage",
+        choices=LEGACY_STAGES,
+        help="retired alias for --through-block",
+    )
     parser.add_argument("--review-workers", type=int, default=config()["pipeline"]["review_workers"])
     parser.add_argument("--no-resume", dest="resume", action="store_false")
     parser.set_defaults(resume=True)
     args = parser.parse_args()
 
-    first = STAGES.index(args.from_stage)
-    last = STAGES.index(args.through_stage)
+    first_name = resolve_block(args.from_stage or args.from_block).name
+    last_name = resolve_block(args.through_stage or args.through_block).name
+    first = BLOCKS.index(first_name)
+    last = BLOCKS.index(last_name)
     if first > last:
-        raise RuntimeError("--from-stage must not come after --through-stage")
+        raise RuntimeError("--from-block must not come after --through-block")
 
     failures = []
     for task_id in args.task:
@@ -150,21 +167,21 @@ def main() -> int:
             "continuation": args.name,
             "status": "running",
             "extraction_model_rerun": False,
-            "stages": previous.get("stages", {}),
+            "blocks": previous.get("blocks", {}),
             "started_at_unix": previous.get("started_at_unix", time.time()),
             "updated_at_unix": time.time(),
         }
         write_json(state_path, state)
         try:
-            for stage in STAGES[first : last + 1]:
-                run_stage(
+            for block in BLOCKS[first : last + 1]:
+                run_block(
                     task,
                     root,
-                    stage,
+                    block,
                     resume=args.resume,
                     review_workers=args.review_workers,
                 )
-                state["stages"][stage] = "completed"
+                state["blocks"][block] = "completed"
                 write_json(state_path, state)
             state["status"] = "completed"
         except Exception as exc:

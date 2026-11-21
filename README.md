@@ -98,7 +98,7 @@ python tools/preflight.py \
   --require-model-env
 ```
 
-随后可以按阶段运行：
+随后可以按原子块运行：
 
 ```bash
 export COMPONENT_METHOD_RUN_ROOT="$PWD/work"
@@ -107,19 +107,61 @@ python -m component_method.workflow.run_stage \
   --stage prepare
 python -m component_method.workflow.run_batch \
   --task elastic__curator-1175 \
-  --stage pipeline \
+  --blocks prepare,build,audit,publish,deliver \
   --task-workers 1 \
   --extraction-workers 1 \
   --review-workers 1
 ```
 
+执行单元是六个单任务原子块（外加工作区级的 `report`），不再有九个绑定子阶段：
+
+| 块 | 包含步骤 | 产物 |
+| --- | --- | --- |
+| `prepare` | 源码扫描、packet 冻结 | `inputs/focus_context_packets.json` |
+| `build` | `extract → curate → prepare_reviews` | `inputs/frozen_components.json` |
+| `audit` | `review → finalize_review` | `runs/<task>/review_v1/summary.json` |
+| `publish` | 组件库发布 | `outputs/full_library/manifest.json` |
+| `retrieval` | 检索并物化选择 | `attempts/<attempt>/result.json` |
+| `task` | 运行任务 | `task_attempts/<attempt>/run_manifest.json` |
+| `report` | 工作区汇总（`run_batch`） | 工作区 `summary.json` |
+
+`deliver` 保留为兼容组合，等价于 `retrieval,task`。
+
+用 `--blocks` 或任务配置模板 `pipeline_config.template.json` 的 `blocks` 字段选择本次要做的块，例如只抽取组件不实现任务：
+
+```bash
+python -m component_method.workflow.run_batch \
+  --task elastic__curator-1175 --blocks prepare,build --no-report
+```
+
+只检索并实现任务（组件库已存在时）：
+
+```bash
+python -m component_method.workflow.run_batch \
+  --task elastic__curator-1175 --blocks deliver --no-report
+```
+
+块的前置条件由 [blocks.py](src/component_method/workflow/blocks.py) 统一判断。运行前可检查：
+
+```bash
+python -m component_method.workflow.run_stage \
+  --task-root work/tasks/elastic__curator-1175 --stage build --check
+```
+
+`--check` 只读取磁盘产物并返回 `ready` / `blocked`，不会调用模型。
+
 `prepare_workspace.py` 默认把运行输出写到 `repository/work/`。离线证据和冻结结果保持只读。
 
 审核默认采用“修订后再次审核”的严格模式。若实验明确限制只能调用一次审核模型，
-可在任务配置中设置 `apply_review_revisions_without_rereview=true`，随后运行
-`finalize_review` 子阶段。该模式只应用审核器已经给出的完整字段替换并执行本地协议
+可在任务配置中设置 `apply_review_revisions_without_rereview=true`，`audit` 块会执行
+`finalize_review` 步骤。该模式只应用审核器已经给出的完整字段替换并执行本地协议
 校验，不会伪装成二次审核；发布审计状态会记录为
 `revisions_applied_without_rereview`。
+
+如果实验要求跳过审核，设置 `publish_mode` 为 `unreviewed`（或运行
+`run_stage --stage publish --publish-mode unreviewed`）。该模式从 `build` 冻结的组件
+直接发布，manifest 记录 `review_status: not_run`，审计文件标记为 `unreviewed`，
+不会与已审核组件库混淆。
 
 ## 完整性校验
 

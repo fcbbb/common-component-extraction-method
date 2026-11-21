@@ -6,18 +6,18 @@ export const name = "component-method-orchestrator";
 // mount `@deepseek-ai/dsh-tool-jobs`.
 export const inject = ["tools", "jobs"];
 
-/** Every stage the single entry accepts.  `finalize_review`, `task` and
- * `report` are deliberately absent: the normal pipeline publishes reviewed
- * components, and the migration workspace runs the task in the main agent's
- * session rather than as a method stage. */
+/** Every atomic block the single entry accepts.  Retired step names
+ * (`extract`, `curate`, `review` …) still resolve inside the kernel, but the
+ * model should select blocks; each block checks its own prerequisites. */
 export const STAGES = [
-  "source_scan",
-  "extract",
-  "curate",
-  "prepare_reviews",
-  "review",
-  "publish_library",
+  "prepare",
+  "build",
+  "audit",
+  "publish",
   "retrieval",
+  "task",
+  "deliver",
+  "report",
   "catalog",
   "validate_selection",
   "materialize_selection",
@@ -28,13 +28,18 @@ export function apply(ctx: any): void {
     {
       name: "component_run_stage",
       description:
-        "Run one component-method stage. This is the only stage entry: pass stage "
-        + "= source_scan | extract | curate | prepare_reviews | review | "
-        + "publish_library | retrieval | catalog | validate_selection | "
-        + "materialize_selection. Long stages (extract, review, retrieval) start as a "
-        + "background job and return a job_id with status 'running'; wait for the "
-        + "completion notice or call job_output. Every result carries status, "
-        + "summary, artifacts and error_code.",
+        "Run one atomic component-method block. This is the only stage entry: pass stage "
+        + "= prepare | build | audit | publish | retrieval | task | report | catalog | "
+        + "validate_selection | materialize_selection. Blocks merge former steps: "
+        + "prepare=scan/packets, build=extract+curate+freeze, audit=review+finalize, "
+        + "publish=library, retrieval=select, task=execute. The compatibility group "
+        + "deliver expands to retrieval+task. The kernel checks dependencies before it "
+        + "runs anything: a missing input returns STAGE_INPUT_MISSING and a stage the "
+        + "workspace forbids (task/report in migration) returns STAGE_UNSUPPORTED. "
+        + "Long blocks (build, audit, retrieval, task) start as a background job and "
+        + "return a job_id with status 'running'; wait for the completion notice or "
+        + "call job_output. Every result carries status, summary, artifacts and "
+        + "error_code.",
       method: "run_stage",
       job: (args: Record<string, unknown>) => BACKGROUND_STAGES.has(String(args.stage)),
       parameters: {
@@ -43,6 +48,7 @@ export function apply(ctx: any): void {
         "task_id": {"type": "string"},
         "workers": {"type": "integer"},
         "resume": {"type": "boolean"},
+        "publish_mode": {"type": "string", "enum": ["reviewed", "unreviewed", "migration_direct"]},
       },
     },
   ]);

@@ -30,15 +30,13 @@ from component_method.workflow.batch_common import (
 )
 
 
-PIPELINE_STAGES = (
-    "prepare",
-    "extract",
-    "curate",
-    "prepare_reviews",
-    "review",
-    "publish",
-    "retrieval",
-    "task",
+from component_method.workflow.blocks import (
+    BLOCK_GROUPS,
+    PER_TASK_BLOCKS,
+    artifacts as block_artifacts,
+    resolve_block,
+    resolve_blocks,
+    selected_from_config,
 )
 
 BASELINE_ENV_PACKAGES = (
@@ -49,28 +47,18 @@ BASELINE_ENV_PACKAGES = (
 )
 
 
-def completed(task: dict[str, Any], stage: str) -> bool:
+def completed(task: dict[str, Any], block: str) -> bool:
     root = ROOT / "tasks" / task["instance_id"]
     instance_id = task["instance_id"]
-    paths = {
-        "prepare": root / "inputs" / "focus_context_packets.json",
-        "extract": root / "runs" / instance_id / "extraction_v1" / "summary.json",
-        "curate": root / "runs" / instance_id / "extraction_v1" / "curated" / "summary.json",
-        "prepare_reviews": root / "inputs" / "frozen_components.json",
-        "review": root / "runs" / instance_id / "review_v1" / "summary.json",
-        "publish": root / "outputs" / "full_library" / "manifest.json",
-        "retrieval": root / "attempts" / "retrieval_01" / "metadata.json",
-        "task": root / "task_attempts" / "task_01" / "run_manifest.json",
-    }
-    if stage == "task":
+    if block == "task":
         return completed_component_manifest(instance_id) is not None
-    path = paths[stage]
+    config_path = root / "config.json"
+    config = load_json(config_path) if config_path.is_file() else {"task_id": instance_id}
+    path = block_artifacts(root, config)[resolve_block(block).produces]
     if not path.is_file():
         return False
-    if stage == "extract":
-        return extraction_ready_for_admission(load_json(path))
-    if stage in {"curate", "review"}:
-        return load_json(path).get("status") == "completed"
+    if block in {"build", "audit"}:
+        return not path.name == "summary.json" or load_json(path).get("status") == "completed"
     return True
 
 
@@ -136,8 +124,8 @@ def environment_identity(python: Path) -> dict[str, Any]:
     return identity
 
 
-def run_stage(task: dict[str, Any], stage: str, args: argparse.Namespace) -> None:
-    if stage == "review" and args.resume:
+def run_block(task: dict[str, Any], block: str, args: argparse.Namespace) -> None:
+    if block == "audit" and args.resume:
         admission = admit_review_component_failures(
             ROOT / "tasks" / task["instance_id"],
             task["instance_id"],
@@ -149,10 +137,10 @@ def run_stage(task: dict[str, Any], stage: str, args: argparse.Namespace) -> Non
                 f"for {task['instance_id']}",
                 flush=True,
             )
-    if args.resume and completed(task, stage):
-        print(f"[pipeline] skip {task['instance_id']} {stage}", flush=True)
+    if args.resume and completed(task, block):
+        print(f"[pipeline] skip {task['instance_id']} {block}", flush=True)
         return
-    if stage == "review" and args.resume:
+    if block == "audit" and args.resume:
         archived = archive_failed_review_outputs(
             ROOT / "tasks" / task["instance_id"],
             task["instance_id"],
@@ -170,25 +158,25 @@ def run_stage(task: dict[str, Any], stage: str, args: argparse.Namespace) -> Non
         "--task-root",
         str(ROOT / "tasks" / task["instance_id"]),
         "--stage",
-        stage,
+        block,
     ]
-    if stage == "extract":
-        if args.resume:
-            command.append("--resume")
+    if args.resume:
+        command.append("--resume")
+    if block == "build":
         command.extend(("--workers", str(args.extraction_workers)))
-    elif stage == "review":
-        if args.resume:
-            command.append("--resume")
+    elif block == "audit":
         command.extend(("--workers", str(args.review_workers)))
+    if block == "publish" and args.publish_mode:
+        command.extend(("--publish-mode", args.publish_mode))
     env = os.environ.copy()
     cfg = config()
     env["MODEL_NAME"] = cfg["model"]
     env["OPENAI_API_BASE"] = cfg["api_base"]
     env["AGENT_BACKEND"] = selected_backend_name(env)
-    print(f"[pipeline] start {task['instance_id']} {stage}", flush=True)
+    print(f"[pipeline] start {task['instance_id']} {block}", flush=True)
     result = subprocess.run(command, cwd=PROJECT, env=env, check=False)
     if result.returncode:
-        if stage == "extract":
+        if block == "build":
             summary_path = (
                 ROOT
                 / "tasks"
@@ -202,20 +190,24 @@ def run_stage(task: dict[str, Any], stage: str, args: argparse.Namespace) -> Non
                 load_json(summary_path)
             ):
                 print(
-                    f"[pipeline] accept {task['instance_id']} extract with "
+                    f"[pipeline] accept {task['instance_id']} build with "
                     "component-level contract rejections",
                     flush=True,
                 )
+                retry = [*command]
+                if "--resume" not in retry:
+                    retry.append("--resume")
+                subprocess.run(retry, cwd=PROJECT, env=env, check=True)
             else:
                 result.check_returncode()
-        elif stage == "review":
+        elif block == "audit":
             admission = admit_review_component_failures(
                 ROOT / "tasks" / task["instance_id"],
                 task["instance_id"],
             )
             if admission is not None:
                 print(
-                    f"[pipeline] accept {task['instance_id']} review with "
+                    f"[pipeline] accept {task['instance_id']} audit with "
                     f"{len(admission['quarantined_components'])} quarantined components",
                     flush=True,
                 )
@@ -223,7 +215,28 @@ def run_stage(task: dict[str, Any], stage: str, args: argparse.Namespace) -> Non
                 result.check_returncode()
         else:
             result.check_returncode()
-    print(f"[pipeline] done {task['instance_id']} {stage}", flush=True)
+    print(f"[pipeline] done {task['instance_id']} {block}", flush=True)
+
+
+def task_blocks(task: dict[str, Any], args: argparse.Namespace) -> tuple[str, ...]:
+    root = ROOT / "tasks" / task["instance_id"]
+    # run_pipeline materializes config.json from the template, so the template
+    # is the authoritative source for block selection.
+    for name in ("pipeline_config.template.json", "config.json"):
+        path = root / name
+        if path.is_file():
+            task_config = load_json(path)
+            break
+    else:
+        task_config = {}
+    blocks = list(selected_from_config(task_config, args.blocks))
+    if args.from_block:
+        start = resolve_blocks(args.from_block)[0]
+        blocks = blocks[blocks.index(start):] if start in blocks else blocks
+    if args.through_block:
+        end = resolve_blocks(args.through_block)[-1]
+        blocks = blocks[: blocks.index(end) + 1] if end in blocks else blocks
+    return tuple(name for name in blocks if name != "report")
 
 
 def run_pipeline(task: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
@@ -240,14 +253,14 @@ def run_pipeline(task: dict[str, Any], args: argparse.Namespace) -> dict[str, An
             if args.pipeline_python is not None
             else "current_release_environment"
         ),
-        "stages": {},
+        "blocks": {},
     }
     write_json(state_path, state)
     try:
         materialize_config(task)
-        for stage in PIPELINE_STAGES:
-            run_stage(task, stage, args)
-            state["stages"][stage] = "completed"
+        for block in task_blocks(task, args):
+            run_block(task, block, args)
+            state["blocks"][block] = "completed"
             write_json(state_path, state)
         state["status"] = "completed"
     except Exception as exc:
@@ -258,6 +271,11 @@ def run_pipeline(task: dict[str, Any], args: argparse.Namespace) -> dict[str, An
     state["elapsed_seconds"] = round(time.monotonic() - started, 2)
     write_json(state_path, state)
     return state
+
+
+def run_report(args: argparse.Namespace) -> None:
+    if not args.no_report:
+        run_command([sys.executable, "-m", "component_method.reporting.summarize"])
 
 
 def run_command(command: list[str]) -> None:
@@ -278,10 +296,35 @@ def main() -> int:
         ),
         default="pipeline",
         help=(
-            "Use 'remaining' after embeddings are available to build missing "
-            "candidates and run only unfinished component tasks."
+            "Workspace preparation stage. 'pipeline' (default) runs the selected "
+            "atomic blocks; 'remaining' also builds missing candidates."
         ),
     )
+    parser.add_argument(
+        "--blocks",
+        help=(
+            "Comma-separated atomic blocks to run: prepare,build,audit,publish,"
+            "retrieval,task. The compatibility group deliver expands to "
+            "retrieval,task. Defaults to the task config's 'blocks' or all "
+            "per-task blocks."
+        ),
+    )
+    parser.add_argument(
+        "--from-block",
+        choices=PER_TASK_BLOCKS + tuple(BLOCK_GROUPS),
+        help="start the selected block sequence here",
+    )
+    parser.add_argument(
+        "--through-block",
+        choices=PER_TASK_BLOCKS + tuple(BLOCK_GROUPS),
+        help="stop the selected block sequence here (inclusive)",
+    )
+    parser.add_argument(
+        "--publish-mode",
+        choices=("reviewed", "unreviewed", "migration_direct"),
+        help="override the workspace publish gate",
+    )
+    parser.add_argument("--no-report", action="store_true", help="skip the final workspace summary")
     parser.add_argument("--task", action="append")
     parser.add_argument("--include-reserve", action="store_true")
     parser.add_argument("--include-no-direct", action="store_true")
@@ -334,7 +377,8 @@ def main() -> int:
             continue
         if task["component_status"] == "imported_pilot" and not args.rerun_imported_pilots:
             continue
-        if args.resume and completed(task, "task"):
+        blocks = task_blocks(task, args)
+        if args.resume and blocks and all(completed(task, block) for block in blocks):
             skipped_completed.append(task)
             continue
         runnable.append(task)
@@ -398,7 +442,7 @@ def main() -> int:
             )
     if not runnable:
         print("[pipeline] no tasks selected", flush=True)
-        run_command([sys.executable, "-m", "component_method.reporting.summarize"])
+        run_report(args)
         return 0
     failures = []
     with ThreadPoolExecutor(max_workers=args.task_workers) as executor:
@@ -414,6 +458,7 @@ def main() -> int:
         ROOT / "batch_run_summary.json",
         {
             "task_order": args.task_order,
+            "blocks": args.blocks,
             "selected": [task["instance_id"] for task in runnable],
             "selected_repository_sizes": [
                 {
@@ -436,7 +481,7 @@ def main() -> int:
             "failures": failures,
         },
     )
-    run_command([sys.executable, str(ROOT / "summarize.py")])
+    run_report(args)
     return 1 if failures else 0
 
 

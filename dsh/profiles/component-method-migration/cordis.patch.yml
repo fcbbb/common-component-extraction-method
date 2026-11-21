@@ -72,10 +72,9 @@
 - insert:
     - id: component-method-controlled-bash
       name: '@component-method/dsh-controlled-bash'
-    # One method entry for the whole workflow.  The stage plugins stay
-    # available to operator profiles; the migration arm deliberately exposes
-    # no per-stage and no review tools, so its tool table cannot lie about
-    # stages this workspace refuses.
+    # One method entry for the whole workflow.  The migration arm mounts no
+    # per-stage or review plugin: every block goes through this entry, and the
+    # kernel returns STAGE_UNSUPPORTED for the ones this workspace refuses.
     - id: component-method-orchestrator
       name: '@component-method/dsh-method-orchestrator'
 

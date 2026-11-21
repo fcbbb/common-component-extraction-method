@@ -120,6 +120,11 @@ def task_config(
         "task_attempt": "task_01",
         "source_subdir": provenance["source_subdir"],
         "apply_review_revisions_without_rereview": False,
+        # Atomic blocks the task runs by default.  Remove "audit" or set
+        # publish_mode to "unreviewed" for a no-review experiment; remove
+        # "retrieval"/"task" to stop after publishing the library.
+        "blocks": ["prepare", "build", "audit", "publish", "retrieval", "task"],
+        "publish_mode": "reviewed",
     }
 
 

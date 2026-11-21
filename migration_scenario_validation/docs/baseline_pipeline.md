@@ -232,11 +232,11 @@ DSH 会话，使用 `component-method-migration`（唯一方法入口
 `component_run_stage` + `controlled_bash` + DSH 内置作业工具；不加载逐阶段和
 任务执行/报表插件，迁移工作区下 kernel 也拒绝任务执行/报表阶段）。主 agent 在当前
 尝试的工作区上依次调用同一个入口的
-`stage=source_scan → extract → curate → prepare_reviews → review →
-publish_library → retrieval → validate_selection → materialize_selection`，把选中的
+`stage=prepare → build → audit → publish → retrieval →
+validate_selection → materialize_selection`，把选中的
 组件物化到 `/workspace/component_bundle/`，然后**在同一个会话里**按任务提示完成迁移。
 组件审核与 20 题方法一致（`max_review_repair_rounds: 1`，一次返修 + 定向复审），只有
-审核通过的组件会发布进库。`extract`/`review`/`retrieval` 是后台作业，由内置运行时
+审核通过的组件会发布进库。`build`/`audit`/`retrieval` 是后台作业，由内置运行时
 负责等待、完成通知和空闲唤醒；所有结果（同步/异步）都是同一张
 `status`/`summary`/`artifacts`/`error_code` 单。
 固定工作流提示词在

@@ -19,7 +19,7 @@ REPOSITORY = Path(__file__).resolve().parents[2]
 def _request(tmp_path: Path, **changes) -> AgentRunRequest:
     value = AgentRunRequest(
         run_id="profile-fixture",
-        role="operator",
+        role="extraction",
         model="fixture",
         system_prompt="system",
         task_prompt="task",
@@ -46,22 +46,22 @@ def _backend() -> DshHeadlessBackend:
     )
 
 
-def test_operator_profile_is_selected_explicitly(tmp_path):
+def test_host_operator_profile_is_selected_explicitly(tmp_path):
     backend = _backend()
-    request = _request(tmp_path, profile_name="component-method-operator")
+    request = _request(tmp_path, profile_name="component-method-host-operator")
     command = backend.build_command(request)
-    assert command[command.index("--profile") + 1] == "component-method-operator"
-    assert "component-method-operator/cordis.patch.yml" in command[command.index("--patch") + 1]
+    assert command[command.index("--profile") + 1] == "component-method-host-operator"
+    assert "component-method-host-operator/cordis.patch.yml" in command[command.index("--patch") + 1]
 
 
 def test_role_mapping_is_opt_in_to_preserve_existing_runs(tmp_path, monkeypatch):
     backend = _backend()
     monkeypatch.delenv("COMPONENT_DSH_PROFILE", raising=False)
     monkeypatch.delenv("COMPONENT_DSH_PROFILE_BY_ROLE", raising=False)
-    request = _request(tmp_path, role="operator")
+    request = _request(tmp_path, role="extraction")
     assert backend.build_command(request)[2] == "component-method"
     monkeypatch.setenv("COMPONENT_DSH_PROFILE_BY_ROLE", "1")
-    assert backend.build_command(request)[2] == PROFILE_BY_ROLE["operator"]
+    assert backend.build_command(request)[2] == PROFILE_BY_ROLE["extraction"]
 
 
 def test_all_declared_plugin_bundles_and_profiles_exist():

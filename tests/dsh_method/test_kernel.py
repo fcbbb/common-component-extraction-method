@@ -193,7 +193,8 @@ def test_run_stage_alias_builds_the_registered_stage(tmp_path, monkeypatch):
     )
     assert result["ok"] is True
     command = captured["command"]
-    assert command[command.index("--stage") + 1] == "review"
+    assert command[command.index("--stage") + 1] == "audit"
+    assert command[command.index("--steps") + 1] == "review"
     assert command[command.index("--workers") + 1] == "1"
 
 
@@ -248,6 +249,7 @@ def test_migration_workspace_runs_prepare_reviews_and_review(tmp_path, monkeypat
         task_root / "runs" / "task-a" / "extraction_v1" / "curated" / "summary.json",
         {"status": "completed"},
     )
+    _write_task_json(task_root / "inputs" / "focus_context_packets.json", {"packet_count": 1})
     _write_task_json(task_root / "inputs" / "frozen_components.json", {"component_count": 1})
     called = []
 
@@ -263,8 +265,8 @@ def test_migration_workspace_runs_prepare_reviews_and_review(tmp_path, monkeypat
         result = dsh_kernel.execute_method(method, payload, registry=registry)
         assert result["ok"] is True, result
     assert [command[command.index("--stage") + 1] for command in called] == [
-        "prepare_reviews",
-        "review",
+        "build",
+        "audit",
     ]
 
 
@@ -290,6 +292,68 @@ def test_migration_workspace_rejects_task_and_report_stages(tmp_path, monkeypatc
         assert result["ok"] is False
         assert result["error_code"] == "STAGE_UNSUPPORTED"
     assert called == []
+
+
+def test_migration_workspace_allows_retrieval_but_rejects_task(tmp_path, monkeypatch):
+    _, registry = _registry(tmp_path)
+    task_root = tmp_path / "run" / "tasks" / "task-a"
+    _write_task_json(task_root / "config.json", {
+        "task_id": "task-a",
+        "source_scan_mode": "migration",
+    })
+    _write_task_json(
+        task_root / "outputs" / "full_library" / "manifest.json",
+        {"component_count": 1},
+    )
+    called = []
+
+    def fake_run(command, **kwargs):
+        called.append(command)
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(dsh_kernel.subprocess, "run", fake_run)
+    result = dsh_kernel.execute_method(
+        "run_stage",
+        {"run_id": "run-a", "task_id": "task-a", "stage": "retrieval"},
+        registry=registry,
+    )
+    assert result["ok"] is True, result
+    assert called[0][called[0].index("--stage") + 1] == "retrieval"
+
+    called.clear()
+    for stage in ("task", "deliver"):
+        result = dsh_kernel.execute_method(
+            "run_stage",
+            {"run_id": "run-a", "task_id": "task-a", "stage": stage},
+            registry=registry,
+        )
+        assert result["ok"] is False
+        assert result["error_code"] == "STAGE_UNSUPPORTED"
+    assert called == []
+
+
+def test_deliver_group_builds_both_blocks(tmp_path, monkeypatch):
+    _, registry = _registry(tmp_path)
+    task_root = tmp_path / "run" / "tasks" / "task-a"
+    _write_task_json(
+        task_root / "outputs" / "full_library" / "manifest.json",
+        {"component_count": 1},
+    )
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["command"] = command
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(dsh_kernel.subprocess, "run", fake_run)
+    result = dsh_kernel.execute_method(
+        "run_stage",
+        {"run_id": "run-a", "task_id": "task-a", "stage": "deliver"},
+        registry=registry,
+    )
+    assert result["ok"] is True, result
+    command = captured["command"]
+    assert command[command.index("--blocks") + 1] == "retrieval,task"
 
 
 def test_stage_lock_reports_busy_without_running(tmp_path, monkeypatch):

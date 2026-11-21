@@ -18,6 +18,7 @@ from typing import Any, Callable, Mapping, Sequence
 
 from component_method.dsh_jobs import start_job, job_cancel, job_status
 from component_method.dsh_registry import RegistryError, load_registry, resolve_run
+from component_method.workflow.blocks import BLOCK_GROUPS, block_status, resolve_block
 
 PROJECT = Path(__file__).resolve().parents[2]
 RUN_STAGE_MODULE = "component_method.workflow.run_stage"
@@ -25,28 +26,53 @@ RUN_BATCH_MODULE = "component_method.workflow.run_batch"
 STAGE_LOCK_MODULE = "component_method.workflow.stage_lock"
 
 STAGE_TO_RUN_STAGE = {
+    # Atomic blocks.
+    "prepare": "prepare",
+    "build": "build",
+    "audit": "audit",
+    "publish": "publish",
+    "retrieval": "retrieval",
+    "task": "task",
+    # Retired sub-stage names resolve to the block that owns them.
     "source_scan": "prepare",
+    "extract": "build",
+    "curate": "build",
+    "prepare_reviews": "build",
+    "review": "audit",
+    "finalize_review": "audit",
+    "publish_library": "publish",
+}
+
+STAGE_OPTIONS = {
+    "prepare": frozenset({"steps"}),
+    "build": frozenset({"resume", "workers", "steps"}),
+    "audit": frozenset({"resume", "workers", "steps"}),
+    "publish": frozenset({"publish_mode", "steps"}),
+    "retrieval": frozenset({"steps"}),
+    "task": frozenset({"steps"}),
+    # A group expands to several blocks, so a single --steps value cannot
+    # apply; call the blocks separately when debugging individual steps.
+    "deliver": frozenset(),
+    "report": frozenset(),
+    "source_scan": frozenset({"steps"}),
+    "extract": frozenset({"resume", "workers", "steps"}),
+    "curate": frozenset({"steps"}),
+    "prepare_reviews": frozenset({"steps"}),
+    "review": frozenset({"resume", "workers", "steps"}),
+    "finalize_review": frozenset({"steps"}),
+    "publish_library": frozenset({"publish_mode", "steps"}),
+}
+
+# Retired per-step tools keep their old granularity by pinning one step inside
+# the merged block.  Block names themselves run every enabled step.
+STAGE_STEPS = {
+    "source_scan": "source_scan",
     "extract": "extract",
     "curate": "curate",
     "prepare_reviews": "prepare_reviews",
     "review": "review",
     "finalize_review": "finalize_review",
-    "publish_library": "publish",
-    "retrieval": "retrieval",
-    "task": "task",
-}
-
-STAGE_OPTIONS = {
-    "source_scan": frozenset(),
-    "extract": frozenset({"resume", "workers"}),
-    "curate": frozenset(),
-    "prepare_reviews": frozenset(),
-    "review": frozenset({"resume", "workers"}),
-    "finalize_review": frozenset(),
-    "publish_library": frozenset(),
-    "retrieval": frozenset(),
-    "task": frozenset(),
-    "report": frozenset(),
+    "publish_library": "publish_library",
 }
 
 # Stages that are plain in-process Python calls rather than workflow
@@ -185,6 +211,13 @@ def _validated_ops_args(module: str, args: Any) -> list[str]:
     return validated
 
 
+def _requested_blocks(stage: str) -> tuple[str, ...]:
+    """Atomic blocks a stage name runs; compatibility groups expand."""
+    if stage in BLOCK_GROUPS:
+        return BLOCK_GROUPS[stage]
+    return (resolve_block(stage).name,)
+
+
 def _stage_command(
     stage: str,
     payload: Mapping[str, Any],
@@ -197,17 +230,26 @@ def _stage_command(
     task_root = resolved["task_root"]
     if task_root is None:
         raise KernelError(f"{stage} requires task_id")
-    run_stage = STAGE_TO_RUN_STAGE[stage]
+    blocks = _requested_blocks(stage)
     command = [
         _python(),
         "-m",
         RUN_STAGE_MODULE,
         "--task-root",
         str(task_root),
-        "--stage",
-        run_stage,
     ]
+    if len(blocks) == 1:
+        command.extend(["--stage", blocks[0]])
+    else:
+        command.extend(["--blocks", ",".join(blocks)])
     allowed = STAGE_OPTIONS[stage]
+    steps = payload.get("steps", STAGE_STEPS.get(stage))
+    if steps is not None:
+        if len(blocks) != 1:
+            raise KernelError("steps require a single block; call each block separately")
+        if not isinstance(steps, str):
+            raise KernelError("steps must be a comma-separated string")
+        command.extend(["--steps", steps])
     if "resume" in allowed and payload.get("resume"):
         command.append("--resume")
     if "workers" in allowed and payload.get("workers") is not None:
@@ -215,6 +257,11 @@ def _stage_command(
         if not isinstance(workers, int) or isinstance(workers, bool) or workers < 1:
             raise KernelError("workers must be a positive integer")
         command.extend(["--workers", str(workers)])
+    mode = payload.get("publish_mode")
+    if "publish_mode" in allowed and mode is not None:
+        if mode not in {"reviewed", "unreviewed", "migration_direct"}:
+            raise KernelError("publish_mode must be reviewed, unreviewed or migration_direct")
+        command.extend(["--publish-mode", str(mode)])
     return command
 
 
@@ -222,7 +269,7 @@ def _run_stage_command(payload: Mapping[str, Any], registry: dict[str, Any]) -> 
     stage = payload.get("stage")
     if not isinstance(stage, str):
         raise KernelError("stage is required")
-    if stage not in STAGE_TO_RUN_STAGE and stage != "report":
+    if stage not in STAGE_TO_RUN_STAGE and stage != "report" and stage not in BLOCK_GROUPS:
         raise KernelError(f"unsupported stage: {stage!r}")
     return _stage_command(stage, payload, registry)
 
@@ -309,6 +356,20 @@ def _pipeline_command(payload: Mapping[str, Any], registry: dict[str, Any]) -> l
     command = [_python(), "-m", RUN_BATCH_MODULE, "--stage", "pipeline"]
     for task in _task_ids(payload):
         command.extend(["--task", task])
+    if payload.get("blocks") is not None:
+        blocks = payload["blocks"]
+        if not isinstance(blocks, str):
+            raise KernelError("blocks must be a comma-separated string")
+        command.extend(["--blocks", blocks])
+    for key, flag in (
+        ("from_block", "--from-block"),
+        ("through_block", "--through-block"),
+        ("publish_mode", "--publish-mode"),
+    ):
+        if payload.get(key) is not None:
+            command.extend([flag, str(payload[key])])
+    if payload.get("no_report"):
+        command.append("--no-report")
     if payload.get("resume", True):
         command.append("--resume")
     else:
@@ -642,7 +703,23 @@ METHODS: dict[str, Callable[[Mapping[str, Any], dict[str, Any]], dict[str, Any]]
         stage: (lambda payload, registry, stage=stage: _run_command_result(
             stage, _stage_command(stage, payload, registry), payload, registry
         ))
-        for stage in ("source_scan", "extract", "curate", "prepare_reviews", "review", "finalize_review", "publish_library", "retrieval", "task", "report")
+        for stage in (
+            "prepare",
+            "build",
+            "audit",
+            "publish",
+            "deliver",
+            "source_scan",
+            "extract",
+            "curate",
+            "prepare_reviews",
+            "review",
+            "finalize_review",
+            "publish_library",
+            "retrieval",
+            "task",
+            "report",
+        )
     },
     "run_stage": _dispatch_run_stage,
     "signal_prepare": lambda payload, registry: _run_command_result(
@@ -715,6 +792,11 @@ def _environment(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[s
 
 STAGE_METHODS = frozenset(
     {
+        "prepare",
+        "build",
+        "audit",
+        "publish",
+        "deliver",
         "source_scan",
         "extract",
         "curate",
@@ -730,7 +812,8 @@ STAGE_METHODS = frozenset(
 
 # The migration workspace runs the same extraction/review/publish pipeline as
 # the batch method: extraction, curation and the component review loop all run
-# inside the method task root.  Task execution and reporting must not run there
+# inside the method task root.  Retrieval is allowed so the main agent can
+# materialize a bundle, but task execution and reporting must not run there
 # because the migration itself happens in the main agent's session.
 MIGRATION_UNSUPPORTED_STAGES = frozenset({"task", "report"})
 
@@ -770,41 +853,31 @@ def _stage_prerequisite(method: str, payload: Mapping[str, Any], resolved: Mappi
     if task_root is None:
         return "STAGE_INPUT_MISSING"
     config = _task_config(resolved)
-    if (
-        config.get("source_scan_mode") == "migration"
-        and method in MIGRATION_UNSUPPORTED_STAGES
+    try:
+        blocks = [resolve_block(name) for name in _requested_blocks(method)]
+    except ValueError:
+        return "STAGE_INPUT_MISSING"
+    if config.get("source_scan_mode") == "migration" and any(
+        block.name in MIGRATION_UNSUPPORTED_STAGES for block in blocks
     ):
         return "STAGE_UNSUPPORTED"
-    extraction_root = task_root / "runs" / str(config.get("task_id", "")) / "extraction_v1"
-    checks: dict[str, Path] = {
-        "extract": task_root / "inputs" / "focus_context_packets.json",
-        "curate": extraction_root / "summary.json",
-        "prepare_reviews": extraction_root / "curated" / "summary.json",
-        "review": task_root / "inputs" / "frozen_components.json",
-        "finalize_review": task_root / "runs" / str(config.get("task_id", "")) / "review_v1" / "summary.json",
-        "retrieval": task_root / "outputs" / "full_library" / "manifest.json",
-    }
-    if method == "publish_library":
-        if config.get("publish_mode") == "migration_direct":
-            checks[method] = extraction_root / "curated" / "summary.json"
-        else:
-            checks[method] = task_root / "runs" / str(config.get("task_id", "")) / "review_v1" / "summary.json"
-    path = checks.get(method)
-    if path is not None and not path.is_file():
+    # A group runs its blocks in order; ``run_stage`` re-checks each block
+    # immediately before running it, so only the first block's inputs must
+    # already exist here.
+    if not block_status(blocks[0].name, task_root, config)["ready"]:
         return "STAGE_INPUT_MISSING"
     return None
 
 
-def _stage_summary(method: str, payload: Mapping[str, Any], resolved: Mapping[str, Any]) -> dict[str, Any]:
-    """Read the stage's own manifest instead of making the caller parse stdout."""
-    method = _effective_stage(method, payload)
+def _step_summary(step: str, resolved: Mapping[str, Any]) -> dict[str, Any]:
+    """Read one step's own manifest instead of making the caller parse stdout."""
     task_root = Path(resolved["task_root"]) if resolved.get("task_root") else None
     if task_root is None:
         return {}
     config = _task_config(resolved)
     task_id = str(config.get("task_id", ""))
     try:
-        if method == "source_scan":
+        if step == "source_scan":
             packets = _json_if_file(task_root / "inputs" / "focus_context_packets.json")
             if packets:
                 return {
@@ -814,7 +887,7 @@ def _stage_summary(method: str, payload: Mapping[str, Any], resolved: Mapping[st
                     "language": packets.get("language"),
                     "gaps": len(packets.get("gaps") or []),
                 }
-        if method == "extract":
+        if step == "extract":
             summary = _json_if_file(task_root / "runs" / task_id / "extraction_v1" / "summary.json")
             if summary:
                 return {
@@ -832,21 +905,21 @@ def _stage_summary(method: str, payload: Mapping[str, Any], resolved: Mapping[st
                         "extraction_reported_cost_usd",
                     )
                 }
-        if method == "curate":
+        if step == "curate":
             summary = _json_if_file(task_root / "runs" / task_id / "extraction_v1" / "curated" / "summary.json")
             if summary:
                 return {
                     key: summary.get(key)
                     for key in ("status", "retained_component_count", "excluded_packet_count")
                 }
-        if method == "prepare_reviews":
+        if step == "prepare_reviews":
             frozen = _json_if_file(task_root / "inputs" / "frozen_components.json")
             if frozen:
                 return {
                     "component_count": frozen.get("component_count"),
                     "component_ids": frozen.get("component_ids"),
                 }
-        if method == "review":
+        if step == "review":
             summary = _json_if_file(task_root / "runs" / task_id / "review_v1" / "summary.json")
             if summary:
                 return {
@@ -862,15 +935,17 @@ def _stage_summary(method: str, payload: Mapping[str, Any], resolved: Mapping[st
                         "review_reported_cost_usd",
                     )
                 }
-        if method == "publish_library":
+        if step == "publish_library":
             manifest = _json_if_file(task_root / "outputs" / "full_library" / "manifest.json")
             if manifest:
                 return {
                     "component_count": manifest.get("component_count"),
                     "schema_version": manifest.get("schema_version"),
+                    "review_status": manifest.get("review_status"),
+                    "discovery_audit_status": manifest.get("discovery_audit_status"),
                     "library": str(task_root / "outputs" / "full_library"),
                 }
-        if method == "retrieval":
+        if step == "retrieval":
             attempt = str(config.get("retrieval_attempt") or "retrieval_v1")
             result = _json_if_file(task_root / "attempts" / attempt / "result.json")
             if result:
@@ -878,28 +953,76 @@ def _stage_summary(method: str, payload: Mapping[str, Any], resolved: Mapping[st
                     "selected_bundle_ids": result.get("selected_bundle_ids"),
                     "coverage_file": str(task_root / "attempts" / attempt / "submission" / "coverage.json"),
                 }
+        if step == "task":
+            attempt = str(config.get("task_attempt") or "task_01")
+            result = _json_if_file(task_root / "task_attempts" / attempt / "run_manifest.json")
+            if result:
+                return {
+                    key: result.get(key)
+                    for key in ("status", "task_id", "evaluation", "selected_component_count")
+                }
     except (OSError, ValueError):
         return {}
     return {}
 
 
+def _requested_steps(method: str, payload: Mapping[str, Any]) -> tuple[str, ...] | None:
+    requested = _effective_stage(method, payload)
+    if requested in BLOCK_GROUPS:
+        return None
+    steps = payload.get("steps", STAGE_STEPS.get(requested))
+    if steps is None:
+        return None
+    return tuple(step.strip() for step in str(steps).split(",") if step.strip())
+
+
+def _stage_steps(
+    method: str,
+    payload: Mapping[str, Any],
+    blocks: Sequence[Any],
+) -> tuple[str, ...]:
+    """Steps the caller actually runs, across one block or a group."""
+    requested_steps = _requested_steps(method, payload)
+    if requested_steps is not None and len(blocks) == 1:
+        return requested_steps
+    return tuple(step for block in blocks for step in block.steps)
+
+
+def _stage_summary(method: str, payload: Mapping[str, Any], resolved: Mapping[str, Any]) -> dict[str, Any]:
+    """Aggregate the summaries of the steps the caller actually runs."""
+    requested = _effective_stage(method, payload)
+    try:
+        blocks = [resolve_block(name) for name in _requested_blocks(requested)]
+    except ValueError:
+        return {}
+    steps = _stage_steps(method, payload, blocks)
+    summaries = {step: _step_summary(step, resolved) for step in steps}
+    merged: dict[str, Any] = {}
+    for summary in summaries.values():
+        merged.update(summary)
+    merged["block"] = requested if requested in BLOCK_GROUPS else blocks[0].name
+    merged["steps"] = summaries
+    return merged
+
+
 def _stage_artifacts(method: str, payload: Mapping[str, Any], resolved: Mapping[str, Any]) -> dict[str, str]:
-    method = _effective_stage(method, payload)
+    requested = _effective_stage(method, payload)
     task_root = Path(resolved["task_root"]) if resolved.get("task_root") else None
     if task_root is None:
         return {}
+    try:
+        blocks = [resolve_block(name) for name in _requested_blocks(requested)]
+    except ValueError:
+        return {}
     config = _task_config(resolved)
-    task_id = str(config.get("task_id", ""))
-    candidates = {
-        "source_scan": task_root / "inputs" / "focus_context_packets.json",
-        "extract": task_root / "runs" / task_id / "extraction_v1" / "summary.json",
-        "curate": task_root / "runs" / task_id / "extraction_v1" / "curated" / "summary.json",
-        "prepare_reviews": task_root / "inputs" / "frozen_components.json",
-        "review": task_root / "runs" / task_id / "review_v1" / "summary.json",
-        "publish_library": task_root / "outputs" / "full_library" / "manifest.json",
-        "retrieval": task_root / "attempts" / str(config.get("retrieval_attempt") or "retrieval_v1") / "result.json",
-    }
-    path = candidates.get(method)
+    from component_method.workflow.blocks import STEP_ARTIFACTS, artifacts as block_artifacts
+
+    artifacts_by_key = block_artifacts(task_root, config)
+    steps = _stage_steps(method, payload, blocks)
+    if len(steps) == 1 and steps[0] in STEP_ARTIFACTS:
+        path = artifacts_by_key[STEP_ARTIFACTS[steps[0]]]
+    else:
+        path = artifacts_by_key[blocks[-1].produces]
     return {"manifest": str(path)} if path is not None and path.is_file() else {}
 
 
@@ -1121,7 +1244,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 def _command_for_job(method: str, payload: Mapping[str, Any], registry: dict[str, Any]) -> list[str]:
     if method == "run_stage":
         command = _run_stage_command(payload, registry)
-    elif method in {"source_scan", "extract", "curate", "prepare_reviews", "review", "finalize_review", "publish_library", "retrieval", "task", "report"}:
+    elif method in STAGE_METHODS:
         command = _stage_command(method, payload, registry)
     elif method == "signal_prepare":
         command = _signal_prepare_command(payload, registry)

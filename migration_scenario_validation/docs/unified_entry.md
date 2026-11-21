@@ -129,10 +129,11 @@ B 的主 agent **默认不设步数上限**：组件抽取开销大，用 A 的 
 └── offline_tasks/<task_id>/task.json
 ```
 
-`config.json` 使用 `source_scan_mode: migration`：`source_scan` 直接扫描本次尝试的
+`config.json` 使用 `source_scan_mode: migration`：`prepare` 块直接扫描本次尝试的
 工作区（不依赖预先冻结的候选文件）。抽取之后走与 20 题方法相同的组件审核流程
-（`prepare_reviews → review`，`max_review_repair_rounds: 1`，含一次返修与定向复审），
-`publish_library` 从 `review_v1/` 发布 schema-8 组件库；只有审核通过的组件会进入库。
+（`build` 冻结审核输入，`audit` 完成审核与返修，`max_review_repair_rounds: 1`，
+含一次返修与定向复审），`publish` 从 `review_v1/` 发布 schema-8 组件库；只有审核
+通过的组件会进入库。
 语言后端由场景决定：IPP/Kylin 用 `cpp@1`，MUSA 用 `python@1`。
 
 ### 固定工作流
@@ -141,32 +142,30 @@ B 的主 agent **默认不设步数上限**：组件抽取开销大，用 A 的 
 它被追加在场景的基础迁移系统提示之后，并附上本次的注册身份
 （`run_id` / `task_id`）。B 臂使用最小 profile `component-method-migration`，
 只加载 `controlled_bash`、**唯一的方法入口** `component_run_stage`，以及 DSH 内置的
-作业工具（`job_output` / `job_list` / `job_kill`，由 `tool-jobs` 提供）。任务执行与
-报表插件不加载，kernel 在迁移工作区也拒绝这两类阶段；评审阶段属于固定工作流，但同样
-不单独暴露工具——模型只能从 `component_run_stage` 的 `stage` 进入。工具表按场景裁剪
-后，模型看不到“调了必然失败”的阶段。
+作业工具（`job_output` / `job_list` / `job_kill`，由 `tool-jobs` 提供）。逐阶段插件和
+任务执行/报表插件不加载，模型只能从 `component_run_stage` 的 `stage` 进入。提示词
+写明本次要执行哪些块；kernel 仍允许调用工作区不支持的阶段，但会返回
+`STAGE_UNSUPPORTED`，让失败以结果单的形式出现，而不是靠工具表隐藏。
 
-主 agent 必须按顺序调用同一个工具，用 `stage` 选择阶段：
+主 agent 按顺序调用同一个工具，用 `stage` 选择块：
 
 ```text
-run_stage(stage=source_scan)
-  → run_stage(stage=extract)             # 后台作业，返回 job_id + status: running
-  → run_stage(stage=curate)
-  → run_stage(stage=prepare_reviews)
-  → run_stage(stage=review)              # 后台作业，返回 job_id + status: running
-  → run_stage(stage=publish_library)     # 只发布审核通过的组件
-  → run_stage(stage=retrieval)           # 后台作业，返回 job_id + status: running
+run_stage(stage=prepare)
+  → run_stage(stage=build)               # 后台作业，返回 job_id + status: running
+  → run_stage(stage=audit)               # 后台作业
+  → run_stage(stage=publish)             # 只发布审核通过的组件
+  → run_stage(stage=retrieval)           # 后台作业
   → run_stage(stage=validate_selection)
   → run_stage(stage=materialize_selection)
   → 读取 component_bundle 并完成迁移
 ```
 
-长阶段（`extract`、`review`、`retrieval`）通过 `ctx.jobs` 启动：工具立即返回
+长块（`build`、`audit`、`retrieval`）通过 `ctx.jobs` 启动：工具立即返回
 `status: "running"` 和 `job_id`，主 agent 用
 `job_output {"job_id": ..., "wait": true, "timeout_ms": 600000}` 等到终态（作业结束时
 内置运行时也会发**完成通知**，空闲的主 agent 会被唤醒，两种方式拿到的是同一张结果
-单）。短阶段（`source_scan`、`curate`、`prepare_reviews`、`publish_library`、
-`validate_selection`、`materialize_selection`）同步执行，直接返回同一张结果单。原来自制的
+单）。短块（`prepare`、`publish`、`validate_selection`、`materialize_selection`）
+同步执行，直接返回同一张结果单。原来自制的
 `component_job_status` / `component_job_cancel` 已删除，等待、通知、唤醒都由 DSH
 内置作业运行时提供。
 
@@ -178,16 +177,16 @@ kernel 会为这些阶段做额外保护：
 - **前置条件**：缺少上一阶段产物时直接返回 `error_code=STAGE_INPUT_MISSING`，
   不启动子进程；`run_stage` 按请求的 `stage` 字段检查同一套条件。
 - **并发锁**：同一任务根的阶段互斥。同步调用在锁被占用时返回
-  `error_code=STAGE_BUSY`；`extract`/`retrieval` 这类作业阶段由
+  `error_code=STAGE_BUSY`；`build`/`audit`/`retrieval` 这类作业块由
   `component_method.workflow.stage_lock` 包装进程持有同一把锁，作业会排队等待，
   不与同步阶段并发写同一个任务根。不同迁移任务各有自己的任务根，因此仍可
   并行。
 - **迁移工作区限制阶段**：当 `config.json` 的 `source_scan_mode` 为 `migration`
   时，kernel 拒绝 `task`/`report`（`error_code=STAGE_UNSUPPORTED`）。迁移任务由主
-  agent 在同一会话完成；`run_stage` 是唯一入口，因此这些阶段既没有对应工具，也无法
-  从入口绕过。抽取与审核阶段在迁移工作区照常运行。
-- **工作区冻结**：`source_scan` 记录本次工作区所有可抽取文件的
-  `workspace_sha256`/`workspace_files`；`extract` 启动前会重新计算并比对，
+  agent 在同一会话完成；`retrieval` 仍可运行，用于物化组件 bundle。抽取、审核与
+  检索块在迁移工作区照常运行。
+- **工作区冻结**：`prepare` 记录本次工作区所有可抽取文件的
+  `workspace_sha256`/`workspace_files`；`build` 启动前会重新计算并比对，
   工作区被主 agent 改动时直接失败（`workspace changed after source_scan`），
   防止“先抽取、后改源码”造成的方法/任务环境漂移。
 - **统一结果单**：同步阶段、后台作业、失败响应都返回同一组字段

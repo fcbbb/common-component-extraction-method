@@ -1,7 +1,8 @@
 # Component Method headless profile overlay (method arm) for a host-side
-# execution plane.  Same plugin set as `component-method-operator`, but the
-# agent's shell is the ordinary `bash` tool in the DSH process's own
-# environment instead of `controlled-bash` over a Docker socket.
+# execution plane.  The shell is the ordinary `bash` tool in the DSH process's
+# own environment because the host has no Docker socket.  The method surface is
+# the same single entry as `component-method-migration`: `component_run_stage`
+# plus the built-in job tools; per-stage plugins are not mounted.
 
 - id: agent-default-model
   config:
@@ -71,26 +72,10 @@
   disabled: false
 
 - insert:
-    - id: component-method-source-scan
-      name: '@component-method/dsh-source-scan'
-    - id: component-method-signal-analysis
-      name: '@component-method/dsh-signal-analysis'
-    - id: component-method-protocol-candidates
-      name: '@component-method/dsh-protocol-candidates'
-    - id: component-method-component-build
-      name: '@component-method/dsh-component-build'
-    - id: component-method-library-publish
-      name: '@component-method/dsh-library-publish'
-    - id: component-method-retrieval
-      name: '@component-method/dsh-retrieval'
-    - id: component-method-task-execution
-      name: '@component-method/dsh-task-execution'
-    - id: component-method-reporting
-      name: '@component-method/dsh-reporting'
+    # One method entry for the whole workflow.  Workspace preparation is done
+    # by the harness adapter, so `component-method-ops` is not mounted either.
     - id: component-method-orchestrator
       name: '@component-method/dsh-method-orchestrator'
-    - id: component-method-ops
-      name: '@component-method/dsh-method-ops'
 
 - id: tool-pwsh
   disabled: true

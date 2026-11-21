@@ -11,11 +11,14 @@ export const DEFAULT_KERNEL_TIMEOUT_MS = 600_000;
 
 /** Stages that are long enough to belong in the background-job runtime. */
 export const BACKGROUND_STAGES = new Set([
+  "build",
+  "audit",
+  "deliver",
+  "pipeline",
   "extract",
   "retrieval",
   "review",
   "task",
-  "pipeline",
 ]);
 
 /**

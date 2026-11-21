@@ -23,7 +23,6 @@ PINNED_DSH_VERSION = "0.2.2-rc.1"
 PINNED_NODE_VERSION = "24.9.0"
 PROFILE_NAME = "component-method"
 PROFILE_BY_ROLE = {
-    "operator": "component-method-operator",
     "extraction": "component-method-extraction",
     "review": "component-method-review",
     "retrieval": "component-method-retrieval",
