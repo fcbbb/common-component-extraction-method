@@ -83,6 +83,8 @@ python3 tools/extract_transformation.py --stage verify \
   `v3/windows_to_kylin/library/`。
 - 任务使用的库由 `task.yaml` 的 `library_manifest` 决定；`slate.yaml` 第 110 行只是默认值。
 - 手工库含 5 个组件；`demo_new_flow_v4` 是 `v3_poco_fs_stack` 的复现用产物（1 个组件）。
+- `demo_new_flow_v4/runs/run_manifest.json` 记录的建库输入只有 `l2_libuv_fs`；上面的命令按
+  spec 的 5 个任务重建，得到的组件集不保证与 `demo_new_flow_v4` 相同。
 
 ## 5. 复跑一次配对
 
@@ -107,6 +109,42 @@ python3 tools/bench.py compare --default-label default_rN --method-label method_
 - `windows_to_kylin`：V1 历史任务（13 题）。
 - `windows_to_kylin_v2` 已移除：V2 任务包并入 V3。
 - `ipp_to_vsipl`、`cuda_to_musa`：V1 任务与 gold 正控。
+
+### 5.1 已跑通的一次方法臂（`method_r8`）
+
+`reports/bench/v3_poco_fs_stack_method_r8/`（本机，未提交）记录了一次完整通过的方法臂运行。
+复现所需的配置如下，取值来自该次运行的 `attempt.json` 与终端记录：
+
+| 项 | 值 |
+|---|---|
+| 任务 / 场景 | `v3_poco_fs_stack` / `windows_to_kylin_v3` |
+| 臂 / DSH profile | `method` / `component-method-migration` |
+| 模型 | `DeepSeek-V4.1-Flash-1017`（paratera 网关；凭据按 `bench.yaml` 注释从 `repository/.env` 读取） |
+| DSH / Node | `0.2.2-rc.1` / `24.9.0` |
+| 判分镜像 | `migration/kylin:sp3-p2`（`windows_to_kylin_v3` 的默认镜像） |
+| 方法 prompt | `config/prompts/method_retrieval_only_system.txt`（`--method-prompt`，替换默认 workflow） |
+| 组件库 | `library_generated/demo_new_flow_v4/library/manifest.json`（1 个组件） |
+| 检索结果 | `posix-file-and-directory-request-backend-behind-a-96ebe29d` |
+| 结果 | build ok；隐藏测试 72 项 pass；回归 22 项 pass；api gates pass；34 次迁移调用 + 5 次检索调用；2,019.5 s |
+
+等价命令（模型也可由 `.env` 提供；库由 `task.yaml` 的 `library_manifest` 指定）：
+
+```bash
+python3 tools/bench.py run --arm method --scenario windows_to_kylin_v3 \
+  --only v3_poco_fs_stack --label method_rN \
+  --model DeepSeek-V4.1-Flash-1017 \
+  --method-prompt config/prompts/method_retrieval_only_system.txt \
+  --method-stage-image migration/kylin:sp3-p2
+```
+
+两个前提：
+
+- **库不随仓库分发。** `library_generated/` 未提交；新环境要么从跑过实验的机器复制
+  `demo_new_flow_v4/`，要么按 §4 重建。重建的输入与 `demo_new_flow_v4` 不同（见 §4），
+  不能保证复现同一组件或同一 bundle id。
+- **证据未提交。** `attempt.json`、`selection.json`、工作区与完整复盘
+  （`reports/bench/v3_poco_fs_stack_validation_report.md`）都在 `reports/` 下，新环境不可见。
+  复盘报告记录了判分与 agent view 的两处 harness 修复、r5/r8 配对口径和结论边界。
 
 ## 6. 未完成项
 

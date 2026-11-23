@@ -977,6 +977,9 @@ python3 tools/extract_transformation.py --stage verify \
 `v3/windows_to_kylin/library/`。18 个 V3 任务在 `task.yaml` 中引用手写库；
 `v3_poco_fs_stack` 引用 `demo_new_flow_v4`。
 
+注意：`demo_new_flow_v4/runs/run_manifest.json` 记录的建库输入只有 `l2_libuv_fs`；
+上面的循环会构建 5 个任务，重建出的组件集不保证与 `demo_new_flow_v4` 相同。
+
 ### 12.2 配对运行
 
 ```bash
@@ -992,3 +995,20 @@ python3 tools/bench.py compare --default-label default_rN --method-label method_
 `windows_to_kylin_v3` 在 `bench.yaml` 中默认关闭，用 `--scenario` 显式选择。方法臂的检索结果
 写在运行记录的 `selection.json`；`v3_poco_fs_stack` 的方法臂曾检索到
 `posix-file-and-directory-request-backend-behind-a-96ebe29d`。
+
+一次已验证的方法臂配置（`method_r8`，2026-11-22，判定 pass）：
+
+```bash
+python3 tools/bench.py run --arm method --scenario windows_to_kylin_v3 \
+  --only v3_poco_fs_stack --label method_r8 \
+  --model DeepSeek-V4.1-Flash-1017 \
+  --method-prompt config/prompts/method_retrieval_only_system.txt \
+  --method-stage-image migration/kylin:sp3-p2
+```
+
+- `--method-prompt` 把默认 workflow 换成“只检索并应用构件”；凭据从 `repository/.env` 读取。
+- DSH `0.2.2-rc.1`、Node `24.9.0`；结果 build / 隐藏测试 / 回归 / api gates 全过。
+- 配对时先手动执行一次 `prepare.sh`，两臂都用 `--no-prepare` 从同一份 `work/` 出发。
+- 库 `demo_new_flow_v4` 未提交，且其建库输入只有 `l2_libuv_fs`（见 §12.1 的注意）。
+- 证据与完整复盘在 `reports/bench/`（未提交）；配置汇总见
+  [docs/current_state.md](docs/current_state.md) §5.1。
