@@ -1,0 +1,109 @@
+You extract one reusable transformation component from one completed migration:
+the source side that was replaced and the completed target side that replaced
+it. A migration may change a platform, an API or library, a language, a data
+format, a build system, or a model/kernel implementation.
+
+Read the before/after files, the shared contract and the tests. Treat the
+workspace as read-only. A component records experience for a future migration:
+when it applies, how to map the source mechanism to the target, what differs,
+where it breaks, and how to verify the result.
+
+## One component
+
+A completed migration yields exactly one component. It covers the whole rebuild
+that this example performed, so a reader who applies it can rebuild the same
+layer. Write one card, not one card per file, decision or fix.
+
+## Naming
+
+Name mechanisms by role and platform family, so the card reads the same for any
+project. Cite source and target behavior as concepts: library and project
+names, source symbol prefixes, source file names and example ids stay out of
+the card. Name a convention by its observable behavior, not by its library.
+
+## Rule scope
+
+Every statement names its scope. Write each statement as one of three kinds:
+
+- General: holds for any project that implements the same mechanism. State the
+  observable rule and its fallback.
+- Source convention: holds only where the target API shares the source side's
+  model — how errors are reported, whether failures throw, ownership and
+  lifetime, blocking, threading. Name that model in the statement itself:
+  "when the target reports errors as ..., map ...".
+- Implementation detail: a call sequence, branch, constant or symbol of this
+  migration. Omit it.
+
+Do not state a source convention as a general rule. Do not describe the target
+implementation call by call.
+
+## What the card states
+
+Write for an implementer who has not seen this repository: name mechanisms,
+APIs, formats and observable behavior, so the reader maps them to their own
+names.
+
+Ground each side in its own files: describe source behavior from the source,
+target behavior from the target.
+
+State each mapping rule as source concept -> target mechanism, with the
+fallback and the condition under which it applies. Keep one decision per
+statement. Record what is genuinely different: failure semantics, ownership and
+lifetime, ordering, blocking, resource limits, precision and rounding,
+encoding. For every buffer or resource, state who allocates it, who owns it,
+whether the callee copies or borrows, and who releases it.
+
+A pitfall comes from this migration. Verification says what to observe so a
+reader can tell the port went wrong, using checks an ordinary unprivileged
+process can run.
+
+## Output
+
+Write `manifest.json` with exactly one entry in `transformations`:
+
+{
+  "transformations": [
+    {
+      "title": "short name of the rebuilt layer, in role and platform terms",
+      "when_to_use": "2-4 sentences for someone facing this rebuild; name the API model and conventions that must match",
+      "mapping_rules": "the decisions: source concept -> target mechanism, with the fallback and its applicability condition",
+      "procedure": "the order that matters, stated as decisions rather than a call sequence",
+      "semantic_deltas": "observable differences the implementer must handle",
+      "pitfalls": "failure modes seen in this migration, with the condition under which each occurs",
+      "verification": "how to show the result is right",
+      "boundary": "what this component does not cover",
+      "applicability": {
+        "constraints": ["toolchain, version, device or configuration limit"]
+      }
+    }
+  ]
+}
+
+Each field may be one paragraph or a short list of separate statements. Write
+only `manifest.json`.
+
+## Migration example
+
+Before (source-side implementation), workspace-relative:
+- `src/plan_ipp.c`
+- `src/matched_filter_ipp.c`
+- `src/correlate_ipp.c`
+- `src/profile_ipp.c`
+- `src/radar_pipeline_internal.h`
+- `include/radar_pipeline.h`
+- `CMakeLists.txt`
+
+After (completed target-side implementation), workspace-relative:
+- `plan_vsipl.c`
+- `matched_filter_vsipl.c`
+- `correlate_vsipl.c`
+- `profile_vsipl.c`
+
+Context: 0 shared/caller files. The workspace root is the project's real source layout; explore it directly.
+Tests: 1 files.
+
+
+Write `manifest.json` for this example.
+
+File submission protocol (applies to this run, including saved prompt templates):
+Write the result metadata to /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s1_radar_correlation/file_submissions/9d63800531604296a18ff26a459f988d/manifest.json. It must be one JSON object with the exact schema described in the task. This role submits rules and findings; do not write, copy or reference source files. Run every bash command with the workdir set to /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s1_radar_correlation/repo. The repository snapshot is read-only: never create, edit or delete anything inside it. Write submission files only under /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s1_radar_correlation/file_submissions/9d63800531604296a18ff26a459f988d. Check your files with python3 /home/luoyexx/project/harness/common-component-extraction-method/src/component_method/component_build/submission.py --role methodology --output /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s1_radar_correlation/file_submissions/9d63800531604296a18ff26a459f988d; this validates the metadata contract. Fix errors and check again. Finish by running the same checker with --submit as a standalone bash command; do not chain it with ls/find/echo or other commands. It prints the completion marker only when your files are valid. The program checks the files before accepting completion; errors are returned so you can correct them.

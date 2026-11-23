@@ -1,0 +1,9 @@
+Repaired `streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b` and submitted `manifest.json`.
+
+Changes made, all grounded in the visible migration (source uses four real `ippsDotProd_32f` calls combined as `rr - ri` / `ir + ii`, with time-reversed taps and a forward history window; the target accumulates `hr*xr - hi*xi` / `hr*xi + hi*xr` over backward-walked history):
+
+- **mapping_rules** — kept the "vendor real dot product → explicit accumulation loop" mapping, but corrected the reason: a conjugating inner product flips the sign of the cross term in *both* output components (imaginary×imaginary term in the real plane, imaginary-coefficient×real-sample term in the imaginary plane), so the result is a plausibly wrong filter, not a one-component sign error. Retained the rule to use a target inner product only after confirming it does not conjugate.
+- **semantic_deltas** — rewrote the conjugation delta so neither plane is said to stay correct; stated that the defect cannot be fixed by negating the imaginary output and must be caught by checking both planes against the documented complex-multiply formula with asymmetric complex coefficients.
+- **pitfalls** — split the conjugate substitution and the plane-pairing swap into distinct failure modes with their actual effects, while keeping the concrete asymmetric-coefficient check over both coefficient planes and both output planes.
+
+All other fields, the title, family boundary and applicability constraints were left unchanged. Validation passed (`Submission files and Python syntax are valid.`) and the submit run printed the completion marker.

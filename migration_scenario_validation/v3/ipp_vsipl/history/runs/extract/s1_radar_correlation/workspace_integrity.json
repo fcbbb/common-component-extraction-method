@@ -1,0 +1,9 @@
+{
+  "stage_runtime": "host",
+  "workspace_mount": "read-only by contract (directory, not a mount)",
+  "unchanged": true,
+  "added": [],
+  "removed": [],
+  "changed": [],
+  "files_hashed": 12
+}

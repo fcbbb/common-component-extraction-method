@@ -1,0 +1,64 @@
+{
+  "schema": "methodology-curation-v1",
+  "history_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history",
+  "history_digest": "a2c12f7aacbddb6ba8a7c476cc50ffaeeea6df7cee5e3c8b58befaf85bce5de9",
+  "extract_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract",
+  "example_count": 3,
+  "responses_present": 3,
+  "accepted_count": 3,
+  "rejected_count": 0,
+  "policy": {
+    "model_used": false,
+    "requires_focus_evidence": true,
+    "requires_provenance": true,
+    "rejects_code_paths": true,
+    "duplicate_ids": "keep_first_by_corpus_order"
+  },
+  "examples": [
+    {
+      "task_id": "s1_radar_correlation",
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s1_radar_correlation/extraction_response.json",
+      "status": "ready",
+      "accepted": 1,
+      "rejected": 0,
+      "input_digest": "fa93a45f2624ed1e3a6bb9956415af176dde32a5a4e64ff4dee80e44afb4b120"
+    },
+    {
+      "task_id": "s2_spectral_gate",
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s2_spectral_gate/extraction_response.json",
+      "status": "ready",
+      "accepted": 1,
+      "rejected": 0,
+      "input_digest": "54871c8889a464b8be9e85c32c42d61aeeef6b85e58b7395f9b5e5fd463eafa7"
+    },
+    {
+      "task_id": "s3_channelizer",
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s3_channelizer/extraction_response.json",
+      "status": "ready",
+      "accepted": 1,
+      "rejected": 0,
+      "input_digest": "b481f3eb0f71db4993fba66c94265b9afc29296106ad2705334c51211497b01f"
+    }
+  ],
+  "entries": [
+    {
+      "transformation_id": "real-to-complex-fft-plan-and-bin-adapter-for-a-51087706",
+      "example_id": "s2_spectral_gate",
+      "capability": "other",
+      "entry_digest": "fadabcc95c7afd365c396e908940461358c9ca01e6e79fee7669c9a4cb81d4e5"
+    },
+    {
+      "transformation_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+      "example_id": "s1_radar_correlation",
+      "capability": "other",
+      "entry_digest": "8671ff2852ba3fdbc3ba92e9fd275b05c5cf046c23d687d6eba28fd9442a72d6"
+    },
+    {
+      "transformation_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+      "example_id": "s3_channelizer",
+      "capability": "other",
+      "entry_digest": "0ac20ce282f57ac507ff2b6034bac8839e58de8d051767b054b4d1c74716fe13"
+    }
+  ],
+  "rejected": []
+}

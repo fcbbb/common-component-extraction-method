@@ -183,12 +183,14 @@ def test_kylin_prompt_maps_work_prefix_to_workspace():
     task_root = (
         Path(__file__).resolve().parents[2]
         / "migration_scenario_validation"
+        / "v3"
         / "windows_to_kylin"
         / "tasks"
         / "negative_win32_eventlog"
     )
     task = taskmodel.load_task(task_root)
+    task["spec"] = "Update work/foo and report the result.\n"
     prompt = agent_trial._task_prompt(task, task_root)
     assert "work/foo" in prompt
-    assert "/workspace/foo" in prompt
-    assert "Do not create a nested `work/` directory" in prompt
+    assert "relative to `/workspace`" in prompt
+    assert "do not create a nested `work/` directory" in prompt

@@ -1,0 +1,475 @@
+[
+  {
+    "schema": "methodology-transformation-entry-v1",
+    "transformation_id": "real-to-complex-fft-plan-and-bin-adapter-for-a-51087706",
+    "example_id": "s2_spectral_gate",
+    "capability": "other",
+    "source": {
+      "repo": "synthetic://spectral-gate-v1",
+      "commit": "synthetic-spectral-gate-v1",
+      "tag": null,
+      "license": "synthetic"
+    },
+    "files": {
+      "before": [
+        "src/plan_ipp.c",
+        "src/window_ipp.c",
+        "src/gate_ipp.c",
+        "src/report_ipp.c",
+        "src/spectral_gate_internal.h",
+        "include/spectral_gate.h",
+        "CMakeLists.txt"
+      ],
+      "after": [
+        "plan_vsipl.c",
+        "window_vsipl.c",
+        "gate_vsipl.c",
+        "report_vsipl.c"
+      ],
+      "context": [],
+      "tests": [
+        "test/public_test.c"
+      ]
+    },
+    "input_digest": "54871c8889a464b8be9e85c32c42d61aeeef6b85e58b7395f9b5e5fd463eafa7",
+    "extraction": {
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s2_spectral_gate/extraction_response.json",
+      "response_sha256": "884600cdb51c7c79a557add8663eb0a99b354f4547233ceeaecd5fc356b0bb8b"
+    },
+    "workspace_audit": {},
+    "transformation": {
+      "schema": "transformation-draft-v1",
+      "status": "draft_ready",
+      "transformation_id": "real-to-complex-fft-plan-and-bin-adapter-for-a-51087706",
+      "title": "Real-to-complex FFT plan and bin adapter for a streaming spectral gate",
+      "capability": "other",
+      "when_to_use": "You are rebuilding the FFT-plan and forward-transform module of a streaming spectral gate that was written against a status-code FFT library whose real forward transform returns a packed half-spectrum, and you must re-implement it on a view-based signal-processing library whose real forward transform fills a natural-order complex output view. The public contract fixes a single-precision real frame, an unscaled transform (a unit DC frame gives magnitude 1 at bin 0, not the frame length), nfft/2+1 natural complex bins, caller-owned magnitude and flag buffers, and an integer success/failure return. Use this card when the layer to rebuild is exactly that plan-plus-transform boundary and the windowing, magnitude, gate and report stages carry no vendor types.",
+      "mapping_rules": [
+        "Keep the public guards and the failure contract unchanged: the plan and the transform call stay private state, so every configuration check, frame-length check and output-buffer size stays as written, and each failure is still translated into the layer's documented integer or null failure. Only creation can report failure here, because the target's forward transform returns no status, so validate every handle returned by a create call before using it or passing it on and report the layer's failure at that point. The boundary must therefore say that a mid-transform failure cannot be surfaced through the public integer return.",
+        "Source convention, two-phase plan build: when the source library exposes a size query followed by an init call that takes caller-allocated spec, init and work buffers, and the target constructs a plan in one call that returns an opaque plan object owning its own memory, collapse the sequence to one create plus one destroy and drop the spec/init/work buffers. Applicability: the target transform call accepts no caller work buffer. Fallback: if the target variant does require a work area, keep the size query, allocate once per plan, and pass it on every call.",
+        "Source convention, no-division forward: the source declares its division policy with an explicit no-division flag, so a unit DC frame yields magnitude 1 at bin 0 rather than the frame length; when the target expresses the same policy as a numeric scale factor supplied at plan creation, choose the factor that leaves the forward output unscaled (unity for a no-division forward) and record that choice beside the plan. Applicability: the documented contract is unscaled bins. Fallback: if the target only offers a normalized forward transform, multiply the magnitudes by the frame length after the transform instead of changing the public contract.",
+        "Packed half-spectrum to natural complex bins: when the target writes natural-order bins, one complex element per bin holding both parts, delete the source deinterleave, which read the imaginary part of bin k from index nfft-k of a packed real array and forced zero imaginary parts at DC and Nyquist; take both parts from the target element and rely on the transform producing exactly zero imaginary parts at DC and Nyquist. Fallback: if the target documents the packed form with DC and Nyquist folded into the first complex element, keep an unpack step that splits that element and rebuilds the remaining bins from the packed tail.",
+        "Size the target's complex output block to exactly the contract's bin count (nfft/2+1) and keep it for the plan's lifetime; the target writes as many bins as the output view declares, so a view of nfft/2 bins silently drops Nyquist and a longer view writes past the reserved region. Fallback: if the target derives the output length from the plan and rejects a mismatched view, create the view with the plan's declared length and assert once at creation that it equals the contract's count.",
+        "Ownership follows where the memory came from, not who hands it to the transform. Source convention: the scratch was a plain float array sized a little beyond the frame, allocated, owned and released with the C allocator, while the frame and the per-bin real and imaginary arrays were C buffers. Target convention: a bin block obtained from the library's block-creation routine is library memory and is released only with the library's destroy-all-block variant, even when that view is passed to the transform by the caller as the output view; a view merely bound onto C-allocated caller memory is released with the view-only destructor and its C buffer stays C-freed. Applicability: this target's real-to-complex transform writes through a caller-supplied output view whose storage still came from the library allocator, so the call signature says nothing about ownership and there is no rule that writing into caller-supplied memory implies C allocation and C freeing.",
+        "Input model: when the source transform consumes a raw const float pointer and the target consumes a library real-vector view, map the frame either by binding a transient view onto the existing frame buffer without a copy or by creating a view, filling it element by element, transforming and destroying it inside the same call; the migration takes the second route, which spends one allocation and one element-wise copy per frame. Ownership rule in both variants: a bound view never frees the caller buffer, a created view is released in the call that created it, and the transform input view must not alias the output view unless the target documents in-place use, which a real-to-complex plan does not.",
+        "Lengths, indices and precision: keep the single-precision variant of every target routine so the float contract and its tolerances hold, and convert the layer's signed integer lengths and indices to the target's unsigned, possibly wider, length and index types only after validation, so a rejected size cannot wrap into a huge allocation request. Fallback: when the target takes plain integer sizes, add no conversion and keep the checks as written.",
+        "Backend-neutral stages stay untouched: the window coefficient formula, the magnitude profile, the trailing-mean noise estimate, the threshold comparison and the report aggregation carry no vendor types and must be compiled unchanged against the ported plan. Applicability: true while those stages use only the C math library and the layer's own buffers; a stage that had used a source-library primitive moves into the plan module instead.",
+        "Build integration: build the ported module in place of the source module so exactly one definition of the plan and transform entry points is linked, add the target library's include path, its archive and the C math library, and fail the configure step loudly when the target root is absent rather than silently falling back to the source backend. Fallback: when both implementations must stay selectable, gate them with mutually exclusive options and assert that exactly one was chosen."
+      ],
+      "semantic_deltas": [
+        "Bin layout: the source needed a per-bin deinterleave and explicit zero imaginary parts at DC and Nyquist; a natural-order target supplies both parts per bin. Observable rule: bin k stays at index k, and only DC and Nyquist are guaranteed purely real.",
+        "Scaling is named differently, a division flag in the source versus a numeric scale factor supplied at plan creation in the target. The wrong factor multiplies every magnitude by the same constant: the reported peak and the reported noise floor move by that factor, while each bin's ratio to the trailing mean is preserved, so detections and flags are unchanged. Flags can differ only through float round-off for a bin that sits within that round-off of the detection-multiplier-times-mean comparison threshold, never because of the scaling itself.",
+        "The plan's scratch member changes kind, from a byte or float work array to a library-owned complex block of bin count, so its declared type, its allocator and its destructor change together.",
+        "Failure reporting: the source checked a per-call status from both plan construction and the forward transform, whereas the target's transform call returns nothing, so the only failure signal is creation-time handle validity. Observable rule: the public integer failure still covers argument validation and an unusable plan, but a transform that fails mid-call cannot be distinguished from success.",
+        "Reuse and threading: both sides keep per-plan scratch, so neither plan is reentrant, but what that scratch is changes. The target holds opaque transform state plus one library-owned output block that every call overwrites, so one plan serves one thread at a time and cannot process two frames concurrently.",
+        "Per-call cost: the target's view model adds an allocation and an element-wise copy per frame when the frame is not bound to a view; numerical results are identical but per-frame latency is not.",
+        "Numerics: both sides are single precision, yet two different transform implementations accumulate and apply twiddles in different orders, so magnitudes differ in the last bits and flags differ only where a bin sits within that difference of the threshold."
+      ],
+      "pitfalls": [
+        "Applying the packed-layout indexing to a natural-order target: for a real frame conjugate symmetry gives X[nfft-k] = conj(X[k]), so the value at the mirrored index carries the negation of the correct imaginary part and reusing the packed read yields a conjugated bin set whose magnitudes, and therefore every gate flag and detection, are unchanged. What actually breaks is the index range: on a one-sided natural block the mirrored indices nfft-k for k = 1 to nfft/2-1 lie beyond element nfft/2, so the read runs past the end of the nfft/2+1 block. The shipped test compares magnitudes, so it is blind to both symptoms; the check that catches the mistake is a non-flat frame compared bin by bin against the pre-migration output with the imaginary parts included, and an address sanitizer additionally flags the out-of-range read. Condition: the target already returns natural bins.",
+        "Passing a normalizing scale factor where the contract wants the unscaled forward: the factor is an explicit plan-creation argument, with unity leaving the forward unscaled, so the hazard is supplying a normalizing value rather than omitting an argument. Under a constant scale error every magnitude is multiplied by the same factor, and because the gate compares each magnitude against the detection multiplier times a trailing mean computed from the same scaled magnitudes, the per-bin ratio is unchanged and flags and detections do not move at all; the only observable symptoms are the reported peak and noise floor scaled by that constant. Condition: the documented contract is unscaled bins.",
+        "Releasing a library-created block with the C allocator, or calling the destroy-all variant on a view bound to caller memory: heap corruption or an early free of the caller's buffer. Condition: the target distinguishes destroying a view from destroying the memory behind it.",
+        "Declaring the complex output view with nfft/2 bins, or reshaping it after creation: Nyquist is lost or the last bin is written out of range. Condition: the target trusts the view's declared length instead of the plan's.",
+        "Converting a signed length or index to the target's unsigned type before validation: a negative or oversized value wraps into a huge request, so the layer crashes or allocates wildly instead of returning its documented rejection.",
+        "Cleaning up a partially constructed plan by running the full destroy sequence over handles that were never created: an invalid object reaches the library teardown, which can abort or report an error where the layer promised a clean failure. Condition: creation failure is signalled by an unusable handle, so the destroy path shared with partial construction must null-check each handle and free only what exists.",
+        "Linking both backends, because the source module and the ported module define the same entry points: duplicate definitions, or a build that silently keeps the source module and then pairs source-side freeing with a library-owned block.",
+        "Creating a temporary input view per call and taking an exit path before its destructor runs: a per-frame leak that a single-call test never reveals. Condition: the frame must be materialised into a view per call, so every early return between creation and destruction needs the same cleanup.",
+        "Passing one plan to two threads, or using it for input and output at once: the target plan holds opaque internal state and a single output block that each call overwrites, so results interleave or corrupt; the source kept per-plan scratch as well, so the safe-use rule does not change, only the state that breaks does."
+      ],
+      "procedure": [
+        "Freeze the public contract first: configuration fields and their validation, output buffer sizes and caller ownership, report field meanings and the integer failure return. The plan's private state is the only thing allowed to change.",
+        "Decide the transform convention before writing the adapter: division policy, output length, bin order, and whether DC and Nyquist occupy separate elements. Record it as the plan's documented contract, because the adapter and every test depend on that decision.",
+        "Rebuild plan creation as one library create call plus the output-block allocation, keep the frame and per-bin arrays as plan-owned C buffers, and set the scale factor at creation.",
+        "Rewrite only the forward transform: materialise the input view, run the plan, copy the plan's declared bin count of complex elements into the plan's per-bin arrays, and release the transient view before returning.",
+        "Rewrite destruction and the partial-construction path: release each library object once with its own destructor, free the C arrays, and on failure release only the objects that were actually created.",
+        "Swap the build inputs, link the target library and the math library, and confirm that a single implementation of every entry point is linked.",
+        "Re-run the unchanged public test, then add the scaling, layout, rejection-path, leak and plan-independence checks before any tuning."
+      ],
+      "verification": [
+        "Run the shipped public test unchanged as a smoke test, knowing what it can and cannot see: a windowed impulse has the same magnitude in every bin, so the check that every bin's magnitude equals the window coefficient at the impulse sample within 1e-4 verifies the overall scaling and catches gross bin-count errors, but it is invariant under any permutation of bins and under a sign change of the imaginary parts. Bin order and bin layout must instead be verified by comparing a non-flat frame bin by bin, real and imaginary parts, against the pre-migration output.",
+        "Split the DC check by boundary. At the transform boundary, feed the plan an unwindowed constant frame (all ones) and require magnitude 1.0 at bin 0 within tolerance; that is the meaning of the unscaled forward and it catches a normalizing scale factor. At the layer boundary the per-frame entry point multiplies the frame by the analysis window before transforming, so a unit constant frame reaches the transform as the window itself and its DC magnitude is the window sum, (nfft-1)/2 for this symmetric Hann, not 1.0; assert that window-sum magnitude or compare against the pre-migration output for the same frame.",
+        "Compare magnitudes bin by bin and flags element by element against the pre-migration build for fixed frames: magnitudes must agree within float round-off, and flags must agree except where a bin lies within that tolerance of the multiplier times the trailing mean; list such bins instead of treating them as regressions.",
+        "Run create, many process calls and destroy under an address sanitizer with leak detection: no per-call growth proves the transient view and other temporaries are released, and no invalid-free report proves library blocks go through their own destructor.",
+        "Exercise the rejection paths: too-small and non-power-of-two frame lengths, non-positive training length or multiplier, and a frame length different from the configured one must each return the documented failure and leave no state behind; force a plan-creation failure with an unsupported length and confirm a clean failure without an abort.",
+        "Check a synthetic two-tone frame: the reported peak bin equals the stronger tone's bin, the detection count covers exactly the bins above the threshold, and the reported floor equals the mean magnitude over the one-sided bins; this shows the report stage still consumes increasing natural bins.",
+        "Run two independent plans, one per thread, and compare outputs with a single-plan run: identical results show that the plans share no transform state or output block."
+      ],
+      "boundary": "Does not cover window coefficient derivation or the symmetric-versus-periodic window choice, the magnitude and trailing-mean gate arithmetic and its threshold policy (including the bins whose trailing window is empty or whose trailing mean is zero, which are never flagged), report aggregation, framing, overlap or resampling, algorithm-hint and multithreaded transform tuning, double-precision variants, or general build-system packaging beyond the include path, the archive link, the math library and a configure-time guard on the target root. Limits an implementer must respect: the target's forward transform call returns no status, so a mid-transform failure cannot be reported through the public integer return; the adapter, not the target, owns the duty of sizing the output view to the contract's bin count; and one plan is single-threaded and cannot be used for two frames at once.",
+      "applicability": {
+        "os": [
+          "unspecified"
+        ],
+        "constraints": [
+          "The target library must offer a real-to-complex forward plan with a create/destroy pair, a settable scale factor, and a complex-vector output view of documented length.",
+          "A single-precision variant must exist; the public contract is fixed to 32-bit float frames and magnitudes.",
+          "Transform lengths stay even powers of two of at least 8 per the public contract, even where the target library accepts other lengths.",
+          "No caller-supplied work buffer is assumed; if the chosen target variant needs one, an extra per-plan allocation must be added.",
+          "An unscaled forward transform must be reachable through the API; otherwise magnitudes need an explicit multiplication by the frame length after the transform.",
+          "Failure can only be observed at creation time because the target transform call returns no status; a target that does report per-call status should have it translated in the same wrapper.",
+          "C99 toolchain with the target headers, its static or shared archive and the C math library; the target root must be supplied at configure time and the configure step must fail when it is absent.",
+          "One plan per thread, no concurrent use, and no in-place real-to-complex transform."
+        ]
+      },
+      "evidence": [
+        {
+          "project": "spectral-gate-v1",
+          "commit": "synthetic-spectral-gate-v1",
+          "task_id": "s2_spectral_gate",
+          "role": "source-migration"
+        }
+      ],
+      "notes": ""
+    },
+    "entry_digest": "cc4b0ccb9032c1fe804a23b076e0fcc1d4a12d9cd4c581881688c33385549660",
+    "revision": {
+      "from_entry_digest": "fadabcc95c7afd365c396e908940461358c9ca01e6e79fee7669c9a4cb81d4e5",
+      "review_sha256": "1a2f5b7e7310ca2ee8f2194f52888ad15b847955ae88bf3d91c1e7d3f0315665",
+      "review_verdict": "rework",
+      "must_change": [
+        {
+          "field": "mapping_rules",
+          "quote": "Resource ownership, source convention: the source scratch was a plain float array sized a little beyond nfft, allocated with the C allocator, owned by the plan and released with the C allocator; when the target returns the transform result in a library-created complex block, that block is owned by the library and must be released by the library's matching block destructor, never by the C allocator, while the frame and per-bin arrays that the source kept in plain floats stay C-allocated and C-freed. Applicability: the target allocates its own result block. Fallback: when the target writes into caller memory, keep C allocation and the C free.",
+          "instruction": "State ownership by where the memory came from, not by who hands it to the transform. A bin block obtained from the library's block-creation routine is released only with the library's destroy-all-block variant, even when that view is passed to the transform by the caller; a view merely bound onto C-allocated caller memory is released with the view-only destructor and its C buffer stays C-freed. Replace the applicability line with that distinction and withdraw the fallback that makes 'the target writes into caller memory' a reason to C-allocate and C-free, because this target's transform writes into a caller-supplied view whose storage still came from the library allocator."
+        },
+        {
+          "field": "semantic_deltas",
+          "quote": "Scaling is named differently, a division flag versus a numeric scale factor. The wrong choice multiplies every magnitude by the frame length or divides it, which keeps the peak bin but moves the reported peak value, the reported floor, and every flag whose ratio to the trailing mean changes.",
+          "instruction": "Keep the 'division flag versus numeric scale factor' delta but state its observable signature correctly: a constant scale error multiplies every magnitude by the same factor, so the reported peak and noise floor move by that factor while each bin's ratio to the trailing mean is preserved and detections and flags are unchanged. Say that flags can differ only from rounding near the comparison threshold, not from the scaling itself."
+        },
+        {
+          "field": "pitfalls",
+          "quote": "Leaving the target's default or normalizing scale factor: every magnitude is off by a constant factor, the reported peak and floor scale with it, and gate flags move only where the scaled ratio crosses the multiplier. Condition: the scale argument defaults to normalized output.",
+          "instruction": "Correct the consequence and the condition: under a constant scale error flags and detections do not move at all, because the gate compares each magnitude against the same scaled multiple of a scaled trailing mean; the only observable symptoms are the reported peak and noise floor scaled by that constant. Also drop the claim that the factor has a default: in this migration the factor is an explicit plan-creation argument, with unity giving the unscaled forward, and the hazard is passing a normalizing factor rather than omitting one."
+        },
+        {
+          "field": "verification",
+          "quote": "Run the shipped public test unchanged: an impulse at one interior sample must give every bin a magnitude equal to the window coefficient at that sample within 1e-4, which fails if bin order or scaling is wrong.",
+          "instruction": "Correct what this check can detect: a windowed impulse has the same magnitude in every bin, so the shipped test verifies scaling and gross bin-count errors but is invariant under any permutation of bins and under a sign change of the imaginary parts. State that bin order and bin layout must instead be verified by comparing a non-flat frame bin by bin against the pre-migration output."
+        },
+        {
+          "field": "verification",
+          "quote": "Add a DC frame check: a unit constant frame must give magnitude 1.0 at bin 0 within tolerance and no detection from a uniformly scaled spectrum; this catches a normalized target transform.",
+          "instruction": "Correct the expected value and the entry point: the layer multiplies the frame by the analysis window before transforming, so a unit constant frame reaches the transform as the window itself and its DC magnitude is the window sum, not 1.0. If the check exercises the layer, state that expected window-sum magnitude (or compare against the pre-migration output for the same frame), and test the 'unscaled transform puts magnitude 1 at bin 0' property only at the transform boundary with an unwindowed constant input."
+        },
+        {
+          "field": "pitfalls",
+          "quote": "Applying the packed-layout indexing to a natural-order target: reading the imaginary part of bin k from index nfft-k of an interleaved array mirrors the imaginary parts and corrupts magnitudes everywhere except DC and Nyquist, which an impulse test that checks only real parts can still pass. Condition: the target already returns natural bins.",
+          "instruction": "Correct the mechanism and its consequence: for a real frame the conjugate symmetry makes the value at the mirrored bin index the negation of the correct imaginary part, so reusing the packed index yields a conjugated bin set whose magnitudes, and therefore every flag and detection, are unchanged; what actually breaks is reading past the end of the nfft/2+1 block. Also drop the claim that the shipped test looks only at real parts, since it compares magnitudes, and name the check that does catch the mistake (a non-flat frame compared bin by bin including the imaginary parts)."
+        }
+      ]
+    },
+    "finalize": {
+      "from_entry_digest": "5fa3d60e37c5c6d20481891e790c0854db08e58b12e79e3ddc8a597367162c69",
+      "review_sha256": "b0d4b389e0fa427ab362b99171624a8f10690f93d9e525de9242e2cc0c242ef5",
+      "verdict": "publish",
+      "must_change": []
+    }
+  },
+  {
+    "schema": "methodology-transformation-entry-v1",
+    "transformation_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+    "example_id": "s1_radar_correlation",
+    "capability": "other",
+    "source": {
+      "repo": "synthetic://radar-correlation-v1",
+      "commit": "synthetic-radar-correlation-v1",
+      "tag": null,
+      "license": "synthetic"
+    },
+    "files": {
+      "before": [
+        "src/plan_ipp.c",
+        "src/matched_filter_ipp.c",
+        "src/correlate_ipp.c",
+        "src/profile_ipp.c",
+        "src/radar_pipeline_internal.h",
+        "include/radar_pipeline.h",
+        "CMakeLists.txt"
+      ],
+      "after": [
+        "plan_vsipl.c",
+        "matched_filter_vsipl.c",
+        "correlate_vsipl.c",
+        "profile_vsipl.c"
+      ],
+      "context": [],
+      "tests": [
+        "test/public_test.c"
+      ]
+    },
+    "input_digest": "fa93a45f2624ed1e3a6bb9956415af176dde32a5a4e64ff4dee80e44afb4b120",
+    "extraction": {
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s1_radar_correlation/extraction_response.json",
+      "response_sha256": "2d95384e882ef9f2a2984fda9f2715fd32f1869a79cd5f5ee95c509092663004"
+    },
+    "workspace_audit": {},
+    "transformation": {
+      "schema": "transformation-draft-v1",
+      "status": "draft_ready",
+      "transformation_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+      "title": "split-complex FFT matched-filter correlation layer rebuilt on an opaque-plan array-view signal API",
+      "capability": "other",
+      "when_to_use": "Use this when a matched-filter correlation layer that runs on a vendor signal-processing library driven by a caller-sized transform specification (spec memory, one-shot initialization scratch, per-call work buffer, direction flags that carry normalization) is being moved onto an array-processing API where the library creates an opaque plan handle per direction and data is exchanged through typed complex vector views. The target must supply a single-precision complex-to-complex in-place transform of a power-of-two length, a control over output scaling (at plan creation or as an explicit post-transform multiply), element accessors on a complex vector, and a magnitude plus max-with-index reduction. It applies when the public contract is fixed: split real and imaginary planes, a lag-ordered correlation of 2N-1 samples, the replica copied at set time, and an optional report of peak magnitude, first peak lag and total energy. Where the target has no opaque plan, or offers only real-to-complex transforms, the normalization, packing and lifetime rules below still hold but the plan-lifecycle rule does not.",
+      "mapping_rules": [
+        "Plan construction: the source queries the required specification, initialization and work byte counts, allocates all three, runs a one-shot initialization that fills an opaque spec handle, then frees the initialization scratch immediately; map this to a single plan-creation call per direction that returns a library-owned handle and requires no caller sizing. Fallback: where the target still exposes a size-query plus create pair, keep the same discipline - satisfy exactly what the query asks, drop the initialization scratch as soon as create returns, and retain only the persistent handle and the per-call work area the target names.",
+        "Normalization: the source encodes direction-dependent scaling in the transform flags, no division on the forward and division by the transform length on the inverse; the target encodes scaling as a scalar accepted at plan creation. Choose exactly one place that applies the 1/N factor and leave every other layer unscaled; the choice taken here is a unit scale on both creations plus one explicit 1/N multiply inside the inverse wrapper, which keeps the internal contract identical to the source. Applicability: only when the target honours a create-time scale; if it ignores or does not take one, keep the same single place and apply the factor explicitly after the transform.",
+        "Transform-length validation: the source rejects a length that is not a power of two and a length below 2N-1; keep both checks at create time and return the null or failure result. The lag extraction later reads only the first 2N-1 samples of the transform-length inverse output, so any shorter transform folds circular wrap into the reported lags and no downstream stage can repair it.",
+        "Buffer ownership: the source owns the split float planes plus one interleaved complex scratch that it sizes itself and frees with the vendor allocator; the target owns its complex work vector and plan handles through paired create and destroy calls while the split planes stay plain caller-allocated float arrays. Keep the split planes application-owned and released with the standard allocator, let the library own its plan and view objects, and release each library object only through the destroy that matches its creator.",
+        "Data interchange at the transform boundary: the source packs the split planes element by element into an interleaved complex scratch, transforms that scratch in place, then unpacks; map this to writing the split planes into a complex view through the target's element accessors, running the transform with the same view as both input and output, and reading the result back through the accessors. Fallback: if the target offers a block copy, separate real and imaginary accessors, or attach-to-caller-memory hint, use it for throughput, but preserve the same in-place single-view semantics so the split-plane boundary of the stage does not change.",
+        "Handle storage in the shared private state: the source keeps the vendor spec type inside its plan module and exposes only plan build, forward and inverse entry points; keep the target's handle types out of any shared private header in the same way, storing the forward plan, the inverse plan and the work vector as untyped handle slots that only the backend module casts. Fallback: when a backend needs extra state, add another untyped slot rather than a typed field, so a second backend still compiles against the same header.",
+        "Data lifetime and copying: the replica setter copies - it consumes the caller's arrays during the call, keeps only the transformed replica spectrum, and the caller may then free or reuse its buffers; the process call borrows the caller's input planes read-only for exactly N samples and writes exactly 2N-1 lags into caller-owned output planes without reallocating them; the report is caller-owned and written only when the pointer is non-null. Preserve this even though the target's views can hold a pointer: never attach a caller buffer to a plan or view that outlives the call.",
+        "Error reporting: the source converts every vendor status code to a -1 return and signals allocation failure by returning null from state creation; when the target's compute and accessor operations return void and creation only yields a handle or null, move all failure detection to creation time and to argument validation, and keep the public -1 for argument failures only. Applicability: when the target does return status codes, propagate them under the source's convention instead of contracting the wrapper to always succeed.",
+        "Profiling metrics: the source computes a magnitude per lag, sums squared magnitudes into a double accumulator and narrows only when storing the energy field, and keeps the first maximum with a strict greater-than comparison; map this onto the target's magnitude-vector and max-with-index primitives, but preserve only the units - peak is a magnitude, energy is a sum of squared magnitudes. The accumulator width is not carried over: the migrated step accumulates the energy in a single-precision float over the lags and accepts that narrowed accumulator, so the caller must tolerate relative drift that grows with the number of lags and compare energy with a relative rather than a tight absolute tolerance. Fallback: if the target's max-with-index does not fix the tie order, compute the argmax with a strict comparison so the first lag wins; if a widened accumulator is required, keep one by hand in double and narrow once when storing the field.",
+        "Precision and index families: both sides are single precision, so select the target's single-precision creator, accessor and operation family consistently across one plan, and keep the split planes in that same width; convert the layer's integer lengths and indices to the target's own length and index types once, at the boundary, and check for narrowing on large transforms rather than relying on implicit conversion.",
+        "Build binding: the source build links the vendor's shared objects and adds its include prefix; the target needs its own include directory, a single target library, and the platform math library. Replace the vendor link set with that combination, place the target archive before the math library on the link line, and keep both implementations' source lists behind one build switch so the original backend stays compilable for differential testing."
+      ],
+      "semantic_deltas": [
+        "Scaling has a different home: the source distributes it per direction through transform flags, the target takes it as one scalar at plan creation. A doubled or missing factor shows up as every lag and the energy being off by a constant 1/N or N^2 ratio.",
+        "Plan memory changes owner: the source sizes and allocates specification, initialization and work blocks and frees them with the vendor allocator, while the target's handle is opaque, library-allocated and must be released only by its destroy. The caller no longer has any sizing contract to honour, and freeing a library object with the standard deallocator is undefined behaviour rather than a leak.",
+        "The failure surface shrinks: transform, accessor and vector operations report nothing at all, so a plan created for the wrong length or with the wrong precision fails later as numerically wrong output rather than as a status code.",
+        "The work buffer changes representation: an application-owned interleaved scratch becomes a typed complex view owned by the library, reachable only through accessors or an explicit memory hint, so direct pointer arithmetic over it is no longer available.",
+        "Accumulator width differs: the source summed energy in double and narrowed once at the end, while the migrated reduction accumulates in single precision, so relative drift grows with the number of lags and can exceed an absolute tolerance that looked safe on small frames.",
+        "Tie behaviour of the maximum differs: the source's strict comparison guarantees the first lag attaining the peak, while a library max-with-index may return any index among equal maxima.",
+        "Degenerate input differs: the source wrote report defaults even when the loop body never ran, and a views-based rewrite that returns early leaves the report untouched, so a caller that ignores the return value reads stale numbers.",
+        "The profiling path gains an allocation: the source profiling step performed none, whereas a views-based profiling step allocates per call, adding latency in a per-frame path and introducing a failure mode that a void function cannot report.",
+        "Output ordering does not differ: both sides produce the transform in natural order with the zero frequency first, so the lag index mapping is unchanged and no shift or rotation is part of the port."
+      ],
+      "pitfalls": [
+        "Double normalization: applying the target's create-time 1/N scale and keeping an explicit multiply after the inverse as well. It occurs whenever the source's per-direction normalization flags are read as 'the target now does the forward unscaled and the inverse scaled' while the explicit multiply is also carried over. With one extra inverse-side 1/N factor every lag sits at 1/N of the reference and the energy, being a sum of squared magnitudes, at 1/N^2; omitting the single 1/N factor instead leaves the lags at N and the energy at N^2. Lags at 1/N measured together with energy at 1/N^2 are the signature of this cause, not of a wrap or ordering fault.",
+        "Inventing a lag shift: a belief that the target's convolution origin differs leads to rotating the output by N-1 before extraction. The conjugation plus reversal already places the most negative lag at output index 0, so any added rotation puts every lag off by N-1 while leaving magnitudes correct. It occurs whenever a comment or reviewer claim about a different output origin is trusted instead of the reference comparison.",
+        "Wrong destroy or wrong handle type: because the shared private state holds handles as untyped pointers, casting the work view as a plan, or calling the view destroy on a plan handle, compiles without a warning and corrupts the heap. It occurs as soon as two or more library object kinds share the untyped slots.",
+        "Leaks and crashes on the partial-construction path: state creation allocates the state, then the plan, then the spectral and product buffers, so a failure in any later step must tear down through the same destroy the caller would use, and a half-built plan must already be destructible. It occurs when the plan state is not zero-initialized before the first allocation, or when a failure path returns null without destroying.",
+        "Unfilled report after a profiling allocation failure: the public call still returns success, so the caller reads whatever the report held before. It occurs when the profiling step allocates per call inside a void function and has no way to signal failure.",
+        "Stale padded data: the same transform buffer carries the replica during setup and the return during processing, so a fill that writes only N samples without clearing the tail folds the previous occupant into the transform. It occurs whenever the clear is dropped as redundant while optimizing the copy.",
+        "Silent precision regression in the energy sum, occurring when many lags or large magnitudes are summed in the target's single-precision reduction and the result is compared against a tight absolute tolerance.",
+        "Mixing precision or index families, occurring when a plan created by one width's creator is driven by another width's operation, or when a transform length and lag count are narrowed into the target's smaller index type on a large configuration.",
+        "Keeping the source's typed plan structure in the shared private header, which drags the source library's header into the target build and makes the two backends impossible to compile side by side; it surfaces only when the second build configuration is attempted.",
+        "Loosening the transform-length check to the replica length instead of 2N-1, which lets circular wrap into the reported lags; it appears as slightly wrong values at the extreme lags while the centre of the correlation still looks correct."
+      ],
+      "procedure": [
+        "Freeze the contract first: split planes, lag order with the most negative lag at output index 0, an output length of 2N-1, and the replica copied at set time. None of this follows from the library, so decide it before touching the backend.",
+        "Decide normalization before writing any transform code: pick the one layer that applies 1/N and confirm whether the target's plan creation also scales, so the two cannot both fire.",
+        "Decide ownership before writing any create or teardown: library owns plan handles and work views, application owns the split planes, and every creator has exactly one matching destroy.",
+        "Rebuild the plan module (create, destroy, forward, inverse) first, leaving the shared private state free of the target's types, then the replica setter, then the product-and-inverse stage, then the profiling step; each stage is testable against the previous one only after the one below it is correct.",
+        "Keep the kernel placement unchanged: the conjugate reversal written into the first N samples of a zero-padded transform buffer already produces the lag-ordered result, so no additional rotation of the output is introduced anywhere.",
+        "Clear the whole shared transform buffer on every fill before copying, because the same buffer carries the replica spectrum during setup and the return during processing.",
+        "Carry the profiling step over as the migration did: it creates its complex view and magnitude vector on every call and returns void, so when either allocation fails it returns without writing the report while the caller-visible process call still reports success and the caller's report keeps whatever it held before. If that failure path must leave a trustworthy report, an allocation-free profiling step (a state-owned view, or computing directly from the two planes) is a deliberate deviation from this port, and its effect is to make the report always fully written on return.",
+        "Only after the target build passes the reference comparison, switch the build's default source list and keep the original backend selectable for the differential run."
+      ],
+      "verification": [
+        "Compare every reported lag of both planes against a direct O(N^2) evaluation of the correlation definition with out-of-range replica samples treated as zero, in the same index order, using an absolute tolerance appropriate to single precision on unit-scale data (order 1e-4). A normalization error shows as a constant ratio on every lag and is therefore distinguishable from a wrap or ordering error, which shows only at the edges or as a N-1 offset.",
+        "Impulse check: set a unit impulse as the replica at replica index 0, process a known return, and require the lag-ordered output to be the return itself - its first sample at the centre index (lag 0), its remaining samples at the following indices, and zero at every other lag. The conjugation already sits on the replica side, where the stored kernel is conj(reverse(replica)), so the expected output is the unconjugated return; also conjugating the expected return would cancel the sign difference this check exists to expose and would send a correct implementation looking for a conjugation bug.",
+        "Real-only check: feed purely real return and replica planes and require the imaginary output plane to stay near zero, which catches packing and conjugation errors that a magnitude comparison would hide.",
+        "Energy identity: accumulate the sum of squared magnitudes of the 2N-1 reported lags in double and compare it with the same quantity obtained from a direct reference; a global scale error is a constant ratio, and drift beyond the tolerance indicates a narrowed accumulator.",
+        "Oversized transform: run the same frame with a transform length well above 2N-1 (for example four times the frame length) and require the reported lags to be unchanged within tolerance, which proves no circular wrap is being read.",
+        "Tie check: use a symmetric return so the correlation is symmetric and assert that the reported peak lag is the first lag attaining the maximum, together with a fully written report (peak, peak lag and energy all finite) for an all-zero frame.",
+        "Reuse check: call processing twice on the same state, first with a zero frame and then with a non-zero frame, and confirm the second output is not contaminated by the first; this is what catches a missing clear of the shared transform buffer.",
+        "Resource check: repeat create, set-replica, process and destroy many times under an address or leak checker available to an ordinary unprivileged process and require no growth and no invalid free, then force an allocation failure and require state creation to return the failure result instead of a half-built state.",
+        "Differential run: build both backends behind the same public contract and compare identical frames. Agreement within a small relative tolerance confirms the port preserved normalization, ordering and units, and any disagreement localizes to one of those three."
+      ],
+      "boundary": "Does not cover changes to the public contract itself - the split real and imaginary planes, the lag ordering with the most negative lag at output index 0, the 2N-1 output length and the report fields are preserved as found. It also does not cover choosing or tuning the transform length, the surrounding frame and pulse pipeline, multi-channel or batched transforms, real-to-complex or multi-dimensional transforms, non-power-of-two lengths, double-precision variants, threaded or offloaded plan execution, or bit-exact agreement with the original backend's rounding.",
+      "applicability": {
+        "os": [
+          "unspecified"
+        ],
+        "constraints": [
+          "target must provide a single-precision complex-to-complex transform of a power-of-two length that can run in place with one view as both input and output",
+          "target must expose output scaling either at plan creation or through an explicit post-transform multiply",
+          "target must provide element accessors, a block copy, or an attach-to-caller-memory hint for its complex vector type",
+          "target must provide magnitude and max-with-index reductions over a real vector, otherwise the profiling step is written by hand from the two planes",
+          "transform length must be a power of two and at least 2N-1; the layer rejects any other configuration at creation time",
+          "C99 toolchain with the target library's development headers and archive present at build time, and the target archive placed before the math library on the link line",
+          "both backends must remain compilable from one shared private header, so library handle types stay untyped there"
+        ]
+      },
+      "evidence": [
+        {
+          "project": "radar-correlation-v1",
+          "commit": "synthetic-radar-correlation-v1",
+          "task_id": "s1_radar_correlation",
+          "role": "source-migration"
+        }
+      ],
+      "notes": ""
+    },
+    "entry_digest": "8bb535ac5fb4fda6a9fb25e7be66728c29afad2b0b518ec787fd52e63919edc3",
+    "revision": {
+      "from_entry_digest": "8671ff2852ba3fdbc3ba92e9fd275b05c5cf046c23d687d6eba28fd9442a72d6",
+      "review_sha256": "744a06c261bb311a832bf90567e6db2cb97e38f311c6e1bb518e7e749ffc8cfe",
+      "review_verdict": "rework",
+      "must_change": [
+        {
+          "field": "verification",
+          "quote": "Impulse check: set a unit impulse at replica index 0, process a known return, and require the result to equal the conjugated return centred at the lag-0 output index with the remaining lags near zero.",
+          "instruction": "State the impulse expectation without a conjugation on the return. With the replica a unit impulse at index 0, the lag-ordered output is the return itself: its first sample at the centre index (lag 0), its remaining samples at the following indices, and zero at every other lag. The contract's conjugation already sits on the replica side, so pairing a conjugated return with a conjugated replica in the same check cancels the very sign difference it is meant to expose and sends a correct implementation looking for a conjugation bug."
+        },
+        {
+          "field": "pitfalls",
+          "quote": "every lag and the energy then sit at 1/N or N times the reference.",
+          "instruction": "Give the ratios that actually follow from one extra inverse-side 1/N factor, and keep the lag and energy exponents distinct: every lag sits at 1/N of the reference and the energy, being a sum of squared magnitudes, at 1/N^2, with the missing-factor case as N and N^2. A single ratio offered for both quantities is wrong and prevents the diagnosis it is written for, because an implementer who measures an energy ratio of 1/N^2 alongside lags at 1/N must be able to match that symptom to this cause."
+        },
+        {
+          "field": "procedure",
+          "quote": "Make the profiling step allocation-free in the per-frame path, either by reusing a state-owned view or by computing from the two planes directly, before wiring it into processing that must report success or failure to the caller.",
+          "instruction": "Describe the choice this migration made rather than a different design. The migrated profiling step creates its complex view and magnitude vector per call and returns void, and when either allocation fails it returns without writing the report while the caller-visible process call still reports success; the card states that consequence elsewhere as both a delta and a pitfall. Either keep this step consistent with that consequence and say how the report is left on the failure path, or present an allocation-free step explicitly as a deviation with its effect on the report. Do not order an implementer to remove the allocation as if it were part of the port."
+        },
+        {
+          "field": "mapping_rules",
+          "quote": "map this onto the target's magnitude-vector and max-with-index primitives, but preserve the units (peak is a magnitude, energy is a sum of squared magnitudes) and the accumulator width.",
+          "instruction": "Preserve the units only - peak is a magnitude, energy a sum of squared magnitudes - and state the accumulator this migration actually used: the energy is summed in single precision over the lags, where the source summed in double and narrowed only when storing it into the report field, so the widened accumulator is not carried over. Say either that the narrowed accumulator is accepted together with the tolerance the caller must tolerate, or that a widened accumulator is kept by hand. Do not instruct the implementer to preserve the source's accumulator width, which contradicts the card's own statement that the accumulator width differs."
+        }
+      ]
+    },
+    "finalize": {
+      "from_entry_digest": "8bb535ac5fb4fda6a9fb25e7be66728c29afad2b0b518ec787fd52e63919edc3",
+      "review_sha256": "85a369297cb0a57eabba7d195f4c8a2d7d4042b579eee3b60e3c12ba73e74b57",
+      "verdict": "publish",
+      "must_change": []
+    }
+  },
+  {
+    "schema": "methodology-transformation-entry-v1",
+    "transformation_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+    "example_id": "s3_channelizer",
+    "capability": "other",
+    "source": {
+      "repo": "synthetic://channelizer-v1",
+      "commit": "synthetic-channelizer-v1",
+      "tag": null,
+      "license": "synthetic"
+    },
+    "files": {
+      "before": [
+        "src/state_ipp.c",
+        "src/mixer_ipp.c",
+        "src/fir_ipp.c",
+        "src/stats_ipp.c",
+        "src/channelizer_internal.h",
+        "include/channelizer.h",
+        "CMakeLists.txt"
+      ],
+      "after": [
+        "state_vsipl.c",
+        "mixer_vsipl.c",
+        "fir_vsipl.c",
+        "stats_vsipl.c"
+      ],
+      "context": [],
+      "tests": [
+        "test/public_test.c"
+      ]
+    },
+    "input_digest": "b481f3eb0f71db4993fba66c94265b9afc29296106ad2705334c51211497b01f",
+    "extraction": {
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s3_channelizer/extraction_response.json",
+      "response_sha256": "0e1ce9b7c4af0eb01f461411a78ffa15a7d4caf13e824c9071d5fd211080029f"
+    },
+    "workspace_audit": {},
+    "transformation": {
+      "schema": "transformation-draft-v1",
+      "status": "draft_ready",
+      "transformation_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+      "title": "Streaming complex NCO mix-and-decimate layer rebuilt from block vendor kernels onto a view-based vector signal-processing API",
+      "capability": "other",
+      "when_to_use": "Use this when a streaming complex channelizer layer (complex NCO mix, decimating complex FIR, per-block output report) was written against a vendor block-kernel library whose primitives consume interleaved complex buffers, return status codes and allocate from the vendor heap, and the layer must be rebuilt on a view-based vector signal-processing API that exposes complex samples as struct scalars, arrays as created views with element put and get, and reductions such as magnitude and index-of-maximum. The public ABI here already carries split real and imaginary planes, caller-owned output buffers and a state object whose mixer phase and filter history carry across calls, so the rebuild must preserve block-size-independent output. The conventions that must match are who allocates and frees every buffer, how failures are reported (status codes versus NULL objects and void compute calls), the coefficient time orientation, and the exact complex-multiply formula. A port that gets the arithmetic right but the ownership or orientation wrong still passes a single-block smoke test and fails streaming.",
+      "mapping_rules": [
+        "Interleaved complex sample type with adjacent real and imaginary members -> target complex scalar built by a named constructor and taken apart through named component accessors. Applies when the public ABI or the state layout is interleaved; when the ABI already carries split planes, do not interleave at all and build a scalar only where one per-sample call needs it. Fallback: if a target routine accepts only interleaved data, create one contiguous complex view, copy the planes in, and copy the results back out to planes.",
+        "Vendor block multiply of a complex run against a periodic mixer table -> per-sample complex scalar multiply inside a segment loop bounded by the coefficient table length, with the phase carried in the state and wrapped when the segment reaches the end of the table. Applies when the target has no in-place complex multiply over an arbitrarily offset run; fallback: an elementwise complex view multiply over a temporary contiguous view, still applying the phase offset explicitly instead of restarting the table at zero.",
+        "Vendor real dot product over a contiguous run -> explicit accumulation loop over the same run, in the same element type, with the same rounding order. Applies whenever the target's only inner-product routine conjugates an operand: conjugating one operand computes a different product from the plain correlation, because the sign of the cross term flips in both output components, since the coefficient-imaginary times input-imaginary term changes sign in the real component and the coefficient-imaginary times input-real term changes sign in the imaginary component. The result is therefore a plausible-looking but wrong filter rather than a simple sign error on one component. Use a target inner-product routine only after confirming it does not conjugate, and otherwise keep the explicit real accumulation loops that build the documented complex-multiply formula.",
+        "Time-reversed coefficient copy in the state, consumed by a forward dot product -> coefficients kept in natural order with the history walked backwards from the current sample. One orientation decision per layer: either reverse once at create time and advance forward over history, or keep the given order and walk backwards. Applying both or neither is still a valid-looking build but implements a time-reversed filter, and the stored orientation is not observable from the public ABI, so pin it to a direct-form reference.",
+        "Vendor-heap allocation and free for state, coefficient tables, history and scratch -> standard heap allocation and free, or target views created with the target's own allocate flag where a routine needs a view. Ownership rule: the module allocates the state and its internal history and scratch, copies the caller's coefficient and mixer tables at create time so the caller may reuse or free them immediately, hands the state to the caller who destroys it, and releases every internal buffer on every failure branch of create.",
+        "Interleaved scratch buffer kept alive between calls only to feed the block multiply -> dropped. Applies when the target kernels consume split planes or per-sample scalars; removing the scratch removes one allocation, one plane-to-interleaved conversion and its lifetime bookkeeping. Fallback: keep the scratch only if a target kernel requires a contiguous interleaved run, and then own it as a view or buffer released with the state.",
+        "Plain scalar magnitude-and-peak loop for the per-block report -> complex view over the produced output block, magnitude into a real view, then the target maximum-value reduction that returns both the value and the index; the mean power is accumulated directly from the split planes rather than from the magnitude view. Applies when the target provides a magnitude reduction plus an index-returning maximum reduction; fallback: a plain loop with a strict greater-than comparison so the first index wins on ties, matching the source.",
+        "Status-code-returning kernel calls, which the source layer itself did not inspect and instead guarded with its own argument and allocation checks -> target calls that report failure only by returning NULL for object creation and by returning nothing for compute calls, so the module keeps those argument guards and checks each created view for NULL itself. Applies when the target has no per-call error channel; fallback: if the target exposes an error-query call, query it at exactly the points where the source inspected a kernel status.",
+        "Backend selection through an explicit compile-time define plus vendor shared libraries -> one backend source set compiled against the target include directory and linked against the target library plus the math library, selected by a build option. Never link both backends into one target; the define-driven path is what silently keeps the old backend alive."
+      ],
+      "semantic_deltas": [
+        "Accumulation: block kernels may reassociate or fuse multiply-adds over a run, while a scalar replacement accumulates sequentially in the element type, so results differ in the last bits and any comparison must be tolerance-based rather than bitwise.",
+        "Conjugation: a target inner product that conjugates one operand is not interchangeable with a plain correlation. Conjugating a single operand flips the sign of the cross term in both output components, so neither plane is correct: the real component gains the coefficient-imaginary times input-imaginary product instead of subtracting it, and the imaginary component loses the coefficient-imaginary times input-real-sample term instead of adding it. The error is not a single negated component, so it cannot be repaired by negating the imaginary output; it must be caught by comparing both planes against the documented complex-multiply formula with asymmetric complex coefficients.",
+        "Report accumulation: the source computes each sample's magnitude with a per-sample square root in the same scalar loop that accumulates power and keeps a strict greater-than peak, while the target fills a complex view, derives a magnitude view for the maximum reduction, and accumulates the mean power from the split planes, so the magnitude values feeding the peak come from the target reduction instead of the scalar loop. Keep the division and the accumulation in the same precision and order, and expect last-bit differences from reduction ordering.",
+        "Tie-breaking at the peak: the source keeps the lowest index among equal magnitudes because it updates only on a strict greater-than comparison; the target maximum reduction's tie rule is not established by this migration, and the index is part of the reported result, so it must be checked or replaced with an explicit strict comparison.",
+        "Allocator alignment: the vendor allocator is replaced by the standard allocator, which guarantees only the platform's basic alignment, so any target routine that documents a wider alignment requirement needs an explicitly aligned allocation instead of the plain allocator.",
+        "Failure visibility: the source calls return status codes per kernel invocation even though the layer does not inspect them, while target object creation reports failure by returning NULL and compute calls report nothing, so an unchecked creation becomes a silently wrong report instead of an error return.",
+        "Ownership of view data: a view created with the target's allocate flag owns its storage and its all-destroy call releases it, so the module must not free that storage separately, and state-owned views must be destroyed together with the state.",
+        "Widths: view lengths, strides and indices use target typedefs, while block lengths and the peak index cross back to the ABI's integer type, so the narrowing is explicit and its range is part of the contract."
+      ],
+      "pitfalls": [
+        "Coefficient reversal applied twice or dropped: occurs when the create path keeps the source's reversed copy while the FIR also walks the history backwards, or copies natural order while walking forward. The output is a time-reversed filter and the defect appears only with asymmetric coefficients.",
+        "Conjugate inner product substituted for the plain dot product: conjugating one operand flips the sign of the cross term in both output components, so the real plane adds the coefficient-imaginary times input-imaginary product where the formula subtracts it, and the imaginary plane drops the coefficient-imaginary times input-real term where the formula adds it; the defect is not a negated imaginary output, so negating one plane does not repair it. A distinct failure mode is swapping which plane of the coefficients pairs with which plane of the history in the accumulation loop, which produces its own wrong cross terms: the real output is built from mismatched planes, or the imaginary output loses one of its two terms. Check both by comparing each of the two output components against the documented complex-multiply formula on an asymmetric complex coefficient pair whose coefficient planes and both output planes are inspected.",
+        "Block-boundary drift: the mixer restarts the phase table at index zero for each call instead of carrying the phase, or history compaction advances the consumed-sample base without accounting for the dropped samples. The defect is invisible in one block and appears only when the same input is split differently.",
+        "Plane and interleaved confusion: writing a complex scalar into a buffer that is later read as a plane compiles cleanly because both are float pointers, and the damage is a stride-two read that yields plausible but wrong samples.",
+        "Report fields left unset on the report failure path: fields are assigned only inside the success branch, so a failed view creation leaves caller stack garbage in the report, while the empty-block path must still initialize every field to zero.",
+        "Per-call view leak: views created inside the per-block report are destroyed only on the normal return, so a later early return leaks memory proportional to the number of processed blocks.",
+        "Zero or negative block length passing the argument guard during the port: target compute routines have no error return and view creation reports only success or NULL, so a zero length can pass silently and the layer returns a zero count with a stale report instead of the documented error value.",
+        "Build wiring that keeps the old backend: compiling the target sources under the source backend's define still selects the old include path and libraries, so the build either fails late on missing symbols or silently links the previous backend and validates nothing.",
+        "Backend scratch fields left declared in the private state after the port: the state must be zero-initialized at create so the unconditional destroy path can release the now-unused pointers safely, otherwise the first destroy frees an uninitialized address."
+      ],
+      "procedure": [
+        "Fix the numerical contract before porting any call: coefficient order and orientation, the complex-multiply formula, the decimation phase, and the first and last valid output index. Write the direct-form reference for that contract first, because every later decision is judged against it.",
+        "Decide the layout boundary next: keep the caller's split real and imaginary planes as the internal representation, and determine which target routines genuinely require an interleaved or view argument. This single decision determines whether the source's interleaved scratch survives.",
+        "Move allocation and ownership before the kernels: choose the allocator for state, tables, history and scratch, state who copies and who frees, make the create failure path release everything it allocated, and make destroy tolerate absent buffers.",
+        "Port the mixer while preserving the segment loop and the carried phase, then port the decimating FIR with one accumulation strategy and history compaction that keeps the consumed-sample base consistent with the shifted history.",
+        "Port the report last, since it only reads the produced block, and set every report field on every path including the empty-block and failure paths.",
+        "Re-point the build to the single target backend and rebuild the streaming test that splits the same input into different block sizes before any tolerance tuning, so numerical and structural defects stay distinguishable."
+      ],
+      "verification": [
+        "Direct-form check: compute the expected output in double precision from the documented equations using the natural coefficient order and asymmetric complex coefficients so both cross terms are exercised, then compare every produced sample within a relative tolerance of about 1e-5 of the block peak, and compare the produced count exactly as an integer.",
+        "Block-size invariance: feed identical input in a single call and in several irregular splits, including splits smaller than the decimation factor, smaller than the filter length, not multiples of the coefficient table length, and spanning the table wrap point. Require identical counts and outputs within tolerance regardless of split points.",
+        "Report check: for one block, independently compute the mean of squared magnitudes and the maximum magnitude with its first index; compare the values within tolerance and the index exactly, including an input where two samples share the peak magnitude.",
+        "Failure-path check: a NULL state, a NULL input or output buffer, and zero or negative lengths return the documented error value without touching outputs, and object creation with zero or negative dimensions returns NULL without leaking.",
+        "Resource check: run the streaming test with many small blocks under a leak and undefined-behaviour sanitizer, confirm no growth in allocated bytes across calls, no invalid access, and no outstanding allocation after one create-then-destroy cycle."
+      ],
+      "boundary": "Covers only the rebuild of the streaming mix-and-decimate layer and its per-block report onto a view-based vector signal-processing API, including allocator ownership, coefficient orientation, reduction mapping and backend build selection. It does not cover filter or mixer-table design, FFT-based polyphase channelization, the public ABI itself, multi-channel or multi-threaded scheduling, or performance tuning of the new backend. It also does not cover migrations where the public ABI's split-plane layout changes to interleaved, or where the target reports errors by exceptions instead of NULL creation results and void compute calls. The migration does not establish whether the target offers a non-conjugating inner product or how its maximum reduction breaks ties, so the explicit accumulation loop and an explicit strict comparison remain the safe constructions until those contracts are confirmed.",
+      "applicability": {
+        "os": [
+          "unspecified"
+        ],
+        "constraints": [
+          "Target vector signal-processing headers and static or shared library must be installed and discoverable through an include directory and a link name, and the math library must be linked with them.",
+          "The target must offer 32-bit float complex scalars with constructors and component accessors, view create, put and get over complex and real data, a magnitude reduction, and an index-returning maximum reduction; otherwise the explicit loops are the required fallback.",
+          "Block lengths, view lengths, strides and peak indices must fit the target typedefs and the ABI's integer width, and the layer assumes single-threaded use of one state object with no concurrent calls.",
+          "If the target implementation requires an explicit initialization and finalization call around object creation, the integrator must add it, since the migrated code created views without one and that requirement is implementation-defined.",
+          "The standard heap provides only the platform's guaranteed alignment, so any target routine documenting a wider alignment needs an aligned allocation instead."
+        ]
+      },
+      "evidence": [
+        {
+          "project": "channelizer-v1",
+          "commit": "synthetic-channelizer-v1",
+          "task_id": "s3_channelizer",
+          "role": "source-migration"
+        }
+      ],
+      "notes": ""
+    },
+    "entry_digest": "346459b4c13d4025dfb7338e372ad0f91ec3a5c8180a6e43fe51bd3139d98779",
+    "revision": {
+      "from_entry_digest": "0ac20ce282f57ac507ff2b6034bac8839e58de8d051767b054b4d1c74716fe13",
+      "review_sha256": "e0e43de2ab1c6841995af0ae34433403ad6980123959fbdce3df038c63e221d2",
+      "review_verdict": "rework",
+      "must_change": [
+        {
+          "field": "mapping_rules",
+          "quote": "Vendor real dot product over a contiguous run -> explicit accumulation loop over the same run, in the same element type, with the same rounding order. Applies whenever the target's only inner-product routine conjugates an operand, because a conjugated product changes the sign of the imaginary part of a correlation; use a target inner-product routine only after confirming it does not conjugate, and otherwise keep the loop.",
+          "instruction": "Keep the mapping (an explicit accumulation loop replacing the vendor run-based dot product) but state the applicability reason correctly: an inner product that conjugates one operand computes a different product from the plain correlation, because the sign of the cross term flips in both output components - the coefficient-imaginary times input-imaginary term changes sign in the real component and the coefficient-imaginary times input-real term changes sign in the imaginary component - so the result is a plausible-looking but wrong filter rather than a simple sign error on one component. The decision to keep the loop unless the target offers a non-conjugating inner product is right and should stay."
+        },
+        {
+          "field": "semantic_deltas",
+          "quote": "Conjugation: a target inner product that conjugates one operand is not interchangeable with a plain correlation, and using it flips the sign of the imaginary component while leaving the real component correct, which reads as a plausible but wrong filter.",
+          "instruction": "Correct the symptom: conjugating one operand of a complex correlation flips the sign of the cross term in both components, so neither output plane is correct - the real component gains the product of the two imaginary parts instead of subtracting it, and the imaginary component loses the imaginary-coefficient times real-sample term instead of adding it. Say that the error is not observable as a single negated component, so it cannot be repaired by negating the imaginary output and must be caught by comparing both planes against the documented complex-multiply formula with asymmetric complex coefficients."
+        },
+        {
+          "field": "pitfalls",
+          "quote": "Conjugate inner product substituted for the plain dot product: the imaginary output changes sign or is built from the wrong cross term, which usually happens when the plane pairings in the accumulation loop are reordered. Check the sign on a known asymmetric coefficient pair.",
+          "instruction": "Separate the two distinct failure modes and describe each by its actual effect: substituting a conjugating inner product flips the sign of the cross term in both output components, while swapping the pairings of the two planes in the accumulation produces its own wrong cross terms; do not present the conjugate defect as a negated imaginary output. Keep the concrete check - an asymmetric complex coefficient pair whose two planes and both output components are compared against the documented complex-multiply formula."
+        }
+      ]
+    },
+    "finalize": {
+      "from_entry_digest": "ff9ce7a835142bf02287a6d2d5714f6487841c325ecd43940cd174d065ece835",
+      "review_sha256": "d831d594bdbcdfab3cba7dd9accfcb0d1f5365b06fd796acf04158b3321273a5",
+      "verdict": "publish",
+      "must_change": []
+    }
+  }
+]

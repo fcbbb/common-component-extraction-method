@@ -1,0 +1,149 @@
+You repair one transformation component that review marked for rework. The
+workspace is the completed migration: before, after, context and tests. The
+task contains the component and the review's must-change items, each with a
+field, a quoted statement and an instruction.
+
+## Repair
+
+Replace each quoted statement in its field with text that carries the
+instruction and stays grounded in the visible migration. Where the migration
+does not support a claim, remove it; where the limit matters to an implementer,
+state it in `boundary`. Keep every other field, the title and the family scope.
+
+The pipeline keeps the component id; the repaired card is the same component.
+
+## Output
+
+Write `manifest.json` with exactly one entry in `transformations`:
+
+{
+  "transformations": [
+    {
+      "title": "...",
+      "when_to_use": "...",
+      "mapping_rules": "...",
+      "procedure": "...",
+      "semantic_deltas": "...",
+      "pitfalls": "...",
+      "verification": "...",
+      "boundary": "...",
+      "applicability": {
+        "constraints": ["toolchain, version, device or configuration limit"]
+      }
+    }
+  ]
+}
+
+Use the same field meanings as extraction. Each field may stay a paragraph or a
+short list. Write only `manifest.json`.
+
+## Migration example
+
+Before (source-side implementation), workspace-relative:
+- `src/state_ipp.c`
+- `src/mixer_ipp.c`
+- `src/fir_ipp.c`
+- `src/stats_ipp.c`
+- `src/channelizer_internal.h`
+- `include/channelizer.h`
+- `CMakeLists.txt`
+
+After (completed target-side implementation), workspace-relative:
+- `state_vsipl.c`
+- `mixer_vsipl.c`
+- `fir_vsipl.c`
+- `stats_vsipl.c`
+
+Context: 0 shared/caller files. The workspace root is the project's real source layout; explore it directly.
+Tests: 1 files.
+
+
+## Component under revision
+
+
+
+```json
+
+{
+  "title": "Streaming complex NCO mix-and-decimate layer rebuilt from block vendor kernels onto a view-based vector signal-processing API",
+  "when_to_use": "Use this when a streaming complex channelizer layer (complex NCO mix, decimating complex FIR, per-block output report) was written against a vendor block-kernel library whose primitives consume interleaved complex buffers, return status codes and allocate from the vendor heap, and the layer must be rebuilt on a view-based vector signal-processing API that exposes complex samples as struct scalars, arrays as created views with element put and get, and reductions such as magnitude and index-of-maximum. The public ABI here already carries split real and imaginary planes, caller-owned output buffers and a state object whose mixer phase and filter history carry across calls, so the rebuild must preserve block-size-independent output. The conventions that must match are who allocates and frees every buffer, how failures are reported (status codes versus NULL objects and void compute calls), the coefficient time orientation, and the exact complex-multiply formula. A port that gets the arithmetic right but the ownership or orientation wrong still passes a single-block smoke test and fails streaming.",
+  "mapping_rules": [
+    "Interleaved complex sample type with adjacent real and imaginary members -> target complex scalar built by a named constructor and taken apart through named component accessors. Applies when the public ABI or the state layout is interleaved; when the ABI already carries split planes, do not interleave at all and build a scalar only where one per-sample call needs it. Fallback: if a target routine accepts only interleaved data, create one contiguous complex view, copy the planes in, and copy the results back out to planes.",
+    "Vendor block multiply of a complex run against a windowed coefficient table -> per-sample complex scalar multiply inside a segment loop bounded by the coefficient table length, with the phase carried in the state and wrapped when the segment reaches the end of the table. Applies when the target has no in-place complex multiply over an arbitrarily offset run; fallback: an elementwise complex view multiply over a temporary contiguous view, still applying the window offset explicitly instead of restarting the table at zero.",
+    "Vendor real dot product over a contiguous run -> explicit accumulation loop over the same run, in the same element type, with the same rounding order. Applies whenever the target's only inner-product routine conjugates an operand, because a conjugated product changes the sign of the imaginary part of a correlation; use a target inner-product routine only after confirming it does not conjugate, and otherwise keep the loop.",
+    "Time-reversed coefficient copy in the state, consumed by a forward dot product -> coefficients kept in natural order with the history walked backwards from the current sample. One orientation decision per layer: either reverse once at create time and advance forward over history, or keep the given order and walk backwards. Applying both or neither is still a valid-looking build but implements a time-reversed filter, and the stored orientation is not observable from the public ABI, so pin it to a direct-form reference.",
+    "Vendor-heap allocation and free for state, coefficient tables, history and scratch -> standard heap allocation and free, or target views created with the target's own allocate flag where a routine needs a view. Ownership rule: the module allocates the state and its internal history and scratch, copies the caller's coefficient and mixer tables at create time so the caller may reuse or free them immediately, hands the state to the caller who destroys it, and releases every internal buffer on every failure branch of create.",
+    "Interleaved scratch buffer kept alive between calls only to feed the block multiply -> dropped. Applies when the target kernels consume split planes or per-sample scalars; removing the scratch removes one allocation, one plane-to-interleaved conversion and its lifetime bookkeeping. Fallback: keep the scratch only if a target kernel requires a contiguous interleaved run, and then own it as a view or buffer released with the state.",
+    "Vendor max-magnitude reduction and its position for the per-block report -> complex view over the produced output block, magnitude into a real view, then the target maximum-value reduction that returns both the value and the index; keep the mean power accumulated in the same pass directly from the split planes. Applies when the target provides a magnitude reduction plus an index-returning maximum reduction; fallback: a plain loop with a strict greater-than comparison so the first index wins on ties, matching the source.",
+    "Status-code-returning kernel calls, which the source layer itself did not inspect and instead guarded with its own argument and allocation checks -> target calls that report failure only by returning NULL for object creation and by returning nothing for compute calls, so the module keeps those argument guards and checks each created view for NULL itself. Applies when the target has no per-call error channel; fallback: if the target exposes an error-query call, query it at exactly the points where the source inspected a kernel status.",
+    "Backend selection through an explicit compile-time define plus vendor shared libraries -> one backend source set compiled against the target include directory and linked against the target library plus the math library, selected by a build option. Never link both backends into one target; the define-driven path is what silently keeps the old backend alive."
+  ],
+  "semantic_deltas": [
+    "Accumulation: block kernels may reassociate or fuse multiply-adds over a run, while a scalar replacement accumulates sequentially in the element type, so results differ in the last bits and any comparison must be tolerance-based rather than bitwise.",
+    "Conjugation: a target inner product that conjugates one operand is not interchangeable with a plain correlation, and using it flips the sign of the imaginary component while leaving the real component correct, which reads as a plausible but wrong filter.",
+    "Report rounding: the source divides accumulated power by the produced count in single precision and derives the peak from a square root per sample; computing the mean from the split planes avoids the extra square-root round trip, and the division should keep the same precision and order.",
+    "Tie-breaking at the peak: a strict greater-than comparison keeps the lowest index among equal magnitudes, whereas a library maximum reduction may define the index differently, and the index is part of the reported result.",
+    "Alignment: vendor allocation returned wider alignment than the standard allocator guarantees, so any target routine that documents an alignment requirement needs an explicitly aligned allocation instead of the plain allocator.",
+    "Failure visibility: status codes made each kernel failure visible per call, while the target reports creation by NULL and compute calls by returning nothing, so an unchecked creation becomes a silently wrong report instead of an error return.",
+    "Ownership of view data: a view created with the target's allocate flag owns its storage and its all-destroy call releases it, so the module must not free that storage separately, and state-owned views must be destroyed together with the state.",
+    "Widths: view lengths, strides and indices use target typedefs, while block lengths and the peak index cross back to the ABI's integer type, so the narrowing is explicit and its range is part of the contract."
+  ],
+  "pitfalls": [
+    "Coefficient reversal applied twice or dropped: occurs when the create path keeps the source's reversed copy while the FIR also walks the history backwards, or copies natural order while walking forward. The output is a time-reversed filter and the defect appears only with asymmetric coefficients.",
+    "Conjugate inner product substituted for the plain dot product: the imaginary output changes sign or is built from the wrong cross term, which usually happens when the plane pairings in the accumulation loop are reordered. Check the sign on a known asymmetric coefficient pair.",
+    "Block-boundary drift: the mixer restarts the coefficient window at index zero for each call instead of carrying the phase, or history compaction advances the consumed-sample base without accounting for the dropped samples. The defect is invisible in one block and appears only when the same input is split differently.",
+    "Plane and interleaved confusion: writing a complex scalar into a buffer that is later read as a plane compiles cleanly because both are float pointers, and the damage is a stride-two read that yields plausible but wrong samples.",
+    "Report fields left unset on the failure or empty-block path: fields are assigned only inside the success branch, so a failed view creation leaves caller stack garbage in the report.",
+    "Per-call view leak: views created inside the per-block report are destroyed only on the normal return, so a later early return leaks memory proportional to the number of processed blocks.",
+    "Zero or negative block length slipping past the argument guard during the port: the target routines accept the length silently, so the layer returns a zero count with a stale report instead of the documented error value.",
+    "Build wiring that keeps the old backend: compiling the target sources under the source backend's define still selects the old include path and libraries, so the build either fails late on missing symbols or silently links the previous backend and validates nothing.",
+    "Backend scratch fields left declared in the private state after the port: the state must be zero-initialized at create so the unconditional destroy path can release the now-unused pointers safely, otherwise the first destroy frees an uninitialized address."
+  ],
+  "procedure": [
+    "Fix the numerical contract before porting any call: coefficient order and orientation, the complex-multiply formula, the decimation phase, and the first and last valid output index. Write the direct-form reference for that contract first, because every later decision is judged against it.",
+    "Decide the layout boundary next: keep the caller's split real and imaginary planes as the internal representation, and determine which target routines genuinely require an interleaved or view argument. This single decision determines whether the source's interleaved scratch survives.",
+    "Move allocation and ownership before the kernels: choose the allocator for state, tables, history and scratch, state who copies and who frees, make the create failure path release everything it allocated, and make destroy tolerate absent buffers.",
+    "Port the mixer while preserving the segment loop and the carried phase, then port the decimating FIR with one accumulation strategy and history compaction that keeps the consumed-sample base consistent with the shifted history.",
+    "Port the report last, since it only reads the produced block, and set every report field on every path including the empty-block and failure paths.",
+    "Re-point the build to the single target backend and rebuild the streaming test that splits the same input into different block sizes before any tolerance tuning, so numerical and structural defects stay distinguishable."
+  ],
+  "verification": [
+    "Direct-form check: compute the expected output in double precision from the documented equations using the natural coefficient order, then compare every produced sample within a relative tolerance of about 1e-5 of the block peak, and compare the produced count exactly as an integer.",
+    "Block-size invariance: feed identical input in a single call and in several irregular splits, including splits smaller than the decimation factor, smaller than the filter length, not multiples of the coefficient table length, and spanning the table wrap point. Require identical counts and outputs within tolerance regardless of split points.",
+    "Report check: for one block, independently compute the mean of squared magnitudes and the maximum magnitude with its first index; compare the values within tolerance and the index exactly, including an input where two samples share the peak magnitude.",
+    "Failure-path check: a NULL state, a NULL input or output buffer, and zero or negative lengths return the documented error value without touching outputs, and object creation with zero or negative dimensions returns NULL without leaking.",
+    "Resource check: run the streaming test with many small blocks under a leak and undefined-behaviour sanitizer, confirm no growth in allocated bytes across calls, no invalid access, and no outstanding allocation after one create-then-destroy cycle."
+  ],
+  "boundary": "Covers only the rebuild of the streaming mix-and-decimate layer and its per-block report onto a view-based vector signal-processing API, including allocator ownership, coefficient orientation, reduction mapping and backend build selection. It does not cover filter or mixer-table design, FFT-based polyphase channelization, the public ABI itself, multi-channel or multi-threaded scheduling, or performance tuning of the new backend. It also does not cover migrations where the public ABI's split-plane layout changes to interleaved, or where the target reports errors by exceptions instead of NULL creation results and void compute calls.",
+  "applicability": {
+    "constraints": [
+      "Target vector signal-processing headers and static or shared library must be installed and discoverable through an include directory and a link name, and the math library must be linked with them.",
+      "The target must offer 32-bit float complex scalars with constructors and component accessors, view create, put and get over complex and real data, a magnitude reduction, and an index-returning maximum reduction; otherwise the explicit loops are the required fallback.",
+      "Block lengths, view lengths, strides and peak indices must fit the target typedefs and the ABI's integer width, and the layer assumes single-threaded use of one state object with no concurrent calls.",
+      "If the target implementation requires an explicit initialization and finalization call around object creation, the integrator must add it, since the migrated code created views without one and that requirement is implementation-defined.",
+      "The standard heap provides only the platform's guaranteed alignment, so any target routine documenting a wider alignment needs an aligned allocation instead."
+    ]
+  }
+}
+
+```
+
+
+
+## Must change
+
+
+
+1. field: `mapping_rules`
+   quote: Vendor real dot product over a contiguous run -> explicit accumulation loop over the same run, in the same element type, with the same rounding order. Applies whenever the target's only inner-product routine conjugates an operand, because a conjugated product changes the sign of the imaginary part of a correlation; use a target inner-product routine only after confirming it does not conjugate, and otherwise keep the loop.
+   instruction: Keep the mapping (an explicit accumulation loop replacing the vendor run-based dot product) but state the applicability reason correctly: an inner product that conjugates one operand computes a different product from the plain correlation, because the sign of the cross term flips in both output components - the coefficient-imaginary times input-imaginary term changes sign in the real component and the coefficient-imaginary times input-real term changes sign in the imaginary component - so the result is a plausible-looking but wrong filter rather than a simple sign error on one component. The decision to keep the loop unless the target offers a non-conjugating inner product is right and should stay.
+2. field: `semantic_deltas`
+   quote: Conjugation: a target inner product that conjugates one operand is not interchangeable with a plain correlation, and using it flips the sign of the imaginary component while leaving the real component correct, which reads as a plausible but wrong filter.
+   instruction: Correct the symptom: conjugating one operand of a complex correlation flips the sign of the cross term in both components, so neither output plane is correct - the real component gains the product of the two imaginary parts instead of subtracting it, and the imaginary component loses the imaginary-coefficient times real-sample term instead of adding it. Say that the error is not observable as a single negated component, so it cannot be repaired by negating the imaginary output and must be caught by comparing both planes against the documented complex-multiply formula with asymmetric complex coefficients.
+3. field: `pitfalls`
+   quote: Conjugate inner product substituted for the plain dot product: the imaginary output changes sign or is built from the wrong cross term, which usually happens when the plane pairings in the accumulation loop are reordered. Check the sign on a known asymmetric coefficient pair.
+   instruction: Separate the two distinct failure modes and describe each by its actual effect: substituting a conjugating inner product flips the sign of the cross term in both output components, while swapping the pairings of the two planes in the accumulation produces its own wrong cross terms; do not present the conjugate defect as a negated imaginary output. Keep the concrete check - an asymmetric complex coefficient pair whose two planes and both output components are compared against the documented complex-multiply formula.
+
+
+
+Repair `streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b` against this example; the pipeline keeps the component id. Write `manifest.json` with the revised component. The workspace stays read-only.

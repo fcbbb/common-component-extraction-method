@@ -1,0 +1,12 @@
+Submitted. `manifest.json` is written and accepted (completion marker printed).
+
+**Verdict: `rework`** for `split-complex-fft-matched-filter-correlation-layer-d152355a`.
+
+The card is genuinely reusable — I verified against the workspace that its central claims hold: plan construction (size query → one-shot init → init scratch freed) maps to one handle-returning create per direction; normalization matches the after side exactly (unit scale on both creations plus one explicit 1/N multiply in the inverse wrapper, replacing `NODIV_BY_ANY`/`DIV_INV_BY_N`); the create-time power-of-two and 2N-1 checks, split-plane↔interleaved-view interchange, void-returning compute surface, untyped handle slots in the shared private header, and the no-rotation lag mapping (the stale "shift by n-1" comment in the target is correctly ruled out) are all accurate.
+
+Four statements would still mislead an implementer, so the verdict is `rework`:
+
+1. **verification / impulse check** — asserts equality with the *conjugated* return. I checked the contract numerically: with a unit impulse at replica index 0 the lag-ordered output equals the return itself (imag parts unchanged); a correct port would be "fixed" into a conjugation bug.
+2. **pitfalls / double normalization** — one flat "1/N or N" ratio for both lag and energy; energy (sum of squares) moves by the square, i.e. 1/N² / N².
+3. **procedure / profiling** — orders the profiling step to be made allocation-free, contradicting the completed migration, which allocates a complex view and magnitude vector per call, and contradicting the card's own delta and pitfall about that allocation.
+4. **mapping_rules / profiling metrics** — orders the source's accumulator width to be preserved, while the migrated step accumulates energy in single precision.

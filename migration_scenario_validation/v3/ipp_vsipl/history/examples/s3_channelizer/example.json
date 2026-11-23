@@ -1,0 +1,75 @@
+{
+  "schema": "migration-history-example-v1",
+  "generated_by": "tools/build_history_corpus.py",
+  "generated_at": "2026-11-23T13:42:20.038456+00:00",
+  "task_id": "s3_channelizer",
+  "capability": "communications/channelizer",
+  "scenario": "ipp_to_vsipl",
+  "library_id": "ipp-to-vsipl-v3-self-built",
+  "source": {
+    "repo": "synthetic://channelizer-v1",
+    "commit": "synthetic-channelizer-v1",
+    "tag": null,
+    "license": "synthetic"
+  },
+  "target": {
+    "api": "VSIPL",
+    "library": "jvsip",
+    "toolchain": "gcc-13"
+  },
+  "spec": "",
+  "api_symbols": [
+    "ippsRealToCplx_32f",
+    "ippsCplxToReal_32fc",
+    "ippsMul_32fc",
+    "ippsDotProd_32f"
+  ],
+  "removed_paths": [],
+  "workspace": "repo",
+  "files": {
+    "before": [
+      "src/state_ipp.c",
+      "src/mixer_ipp.c",
+      "src/fir_ipp.c",
+      "src/stats_ipp.c",
+      "src/channelizer_internal.h",
+      "include/channelizer.h",
+      "CMakeLists.txt"
+    ],
+    "after": [
+      "state_vsipl.c",
+      "mixer_vsipl.c",
+      "fir_vsipl.c",
+      "stats_vsipl.c"
+    ],
+    "context": [],
+    "tests": [
+      "test/public_test.c"
+    ]
+  },
+  "context_selection": {
+    "headers": [
+      {
+        "path": "src/channelizer_internal.h",
+        "included_by": "src/state_ipp.c"
+      },
+      {
+        "path": "include/channelizer.h",
+        "included_by": "src/channelizer_internal.h"
+      }
+    ],
+    "callers": []
+  },
+  "packet": {
+    "path": "inputs/focus_context_packets.json",
+    "sha256": "0b32cf44ae59490074d55f962f03f12e56e986e2e2927121edb4d00f5eadaa48",
+    "packet_id": "history_s3_channelizer",
+    "focus_file_count": 4,
+    "context_file_count": 8,
+    "focus_unit_count": 7,
+    "context_unit_count": 21,
+    "source_unit_count": 27,
+    "fallback_file_count": 1,
+    "gaps": 0
+  }
+}

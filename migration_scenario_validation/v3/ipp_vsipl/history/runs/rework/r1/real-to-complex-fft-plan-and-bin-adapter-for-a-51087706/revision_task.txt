@@ -1,0 +1,163 @@
+You repair one transformation component that review marked for rework. The
+workspace is the completed migration: before, after, context and tests. The
+task contains the component and the review's must-change items, each with a
+field, a quoted statement and an instruction.
+
+## Repair
+
+Replace each quoted statement in its field with text that carries the
+instruction and stays grounded in the visible migration. Where the migration
+does not support a claim, remove it; where the limit matters to an implementer,
+state it in `boundary`. Keep every other field, the title and the family scope.
+
+The pipeline keeps the component id; the repaired card is the same component.
+
+## Output
+
+Write `manifest.json` with exactly one entry in `transformations`:
+
+{
+  "transformations": [
+    {
+      "title": "...",
+      "when_to_use": "...",
+      "mapping_rules": "...",
+      "procedure": "...",
+      "semantic_deltas": "...",
+      "pitfalls": "...",
+      "verification": "...",
+      "boundary": "...",
+      "applicability": {
+        "constraints": ["toolchain, version, device or configuration limit"]
+      }
+    }
+  ]
+}
+
+Use the same field meanings as extraction. Each field may stay a paragraph or a
+short list. Write only `manifest.json`.
+
+## Migration example
+
+Before (source-side implementation), workspace-relative:
+- `src/plan_ipp.c`
+- `src/window_ipp.c`
+- `src/gate_ipp.c`
+- `src/report_ipp.c`
+- `src/spectral_gate_internal.h`
+- `include/spectral_gate.h`
+- `CMakeLists.txt`
+
+After (completed target-side implementation), workspace-relative:
+- `plan_vsipl.c`
+- `window_vsipl.c`
+- `gate_vsipl.c`
+- `report_vsipl.c`
+
+Context: 0 shared/caller files. The workspace root is the project's real source layout; explore it directly.
+Tests: 1 files.
+
+
+## Component under revision
+
+
+
+```json
+
+{
+  "title": "Real-to-complex FFT plan and bin adapter for a streaming spectral gate",
+  "when_to_use": "You are rebuilding the FFT-plan and forward-transform module of a streaming spectral gate that was written against a status-code FFT library whose real forward transform returns a packed half-spectrum, and you must re-implement it on a view-based signal-processing library whose real forward transform fills a natural-order complex output view. The public contract fixes a single-precision real frame, an unscaled transform (a unit DC frame gives magnitude 1 at bin 0, not the frame length), nfft/2+1 natural complex bins, caller-owned magnitude and flag buffers, and an integer success/failure return. Use this card when the layer to rebuild is exactly that plan-plus-transform boundary and the windowing, magnitude, gate and report stages carry no vendor types.",
+  "mapping_rules": [
+    "Keep the public guards and the failure contract unchanged: the plan and the transform call are private state, so every configuration check, frame-length check and output-buffer size stays as written, and each library-level failure is still translated into the layer's documented integer or null failure. Fallback: when the target reports errors by throwing or by invoking an error handler instead of returning a value, translate at this boundary only and never let the handler unwind into callers.",
+    "Source convention, two-phase plan build: when the source library exposes a size query followed by an init call that takes caller-allocated spec, init and work buffers, and the target constructs a plan in one call that returns an opaque plan object owning its own memory, collapse the sequence to one create plus one destroy and drop the spec/init/work buffers. Applicability: the target transform call accepts no caller work buffer. Fallback: if the target variant does require a work area, keep the size query, allocate once per plan, and pass it on every call.",
+    "Source convention, no-division forward: the source declares its division policy with an explicit no-division flag, so a unit DC frame yields magnitude 1 at bin 0 rather than the frame length; when the target expresses the same policy as a numeric scale factor supplied at plan creation, choose the factor that leaves the forward output unscaled (unity for a no-division forward) and record that choice beside the plan. Applicability: the documented contract is unscaled bins. Fallback: if the target only offers a normalized forward transform, multiply the magnitudes by the frame length after the transform instead of changing the public contract.",
+    "Packed half-spectrum -> natural complex bins: when the target writes natural-order bins, one complex element per bin holding both parts, delete the source deinterleave, which read the imaginary part of bin k from index nfft-k of a packed real array and forced zero imaginary parts at DC and Nyquist; take both parts from the target element and rely on the transform producing exactly zero imaginary parts at DC and Nyquist. Fallback: if the target documents the packed form with DC and Nyquist folded into the first complex element, keep an unpack step that splits that element and rebuilds the remaining bins from the packed tail.",
+    "Size the target's complex output block to exactly the contract's bin count (nfft/2+1) and keep it for the plan's lifetime; the target writes as many bins as the output view declares, so a view of nfft/2 bins silently drops Nyquist and a longer view writes past the reserved region. Fallback: if the target derives the output length from the plan and rejects a mismatched view, create the view with the plan's declared length and assert once at creation that it equals the contract's count.",
+    "Resource ownership, source convention: the source scratch was a plain float array sized a little beyond nfft, allocated with the C allocator, owned by the plan and released with the C allocator; when the target returns the transform result in a library-created complex block, that block is owned by the library and must be released by the library's matching block destructor, never by the C allocator, while the frame and per-bin arrays that the source kept in plain floats stay C-allocated and C-freed. Applicability: the target allocates its own result block. Fallback: when the target writes into caller memory, keep C allocation and the C free.",
+    "Input model: when the source transform consumes a raw const float pointer and the target consumes a library real-vector view, map the frame either by binding a transient view onto the existing frame buffer without a copy, or by creating a view, filling it element by element, transforming and destroying it inside the same call. Ownership rule in both variants: a bound view never frees the caller buffer, a created view is released in the call that created it, and the transform input view must not alias the output view unless the target documents in-place use, which a real-to-complex plan does not.",
+    "Lengths, indices and precision: keep the single-precision variant of every target routine so the float contract and its tolerances hold, and convert the layer's signed integer lengths and indices to the target's unsigned, possibly wider, length and index types only after validation, so a rejected size cannot wrap into a huge allocation request. Fallback: when the target takes plain integer sizes, add no conversion and keep the checks as written.",
+    "Backend-neutral stages stay untouched: the window coefficient formula, the magnitude profile, the trailing-mean noise estimate, the threshold comparison and the report aggregation carry no vendor types and must be compiled unchanged against the ported plan. Applicability: true while those stages use only the C math library and the layer's own buffers; a stage that had used a source-library primitive moves into the plan module instead.",
+    "Build integration: build the ported module in place of the source module so exactly one definition of the plan and transform entry points is linked, add the target library's include path, its archive and the C math library, and fail the configure step loudly when the target root is absent rather than silently falling back to the source backend. Fallback: when both implementations must stay selectable, gate them with mutually exclusive options and assert that exactly one was chosen."
+  ],
+  "semantic_deltas": [
+    "Bin layout: the source needed a per-bin deinterleave and explicit zero imaginary parts at DC and Nyquist; a natural-order target supplies both parts per bin. Observable rule: bin k stays at index k, and only DC and Nyquist are guaranteed purely real.",
+    "Scaling is named differently, a division flag versus a numeric scale factor. The wrong choice multiplies every magnitude by the frame length or divides it, which keeps the peak bin but moves the reported peak value, the reported floor, and every flag whose ratio to the trailing mean changes.",
+    "The plan's scratch member changes kind, from a byte or float work array to a library-owned complex block of bin count, so its declared type, its allocator and its destructor change together.",
+    "Failure reporting changes from a per-call status code to handle validity plus the library's error handler; a non-null handle is not proof of success, so the wrapper should use the library's own validity predicate when one exists.",
+    "Reuse and threading: the source plan carried a per-call work buffer, while the target plan carries internal transform state plus the shared output block, so one plan serves one thread at a time and cannot process two frames concurrently.",
+    "Per-call cost: the target's view model adds an allocation and an element-wise copy per frame when the frame is not bound to a view; numerical results are identical but per-frame latency is not.",
+    "Numerics: both sides are single precision yet sum and twiddle in different orders, so magnitudes differ in the last bits and flags differ only where a bin sits within that difference of the threshold."
+  ],
+  "pitfalls": [
+    "Applying the packed-layout indexing to a natural-order target: reading the imaginary part of bin k from index nfft-k of an interleaved array mirrors the imaginary parts and corrupts magnitudes everywhere except DC and Nyquist, which an impulse test that checks only real parts can still pass. Condition: the target already returns natural bins.",
+    "Leaving the target's default or normalizing scale factor: every magnitude is off by a constant factor, the reported peak and floor scale with it, and gate flags move only where the scaled ratio crosses the multiplier. Condition: the scale argument defaults to normalized output.",
+    "Releasing a library-created block with the C allocator, or calling the destroy-all variant on a view bound to caller memory: heap corruption or an early free of the caller's buffer. Condition: the target distinguishes destroying a view from destroying the memory behind it.",
+    "Declaring the complex output view with nfft/2 bins, or reshaping it after creation: Nyquist is lost or the last bin is written out of range. Condition: the target trusts the view's declared length instead of the plan's.",
+    "Converting a signed length or index to the target's unsigned type before validation: a negative or oversized value wraps into a huge request, so the layer crashes or allocates wildly instead of returning its documented rejection.",
+    "Cleaning up a partially constructed plan by calling library destructors on handles whose creation failed: the library's error handler aborts or flags an invalid object where the layer promised a clean failure. Condition: creation failure is signalled by an invalid handle rather than a null one.",
+    "Linking both backends, because the source module and the ported module define the same entry points: duplicate definitions, or a build that silently keeps the source module and then pairs source-side freeing with a library-owned block.",
+    "Creating a temporary input view per call and returning early after a transform failure without releasing it: a per-frame leak that a single-call test never reveals. Condition: the layer turns the target transform's status into a failure return.",
+    "Passing one plan to two threads, or using it for input and output at once: the target plan holds internal state and a single output block, so results interleave or corrupt even though the source plan looked reentrant."
+  ],
+  "procedure": [
+    "Freeze the public contract first: configuration fields and their validation, output buffer sizes and caller ownership, report field meanings and the integer failure return. The plan's private state is the only thing allowed to change.",
+    "Decide the transform convention before writing the adapter: division policy, output length, bin order, and whether DC and Nyquist occupy separate elements. Record it as the plan's documented contract, because the adapter and every test depend on that decision.",
+    "Rebuild plan creation as one library create call plus the output-block allocation, keep the frame and per-bin arrays as plan-owned C buffers, and set the scale factor at creation.",
+    "Rewrite only the forward transform: materialize the input view, run the plan, copy bins in the target's order into the plan's per-bin arrays, and release the transient view before returning.",
+    "Rewrite destruction and the partial-construction path: release each library object once with its own destructor, free the C arrays, and on failure release only the objects that were actually created.",
+    "Swap the build inputs, link the target library and the math library, and confirm that a single implementation of every entry point is linked.",
+    "Re-run the unchanged public test, then add the scaling, layout, rejection-path, leak and plan-independence checks before any tuning."
+  ],
+  "verification": [
+    "Run the shipped public test unchanged: an impulse at one interior sample must give every bin a magnitude equal to the window coefficient at that sample within 1e-4, which fails if bin order or scaling is wrong.",
+    "Add a DC frame check: a unit constant frame must give magnitude 1.0 at bin 0 within tolerance and no detection from a uniformly scaled spectrum; this catches a normalized target transform.",
+    "Compare magnitudes bin by bin and flags element by element against the pre-migration build for fixed frames: magnitudes must agree within float round-off, and flags must agree except where a bin lies within that tolerance of the multiplier times the trailing mean; list such bins instead of treating them as regressions.",
+    "Run create, many process calls and destroy under an address sanitizer with leak detection: no per-call growth proves the transient view and other temporaries are released, and no invalid-free report proves library blocks go through their own destructor.",
+    "Exercise the rejection paths: too-small and non-power-of-two frame lengths, non-positive training length or multiplier, and a frame length different from the configured one must each return the documented failure and leave no state behind; force a plan-creation failure with an unsupported length and confirm a clean failure without an abort.",
+    "Check a synthetic two-tone frame: the reported peak bin equals the stronger tone's bin, the detection count covers exactly the bins above the threshold, and the reported floor equals the mean magnitude; this shows the report stage still consumes increasing natural bins.",
+    "Run two independent plans, one per thread, and compare outputs with a single-plan run: identical results show that no plan state is shared."
+  ],
+  "boundary": "Does not cover window coefficient derivation or the symmetric-versus-periodic window choice, the magnitude and trailing-mean gate arithmetic and its threshold policy, report aggregation, framing, overlap or resampling, algorithm-hint and multithreaded transform tuning, double-precision variants, or general build-system packaging beyond the include path, the archive link, the math library and a configure-time guard on the target root.",
+  "applicability": {
+    "constraints": [
+      "The target library must offer a real-to-complex forward plan with a create/destroy pair, a settable scale factor, and a complex-vector output of documented length.",
+      "A single-precision variant must exist; the public contract is fixed to 32-bit float frames and magnitudes.",
+      "Transform lengths stay even powers of two of at least 8 per the public contract, even where the target library accepts other lengths.",
+      "No caller-supplied work buffer is assumed; if the chosen target variant needs one, an extra per-plan allocation must be added.",
+      "An unscaled forward transform must be reachable through the API; otherwise magnitudes need an explicit multiplications by the frame length after the transform.",
+      "C99 toolchain with the target headers, its static or shared archive and the C math library; the target root must be supplied at configure time.",
+      "One plan per thread, no concurrent use, and no in-place real-to-complex transform."
+    ]
+  }
+}
+
+```
+
+
+
+## Must change
+
+
+
+1. field: `mapping_rules`
+   quote: Resource ownership, source convention: the source scratch was a plain float array sized a little beyond nfft, allocated with the C allocator, owned by the plan and released with the C allocator; when the target returns the transform result in a library-created complex block, that block is owned by the library and must be released by the library's matching block destructor, never by the C allocator, while the frame and per-bin arrays that the source kept in plain floats stay C-allocated and C-freed. Applicability: the target allocates its own result block. Fallback: when the target writes into caller memory, keep C allocation and the C free.
+   instruction: State ownership by where the memory came from, not by who hands it to the transform. A bin block obtained from the library's block-creation routine is released only with the library's destroy-all-block variant, even when that view is passed to the transform by the caller; a view merely bound onto C-allocated caller memory is released with the view-only destructor and its C buffer stays C-freed. Replace the applicability line with that distinction and withdraw the fallback that makes 'the target writes into caller memory' a reason to C-allocate and C-free, because this target's transform writes into a caller-supplied view whose storage still came from the library allocator.
+2. field: `semantic_deltas`
+   quote: Scaling is named differently, a division flag versus a numeric scale factor. The wrong choice multiplies every magnitude by the frame length or divides it, which keeps the peak bin but moves the reported peak value, the reported floor, and every flag whose ratio to the trailing mean changes.
+   instruction: Keep the 'division flag versus numeric scale factor' delta but state its observable signature correctly: a constant scale error multiplies every magnitude by the same factor, so the reported peak and noise floor move by that factor while each bin's ratio to the trailing mean is preserved and detections and flags are unchanged. Say that flags can differ only from rounding near the comparison threshold, not from the scaling itself.
+3. field: `pitfalls`
+   quote: Leaving the target's default or normalizing scale factor: every magnitude is off by a constant factor, the reported peak and floor scale with it, and gate flags move only where the scaled ratio crosses the multiplier. Condition: the scale argument defaults to normalized output.
+   instruction: Correct the consequence and the condition: under a constant scale error flags and detections do not move at all, because the gate compares each magnitude against the same scaled multiple of a scaled trailing mean; the only observable symptoms are the reported peak and noise floor scaled by that constant. Also drop the claim that the factor has a default: in this migration the factor is an explicit plan-creation argument, with unity giving the unscaled forward, and the hazard is passing a normalizing factor rather than omitting one.
+4. field: `verification`
+   quote: Run the shipped public test unchanged: an impulse at one interior sample must give every bin a magnitude equal to the window coefficient at that sample within 1e-4, which fails if bin order or scaling is wrong.
+   instruction: Correct what this check can detect: a windowed impulse has the same magnitude in every bin, so the shipped test verifies scaling and gross bin-count errors but is invariant under any permutation of bins and under a sign change of the imaginary parts. State that bin order and bin layout must instead be verified by comparing a non-flat frame bin by bin against the pre-migration output.
+5. field: `verification`
+   quote: Add a DC frame check: a unit constant frame must give magnitude 1.0 at bin 0 within tolerance and no detection from a uniformly scaled spectrum; this catches a normalized target transform.
+   instruction: Correct the expected value and the entry point: the layer multiplies the frame by the analysis window before transforming, so a unit constant frame reaches the transform as the window itself and its DC magnitude is the window sum, not 1.0. If the check exercises the layer, state that expected window-sum magnitude (or compare against the pre-migration output for the same frame), and test the 'unscaled transform puts magnitude 1 at bin 0' property only at the transform boundary with an unwindowed constant input.
+6. field: `pitfalls`
+   quote: Applying the packed-layout indexing to a natural-order target: reading the imaginary part of bin k from index nfft-k of an interleaved array mirrors the imaginary parts and corrupts magnitudes everywhere except DC and Nyquist, which an impulse test that checks only real parts can still pass. Condition: the target already returns natural bins.
+   instruction: Correct the mechanism and its consequence: for a real frame the conjugate symmetry makes the value at the mirrored bin index the negation of the correct imaginary part, so reusing the packed index yields a conjugated bin set whose magnitudes, and therefore every flag and detection, are unchanged; what actually breaks is reading past the end of the nfft/2+1 block. Also drop the claim that the shipped test looks only at real parts, since it compares magnitudes, and name the check that does catch the mistake (a non-flat frame compared bin by bin including the imaginary parts).
+
+
+
+Repair `real-to-complex-fft-plan-and-bin-adapter-for-a-51087706` against this example; the pipeline keeps the component id. Write `manifest.json` with the revised component. The workspace stays read-only.

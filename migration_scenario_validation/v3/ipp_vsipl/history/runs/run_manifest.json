@@ -1,0 +1,13 @@
+{
+  "schema": "methodology-extraction-run-v1",
+  "history_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history",
+  "history_digest": "a2c12f7aacbddb6ba8a7c476cc50ffaeeea6df7cee5e3c8b58befaf85bce5de9",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "prompt_sha256": "9c79a552e84434fe83a966d616808927de4bcd49d1a499cf46fd20f65444de13",
+  "task_ids": [
+    "s1_radar_correlation",
+    "s2_spectral_gate",
+    "s3_channelizer"
+  ],
+  "status": "completed"
+}

@@ -71,13 +71,14 @@ def origin_system_prompt(task: Dict[str, Any]) -> str:
     if scenario == "ipp_to_vsipl":
         target = (
             "You are a software engineer migrating a C/C++ component from Intel IPP to VSIPL (jvsip).\n"
-            "The submitted implementation must use the VSIPL C API and link against libvsip."
+            "The submitted implementation must use the VSIPL C API and link against libvsip; "
+            "a portable fallback is not accepted."
         )
     elif scenario == "windows_to_kylin":
         target = (
             "You are a software engineer porting one component to Kylin V10 SP3 with GCC 13.\n"
             "The submitted implementation must use the target Kylin/Linux platform APIs required "
-            "by the task."
+            "by the task; a portable Windows-independent fallback is not accepted."
         )
     else:
         target = "Use the target platform required by the task."

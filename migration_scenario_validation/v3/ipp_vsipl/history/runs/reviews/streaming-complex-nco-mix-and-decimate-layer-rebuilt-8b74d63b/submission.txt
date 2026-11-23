@@ -1,0 +1,7 @@
+Verdict: **rework**.
+
+I checked every rule, delta, pitfall and check against the visible before/after code. The card is mostly well grounded — split-plane ABI decision, per-sample complex multiply in the wrapped NCO segment loop, dropping the interleaved scratch (with the leftover-field destroy hazard behind a zero-initialized state), the coefficient-orientation decision (source reverses taps at create and advances forward; target keeps natural order and walks history backwards), the owner/copy/free contract, the report-field gap on failed view creation, and the build-selection hazard all match the migration.
+
+One claim is technically wrong and it is reused as the rationale of a mapping rule and of a pitfall: a conjugating inner product does not merely flip the sign of the imaginary output component. Conjugating one operand flips the cross term in *both* components (imaginary-coefficient × imaginary-sample in the real part, imaginary-coefficient × real-sample in the imaginary part), so the result cannot be repaired by negating the imaginary output. `must_change` lists the three verbatim statements (in `mapping_rules`, `semantic_deltas`, `pitfalls`) with corrected, project-neutral guidance.
+
+Manifest validated and submitted.

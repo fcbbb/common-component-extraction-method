@@ -1,0 +1,12 @@
+The component is written and validated.
+
+**Card summary** — one transformation covering the whole rebuilt layer: a streaming complex NCO mix-and-decimate channelizer plus per-block report, moved from a block-kernel vendor DSP primitive library (interleaved complex buffers, status-returning kernels, vendor heap) onto a view-based vector signal-processing API (complex struct scalars, created views, magnitude/max reductions).
+
+Key recorded decisions:
+- **Layout**: keep the ABI's split real/imaginary planes; build complex scalars only where a per-sample call needs one; drop the source's interleaved scratch and its lifetime bookkeeping. Fallback to a contiguous complex view when a target routine demands interleaved data.
+- **Arithmetic**: segment loop bounded by the coefficient-table length with the phase carried in state (block-size-independent output); plain accumulation loop wherever the target's inner product conjugates an operand.
+- **Orientation**: natural-order coefficients with backward history walk instead of a reversed coefficient copy plus forward dot product — one orientation decision per layer, pinned to a direct-form reference.
+- **Ownership**: module allocates state/history/scratch, copies caller tables at create, releases everything on every failure branch; target view storage is owned by the view and freed only through its destroy call.
+- **Errors**: no target per-call error channel, so argument guards and NULL checks on created views stay in the module.
+
+Also captured: last-bit re-association deltas, peak tie-breaking, alignment loss versus the vendor allocator, unset report fields on the failure branch, per-call view leaks, plane/interleaved stride confusion, and backend-define build drift — with direct-form, block-split, report, failure-path and sanitizer checks that an unprivileged process can run.

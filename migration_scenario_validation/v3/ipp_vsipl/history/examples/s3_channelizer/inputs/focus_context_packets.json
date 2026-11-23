@@ -1,0 +1,604 @@
+{
+  "schema": "migration-focus-context-packets-v1",
+  "task_blind": true,
+  "task_information_used": false,
+  "task_id": "s3_channelizer",
+  "scenario": "ipp_to_vsipl",
+  "language": "cpp",
+  "backend_id": "cpp@1",
+  "source": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s3_channelizer/repo",
+  "source_sha256": "b035370a84fd5d31d683b3374a3a3222ed8eb988a4cb1ab46ff6b2f5442c27b1",
+  "workspace_sha256": "ec099106ae3f1b50bbd09826ecb045a0ce30114a9f69c9191ebbd1b434c6c05f",
+  "workspace_files": [
+    "fir_vsipl.c",
+    "include/channelizer.h",
+    "mixer_vsipl.c",
+    "src/channelizer_internal.h",
+    "src/fir_ipp.c",
+    "src/mixer_ipp.c",
+    "src/state_ipp.c",
+    "src/stats_ipp.c",
+    "state_vsipl.c",
+    "stats_vsipl.c",
+    "test/public_test.c"
+  ],
+  "packet_config": {
+    "extensions": [
+      ".c",
+      ".cc",
+      ".cpp",
+      ".cxx",
+      ".h",
+      ".hh",
+      ".hpp",
+      ".hxx"
+    ],
+    "excluded_directory_names": [
+      ".git",
+      "__pycache__"
+    ],
+    "excluded_filenames": [
+      "test_*.py",
+      "*_test.py"
+    ],
+    "max_file_bytes": 8388608,
+    "max_files_per_packet": 1000000,
+    "max_units_per_packet": 1000000
+  },
+  "source_file_count": 11,
+  "source_unit_count": 27,
+  "packet_count": 1,
+  "gaps": [],
+  "packets": [
+    {
+      "packet_id": "history_s3_channelizer",
+      "candidate_ids": [
+        "history:s3_channelizer"
+      ],
+      "candidate_ranks": [
+        1
+      ],
+      "focus_groups": [
+        {
+          "candidate_id": "history:s3_channelizer",
+          "candidate_rank": 1,
+          "focus_units": [
+            {
+              "file_id": "fir_vsipl.c",
+              "unit_id": "7a099e2c822f091c1af64c5e832fc34d99cb620c8836bea091a7ee9d3f9d9a0b",
+              "unit_key": "7a099e2c822f091c1af64c5e832fc34d99cb620c8836bea091a7ee9d3f9d9a0b",
+              "kind": "function",
+              "qualified_name": "wc_process",
+              "signature": "int (int *, const float *, const float *, int, float *, float *, int *) wc_process(int *, const float *, const float *, int, float *, float *, int *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 8,
+              "line_end": 55
+            },
+            {
+              "file_id": "mixer_vsipl.c",
+              "unit_id": "3331e2fa7794b3fa419ff9eca6261d970bf8aaa4f46af2f46a0bcb9bac92a907",
+              "unit_key": "3331e2fa7794b3fa419ff9eca6261d970bf8aaa4f46af2f46a0bcb9bac92a907",
+              "kind": "function",
+              "qualified_name": "wc_mix_block",
+              "signature": "int (int *, const float *, const float *, int) wc_mix_block(int *, const float *, const float *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 6,
+              "line_end": 36
+            },
+            {
+              "file_id": "state_vsipl.c",
+              "unit_id": "3282afc22c63aecde4334b8d7abf18a4371958d5dc4bf0142a25a4f42b41a641",
+              "unit_key": "3282afc22c63aecde4334b8d7abf18a4371958d5dc4bf0142a25a4f42b41a641",
+              "kind": "function",
+              "qualified_name": "wc_reserve_history",
+              "signature": "int (int *, int) wc_reserve_history(int *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 7,
+              "line_end": 32
+            },
+            {
+              "file_id": "state_vsipl.c",
+              "unit_id": "b2ef1e8dcf5e55a356969f0396cf66a46932970bc52b8ea90f759368edfa6b53",
+              "unit_key": "b2ef1e8dcf5e55a356969f0396cf66a46932970bc52b8ea90f759368edfa6b53",
+              "kind": "function",
+              "qualified_name": "wc_reserve_mix",
+              "signature": "int (int *, int) wc_reserve_mix(int *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 34,
+              "line_end": 52
+            },
+            {
+              "file_id": "state_vsipl.c",
+              "unit_id": "70614a30c796c845d32219918e1e9c6aae1cd0e19a426ba440508d18dc507c16",
+              "unit_key": "70614a30c796c845d32219918e1e9c6aae1cd0e19a426ba440508d18dc507c16",
+              "kind": "function",
+              "qualified_name": "wc_create",
+              "signature": "int *(const int *, const float *, const float *, const float *, const float *) wc_create(const int *, const float *, const float *, const float *, const float *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 54,
+              "line_end": 83
+            },
+            {
+              "file_id": "state_vsipl.c",
+              "unit_id": "a365f038baa3b4bb0f892129411243afcd7e7449170a8ca52525b774845f56e5",
+              "unit_key": "a365f038baa3b4bb0f892129411243afcd7e7449170a8ca52525b774845f56e5",
+              "kind": "function",
+              "qualified_name": "wc_destroy",
+              "signature": "void (int *) wc_destroy(int *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 85,
+              "line_end": 99
+            },
+            {
+              "file_id": "stats_vsipl.c",
+              "unit_id": "60fa45842e4c516c7b7e1db741b5516395fc0c5321e694f0aede8c55192fe83c",
+              "unit_key": "60fa45842e4c516c7b7e1db741b5516395fc0c5321e694f0aede8c55192fe83c",
+              "kind": "function",
+              "qualified_name": "wc_fill_report",
+              "signature": "void (const float *, const float *, int, int *) wc_fill_report(const float *, const float *, int, int *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 8,
+              "line_end": 37
+            }
+          ],
+          "seed_evidence": [
+            {
+              "file_id": "fir_vsipl.c",
+              "line_start": 1,
+              "line_end": 55
+            },
+            {
+              "file_id": "mixer_vsipl.c",
+              "line_start": 1,
+              "line_end": 36
+            },
+            {
+              "file_id": "state_vsipl.c",
+              "line_start": 1,
+              "line_end": 99
+            },
+            {
+              "file_id": "stats_vsipl.c",
+              "line_start": 1,
+              "line_end": 37
+            }
+          ],
+          "candidate_unit_count": 7,
+          "expanded_unit_count": 0
+        }
+      ],
+      "focus_units": [
+        {
+          "file_id": "fir_vsipl.c",
+          "unit_id": "7a099e2c822f091c1af64c5e832fc34d99cb620c8836bea091a7ee9d3f9d9a0b",
+          "unit_key": "7a099e2c822f091c1af64c5e832fc34d99cb620c8836bea091a7ee9d3f9d9a0b",
+          "kind": "function",
+          "qualified_name": "wc_process",
+          "signature": "int (int *, const float *, const float *, int, float *, float *, int *) wc_process(int *, const float *, const float *, int, float *, float *, int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 8,
+          "line_end": 55
+        },
+        {
+          "file_id": "mixer_vsipl.c",
+          "unit_id": "3331e2fa7794b3fa419ff9eca6261d970bf8aaa4f46af2f46a0bcb9bac92a907",
+          "unit_key": "3331e2fa7794b3fa419ff9eca6261d970bf8aaa4f46af2f46a0bcb9bac92a907",
+          "kind": "function",
+          "qualified_name": "wc_mix_block",
+          "signature": "int (int *, const float *, const float *, int) wc_mix_block(int *, const float *, const float *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 6,
+          "line_end": 36
+        },
+        {
+          "file_id": "state_vsipl.c",
+          "unit_id": "3282afc22c63aecde4334b8d7abf18a4371958d5dc4bf0142a25a4f42b41a641",
+          "unit_key": "3282afc22c63aecde4334b8d7abf18a4371958d5dc4bf0142a25a4f42b41a641",
+          "kind": "function",
+          "qualified_name": "wc_reserve_history",
+          "signature": "int (int *, int) wc_reserve_history(int *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 7,
+          "line_end": 32
+        },
+        {
+          "file_id": "state_vsipl.c",
+          "unit_id": "b2ef1e8dcf5e55a356969f0396cf66a46932970bc52b8ea90f759368edfa6b53",
+          "unit_key": "b2ef1e8dcf5e55a356969f0396cf66a46932970bc52b8ea90f759368edfa6b53",
+          "kind": "function",
+          "qualified_name": "wc_reserve_mix",
+          "signature": "int (int *, int) wc_reserve_mix(int *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 34,
+          "line_end": 52
+        },
+        {
+          "file_id": "state_vsipl.c",
+          "unit_id": "70614a30c796c845d32219918e1e9c6aae1cd0e19a426ba440508d18dc507c16",
+          "unit_key": "70614a30c796c845d32219918e1e9c6aae1cd0e19a426ba440508d18dc507c16",
+          "kind": "function",
+          "qualified_name": "wc_create",
+          "signature": "int *(const int *, const float *, const float *, const float *, const float *) wc_create(const int *, const float *, const float *, const float *, const float *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 54,
+          "line_end": 83
+        },
+        {
+          "file_id": "state_vsipl.c",
+          "unit_id": "a365f038baa3b4bb0f892129411243afcd7e7449170a8ca52525b774845f56e5",
+          "unit_key": "a365f038baa3b4bb0f892129411243afcd7e7449170a8ca52525b774845f56e5",
+          "kind": "function",
+          "qualified_name": "wc_destroy",
+          "signature": "void (int *) wc_destroy(int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 85,
+          "line_end": 99
+        },
+        {
+          "file_id": "stats_vsipl.c",
+          "unit_id": "60fa45842e4c516c7b7e1db741b5516395fc0c5321e694f0aede8c55192fe83c",
+          "unit_key": "60fa45842e4c516c7b7e1db741b5516395fc0c5321e694f0aede8c55192fe83c",
+          "kind": "function",
+          "qualified_name": "wc_fill_report",
+          "signature": "void (const float *, const float *, int, int *) wc_fill_report(const float *, const float *, int, int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 8,
+          "line_end": 37
+        }
+      ],
+      "context_units": [
+        {
+          "file_id": "include/channelizer.h",
+          "unit_id": "8a8710308ed88aca63f072025a0c6f5080f6a83d141b26c441b24a8b410ef2ab",
+          "unit_key": "8a8710308ed88aca63f072025a0c6f5080f6a83d141b26c441b24a8b410ef2ab",
+          "kind": "struct",
+          "qualified_name": "wc_config",
+          "signature": "wc_config wc_config",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 24,
+          "line_end": 28
+        },
+        {
+          "file_id": "include/channelizer.h",
+          "unit_id": "989f29640bf6378e7c2f50d5f8024def7efb4e7cdbd65553e8e0aec272c03c20",
+          "unit_key": "989f29640bf6378e7c2f50d5f8024def7efb4e7cdbd65553e8e0aec272c03c20",
+          "kind": "struct",
+          "qualified_name": "wc_report",
+          "signature": "wc_report wc_report",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 30,
+          "line_end": 34
+        },
+        {
+          "file_id": "include/channelizer.h",
+          "unit_id": "7592266609a41def38931273395c915af43a8a39c8dc012157ce465da9bdb017",
+          "unit_key": "7592266609a41def38931273395c915af43a8a39c8dc012157ce465da9bdb017",
+          "kind": "function",
+          "qualified_name": "wc_create",
+          "signature": "wc_state *(const wc_config *, const float *, const float *, const float *, const float *) wc_create(const wc_config *, const float *, const float *, const float *, const float *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 36,
+          "line_end": 38
+        },
+        {
+          "file_id": "include/channelizer.h",
+          "unit_id": "6a6824def5e298db6891fff53938b2f13f895f698da24fa8191eaf79ece90dd3",
+          "unit_key": "6a6824def5e298db6891fff53938b2f13f895f698da24fa8191eaf79ece90dd3",
+          "kind": "function",
+          "qualified_name": "wc_destroy",
+          "signature": "void (wc_state *) wc_destroy(wc_state *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 39,
+          "line_end": 39
+        },
+        {
+          "file_id": "include/channelizer.h",
+          "unit_id": "35cc8998a6e0edde701b41743a8f13a86e9b955b056fe952b6ef3bc98ea9cc91",
+          "unit_key": "35cc8998a6e0edde701b41743a8f13a86e9b955b056fe952b6ef3bc98ea9cc91",
+          "kind": "function",
+          "qualified_name": "wc_process",
+          "signature": "int (wc_state *, const float *, const float *, int, float *, float *, wc_report *) wc_process(wc_state *, const float *, const float *, int, float *, float *, wc_report *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 44,
+          "line_end": 46
+        },
+        {
+          "file_id": "src/channelizer_internal.h",
+          "unit_id": "17f5fa7b419cb87e918599e5d8b9a25dcd0297027ab55827083aa44412600656",
+          "unit_key": "17f5fa7b419cb87e918599e5d8b9a25dcd0297027ab55827083aa44412600656",
+          "kind": "struct",
+          "qualified_name": "wc_state",
+          "signature": "wc_state wc_state",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 6,
+          "line_end": 32
+        },
+        {
+          "file_id": "src/channelizer_internal.h",
+          "unit_id": "3d4c4180cdb3621be4f80dbc06b30ac7bb25e1b7c3cd9b06d21c08efe62ed93b",
+          "unit_key": "3d4c4180cdb3621be4f80dbc06b30ac7bb25e1b7c3cd9b06d21c08efe62ed93b",
+          "kind": "function",
+          "qualified_name": "wc_mix_block",
+          "signature": "int (wc_state *, const float *, const float *, int) wc_mix_block(wc_state *, const float *, const float *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 34,
+          "line_end": 34
+        },
+        {
+          "file_id": "src/channelizer_internal.h",
+          "unit_id": "d5ebf90f42dee5de8ba5170341a17f9da2db6452bb02bf05fca8c6149197cf7c",
+          "unit_key": "d5ebf90f42dee5de8ba5170341a17f9da2db6452bb02bf05fca8c6149197cf7c",
+          "kind": "function",
+          "qualified_name": "wc_reserve_history",
+          "signature": "int (wc_state *, int) wc_reserve_history(wc_state *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 35,
+          "line_end": 35
+        },
+        {
+          "file_id": "src/channelizer_internal.h",
+          "unit_id": "70968979eee67fa7d36a53d5675ddb8eb0d5241c5aaae65bacd282884585ffd2",
+          "unit_key": "70968979eee67fa7d36a53d5675ddb8eb0d5241c5aaae65bacd282884585ffd2",
+          "kind": "function",
+          "qualified_name": "wc_reserve_mix",
+          "signature": "int (wc_state *, int) wc_reserve_mix(wc_state *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 36,
+          "line_end": 36
+        },
+        {
+          "file_id": "src/channelizer_internal.h",
+          "unit_id": "18efaaedc3aa60290f9a7d75f9b39a8abddd58937aecb746838e7bad24004087",
+          "unit_key": "18efaaedc3aa60290f9a7d75f9b39a8abddd58937aecb746838e7bad24004087",
+          "kind": "function",
+          "qualified_name": "wc_fill_report",
+          "signature": "void (const float *, const float *, int, wc_report *) wc_fill_report(const float *, const float *, int, wc_report *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 37,
+          "line_end": 37
+        },
+        {
+          "file_id": "src/fir_ipp.c",
+          "unit_id": "3fa15dcd911727b0d3a17d8866ae9debe54bcb806912289989763919fce29ceb",
+          "unit_key": "3fa15dcd911727b0d3a17d8866ae9debe54bcb806912289989763919fce29ceb",
+          "kind": "function",
+          "qualified_name": "wc_process",
+          "signature": "int (wc_state *, const float *, const float *, int, float *, float *, wc_report *) wc_process(wc_state *, const float *, const float *, int, float *, float *, wc_report *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 8,
+          "line_end": 56
+        },
+        {
+          "file_id": "src/mixer_ipp.c",
+          "unit_id": "f8d21fa90d7a235ed55b23912a484e8d7acad0a80e1ce674ec1d84fd2b9d2fd6",
+          "unit_key": "f8d21fa90d7a235ed55b23912a484e8d7acad0a80e1ce674ec1d84fd2b9d2fd6",
+          "kind": "function",
+          "qualified_name": "wc_mix_block",
+          "signature": "int (wc_state *, const float *, const float *, int) wc_mix_block(wc_state *, const float *, const float *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 6,
+          "line_end": 37
+        },
+        {
+          "file_id": "src/state_ipp.c",
+          "unit_id": "4893e90efad269a76b6798c78cb4f82ddef37de529905d04c9375f6a73b16035",
+          "unit_key": "4893e90efad269a76b6798c78cb4f82ddef37de529905d04c9375f6a73b16035",
+          "kind": "function",
+          "qualified_name": "wc_alloc",
+          "signature": "void *(size_t) wc_alloc(size_t)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 8,
+          "line_end": 12
+        },
+        {
+          "file_id": "src/state_ipp.c",
+          "unit_id": "b599867fab34aac52bff4d25967eb65bf1677c982aacdae95a663abcb8cad7fd",
+          "unit_key": "b599867fab34aac52bff4d25967eb65bf1677c982aacdae95a663abcb8cad7fd",
+          "kind": "function",
+          "qualified_name": "wc_reserve_history",
+          "signature": "int (wc_state *, int) wc_reserve_history(wc_state *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 14,
+          "line_end": 40
+        },
+        {
+          "file_id": "src/state_ipp.c",
+          "unit_id": "f24be2d80270f36aea21099088e653bb9e3dc1f34b97dab1b576df145f022ccf",
+          "unit_key": "f24be2d80270f36aea21099088e653bb9e3dc1f34b97dab1b576df145f022ccf",
+          "kind": "function",
+          "qualified_name": "wc_reserve_mix",
+          "signature": "int (wc_state *, int) wc_reserve_mix(wc_state *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 42,
+          "line_end": 65
+        },
+        {
+          "file_id": "src/state_ipp.c",
+          "unit_id": "10adbdf4aa6b20ff86fa767fa66bc8cb64f4663523153bc2aee6b0099e1f48ca",
+          "unit_key": "10adbdf4aa6b20ff86fa767fa66bc8cb64f4663523153bc2aee6b0099e1f48ca",
+          "kind": "function",
+          "qualified_name": "wc_create",
+          "signature": "wc_state *(const wc_config *, const float *, const float *, const float *, const float *) wc_create(const wc_config *, const float *, const float *, const float *, const float *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 67,
+          "line_end": 108
+        },
+        {
+          "file_id": "src/state_ipp.c",
+          "unit_id": "7665e5a24f6b1cae192d4e9562579976b8a04085db78fd32115975b3d2958af8",
+          "unit_key": "7665e5a24f6b1cae192d4e9562579976b8a04085db78fd32115975b3d2958af8",
+          "kind": "function",
+          "qualified_name": "wc_destroy",
+          "signature": "void (wc_state *) wc_destroy(wc_state *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 110,
+          "line_end": 124
+        },
+        {
+          "file_id": "src/stats_ipp.c",
+          "unit_id": "7a825803660d7408e9d580add48bf32cc98392efa65a93d519e6ee897221e782",
+          "unit_key": "7a825803660d7408e9d580add48bf32cc98392efa65a93d519e6ee897221e782",
+          "kind": "function",
+          "qualified_name": "wc_fill_report",
+          "signature": "void (const float *, const float *, int, wc_report *) wc_fill_report(const float *, const float *, int, wc_report *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 6,
+          "line_end": 32
+        },
+        {
+          "file_id": "test/public_test.c",
+          "unit_id": "84cf4119e1676cba73673f33368384abd7026ff7a20cc93d834075c54f9e2fe8",
+          "unit_key": "84cf4119e1676cba73673f33368384abd7026ff7a20cc93d834075c54f9e2fe8",
+          "kind": "function",
+          "qualified_name": "ref",
+          "signature": "void (const float *, const float *, const float *, const float *, const float *, const float *, int, int, int, int, float *, float *, int *) ref(const float *, const float *, const float *, const float *, const float *, const float *, int, int, int, int, float *, float *, int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 7,
+          "line_end": 39
+        },
+        {
+          "file_id": "test/public_test.c",
+          "unit_id": "9ea28765eaa737881240d3c9b6688e9a76c1786d0628428a69c16e9332f6cdf2",
+          "unit_key": "9ea28765eaa737881240d3c9b6688e9a76c1786d0628428a69c16e9332f6cdf2",
+          "kind": "function",
+          "qualified_name": "main",
+          "signature": "int () main()",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 41,
+          "line_end": 77
+        },
+        {
+          "file_id": "CMakeLists.txt",
+          "unit_id": "CMakeLists.txt#file",
+          "unit_key": "file:CMakeLists.txt",
+          "kind": "file",
+          "qualified_name": "CMakeLists.txt",
+          "signature": "",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 1,
+          "line_end": 58,
+          "fallback": true,
+          "fallback_reason": "no source units"
+        }
+      ],
+      "focus_files": [
+        "fir_vsipl.c",
+        "mixer_vsipl.c",
+        "state_vsipl.c",
+        "stats_vsipl.c"
+      ],
+      "context_files": [
+        "CMakeLists.txt",
+        "include/channelizer.h",
+        "src/channelizer_internal.h",
+        "src/fir_ipp.c",
+        "src/mixer_ipp.c",
+        "src/state_ipp.c",
+        "src/stats_ipp.c",
+        "test/public_test.c"
+      ],
+      "visible_files": [
+        "CMakeLists.txt",
+        "fir_vsipl.c",
+        "include/channelizer.h",
+        "mixer_vsipl.c",
+        "src/channelizer_internal.h",
+        "src/fir_ipp.c",
+        "src/mixer_ipp.c",
+        "src/state_ipp.c",
+        "src/stats_ipp.c",
+        "state_vsipl.c",
+        "stats_vsipl.c",
+        "test/public_test.c"
+      ],
+      "visible_unit_count": 28,
+      "focus_unit_count": 7,
+      "context_unit_count": 21,
+      "fallback_file_count": 1,
+      "role": "history",
+      "example_id": "s3_channelizer"
+    }
+  ],
+  "history": {
+    "schema": "migration-history-packet-v1",
+    "example_id": "s3_channelizer",
+    "capability": "communications/channelizer",
+    "workspace": "repo",
+    "roles": {
+      "before": [
+        "src/state_ipp.c",
+        "src/mixer_ipp.c",
+        "src/fir_ipp.c",
+        "src/stats_ipp.c",
+        "src/channelizer_internal.h",
+        "include/channelizer.h",
+        "CMakeLists.txt"
+      ],
+      "after": [
+        "state_vsipl.c",
+        "mixer_vsipl.c",
+        "fir_vsipl.c",
+        "stats_vsipl.c"
+      ],
+      "context": [],
+      "tests": [
+        "test/public_test.c"
+      ]
+    },
+    "focus_role": "after",
+    "fallback_files": [
+      "CMakeLists.txt"
+    ],
+    "focus_files": [
+      "fir_vsipl.c",
+      "mixer_vsipl.c",
+      "state_vsipl.c",
+      "stats_vsipl.c"
+    ],
+    "context_files": [
+      "CMakeLists.txt",
+      "include/channelizer.h",
+      "src/channelizer_internal.h",
+      "src/fir_ipp.c",
+      "src/mixer_ipp.c",
+      "src/state_ipp.c",
+      "src/stats_ipp.c",
+      "test/public_test.c"
+    ]
+  }
+}

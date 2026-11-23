@@ -1,0 +1,95 @@
+{
+  "schema": "migration-history-corpus-v1",
+  "generated_by": "tools/build_history_corpus.py",
+  "generated_at": "2026-11-23T13:42:20.038865+00:00",
+  "scenario": "ipp_to_vsipl",
+  "library_id": "ipp-to-vsipl-v3-self-built",
+  "language": "cpp",
+  "backend_id": "cpp@1",
+  "policy": {
+    "library_source_repos": [
+      "radar-correlation-v1",
+      "spectral-gate-v1",
+      "channelizer-v1"
+    ],
+    "held_out_repos": []
+  },
+  "spec": "spec.yaml",
+  "spec_sha256": "9a45ed9ded470ec508fd83fbf10754d0e94de9d89a27ab7251211bc59a0eeaa9",
+  "examples": [
+    {
+      "task_id": "s1_radar_correlation",
+      "capability": "radar/fft-correlation",
+      "repo": "synthetic://radar-correlation-v1",
+      "commit": "synthetic-radar-correlation-v1",
+      "before_files": 7,
+      "after_files": 4,
+      "context_files": 0,
+      "test_files": 1,
+      "packet": {
+        "path": "inputs/focus_context_packets.json",
+        "sha256": "c81c04bdd73f504932681c15d4c72108d539da2b701e855d23dae1ed6693ca0c",
+        "packet_id": "history_s1_radar_correlation",
+        "focus_file_count": 4,
+        "context_file_count": 8,
+        "focus_unit_count": 9,
+        "context_unit_count": 29,
+        "source_unit_count": 37,
+        "fallback_file_count": 1,
+        "gaps": 0
+      }
+    },
+    {
+      "task_id": "s2_spectral_gate",
+      "capability": "spectral/real-fft-gate",
+      "repo": "synthetic://spectral-gate-v1",
+      "commit": "synthetic-spectral-gate-v1",
+      "before_files": 7,
+      "after_files": 4,
+      "context_files": 0,
+      "test_files": 1,
+      "packet": {
+        "path": "inputs/focus_context_packets.json",
+        "sha256": "f6814cc8ac88437e670e614df8d7e262383b93e8ea1a1dbef3ceca6d03a8601e",
+        "packet_id": "history_s2_spectral_gate",
+        "focus_file_count": 4,
+        "context_file_count": 8,
+        "focus_unit_count": 8,
+        "context_unit_count": 24,
+        "source_unit_count": 31,
+        "fallback_file_count": 1,
+        "gaps": 0
+      }
+    },
+    {
+      "task_id": "s3_channelizer",
+      "capability": "communications/channelizer",
+      "repo": "synthetic://channelizer-v1",
+      "commit": "synthetic-channelizer-v1",
+      "before_files": 7,
+      "after_files": 4,
+      "context_files": 0,
+      "test_files": 1,
+      "packet": {
+        "path": "inputs/focus_context_packets.json",
+        "sha256": "0b32cf44ae59490074d55f962f03f12e56e986e2e2927121edb4d00f5eadaa48",
+        "packet_id": "history_s3_channelizer",
+        "focus_file_count": 4,
+        "context_file_count": 8,
+        "focus_unit_count": 7,
+        "context_unit_count": 21,
+        "source_unit_count": 27,
+        "fallback_file_count": 1,
+        "gaps": 0
+      }
+    }
+  ],
+  "totals": {
+    "examples": 3,
+    "focus_files": 12,
+    "context_files": 24,
+    "focus_units": 24,
+    "context_units": 74,
+    "fallback_files": 3
+  }
+}

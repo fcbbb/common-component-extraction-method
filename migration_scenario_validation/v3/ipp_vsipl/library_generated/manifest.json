@@ -1,0 +1,37 @@
+{
+  "schema_version": "methodology-1",
+  "kind": "methodology",
+  "library_id": "ipp-to-vsipl-v3-self-built",
+  "version": 1,
+  "generated_by": "component_method.component_build.methodology.publish",
+  "generated_at": "2026-11-23T14:18:49.001007+00:00",
+  "component_count": 3,
+  "components_file": "INDEX.md",
+  "selection_file": "SELECTION.md",
+  "components": [
+    {
+      "bundle_id": "real-to-complex-fft-plan-and-bin-adapter-for-a-51087706",
+      "title": "Real-to-complex FFT plan and bin adapter for a streaming spectral gate",
+      "capability": "other",
+      "library": "components/real-to-complex-fft-plan-and-bin-adapter-for-a-51087706/README.md",
+      "readme": "components/real-to-complex-fft-plan-and-bin-adapter-for-a-51087706/README.md",
+      "metadata": "components/real-to-complex-fft-plan-and-bin-adapter-for-a-51087706/component.json"
+    },
+    {
+      "bundle_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+      "title": "split-complex FFT matched-filter correlation layer rebuilt on an opaque-plan array-view signal API",
+      "capability": "other",
+      "library": "components/split-complex-fft-matched-filter-correlation-layer-d152355a/README.md",
+      "readme": "components/split-complex-fft-matched-filter-correlation-layer-d152355a/README.md",
+      "metadata": "components/split-complex-fft-matched-filter-correlation-layer-d152355a/component.json"
+    },
+    {
+      "bundle_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+      "title": "Streaming complex NCO mix-and-decimate layer rebuilt from block vendor kernels onto a view-based vector signal-processing API",
+      "capability": "other",
+      "library": "components/streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b/README.md",
+      "readme": "components/streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b/README.md",
+      "metadata": "components/streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b/component.json"
+    }
+  ]
+}

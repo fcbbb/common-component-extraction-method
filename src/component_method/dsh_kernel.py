@@ -821,6 +821,7 @@ def _environment(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[s
         "COMPONENT_DSH_COVERAGE_PATH",
         "COMPONENT_DSH_BUNDLE_DESTINATION",
         "COMPONENT_DSH_STAGE_RUNTIME",
+        "COMPONENT_METHOD_RELEASE_ROOT",
         "COMPONENT_DSH_HOST_WORKSPACE",
         "COMPONENT_DSH_AGENT_WORKSPACE",
         "DOCKER_HOST",

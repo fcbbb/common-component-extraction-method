@@ -1509,6 +1509,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                         # Use the same budget as the outer workflow agent.
                         "COMPONENT_DSH_MAX_OUTPUT_TOKENS": str(args.max_output_tokens),
                     }
+                    release_root = os.environ.get("COMPONENT_METHOD_RELEASE_ROOT", "")
+                    if release_root:
+                        # Nested stage subprocesses import batch_common, which
+                        # resolves release_root() before reading any task
+                        # config.  Pass it through when the caller configured
+                        # a local release layout.
+                        method_environment["COMPONENT_METHOD_RELEASE_ROOT"] = release_root
                     if not remote_host:
                         # The agent's shell sees the attempt workspace at
                         # /workspace; report workspace paths in that namespace

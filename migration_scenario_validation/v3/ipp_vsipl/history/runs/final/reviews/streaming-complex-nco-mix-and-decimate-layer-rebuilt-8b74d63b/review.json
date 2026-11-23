@@ -1,0 +1,35 @@
+{
+  "schema": "methodology-finalize-v2",
+  "transformation_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+  "example_id": "s3_channelizer",
+  "entry_digest": "346459b4c13d4025dfb7338e372ad0f91ec3a5c8180a6e43fe51bd3139d98779",
+  "input_digest": "661515df4b94c34a5411d8f18c5d63818e4422ec44b52ce59075bfa05eacacf9",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "verdict": "publish",
+  "finalized": true,
+  "must_change": [
+    {
+      "field": "mapping_rules",
+      "quote": "Vendor real dot product over a contiguous run -> explicit accumulation loop over the same run, in the same element type, with the same rounding order. Applies whenever the target's only inner-product routine conjugates an operand, because a conjugated product changes the sign of the imaginary part of a correlation; use a target inner-product routine only after confirming it does not conjugate, and otherwise keep the loop.",
+      "instruction": "Keep the mapping (an explicit accumulation loop replacing the vendor run-based dot product) but state the applicability reason correctly: an inner product that conjugates one operand computes a different product from the plain correlation, because the sign of the cross term flips in both output components - the coefficient-imaginary times input-imaginary term changes sign in the real component and the coefficient-imaginary times input-real term changes sign in the imaginary component - so the result is a plausible-looking but wrong filter rather than a simple sign error on one component. The decision to keep the loop unless the target offers a non-conjugating inner product is right and should stay."
+    },
+    {
+      "field": "semantic_deltas",
+      "quote": "Conjugation: a target inner product that conjugates one operand is not interchangeable with a plain correlation, and using it flips the sign of the imaginary component while leaving the real component correct, which reads as a plausible but wrong filter.",
+      "instruction": "Correct the symptom: conjugating one operand of a complex correlation flips the sign of the cross term in both components, so neither output plane is correct - the real component gains the product of the two imaginary parts instead of subtracting it, and the imaginary component loses the imaginary-coefficient times real-sample term instead of adding it. Say that the error is not observable as a single negated component, so it cannot be repaired by negating the imaginary output and must be caught by comparing both planes against the documented complex-multiply formula with asymmetric complex coefficients."
+    },
+    {
+      "field": "pitfalls",
+      "quote": "Conjugate inner product substituted for the plain dot product: the imaginary output changes sign or is built from the wrong cross term, which usually happens when the plane pairings in the accumulation loop are reordered. Check the sign on a known asymmetric coefficient pair.",
+      "instruction": "Separate the two distinct failure modes and describe each by its actual effect: substituting a conjugating inner product flips the sign of the cross term in both output components, while swapping the pairings of the two planes in the accumulation produces its own wrong cross terms; do not present the conjugate defect as a negated imaginary output. Keep the concrete check - an asymmetric complex coefficient pair whose two planes and both output components are compared against the documented complex-multiply formula."
+    }
+  ],
+  "validation_errors": [],
+  "review": {
+    "transformation_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+    "verdict": "publish",
+    "summary": "Finalize returned a component with every quoted statement replaced.",
+    "must_change": []
+  },
+  "review_sha256": "d831d594bdbcdfab3cba7dd9accfcb0d1f5365b06fd796acf04158b3321273a5"
+}

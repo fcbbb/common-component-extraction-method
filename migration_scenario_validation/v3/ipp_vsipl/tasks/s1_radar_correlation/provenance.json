@@ -1,0 +1,35 @@
+{
+  "task_id": "s1_radar_correlation",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://radar-correlation-v1",
+  "commit": "synthetic-radar-correlation-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "snapshot": "v3/ipp_vsipl/tasks/s1_radar_correlation",
+  "gold_map": {
+    "plan_vsipl.c": "src/plan_ipp.c",
+    "matched_filter_vsipl.c": "src/matched_filter_ipp.c",
+    "correlate_vsipl.c": "src/correlate_ipp.c",
+    "profile_vsipl.c": "src/profile_ipp.c"
+  },
+  "source_files": [
+    "src/plan_ipp.c",
+    "src/matched_filter_ipp.c",
+    "src/correlate_ipp.c",
+    "src/profile_ipp.c",
+    "src/radar_pipeline_internal.h",
+    "include/radar_pipeline.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "plan_vsipl.c",
+    "matched_filter_vsipl.c",
+    "correlate_vsipl.c",
+    "profile_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}

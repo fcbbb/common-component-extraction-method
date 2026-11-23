@@ -1,0 +1,16 @@
+I extracted the component and submitted it.
+
+**Card summary: "Real-to-complex FFT plan and bin adapter for a streaming spectral gate"**
+
+The migration swaps a status-code FFT library (two-phase plan build with caller-supplied spec/init/work buffers, packed CCS half-spectrum, explicit no-division flag) for a view-based signal-processing library (single-call plan object with a numeric scale factor, natural-order complex output view, library-owned blocks).
+
+Key rules captured:
+- **Plan construction**: collapse size-query + init + work-buffer allocation into one create/destroy pair; keep the size query only if the target variant needs a work area.
+- **Scaling**: map the no-division flag to the unity scale factor, with a post-transform multiply fallback if the target only normalizes.
+- **Bin layout**: delete the packed deinterleave for a natural-order target, keeping the unpack step as the fallback; size the complex output block to exactly nfft/2+1 bins.
+- **Ownership**: C-allocated frame/bin arrays stay C-owned; the library-created result block must be released by its own destructor (never the C allocator); bound views never free caller memory.
+- **Input model**: bind a transient view onto the frame or create/fill/destroy per call, with no input/output aliasing.
+- **Type discipline**: convert signed lengths/indices only after validation; keep single-precision variants.
+- **Build**: link target archive + math library and fail loudly when the target root is absent.
+
+Pitfalls, verification (impulse flat-magnitude, DC unity check, cross-backend bin/flag comparison, sanitizer leak runs, rejection paths, two-tone report check, two-plan independence) and a boundary covering out-of-scope window/gate/report/tuning concerns are included. Leakage checks pass against the corpus example, and the metadata validator accepted the submission.

@@ -1,0 +1,12 @@
+Submission accepted.
+
+**Component written:** `manifest.json` — one card, `split-complex FFT matched-filter correlation layer rebuilt on an opaque-plan array-view signal API`.
+
+What it records from this migration:
+
+- **Mapping rules** (11 decisions): caller-sized spec/init/work-byte planning → one library-owned opaque plan per direction; per-direction normalization flags → a single place that applies `1/N` (unit create-scale plus one explicit inverse multiply, with the fallback for targets that ignore create-scale); transform-length validation at create (power of two, ≥ 2N-1); split planes stay app-owned while plan and complex work view are library-owned with one destroy per creator; element-wise pack/unpack of split planes into a complex view, in place on one view; untyped handle slots in the shared private header; the copy-on-set replica / borrow-on-process / caller-owned report lifetime contract; shrinking error surface (void compute ops ⇒ detect failure at creation); profiling units and accumulator width; precision and index families; build binding with the target archive before the math library.
+- **Semantic deltas**: scaling home, plan-memory ownership, reduced failure surface, work-buffer representation, double→single accumulator drift, max-on-tie behaviour, degenerate-input report defaults, per-frame allocation in profiling, and the explicit note that natural output order (and therefore lag mapping) does *not* change between backends.
+- **Pitfalls** with triggering conditions: double normalization, an invented N-1 lag rotation, wrong destroy/handle type through the untyped slot, leaks on partial construction, unfilled report after profiling allocation failure, stale padded buffer shared by replica and return, precision narrowing, mixed type families, leaking the source's typed plan into the shared header, and loosening the 2N-1 check.
+- **Verification** runnable by an ordinary unprivileged process: O(N²) lag-ordered reference comparison, impulse, real-only, energy identity, oversized transform, tie, buffer-reuse, leak/injection checks, plus a cross-backend differential run.
+
+No library names, symbol prefixes, file paths or ids appear in the card; the leakage and normalization checks pass cleanly, and the example repo was left untouched.

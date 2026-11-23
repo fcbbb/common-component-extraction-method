@@ -1,0 +1,12 @@
+Submission accepted.
+
+**Repair summary** — component `real-to-complex-fft-plan-and-bin-adapter-for-a-51087706`, title/scope unchanged, six reviewed statements replaced and grounded in the visible migration:
+
+1. **Resource ownership** — now decided by memory origin: library-created bin blocks are released only with the destroy-all-block variant *even when passed to the transform as the caller-supplied output view*; only a view bound onto C memory gets the view-only destructor with its C buffer C-freed. The "writes into caller memory ⇒ C-allocate/C-free" fallback is withdrawn.
+2. **Scaling delta** — a constant scale error multiplies every magnitude identically; peak and noise floor move by that factor while each bin's ratio to the trailing mean is preserved, so flags/detections are unchanged; differences only from round-off at the comparison.
+3. **Scale pitfall** — same corrected consequence; the factor is an explicit plan-creation argument (unity = unscaled), so the hazard is a normalizing value, not an omitted default.
+4. **Impulse test** — a windowed impulse is flat in magnitude, so it verifies scaling and gross bin-count only and is invariant under bin permutation and imaginary-sign flip; order/layout needs a non-flat bin-by-bin comparison.
+5. **DC check** — split by boundary: magnitude 1 at bin 0 only for an unwindowed constant at the transform boundary; at the layer the window is applied first, so DC magnitude is the window sum `(nfft-1)/2` for this symmetric Hann (verified numerically for n = 8/16/32).
+6. **Packed indexing pitfall** — conjugate symmetry makes the mirrored imaginary part the negation, giving a conjugated bin set whose magnitudes (hence flags/detections) survive; the real break is reading past the `nfft/2+1` block. The "real parts only" claim is dropped; the catching check is a non-flat imaginary-inclusive comparison (with ASan for the out-of-range read).
+
+Only `manifest.json` was written, under the designated submission directory; the repository was not modified.

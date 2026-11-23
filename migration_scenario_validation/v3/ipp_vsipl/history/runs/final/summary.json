@@ -1,0 +1,37 @@
+{
+  "schema": "methodology-finalize-summary-v1",
+  "history_digest": "a2c12f7aacbddb6ba8a7c476cc50ffaeeea6df7cee5e3c8b58befaf85bce5de9",
+  "curated_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/rework/r1",
+  "review_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/reviews",
+  "output_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/final",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "entry_count": 3,
+  "finalized_count": 3,
+  "invalid_count": 0,
+  "unchanged_count": 0,
+  "failure_count": 0,
+  "status_counts": {
+    "finalized": 3
+  },
+  "results": [
+    {
+      "transformation_id": "real-to-complex-fft-plan-and-bin-adapter-for-a-51087706",
+      "verdict": "publish",
+      "status": "finalized",
+      "errors": []
+    },
+    {
+      "transformation_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+      "verdict": "publish",
+      "status": "finalized",
+      "errors": []
+    },
+    {
+      "transformation_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+      "verdict": "publish",
+      "status": "finalized",
+      "errors": []
+    }
+  ],
+  "failures": []
+}

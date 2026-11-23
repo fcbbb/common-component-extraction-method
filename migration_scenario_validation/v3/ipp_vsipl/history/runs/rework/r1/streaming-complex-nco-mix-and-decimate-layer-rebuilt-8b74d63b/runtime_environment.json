@@ -1,0 +1,10 @@
+{
+  "kind": "host",
+  "stage_runtime": "host",
+  "stage_runtime_reason": "auto: docker runtime image not ready (cannot prepare component-method-repo-tools:py312: failed to resolve reference \"docker.io/library/python:3.12-slim\": failed to do request: Head \"https://registry-1.docker.io/v2/library/python/manifests/3.12-slim\": dial tcp 103.226.246.99:443: i/o timeout)",
+  "declared_runtime_image": null,
+  "activation": null,
+  "executable": "/home/luoyexx/project/harness/common-component-extraction-method/.venv/bin/python",
+  "prefix": "/home/luoyexx/project/harness/common-component-extraction-method/.venv",
+  "python_version": "3.12.16 (main, Oct 26 2026, 15:28:01) [GCC 15.2.0]"
+}

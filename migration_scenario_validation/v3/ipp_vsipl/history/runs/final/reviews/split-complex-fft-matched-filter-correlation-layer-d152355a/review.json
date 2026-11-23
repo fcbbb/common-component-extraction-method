@@ -1,0 +1,40 @@
+{
+  "schema": "methodology-finalize-v2",
+  "transformation_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+  "example_id": "s1_radar_correlation",
+  "entry_digest": "8bb535ac5fb4fda6a9fb25e7be66728c29afad2b0b518ec787fd52e63919edc3",
+  "input_digest": "91270abd54b7ffe3218553e08dbf9f022ef6d3eeaa7a5b74e0c2466e3cd3d50e",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "verdict": "publish",
+  "finalized": true,
+  "must_change": [
+    {
+      "field": "verification",
+      "quote": "Impulse check: set a unit impulse at replica index 0, process a known return, and require the result to equal the conjugated return centred at the lag-0 output index with the remaining lags near zero.",
+      "instruction": "State the impulse expectation without a conjugation on the return. With the replica a unit impulse at index 0, the lag-ordered output is the return itself: its first sample at the centre index (lag 0), its remaining samples at the following indices, and zero at every other lag. The contract's conjugation already sits on the replica side, so pairing a conjugated return with a conjugated replica in the same check cancels the very sign difference it is meant to expose and sends a correct implementation looking for a conjugation bug."
+    },
+    {
+      "field": "pitfalls",
+      "quote": "every lag and the energy then sit at 1/N or N times the reference.",
+      "instruction": "Give the ratios that actually follow from one extra inverse-side 1/N factor, and keep the lag and energy exponents distinct: every lag sits at 1/N of the reference and the energy, being a sum of squared magnitudes, at 1/N^2, with the missing-factor case as N and N^2. A single ratio offered for both quantities is wrong and prevents the diagnosis it is written for, because an implementer who measures an energy ratio of 1/N^2 alongside lags at 1/N must be able to match that symptom to this cause."
+    },
+    {
+      "field": "procedure",
+      "quote": "Make the profiling step allocation-free in the per-frame path, either by reusing a state-owned view or by computing from the two planes directly, before wiring it into processing that must report success or failure to the caller.",
+      "instruction": "Describe the choice this migration made rather than a different design. The migrated profiling step creates its complex view and magnitude vector per call and returns void, and when either allocation fails it returns without writing the report while the caller-visible process call still reports success; the card states that consequence elsewhere as both a delta and a pitfall. Either keep this step consistent with that consequence and say how the report is left on the failure path, or present an allocation-free step explicitly as a deviation with its effect on the report. Do not order an implementer to remove the allocation as if it were part of the port."
+    },
+    {
+      "field": "mapping_rules",
+      "quote": "map this onto the target's magnitude-vector and max-with-index primitives, but preserve the units (peak is a magnitude, energy is a sum of squared magnitudes) and the accumulator width.",
+      "instruction": "Preserve the units only - peak is a magnitude, energy a sum of squared magnitudes - and state the accumulator this migration actually used: the energy is summed in single precision over the lags, where the source summed in double and narrowed only when storing it into the report field, so the widened accumulator is not carried over. Say either that the narrowed accumulator is accepted together with the tolerance the caller must tolerate, or that a widened accumulator is kept by hand. Do not instruct the implementer to preserve the source's accumulator width, which contradicts the card's own statement that the accumulator width differs."
+    }
+  ],
+  "validation_errors": [],
+  "review": {
+    "transformation_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+    "verdict": "publish",
+    "summary": "Finalize returned a component with every quoted statement replaced.",
+    "must_change": []
+  },
+  "review_sha256": "85a369297cb0a57eabba7d195f4c8a2d7d4042b579eee3b60e3c12ba73e74b57"
+}

@@ -1,0 +1,17 @@
+schema: migration-slate-v1
+scenario: ipp_to_vsipl
+library_sources:
+  - task_id: s1_radar_correlation
+    role: library_source
+    domain: radar
+    title: Radar pulse-compression correlation
+  - task_id: s2_spectral_gate
+    role: library_source
+    domain: spectral
+    title: Spectral gate with real FFT
+  - task_id: s3_channelizer
+    role: library_source
+    domain: communications
+    title: Streaming wideband channelizer
+
+held_out: []

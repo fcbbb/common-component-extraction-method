@@ -1,0 +1,27 @@
+{
+  "transformation_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+  "verdict": "rework",
+  "summary": "The card is substantive and mostly grounded: plan construction (size query, one-shot init, dropped init scratch) maps to a single handle-returning create per direction; normalization matches the after-side exactly (unit scale on both creations plus one explicit 1/N multiply inside the inverse wrapper, replacing the source's no-division forward and divide-by-N inverse flags); the create-time power-of-two and 2N-1 length checks, the split-plane/interleaved-view interchange, the void-returning compute surface, the untyped handle slots in the shared private header, the per-call profiling allocation widening the failure surface, and the single-precision energy accumulator all check out against the visible migration, as does the key negative claim that no lag rotation is part of the port (the after-side comment about 'shifting by n-1 lags' is stale; the code, like the reference contract, indexes from the conjugate reversal alone). Four statements still mislead an implementer. The impulse verification asserts equality with the conjugated return, but with a unit impulse at replica index 0 the lag-ordered output equals the return itself, so a correct port would be 'fixed' into a conjugation bug. The double-normalization pitfall gives one flat ratio for both lag and energy, whereas the energy, being a sum of squares, moves by the square of the lag ratio. The procedure orders the profiling step to be made allocation-free per call, which contradicts the completed migration (it allocates a complex view and magnitude vector per call) and the card's own delta and pitfall about that allocation. And the profiling mapping rule orders the source's accumulator width to be preserved, while the migrated step accumulates in single precision. Each is a concrete, repairable defect in an otherwise reusable card.",
+  "must_change": [
+    {
+      "field": "verification",
+      "quote": "Impulse check: set a unit impulse at replica index 0, process a known return, and require the result to equal the conjugated return centred at the lag-0 output index with the remaining lags near zero.",
+      "instruction": "State the impulse expectation without a conjugation on the return. With the replica a unit impulse at index 0, the lag-ordered output is the return itself: its first sample at the centre index (lag 0), its remaining samples at the following indices, and zero at every other lag. The contract's conjugation already sits on the replica side, so pairing a conjugated return with a conjugated replica in the same check cancels the very sign difference it is meant to expose and sends a correct implementation looking for a conjugation bug."
+    },
+    {
+      "field": "pitfalls",
+      "quote": "every lag and the energy then sit at 1/N or N times the reference.",
+      "instruction": "Give the ratios that actually follow from one extra inverse-side 1/N factor, and keep the lag and energy exponents distinct: every lag sits at 1/N of the reference and the energy, being a sum of squared magnitudes, at 1/N^2, with the missing-factor case as N and N^2. A single ratio offered for both quantities is wrong and prevents the diagnosis it is written for, because an implementer who measures an energy ratio of 1/N^2 alongside lags at 1/N must be able to match that symptom to this cause."
+    },
+    {
+      "field": "procedure",
+      "quote": "Make the profiling step allocation-free in the per-frame path, either by reusing a state-owned view or by computing from the two planes directly, before wiring it into processing that must report success or failure to the caller.",
+      "instruction": "Describe the choice this migration made rather than a different design. The migrated profiling step creates its complex view and magnitude vector per call and returns void, and when either allocation fails it returns without writing the report while the caller-visible process call still reports success; the card states that consequence elsewhere as both a delta and a pitfall. Either keep this step consistent with that consequence and say how the report is left on the failure path, or present an allocation-free step explicitly as a deviation with its effect on the report. Do not order an implementer to remove the allocation as if it were part of the port."
+    },
+    {
+      "field": "mapping_rules",
+      "quote": "map this onto the target's magnitude-vector and max-with-index primitives, but preserve the units (peak is a magnitude, energy is a sum of squared magnitudes) and the accumulator width.",
+      "instruction": "Preserve the units only - peak is a magnitude, energy a sum of squared magnitudes - and state the accumulator this migration actually used: the energy is summed in single precision over the lags, where the source summed in double and narrowed only when storing it into the report field, so the widened accumulator is not carried over. Say either that the narrowed accumulator is accepted together with the tolerance the caller must tolerate, or that a widened accumulator is kept by hand. Do not instruct the implementer to preserve the source's accumulator width, which contradicts the card's own statement that the accumulator width differs."
+    }
+  ]
+}

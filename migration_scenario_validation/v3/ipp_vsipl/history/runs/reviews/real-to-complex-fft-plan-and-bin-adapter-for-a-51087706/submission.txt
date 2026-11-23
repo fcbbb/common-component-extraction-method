@@ -1,0 +1,14 @@
+Submission accepted.
+
+**Verdict: `rework`** for `real-to-complex-fft-plan-and-bin-adapter-for-a-51087706`.
+
+The card's spine is sound and grounded in the migration: two-phase size-query/init collapses to one create/destroy pair; the explicit no-division flag becomes a unity scale argument; the packed CCS deinterleave is deleted in favour of natural complex bins sized `nfft/2+1`; frame and per-bin floats stay C-allocated while the bin block goes through its own destructor; signed lengths are cast only after validation; window/gate/report stay untouched (they are byte-identical between `src/*_ipp.c` and `*_vsipl.c`).
+
+Six statements are nonetheless wrong or inverted against the visible code, and each would break or misdirect an implementation:
+
+1. **`mapping_rules` (resource ownership)** — the applicability/fallback inverts the migration: the target does write into caller-supplied memory, yet that storage came from the library allocator, so the fallback's "keep the C allocation and the C free" would `free()` a library block.
+2. **`semantic_deltas` (scaling)** — a constant scale error cannot move flags: the gate compares each magnitude against the same scaled multiple of a scaled trailing mean (verified numerically: identical flag vectors at ×7.5).
+3. **`pitfalls` (scale factor)** — same false consequence, plus a "default" that does not exist; the factor is an explicit create argument.
+4. **`verification` (public test)** — a windowed impulse has one equal magnitude in every bin, so the check is permutation-invariant and cannot fail on bin-order error (verified: all bins = 0.989074).
+5. **`verification` (DC check)** — the layer windows first, so a unit constant frame reaches the transform as the window itself and gives the window sum (7.5 for n=16), not 1.0.
+6. **`pitfalls` (packed indexing)** — conjugate symmetry makes the mirrored imaginary part the negation of the correct one, leaving magnitudes and flags unchanged; the real hazard is a read past the `nfft/2+1` block, and the shipped test does compare magnitudes, not just real parts.

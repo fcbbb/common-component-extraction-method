@@ -1,0 +1,35 @@
+{
+  "task_id": "s3_channelizer",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://channelizer-v1",
+  "commit": "synthetic-channelizer-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "snapshot": "v3/ipp_vsipl/tasks/s3_channelizer",
+  "gold_map": {
+    "state_vsipl.c": "src/state_ipp.c",
+    "mixer_vsipl.c": "src/mixer_ipp.c",
+    "fir_vsipl.c": "src/fir_ipp.c",
+    "stats_vsipl.c": "src/stats_ipp.c"
+  },
+  "source_files": [
+    "src/state_ipp.c",
+    "src/mixer_ipp.c",
+    "src/fir_ipp.c",
+    "src/stats_ipp.c",
+    "src/channelizer_internal.h",
+    "include/channelizer.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "state_vsipl.c",
+    "mixer_vsipl.c",
+    "fir_vsipl.c",
+    "stats_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}

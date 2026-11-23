@@ -1,0 +1,35 @@
+{
+  "task_id": "s2_spectral_gate",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://spectral-gate-v1",
+  "commit": "synthetic-spectral-gate-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "snapshot": "v3/ipp_vsipl/tasks/s2_spectral_gate",
+  "gold_map": {
+    "plan_vsipl.c": "src/plan_ipp.c",
+    "window_vsipl.c": "src/window_ipp.c",
+    "gate_vsipl.c": "src/gate_ipp.c",
+    "report_vsipl.c": "src/report_ipp.c"
+  },
+  "source_files": [
+    "src/plan_ipp.c",
+    "src/window_ipp.c",
+    "src/gate_ipp.c",
+    "src/report_ipp.c",
+    "src/spectral_gate_internal.h",
+    "include/spectral_gate.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "plan_vsipl.c",
+    "window_vsipl.c",
+    "gate_vsipl.c",
+    "report_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}

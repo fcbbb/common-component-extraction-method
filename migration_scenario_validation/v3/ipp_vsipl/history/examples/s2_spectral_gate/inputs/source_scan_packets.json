@@ -1,0 +1,907 @@
+{
+  "schema": "migration-focus-context-packets-v1",
+  "task_blind": true,
+  "task_information_used": false,
+  "task_id": "s2_spectral_gate",
+  "scenario": "ipp_to_vsipl",
+  "language": "cpp",
+  "backend_id": "cpp@1",
+  "source": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s2_spectral_gate/repo",
+  "source_sha256": "242a4a3f23e43b11319a733e370c1ddb17601e24b4a54ac868b6b8d37a502ada",
+  "workspace_sha256": "6eb1f86e08af46ed6cc3c2420e4a36618c9e7f0ec6c9f41c32a4ca069b9fe1ce",
+  "workspace_files": [
+    "gate_vsipl.c",
+    "include/spectral_gate.h",
+    "plan_vsipl.c",
+    "report_vsipl.c",
+    "src/gate_ipp.c",
+    "src/plan_ipp.c",
+    "src/report_ipp.c",
+    "src/spectral_gate_internal.h",
+    "src/window_ipp.c",
+    "test/public_test.c",
+    "window_vsipl.c"
+  ],
+  "packet_config": {
+    "extensions": [
+      ".c",
+      ".cc",
+      ".cpp",
+      ".cxx",
+      ".h",
+      ".hh",
+      ".hpp",
+      ".hxx"
+    ],
+    "excluded_directory_names": [
+      ".git",
+      "__pycache__"
+    ],
+    "excluded_filenames": [
+      "test_*.py",
+      "*_test.py"
+    ],
+    "max_file_bytes": 8388608,
+    "max_files_per_packet": 1000000,
+    "max_units_per_packet": 1000000
+  },
+  "source_file_count": 11,
+  "source_unit_count": 31,
+  "packet_count": 1,
+  "gaps": [],
+  "packets": [
+    {
+      "packet_id": "region_001",
+      "candidate_ids": [
+        "region-001"
+      ],
+      "candidate_ranks": [
+        1
+      ],
+      "focus_groups": [
+        {
+          "candidate_id": "region-001",
+          "candidate_rank": 1,
+          "focus_units": [
+            {
+              "file_id": "gate_vsipl.c",
+              "unit_id": "b7ddb02dcef3464ca8527ba4231ee83f55836a9149995160b8eefb9d6839419c",
+              "unit_key": "b7ddb02dcef3464ca8527ba4231ee83f55836a9149995160b8eefb9d6839419c",
+              "kind": "function",
+              "qualified_name": "sg_create",
+              "signature": "int *(const int *) sg_create(const int *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 8,
+              "line_end": 27
+            },
+            {
+              "file_id": "gate_vsipl.c",
+              "unit_id": "209b24161c01720265838932fae5f5c94971168e0c046fec1e2b68560d7e3b8d",
+              "unit_key": "209b24161c01720265838932fae5f5c94971168e0c046fec1e2b68560d7e3b8d",
+              "kind": "function",
+              "qualified_name": "sg_destroy",
+              "signature": "void (int *) sg_destroy(int *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 29,
+              "line_end": 35
+            },
+            {
+              "file_id": "gate_vsipl.c",
+              "unit_id": "6f50cd982192cce51e14901d53410c643229d4df6d360a20121ab2e1e436c29b",
+              "unit_key": "6f50cd982192cce51e14901d53410c643229d4df6d360a20121ab2e1e436c29b",
+              "kind": "function",
+              "qualified_name": "sg_process",
+              "signature": "int (int *, const float *, int, float *, unsigned char *, int *) sg_process(int *, const float *, int, float *, unsigned char *, int *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 37,
+              "line_end": 72
+            },
+            {
+              "file_id": "include/spectral_gate.h",
+              "unit_id": "25f19431fb249bdb15a8aaba8856ab39904d2b22ae0917919e786f40d953d8c5",
+              "unit_key": "25f19431fb249bdb15a8aaba8856ab39904d2b22ae0917919e786f40d953d8c5",
+              "kind": "struct",
+              "qualified_name": "sg_config",
+              "signature": "sg_config sg_config",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 20,
+              "line_end": 24
+            },
+            {
+              "file_id": "include/spectral_gate.h",
+              "unit_id": "0b74bbd538f090472fa13b33d3cfbf131c67e256a85c94f15a0fbe9fd8a4f2eb",
+              "unit_key": "0b74bbd538f090472fa13b33d3cfbf131c67e256a85c94f15a0fbe9fd8a4f2eb",
+              "kind": "struct",
+              "qualified_name": "sg_report",
+              "signature": "sg_report sg_report",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 26,
+              "line_end": 31
+            },
+            {
+              "file_id": "include/spectral_gate.h",
+              "unit_id": "f1e47e60407e0676d2abac87d68be13a30855667d2c70745c7ba48ba54474988",
+              "unit_key": "f1e47e60407e0676d2abac87d68be13a30855667d2c70745c7ba48ba54474988",
+              "kind": "function",
+              "qualified_name": "sg_create",
+              "signature": "sg_state *(const sg_config *) sg_create(const sg_config *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 33,
+              "line_end": 33
+            },
+            {
+              "file_id": "include/spectral_gate.h",
+              "unit_id": "4dd355a6b5615825613b83adeca706929c22b810b62642da652e8cae1259811a",
+              "unit_key": "4dd355a6b5615825613b83adeca706929c22b810b62642da652e8cae1259811a",
+              "kind": "function",
+              "qualified_name": "sg_destroy",
+              "signature": "void (sg_state *) sg_destroy(sg_state *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 34,
+              "line_end": 34
+            },
+            {
+              "file_id": "include/spectral_gate.h",
+              "unit_id": "85a7dee0096ae4e5fc5c90c8471ee7eaa0610d47f754537cb708ded534b102af",
+              "unit_key": "85a7dee0096ae4e5fc5c90c8471ee7eaa0610d47f754537cb708ded534b102af",
+              "kind": "function",
+              "qualified_name": "sg_process",
+              "signature": "int (sg_state *, const float *, int, float *, unsigned char *, sg_report *) sg_process(sg_state *, const float *, int, float *, unsigned char *, sg_report *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 38,
+              "line_end": 39
+            },
+            {
+              "file_id": "plan_vsipl.c",
+              "unit_id": "a00617e6d8e324e5902bcc04236323bd48e6fe5e2140eee28eb3a0b15caf5d1c",
+              "unit_key": "a00617e6d8e324e5902bcc04236323bd48e6fe5e2140eee28eb3a0b15caf5d1c",
+              "kind": "function",
+              "qualified_name": "sg_plan_build",
+              "signature": "int (int *, int) sg_plan_build(int *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 9,
+              "line_end": 26
+            },
+            {
+              "file_id": "plan_vsipl.c",
+              "unit_id": "15f81e4798d9050804040a464a62e03c820e35dbe6051e391639ec88e66ac562",
+              "unit_key": "15f81e4798d9050804040a464a62e03c820e35dbe6051e391639ec88e66ac562",
+              "kind": "function",
+              "qualified_name": "sg_plan_destroy",
+              "signature": "void (int *) sg_plan_destroy(int *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 28,
+              "line_end": 37
+            },
+            {
+              "file_id": "plan_vsipl.c",
+              "unit_id": "58b60f3a25778557e7bd26e8caddb019301c7bc718876938e98d838fcf14bbb4",
+              "unit_key": "58b60f3a25778557e7bd26e8caddb019301c7bc718876938e98d838fcf14bbb4",
+              "kind": "function",
+              "qualified_name": "sg_plan_forward",
+              "signature": "int (int *, const float *) sg_plan_forward(int *, const float *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 39,
+              "line_end": 60
+            },
+            {
+              "file_id": "report_vsipl.c",
+              "unit_id": "37d1997a734471834f52f12926b9a8dd4c6c06025e4ed006c15318a2e0e21825",
+              "unit_key": "37d1997a734471834f52f12926b9a8dd4c6c06025e4ed006c15318a2e0e21825",
+              "kind": "function",
+              "qualified_name": "sg_fill_report",
+              "signature": "void (const float *, const unsigned char *, int, int *) sg_fill_report(const float *, const unsigned char *, int, int *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 4,
+              "line_end": 26
+            },
+            {
+              "file_id": "src/gate_ipp.c",
+              "unit_id": "5c15be2d153e2111ddc4b6eb026c5f9f8eaccdec6e53e858b19159c5a2cd9adc",
+              "unit_key": "5c15be2d153e2111ddc4b6eb026c5f9f8eaccdec6e53e858b19159c5a2cd9adc",
+              "kind": "function",
+              "qualified_name": "sg_create",
+              "signature": "sg_state *(const sg_config *) sg_create(const sg_config *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 8,
+              "line_end": 27
+            },
+            {
+              "file_id": "src/gate_ipp.c",
+              "unit_id": "8bd066ef18bf89ebaf74148e25dc207776c6d122c4e38fbefd4044b968173c16",
+              "unit_key": "8bd066ef18bf89ebaf74148e25dc207776c6d122c4e38fbefd4044b968173c16",
+              "kind": "function",
+              "qualified_name": "sg_destroy",
+              "signature": "void (sg_state *) sg_destroy(sg_state *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 29,
+              "line_end": 35
+            },
+            {
+              "file_id": "src/gate_ipp.c",
+              "unit_id": "4d628742a5db866b8be974911a4af7dab676d397ca8d608117844756cb962e25",
+              "unit_key": "4d628742a5db866b8be974911a4af7dab676d397ca8d608117844756cb962e25",
+              "kind": "function",
+              "qualified_name": "sg_process",
+              "signature": "int (sg_state *, const float *, int, float *, unsigned char *, sg_report *) sg_process(sg_state *, const float *, int, float *, unsigned char *, sg_report *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 37,
+              "line_end": 72
+            },
+            {
+              "file_id": "src/plan_ipp.c",
+              "unit_id": "374a6f1ba4bd47e365ad93ec19785c24cdb68dc4a411e2a0dbbbe82d4114f6df",
+              "unit_key": "374a6f1ba4bd47e365ad93ec19785c24cdb68dc4a411e2a0dbbbe82d4114f6df",
+              "kind": "struct",
+              "qualified_name": "(unnamed struct at /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s2_spectral_gate/repo/src/plan_ipp.c:9:9)",
+              "signature": "(unnamed struct at /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s2_spectral_gate/repo/src/plan_ipp.c:9:9) (unnamed struct at /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s2_spectral_gate/repo/src/plan_ipp.c:9:9)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 9,
+              "line_end": 14
+            },
+            {
+              "file_id": "src/plan_ipp.c",
+              "unit_id": "1d036cb649c4c61b363a8819671bf453d20177e3f3d6a41df1c7452ae2ff52fb",
+              "unit_key": "1d036cb649c4c61b363a8819671bf453d20177e3f3d6a41df1c7452ae2ff52fb",
+              "kind": "function",
+              "qualified_name": "drop_plan",
+              "signature": "void (sg_plan *) drop_plan(sg_plan *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 16,
+              "line_end": 26
+            },
+            {
+              "file_id": "src/plan_ipp.c",
+              "unit_id": "55ea2001c78bcce375adfa18952eb8aa8352d4e0d6a69df478174641843888fa",
+              "unit_key": "55ea2001c78bcce375adfa18952eb8aa8352d4e0d6a69df478174641843888fa",
+              "kind": "function",
+              "qualified_name": "sg_plan_build",
+              "signature": "int (sg_plan *, int) sg_plan_build(sg_plan *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 28,
+              "line_end": 71
+            },
+            {
+              "file_id": "src/plan_ipp.c",
+              "unit_id": "36a1776956e1057c9e119afca3932c29642c445bb94745d73bb692093dce35d3",
+              "unit_key": "36a1776956e1057c9e119afca3932c29642c445bb94745d73bb692093dce35d3",
+              "kind": "function",
+              "qualified_name": "sg_plan_destroy",
+              "signature": "void (sg_plan *) sg_plan_destroy(sg_plan *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 73,
+              "line_end": 82
+            },
+            {
+              "file_id": "src/plan_ipp.c",
+              "unit_id": "80af428ce8df685499b5cc9ec9badbe04e483198d554d77c7ba8b9aa240861ef",
+              "unit_key": "80af428ce8df685499b5cc9ec9badbe04e483198d554d77c7ba8b9aa240861ef",
+              "kind": "function",
+              "qualified_name": "sg_plan_forward",
+              "signature": "int (sg_plan *, const float *) sg_plan_forward(sg_plan *, const float *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 84,
+              "line_end": 109
+            },
+            {
+              "file_id": "src/report_ipp.c",
+              "unit_id": "a99ec07b06b5b22df9b0378bffd6a79c2122f7826f8266ba227f0beef070f67b",
+              "unit_key": "a99ec07b06b5b22df9b0378bffd6a79c2122f7826f8266ba227f0beef070f67b",
+              "kind": "function",
+              "qualified_name": "sg_fill_report",
+              "signature": "void (const float *, const unsigned char *, int, sg_report *) sg_fill_report(const float *, const unsigned char *, int, sg_report *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 4,
+              "line_end": 26
+            },
+            {
+              "file_id": "src/spectral_gate_internal.h",
+              "unit_id": "6031c920eea85f26a7c49995152c7c9fd2f86e1cb6c54d1c38add6229780ef9f",
+              "unit_key": "6031c920eea85f26a7c49995152c7c9fd2f86e1cb6c54d1c38add6229780ef9f",
+              "kind": "struct",
+              "qualified_name": "sg_plan",
+              "signature": "sg_plan sg_plan",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 6,
+              "line_end": 14
+            },
+            {
+              "file_id": "src/spectral_gate_internal.h",
+              "unit_id": "1bb4f268ce2c0816d979c328a4d1d2be90fb064ccc2690d7c242bfa8f8297bb3",
+              "unit_key": "1bb4f268ce2c0816d979c328a4d1d2be90fb064ccc2690d7c242bfa8f8297bb3",
+              "kind": "struct",
+              "qualified_name": "sg_state",
+              "signature": "sg_state sg_state",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 16,
+              "line_end": 21
+            },
+            {
+              "file_id": "src/spectral_gate_internal.h",
+              "unit_id": "a367bb3074cafea95b58c1bac0bc3dfbd1b82429b6b1b013e0c763a8bb12d97f",
+              "unit_key": "a367bb3074cafea95b58c1bac0bc3dfbd1b82429b6b1b013e0c763a8bb12d97f",
+              "kind": "function",
+              "qualified_name": "sg_plan_build",
+              "signature": "int (sg_plan *, int) sg_plan_build(sg_plan *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 23,
+              "line_end": 23
+            },
+            {
+              "file_id": "src/spectral_gate_internal.h",
+              "unit_id": "c5d80e1a1000f74690b3c5c6dea0de02695e26ff0b72887d9a0893742852f5a5",
+              "unit_key": "c5d80e1a1000f74690b3c5c6dea0de02695e26ff0b72887d9a0893742852f5a5",
+              "kind": "function",
+              "qualified_name": "sg_plan_destroy",
+              "signature": "void (sg_plan *) sg_plan_destroy(sg_plan *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 24,
+              "line_end": 24
+            },
+            {
+              "file_id": "src/spectral_gate_internal.h",
+              "unit_id": "b2a5784da00df63900d5cbc75e865dc97cb357efd039986fbd03dab3a7f40146",
+              "unit_key": "b2a5784da00df63900d5cbc75e865dc97cb357efd039986fbd03dab3a7f40146",
+              "kind": "function",
+              "qualified_name": "sg_plan_forward",
+              "signature": "int (sg_plan *, const float *) sg_plan_forward(sg_plan *, const float *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 25,
+              "line_end": 25
+            },
+            {
+              "file_id": "src/spectral_gate_internal.h",
+              "unit_id": "a484fe4982819b69712ca208fb72b13ffd6f8fb5178d02c82d8b43c32a398973",
+              "unit_key": "a484fe4982819b69712ca208fb72b13ffd6f8fb5178d02c82d8b43c32a398973",
+              "kind": "function",
+              "qualified_name": "sg_fill_window",
+              "signature": "void (float *, int) sg_fill_window(float *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 26,
+              "line_end": 26
+            },
+            {
+              "file_id": "src/spectral_gate_internal.h",
+              "unit_id": "81bee5bb56419d15a96800f8d1e55e071e55673890c05ddd50aa5bb3a7f33cbd",
+              "unit_key": "81bee5bb56419d15a96800f8d1e55e071e55673890c05ddd50aa5bb3a7f33cbd",
+              "kind": "function",
+              "qualified_name": "sg_fill_report",
+              "signature": "void (const float *, const unsigned char *, int, sg_report *) sg_fill_report(const float *, const unsigned char *, int, sg_report *)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 27,
+              "line_end": 28
+            },
+            {
+              "file_id": "src/window_ipp.c",
+              "unit_id": "c4cc2011d7c01cd4a4b58001cbc7d2ca8611379f632f98ee1e4829c2376c685e",
+              "unit_key": "c4cc2011d7c01cd4a4b58001cbc7d2ca8611379f632f98ee1e4829c2376c685e",
+              "kind": "function",
+              "qualified_name": "sg_fill_window",
+              "signature": "void (float *, int) sg_fill_window(float *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 10,
+              "line_end": 17
+            },
+            {
+              "file_id": "test/public_test.c",
+              "unit_id": "9ea28765eaa737881240d3c9b6688e9a76c1786d0628428a69c16e9332f6cdf2",
+              "unit_key": "9ea28765eaa737881240d3c9b6688e9a76c1786d0628428a69c16e9332f6cdf2",
+              "kind": "function",
+              "qualified_name": "main",
+              "signature": "int () main()",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 6,
+              "line_end": 32
+            },
+            {
+              "file_id": "window_vsipl.c",
+              "unit_id": "ce46cc60735e58f72feb8a70bec9381279c80e424eb9b706d504a4004ce9a36a",
+              "unit_key": "ce46cc60735e58f72feb8a70bec9381279c80e424eb9b706d504a4004ce9a36a",
+              "kind": "function",
+              "qualified_name": "sg_fill_window",
+              "signature": "void (float *, int) sg_fill_window(float *, int)",
+              "language": "cpp",
+              "backend_id": "cpp@1",
+              "line_start": 10,
+              "line_end": 17
+            }
+          ],
+          "seed_evidence": [
+            {
+              "file_id": "gate_vsipl.c",
+              "line_start": 1,
+              "line_end": 72
+            },
+            {
+              "file_id": "include/spectral_gate.h",
+              "line_start": 1,
+              "line_end": 45
+            },
+            {
+              "file_id": "plan_vsipl.c",
+              "line_start": 1,
+              "line_end": 60
+            },
+            {
+              "file_id": "report_vsipl.c",
+              "line_start": 1,
+              "line_end": 26
+            },
+            {
+              "file_id": "src/gate_ipp.c",
+              "line_start": 1,
+              "line_end": 72
+            },
+            {
+              "file_id": "src/plan_ipp.c",
+              "line_start": 1,
+              "line_end": 109
+            },
+            {
+              "file_id": "src/report_ipp.c",
+              "line_start": 1,
+              "line_end": 26
+            },
+            {
+              "file_id": "src/spectral_gate_internal.h",
+              "line_start": 1,
+              "line_end": 30
+            },
+            {
+              "file_id": "src/window_ipp.c",
+              "line_start": 1,
+              "line_end": 17
+            },
+            {
+              "file_id": "test/public_test.c",
+              "line_start": 1,
+              "line_end": 32
+            },
+            {
+              "file_id": "window_vsipl.c",
+              "line_start": 1,
+              "line_end": 17
+            }
+          ],
+          "candidate_unit_count": 31,
+          "expanded_unit_count": 0
+        }
+      ],
+      "focus_units": [
+        {
+          "file_id": "gate_vsipl.c",
+          "unit_id": "b7ddb02dcef3464ca8527ba4231ee83f55836a9149995160b8eefb9d6839419c",
+          "unit_key": "b7ddb02dcef3464ca8527ba4231ee83f55836a9149995160b8eefb9d6839419c",
+          "kind": "function",
+          "qualified_name": "sg_create",
+          "signature": "int *(const int *) sg_create(const int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 8,
+          "line_end": 27
+        },
+        {
+          "file_id": "gate_vsipl.c",
+          "unit_id": "209b24161c01720265838932fae5f5c94971168e0c046fec1e2b68560d7e3b8d",
+          "unit_key": "209b24161c01720265838932fae5f5c94971168e0c046fec1e2b68560d7e3b8d",
+          "kind": "function",
+          "qualified_name": "sg_destroy",
+          "signature": "void (int *) sg_destroy(int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 29,
+          "line_end": 35
+        },
+        {
+          "file_id": "gate_vsipl.c",
+          "unit_id": "6f50cd982192cce51e14901d53410c643229d4df6d360a20121ab2e1e436c29b",
+          "unit_key": "6f50cd982192cce51e14901d53410c643229d4df6d360a20121ab2e1e436c29b",
+          "kind": "function",
+          "qualified_name": "sg_process",
+          "signature": "int (int *, const float *, int, float *, unsigned char *, int *) sg_process(int *, const float *, int, float *, unsigned char *, int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 37,
+          "line_end": 72
+        },
+        {
+          "file_id": "include/spectral_gate.h",
+          "unit_id": "25f19431fb249bdb15a8aaba8856ab39904d2b22ae0917919e786f40d953d8c5",
+          "unit_key": "25f19431fb249bdb15a8aaba8856ab39904d2b22ae0917919e786f40d953d8c5",
+          "kind": "struct",
+          "qualified_name": "sg_config",
+          "signature": "sg_config sg_config",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 20,
+          "line_end": 24
+        },
+        {
+          "file_id": "include/spectral_gate.h",
+          "unit_id": "0b74bbd538f090472fa13b33d3cfbf131c67e256a85c94f15a0fbe9fd8a4f2eb",
+          "unit_key": "0b74bbd538f090472fa13b33d3cfbf131c67e256a85c94f15a0fbe9fd8a4f2eb",
+          "kind": "struct",
+          "qualified_name": "sg_report",
+          "signature": "sg_report sg_report",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 26,
+          "line_end": 31
+        },
+        {
+          "file_id": "include/spectral_gate.h",
+          "unit_id": "f1e47e60407e0676d2abac87d68be13a30855667d2c70745c7ba48ba54474988",
+          "unit_key": "f1e47e60407e0676d2abac87d68be13a30855667d2c70745c7ba48ba54474988",
+          "kind": "function",
+          "qualified_name": "sg_create",
+          "signature": "sg_state *(const sg_config *) sg_create(const sg_config *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 33,
+          "line_end": 33
+        },
+        {
+          "file_id": "include/spectral_gate.h",
+          "unit_id": "4dd355a6b5615825613b83adeca706929c22b810b62642da652e8cae1259811a",
+          "unit_key": "4dd355a6b5615825613b83adeca706929c22b810b62642da652e8cae1259811a",
+          "kind": "function",
+          "qualified_name": "sg_destroy",
+          "signature": "void (sg_state *) sg_destroy(sg_state *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 34,
+          "line_end": 34
+        },
+        {
+          "file_id": "include/spectral_gate.h",
+          "unit_id": "85a7dee0096ae4e5fc5c90c8471ee7eaa0610d47f754537cb708ded534b102af",
+          "unit_key": "85a7dee0096ae4e5fc5c90c8471ee7eaa0610d47f754537cb708ded534b102af",
+          "kind": "function",
+          "qualified_name": "sg_process",
+          "signature": "int (sg_state *, const float *, int, float *, unsigned char *, sg_report *) sg_process(sg_state *, const float *, int, float *, unsigned char *, sg_report *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 38,
+          "line_end": 39
+        },
+        {
+          "file_id": "plan_vsipl.c",
+          "unit_id": "a00617e6d8e324e5902bcc04236323bd48e6fe5e2140eee28eb3a0b15caf5d1c",
+          "unit_key": "a00617e6d8e324e5902bcc04236323bd48e6fe5e2140eee28eb3a0b15caf5d1c",
+          "kind": "function",
+          "qualified_name": "sg_plan_build",
+          "signature": "int (int *, int) sg_plan_build(int *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 9,
+          "line_end": 26
+        },
+        {
+          "file_id": "plan_vsipl.c",
+          "unit_id": "15f81e4798d9050804040a464a62e03c820e35dbe6051e391639ec88e66ac562",
+          "unit_key": "15f81e4798d9050804040a464a62e03c820e35dbe6051e391639ec88e66ac562",
+          "kind": "function",
+          "qualified_name": "sg_plan_destroy",
+          "signature": "void (int *) sg_plan_destroy(int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 28,
+          "line_end": 37
+        },
+        {
+          "file_id": "plan_vsipl.c",
+          "unit_id": "58b60f3a25778557e7bd26e8caddb019301c7bc718876938e98d838fcf14bbb4",
+          "unit_key": "58b60f3a25778557e7bd26e8caddb019301c7bc718876938e98d838fcf14bbb4",
+          "kind": "function",
+          "qualified_name": "sg_plan_forward",
+          "signature": "int (int *, const float *) sg_plan_forward(int *, const float *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 39,
+          "line_end": 60
+        },
+        {
+          "file_id": "report_vsipl.c",
+          "unit_id": "37d1997a734471834f52f12926b9a8dd4c6c06025e4ed006c15318a2e0e21825",
+          "unit_key": "37d1997a734471834f52f12926b9a8dd4c6c06025e4ed006c15318a2e0e21825",
+          "kind": "function",
+          "qualified_name": "sg_fill_report",
+          "signature": "void (const float *, const unsigned char *, int, int *) sg_fill_report(const float *, const unsigned char *, int, int *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 4,
+          "line_end": 26
+        },
+        {
+          "file_id": "src/gate_ipp.c",
+          "unit_id": "5c15be2d153e2111ddc4b6eb026c5f9f8eaccdec6e53e858b19159c5a2cd9adc",
+          "unit_key": "5c15be2d153e2111ddc4b6eb026c5f9f8eaccdec6e53e858b19159c5a2cd9adc",
+          "kind": "function",
+          "qualified_name": "sg_create",
+          "signature": "sg_state *(const sg_config *) sg_create(const sg_config *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 8,
+          "line_end": 27
+        },
+        {
+          "file_id": "src/gate_ipp.c",
+          "unit_id": "8bd066ef18bf89ebaf74148e25dc207776c6d122c4e38fbefd4044b968173c16",
+          "unit_key": "8bd066ef18bf89ebaf74148e25dc207776c6d122c4e38fbefd4044b968173c16",
+          "kind": "function",
+          "qualified_name": "sg_destroy",
+          "signature": "void (sg_state *) sg_destroy(sg_state *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 29,
+          "line_end": 35
+        },
+        {
+          "file_id": "src/gate_ipp.c",
+          "unit_id": "4d628742a5db866b8be974911a4af7dab676d397ca8d608117844756cb962e25",
+          "unit_key": "4d628742a5db866b8be974911a4af7dab676d397ca8d608117844756cb962e25",
+          "kind": "function",
+          "qualified_name": "sg_process",
+          "signature": "int (sg_state *, const float *, int, float *, unsigned char *, sg_report *) sg_process(sg_state *, const float *, int, float *, unsigned char *, sg_report *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 37,
+          "line_end": 72
+        },
+        {
+          "file_id": "src/plan_ipp.c",
+          "unit_id": "374a6f1ba4bd47e365ad93ec19785c24cdb68dc4a411e2a0dbbbe82d4114f6df",
+          "unit_key": "374a6f1ba4bd47e365ad93ec19785c24cdb68dc4a411e2a0dbbbe82d4114f6df",
+          "kind": "struct",
+          "qualified_name": "(unnamed struct at /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s2_spectral_gate/repo/src/plan_ipp.c:9:9)",
+          "signature": "(unnamed struct at /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s2_spectral_gate/repo/src/plan_ipp.c:9:9) (unnamed struct at /home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/examples/s2_spectral_gate/repo/src/plan_ipp.c:9:9)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 9,
+          "line_end": 14
+        },
+        {
+          "file_id": "src/plan_ipp.c",
+          "unit_id": "1d036cb649c4c61b363a8819671bf453d20177e3f3d6a41df1c7452ae2ff52fb",
+          "unit_key": "1d036cb649c4c61b363a8819671bf453d20177e3f3d6a41df1c7452ae2ff52fb",
+          "kind": "function",
+          "qualified_name": "drop_plan",
+          "signature": "void (sg_plan *) drop_plan(sg_plan *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 16,
+          "line_end": 26
+        },
+        {
+          "file_id": "src/plan_ipp.c",
+          "unit_id": "55ea2001c78bcce375adfa18952eb8aa8352d4e0d6a69df478174641843888fa",
+          "unit_key": "55ea2001c78bcce375adfa18952eb8aa8352d4e0d6a69df478174641843888fa",
+          "kind": "function",
+          "qualified_name": "sg_plan_build",
+          "signature": "int (sg_plan *, int) sg_plan_build(sg_plan *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 28,
+          "line_end": 71
+        },
+        {
+          "file_id": "src/plan_ipp.c",
+          "unit_id": "36a1776956e1057c9e119afca3932c29642c445bb94745d73bb692093dce35d3",
+          "unit_key": "36a1776956e1057c9e119afca3932c29642c445bb94745d73bb692093dce35d3",
+          "kind": "function",
+          "qualified_name": "sg_plan_destroy",
+          "signature": "void (sg_plan *) sg_plan_destroy(sg_plan *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 73,
+          "line_end": 82
+        },
+        {
+          "file_id": "src/plan_ipp.c",
+          "unit_id": "80af428ce8df685499b5cc9ec9badbe04e483198d554d77c7ba8b9aa240861ef",
+          "unit_key": "80af428ce8df685499b5cc9ec9badbe04e483198d554d77c7ba8b9aa240861ef",
+          "kind": "function",
+          "qualified_name": "sg_plan_forward",
+          "signature": "int (sg_plan *, const float *) sg_plan_forward(sg_plan *, const float *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 84,
+          "line_end": 109
+        },
+        {
+          "file_id": "src/report_ipp.c",
+          "unit_id": "a99ec07b06b5b22df9b0378bffd6a79c2122f7826f8266ba227f0beef070f67b",
+          "unit_key": "a99ec07b06b5b22df9b0378bffd6a79c2122f7826f8266ba227f0beef070f67b",
+          "kind": "function",
+          "qualified_name": "sg_fill_report",
+          "signature": "void (const float *, const unsigned char *, int, sg_report *) sg_fill_report(const float *, const unsigned char *, int, sg_report *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 4,
+          "line_end": 26
+        },
+        {
+          "file_id": "src/spectral_gate_internal.h",
+          "unit_id": "6031c920eea85f26a7c49995152c7c9fd2f86e1cb6c54d1c38add6229780ef9f",
+          "unit_key": "6031c920eea85f26a7c49995152c7c9fd2f86e1cb6c54d1c38add6229780ef9f",
+          "kind": "struct",
+          "qualified_name": "sg_plan",
+          "signature": "sg_plan sg_plan",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 6,
+          "line_end": 14
+        },
+        {
+          "file_id": "src/spectral_gate_internal.h",
+          "unit_id": "1bb4f268ce2c0816d979c328a4d1d2be90fb064ccc2690d7c242bfa8f8297bb3",
+          "unit_key": "1bb4f268ce2c0816d979c328a4d1d2be90fb064ccc2690d7c242bfa8f8297bb3",
+          "kind": "struct",
+          "qualified_name": "sg_state",
+          "signature": "sg_state sg_state",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 16,
+          "line_end": 21
+        },
+        {
+          "file_id": "src/spectral_gate_internal.h",
+          "unit_id": "a367bb3074cafea95b58c1bac0bc3dfbd1b82429b6b1b013e0c763a8bb12d97f",
+          "unit_key": "a367bb3074cafea95b58c1bac0bc3dfbd1b82429b6b1b013e0c763a8bb12d97f",
+          "kind": "function",
+          "qualified_name": "sg_plan_build",
+          "signature": "int (sg_plan *, int) sg_plan_build(sg_plan *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 23,
+          "line_end": 23
+        },
+        {
+          "file_id": "src/spectral_gate_internal.h",
+          "unit_id": "c5d80e1a1000f74690b3c5c6dea0de02695e26ff0b72887d9a0893742852f5a5",
+          "unit_key": "c5d80e1a1000f74690b3c5c6dea0de02695e26ff0b72887d9a0893742852f5a5",
+          "kind": "function",
+          "qualified_name": "sg_plan_destroy",
+          "signature": "void (sg_plan *) sg_plan_destroy(sg_plan *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 24,
+          "line_end": 24
+        },
+        {
+          "file_id": "src/spectral_gate_internal.h",
+          "unit_id": "b2a5784da00df63900d5cbc75e865dc97cb357efd039986fbd03dab3a7f40146",
+          "unit_key": "b2a5784da00df63900d5cbc75e865dc97cb357efd039986fbd03dab3a7f40146",
+          "kind": "function",
+          "qualified_name": "sg_plan_forward",
+          "signature": "int (sg_plan *, const float *) sg_plan_forward(sg_plan *, const float *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 25,
+          "line_end": 25
+        },
+        {
+          "file_id": "src/spectral_gate_internal.h",
+          "unit_id": "a484fe4982819b69712ca208fb72b13ffd6f8fb5178d02c82d8b43c32a398973",
+          "unit_key": "a484fe4982819b69712ca208fb72b13ffd6f8fb5178d02c82d8b43c32a398973",
+          "kind": "function",
+          "qualified_name": "sg_fill_window",
+          "signature": "void (float *, int) sg_fill_window(float *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 26,
+          "line_end": 26
+        },
+        {
+          "file_id": "src/spectral_gate_internal.h",
+          "unit_id": "81bee5bb56419d15a96800f8d1e55e071e55673890c05ddd50aa5bb3a7f33cbd",
+          "unit_key": "81bee5bb56419d15a96800f8d1e55e071e55673890c05ddd50aa5bb3a7f33cbd",
+          "kind": "function",
+          "qualified_name": "sg_fill_report",
+          "signature": "void (const float *, const unsigned char *, int, sg_report *) sg_fill_report(const float *, const unsigned char *, int, sg_report *)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 27,
+          "line_end": 28
+        },
+        {
+          "file_id": "src/window_ipp.c",
+          "unit_id": "c4cc2011d7c01cd4a4b58001cbc7d2ca8611379f632f98ee1e4829c2376c685e",
+          "unit_key": "c4cc2011d7c01cd4a4b58001cbc7d2ca8611379f632f98ee1e4829c2376c685e",
+          "kind": "function",
+          "qualified_name": "sg_fill_window",
+          "signature": "void (float *, int) sg_fill_window(float *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 10,
+          "line_end": 17
+        },
+        {
+          "file_id": "test/public_test.c",
+          "unit_id": "9ea28765eaa737881240d3c9b6688e9a76c1786d0628428a69c16e9332f6cdf2",
+          "unit_key": "9ea28765eaa737881240d3c9b6688e9a76c1786d0628428a69c16e9332f6cdf2",
+          "kind": "function",
+          "qualified_name": "main",
+          "signature": "int () main()",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 6,
+          "line_end": 32
+        },
+        {
+          "file_id": "window_vsipl.c",
+          "unit_id": "ce46cc60735e58f72feb8a70bec9381279c80e424eb9b706d504a4004ce9a36a",
+          "unit_key": "ce46cc60735e58f72feb8a70bec9381279c80e424eb9b706d504a4004ce9a36a",
+          "kind": "function",
+          "qualified_name": "sg_fill_window",
+          "signature": "void (float *, int) sg_fill_window(float *, int)",
+          "language": "cpp",
+          "backend_id": "cpp@1",
+          "line_start": 10,
+          "line_end": 17
+        }
+      ],
+      "context_units": [],
+      "focus_files": [
+        "gate_vsipl.c",
+        "include/spectral_gate.h",
+        "plan_vsipl.c",
+        "report_vsipl.c",
+        "src/gate_ipp.c",
+        "src/plan_ipp.c",
+        "src/report_ipp.c",
+        "src/spectral_gate_internal.h",
+        "src/window_ipp.c",
+        "test/public_test.c",
+        "window_vsipl.c"
+      ],
+      "context_files": [],
+      "visible_files": [
+        "gate_vsipl.c",
+        "include/spectral_gate.h",
+        "plan_vsipl.c",
+        "report_vsipl.c",
+        "src/gate_ipp.c",
+        "src/plan_ipp.c",
+        "src/report_ipp.c",
+        "src/spectral_gate_internal.h",
+        "src/window_ipp.c",
+        "test/public_test.c",
+        "window_vsipl.c"
+      ],
+      "visible_unit_count": 31,
+      "focus_unit_count": 31,
+      "context_unit_count": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "methodology-extraction-summary-v1",
+  "history_digest": "a2c12f7aacbddb6ba8a7c476cc50ffaeeea6df7cee5e3c8b58befaf85bce5de9",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "example_count": 3,
+  "succeeded": 3,
+  "failed": 0,
+  "results": [
+    {
+      "task_id": "s1_radar_correlation",
+      "status": "reused",
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s1_radar_correlation/extraction_response.json"
+    },
+    {
+      "task_id": "s2_spectral_gate",
+      "status": "reused",
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s2_spectral_gate/extraction_response.json"
+    },
+    {
+      "task_id": "s3_channelizer",
+      "status": "reused",
+      "response": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/extract/s3_channelizer/extraction_response.json"
+    }
+  ],
+  "failures": []
+}

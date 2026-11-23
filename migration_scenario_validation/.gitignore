@@ -34,3 +34,10 @@ v3/windows_to_kylin/library_generated/
 # Python
 __pycache__/
 *.pyc
+
+v3/ipp_vsipl/history/examples/
+v3/ipp_vsipl/history/index.json
+v3/ipp_vsipl/history/lock.json
+v3/ipp_vsipl/history/README.md
+v3/ipp_vsipl/history/runs/
+v3/ipp_vsipl/library_generated/

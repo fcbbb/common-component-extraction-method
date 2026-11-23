@@ -1,0 +1,38 @@
+{
+  "schema": "migration-history-verify-v1",
+  "root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history",
+  "digest": "a2c12f7aacbddb6ba8a7c476cc50ffaeeea6df7cee5e3c8b58befaf85bce5de9",
+  "example_count": 3,
+  "examples": [
+    {
+      "task_id": "s1_radar_correlation",
+      "capability": "radar/fft-correlation",
+      "repo": "synthetic://radar-correlation-v1",
+      "commit": "synthetic-radar-correlation-v1",
+      "focus_files": 4,
+      "focus_units": 9,
+      "context_units": 29,
+      "fallback_files": 1
+    },
+    {
+      "task_id": "s2_spectral_gate",
+      "capability": "spectral/real-fft-gate",
+      "repo": "synthetic://spectral-gate-v1",
+      "commit": "synthetic-spectral-gate-v1",
+      "focus_files": 4,
+      "focus_units": 8,
+      "context_units": 24,
+      "fallback_files": 1
+    },
+    {
+      "task_id": "s3_channelizer",
+      "capability": "communications/channelizer",
+      "repo": "synthetic://channelizer-v1",
+      "commit": "synthetic-channelizer-v1",
+      "focus_files": 4,
+      "focus_units": 7,
+      "context_units": 21,
+      "fallback_files": 1
+    }
+  ]
+}

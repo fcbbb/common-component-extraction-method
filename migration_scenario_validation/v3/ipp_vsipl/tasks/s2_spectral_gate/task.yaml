@@ -1,0 +1,71 @@
+scenario: ipp_to_vsipl
+task_family: v3
+task_id: s2_spectral_gate
+role: library_source
+fit: B
+counted: false
+source_kind: synthetic
+gold_kind: implementation
+gold_map:
+  plan_vsipl.c: src/plan_ipp.c
+  window_vsipl.c: src/window_ipp.c
+  gate_vsipl.c: src/gate_ipp.c
+  report_vsipl.c: src/report_ipp.c
+target:
+  api: VSIPL
+  library: jvsip
+  toolchain: gcc-13
+level: L3
+domain: radar
+difficulty: hard
+title: Spectral gate with real FFT half-spectrum — library source
+source:
+  repo: synthetic://spectral-gate-v1
+  commit: synthetic-spectral-gate-v1
+  license: synthetic
+  vendored: true
+  files:
+  - src/plan_ipp.c
+  - src/window_ipp.c
+  - src/gate_ipp.c
+  - src/report_ipp.c
+  - src/spectral_gate_internal.h
+  - include/spectral_gate.h
+  - CMakeLists.txt
+  gold_files:
+  - plan_vsipl.c
+  - window_vsipl.c
+  - gate_vsipl.c
+  - report_vsipl.c
+  test_files:
+  - test/public_test.c
+  - harness/hidden_test.c
+prepare:
+  mode: vendored
+  remove: []
+library_manifest: v3/ipp_vsipl/library_generated/manifest.json
+spec: Implement the spectral gate against VSIPL while preserving the real-FFT half-spectrum
+  contract, Hann window, magnitude/noise gate, report fields and error contract. The
+  reference after state is gold/.
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}"
+    -DBUILD_HIDDEN_TESTS=ON && cmake --build {build} -j2
+  artifact: '{build}/libspectral_gate.a'
+public_tests:
+  command: '{build}/public_test'
+  visible_to_agent: true
+hidden_tests:
+  command: '{build}/hidden_test'
+  visible_to_agent: false
+  cases:
+  - hidden_test.cpp
+gates:
+  build: must configure and build with no IPP include path
+  api_removal: bash {root}/harness/check_api_removal.sh {build}/libspectral_gate.a
+  behavior: hidden_test exits 0
+  numeric: hidden_test exits 0
+tolerances:
+  float32:
+    rtol: 0.0002
+    atol: 0.0
+    mode: peak-relative

@@ -1,0 +1,13 @@
+Repair complete and submitted.
+
+## What changed (4 flagged statements)
+
+1. **`verification` — impulse check.** Expected output is now the *unconjugated* return: with a unit impulse as replica index 0, the stored kernel is `conj(reverse(replica))`, so lag 0 at the centre index holds `x[0]`, the following indices hold `x[1..N-1]`, and every other lag is zero. Verified against the code's kernel convention with a direct FFT reference (agreement to 3e-16). It also explains why conjugating the expectation cancels the very sign difference the check exists to expose.
+
+2. **`pitfalls` — double normalization.** One extra inverse-side 1/N now yields lags at **1/N** of the reference and energy (a sum of squared magnitudes) at **1/N²**; omitting the single factor gives lags at **N** and energy at **N²**. The symptom-to-cause mapping is stated so a measured 1/N + 1/N² pair is diagnosable.
+
+3. **`procedure` — profiling step.** No longer orders an allocation-free rewrite. It records what the migration did: view and magnitude vector created per call, void return, failure leaves the report untouched while `rpc_process` still returns success; an allocation-free step is presented only as an explicit deviation with its effect on the report.
+
+4. **`mapping_rules` — profiling metrics.** Preserves units only (peak = magnitude, energy = sum of squared magnitudes) and states the accumulator actually used — single-precision `float energy` over the lags, versus the source's double narrowed at store — with the narrowed accumulator accepted and energy compared relatively. The double-accumulator fallback is now conditional on a requirement, not presented as carried over.
+
+Title, family scope, `when_to_use`, `semantic_deltas`, `boundary`, `applicability` and all unflagged rules/pitfalls/procedure/verification items were left verbatim. The checker (`--role methodology`) reports valid files and the `--submit` run printed the completion marker.

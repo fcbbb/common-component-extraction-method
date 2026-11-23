@@ -1,0 +1,52 @@
+schema: migration-history-spec-v1
+scenario: ipp_to_vsipl
+library_id: ipp-to-vsipl-v3-self-built
+language: cpp
+library_source_repos:
+  - radar-correlation-v1
+  - spectral-gate-v1
+  - channelizer-v1
+held_out_repos: []
+dataset_root: ../tasks
+output_root: .
+
+examples:
+  - task_id: s1_radar_correlation
+    capability: radar/fft-correlation
+    api_symbols:
+      - ippsFFTGetSize_C_32fc
+      - ippsFFTInit_C_32fc
+      - ippsFFTFwd_CToC_32fc
+      - ippsFFTInv_CToC_32fc
+      - ippsMul_32fc
+      - ippsDotProd_32f
+    include_roots: [include]
+    caller_roots: [src]
+    caller_exclude_dirs: []
+    caller_exclude_globs: []
+    caller_limit: 8
+
+  - task_id: s2_spectral_gate
+    capability: spectral/real-fft-gate
+    api_symbols:
+      - ippsFFTGetSize_R_32f
+      - ippsFFTInit_R_32f
+      - ippsFFTFwd_RToCCS_32f
+    include_roots: [include]
+    caller_roots: [src]
+    caller_exclude_dirs: []
+    caller_exclude_globs: []
+    caller_limit: 8
+
+  - task_id: s3_channelizer
+    capability: communications/channelizer
+    api_symbols:
+      - ippsRealToCplx_32f
+      - ippsCplxToReal_32fc
+      - ippsMul_32fc
+      - ippsDotProd_32f
+    include_roots: [include]
+    caller_roots: [src]
+    caller_exclude_dirs: []
+    caller_exclude_globs: []
+    caller_limit: 8
