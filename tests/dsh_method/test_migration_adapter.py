@@ -143,9 +143,9 @@ def test_build_workspace_accepts_an_attempt_workspace(tmp_path):
 
 
 def test_method_arm_prompts_are_fixed_and_hashed():
-    from migration_scenario_validation.tools import baseline_trial
+    from migration_scenario_validation.tools import migration_trial
 
-    hashes = baseline_trial._prompt_hashes()
+    hashes = migration_trial._prompt_hashes()
     assert set(hashes) == {
         "workflow",
         "extraction_system",
@@ -156,25 +156,25 @@ def test_method_arm_prompts_are_fixed_and_hashed():
         "retrieval_instance",
     }
     assert all(len(value) == 64 for value in hashes.values())
-    assert baseline_trial.ARM_DSH_PROFILES["default"] == "component-method"
-    assert baseline_trial.ARM_DSH_PROFILES["method"] == "component-method-migration"
-    assert baseline_trial.METHOD_MAIN_PROFILE == "component-method-migration"
+    assert migration_trial.ARM_DSH_PROFILES["default"] == "component-method"
+    assert migration_trial.ARM_DSH_PROFILES["method"] == "component-method-migration"
+    assert migration_trial.METHOD_MAIN_PROFILE == "component-method-migration"
 
 
 def test_method_tool_line_replaces_the_plain_agent_sentence():
-    from migration_scenario_validation.tools import agent_trial, baseline_trial
+    from migration_scenario_validation.tools import agent_trial, migration_trial
 
     for prompt in (
-        baseline_trial.IPP_SYSTEM_PROMPT,
+        migration_trial.IPP_SYSTEM_PROMPT,
         agent_trial.SYSTEM_PROMPT,
-        baseline_trial.MUSA_SYSTEM_PROMPT,
+        migration_trial.MUSA_SYSTEM_PROMPT,
     ):
-        assert baseline_trial.TASK_TOOL_LINE in prompt
+        assert migration_trial.TASK_TOOL_LINE in prompt
         swapped = prompt.replace(
-            baseline_trial.TASK_TOOL_LINE, baseline_trial.METHOD_TOOL_LINE
+            migration_trial.TASK_TOOL_LINE, migration_trial.METHOD_TOOL_LINE
         )
-        assert baseline_trial.METHOD_TOOL_LINE in swapped
-        assert baseline_trial.TASK_TOOL_LINE not in swapped
+        assert migration_trial.METHOD_TOOL_LINE in swapped
+        assert migration_trial.TASK_TOOL_LINE not in swapped
 
 def test_kylin_prompt_maps_work_prefix_to_workspace():
     from migration_scenario_validation.tools import agent_trial

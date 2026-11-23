@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from shared.harness import taskmodel  # noqa: E402
+from shared.harness import agent_prompt, taskmodel  # noqa: E402
 
 PATTERNS = {
     "ipp_to_vsipl": r"vsip_|jvsip",
@@ -22,10 +22,77 @@ PATTERNS = {
 
 def _parents() -> List[Path]:
     return [
-        ROOT / "ipp_vsipl_tasks",
-        ROOT / "windows_to_kylin" / "tasks",
-        ROOT / "cuda_to_musa" / "tasks",
+        ROOT / "v1" / "ipp_vsipl_tasks",
+        ROOT / "v1" / "cuda_to_musa" / "tasks",
+        ROOT / "v3" / "windows_to_kylin" / "tasks",
     ]
+
+
+# The prompt is the only task text the agent sees.  These markers must never
+# reach it: dataset identity, provenance, and anything that names the
+# evaluator or its hidden material.
+PROMPT_META = r"(?i)(scenario\s*:|level\s*:|source repository|family\s*:|sequence\s*:)"
+PROMPT_JUDGE = r"(?i)\b(hidden|evaluator|judge|eval_single_runner|fail_to_pass|pass_to_pass)\b"
+
+
+def lint_prompt(task: Dict[str, Any], root: Path) -> List[str]:
+    """Render the actual prompt and reject metadata/judge leakage."""
+    errors: List[str] = []
+    try:
+        prompt = agent_prompt.render_task_prompt(task, root=root)
+    except Exception as exc:  # noqa: BLE001 - report a broken renderer
+        return [f"cannot render agent prompt: {exc}"]
+    meta = sorted(set(m.group(0).lower() for m in re.finditer(PROMPT_META, prompt)))
+    if meta:
+        errors.append(f"agent prompt contains dataset metadata: {meta}")
+    judge = sorted(set(m.group(0).lower() for m in re.finditer(PROMPT_JUDGE, prompt)))
+    if judge:
+        errors.append(f"agent prompt names judge material: {judge}")
+    scenario = str(task.get("scenario") or "")
+    if scenario and scenario in prompt:
+        errors.append(f"agent prompt contains scenario id: {scenario}")
+    source = task.get("source") or {}
+    repo = str(source.get("repo") or "")
+    commit = str(source.get("commit") or "")
+    if repo and repo in prompt:
+        errors.append(f"agent prompt contains source repo: {repo}")
+    if re.fullmatch(r"[0-9a-fA-F]{7,40}", commit or "") and (
+        commit in prompt or commit[:12] in prompt
+    ):
+        errors.append(f"agent prompt contains source commit: {commit}")
+    return errors
+
+
+def lint_v2_identifiers(task: Dict[str, Any], root: Path, spec: str) -> List[str]:
+    """Reject V2 spec references to APIs the agent cannot see.
+
+    The V2 spec points at the public headers instead of restating their
+    semantics.  A typo or a stale API name then becomes a contradiction
+    between the prompt and the workspace, so check every ``Poco::X`` and
+    ``x()`` the spec names against the materialized tree.
+    """
+    if not taskmodel.task_id(task).startswith("v2_"):
+        return []
+    work = root / "work"
+    include = work / "Foundation" / "include"
+    poco = include / "Poco"
+    if not poco.is_dir():
+        return []  # recipe-only task, nothing to check against yet
+    errors: List[str] = []
+    for name in sorted(set(re.findall(r"\bPoco::([A-Za-z_]\w*)", spec))):
+        if not (poco / f"{name}.h").is_file():
+            errors.append(f"spec names Poco::{name}, but Poco/{name}.h is not visible")
+    for name in sorted(set(re.findall(r"`Poco/([A-Za-z_]\w*)\.h`", spec))):
+        if not (poco / f"{name}.h").is_file():
+            errors.append(f"spec names Poco/{name}.h, which is not visible")
+    headers = "\n".join(
+        path.read_text(encoding="utf-8", errors="replace")
+        for path in include.rglob("*.h")
+    )
+    for name in sorted(set(re.findall(r"\b([a-z][A-Za-z0-9_]*)\(\)", spec))):
+        if not re.search(rf"\b{re.escape(name)}\s*\(", headers):
+            errors.append(f"spec names {name}(), which no visible header declares")
+    return errors
 
 
 def lint_task(root: Path) -> Dict[str, Any]:
@@ -52,6 +119,8 @@ def lint_task(root: Path) -> Dict[str, Any]:
     work_task = root / "work" / "TASK.md"
     if work_task.exists():
         errors.append("work/TASK.md is agent-visible")
+    errors.extend(lint_prompt(task, root))
+    errors.extend(lint_v2_identifiers(task, root, spec))
     return {"task": task_id, "scenario": scenario, "ok": not errors, "errors": errors}
 
 

@@ -25,7 +25,7 @@ Docker failure does not lose finished attempts.
 Usage::
 
     python3 tools/agent_trial.py \
-        --parent windows_to_kylin/tasks \
+        --parent v1/windows_to_kylin/tasks \
         --only l1_poco_thread --only l2_libuv_thread \
         --runs 3 --label p2_kylin
 
@@ -54,9 +54,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from shared.harness import agent_view, taskmodel  # noqa: E402
+from shared.harness import agent_prompt, agent_view, taskmodel  # noqa: E402
 
-COMPLETION_MARKER = "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
+COMPLETION_MARKER = agent_prompt.COMPLETION_MARKER
 AGENT_UID = 10001
 
 
@@ -77,15 +77,10 @@ ACTIVATION = (
     "export PATH=/opt/rh/gcc-toolset-13/root/usr/bin:$PATH; "
     "export LD_LIBRARY_PATH=/opt/rh/gcc-toolset-13/root/usr/lib64:/opt/gcc13-libs"
 )
-SYSTEM_PROMPT = f"""You are a software engineer porting one component to Kylin V10 SP3 with GCC 13.
-Use the controlled_bash tool for every inspection, edit, and build command; you have no other tool.
-The task workspace is /workspace and it is the repository root. Use /tmp/build as the build directory.
-External network access is disabled: every source file you need is already present, and no package
-can be downloaded. The implementation you are asked to write was removed from /workspace and does
-not exist anywhere else in this container, so do not search the filesystem for a copy; write it. Modify only files under /workspace. Do not modify or disable tests, build files,
-or evaluator inputs, and do not special-case test names to fake behavior.
-When the implementation is complete and the build command succeeds, call controlled_bash once with
-cwd /workspace and a command whose first non-empty output line is exactly {COMPLETION_MARKER}."""
+# The prompt is built by ``shared.harness.agent_prompt``: it carries the task
+# contract and environment only, never dataset metadata, provenance,
+# evaluator commands or hidden-test details.
+SYSTEM_PROMPT = agent_prompt.SYSTEM_PROMPT
 
 
 def _now() -> str:
@@ -203,44 +198,12 @@ def _iter_task_roots(args: argparse.Namespace) -> List[Path]:
 
 
 def _task_prompt(task: Dict[str, Any], root: Path) -> str:
-    spec = str(task.get("spec") or "").strip()
-    source = task.get("source") or {}
-    build = taskmodel.agent_build_command(task) or ""
-    build = taskmodel.expand_command(
-        build, root=root, work=Path("/workspace"), build=Path("/tmp/build"),
-        golden=Path("/workspace"),
+    return agent_prompt.render_task_prompt(
+        task,
+        root=root,
+        workspace="/workspace",
+        build_dir="/tmp/build",
     )
-    lines = [
-        f"# {task.get('title') or taskmodel.task_id(task)}",
-        "",
-        f"Scenario: {task.get('scenario')}    Level: {task.get('level')}",
-        f"Source repository: {source.get('repo', '')} @ {source.get('commit', '')}",
-        "",
-        spec,
-        "",
-        "## Workspace",
-        "",
-        "The repository snapshot is at /workspace. The reference implementation was removed;",
-        "other platform backends and the public headers are still present for orientation.",
-        "",
-        "The task spec may use a `work/` prefix for paths. In this container the task",
-        "package's `work/` directory is mounted as `/workspace`; therefore `work/foo`",
-        "means `/workspace/foo`. Do not create a nested `work/` directory.",
-        "",
-        "## Build command",
-        "",
-        "The evaluator runs this exact command from /workspace:",
-        "",
-        "```bash",
-        build,
-        "```",
-        "",
-        "Build into /tmp/build as shown. Hidden behavior tests and an API-removal gate are",
-        "evaluated after you finish; they are not visible in the workspace.",
-        "",
-        f"When the build succeeds, submit with: echo {COMPLETION_MARKER}",
-    ]
-    return "\n".join(lines).rstrip() + "\n"
 
 
 def _prepare(task_root: Path, timeout: int, no_prepare: bool) -> Tuple[bool, str]:

@@ -1,0 +1,31 @@
+{
+  "task_id": "l2_libuv_process",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/libuv/libuv.git",
+  "commit": "e9f29cb984231524e3931aa0ae2c5dae1a32884e",
+  "tag": "v1.48.0",
+  "subdir": null,
+  "license": "MIT",
+  "source_files": [
+    "src/win/process.c",
+    "src/win/process-stdio.c"
+  ],
+  "gold_files": [
+    "src/unix/process.c"
+  ],
+  "test_files": [
+    "test/test-spawn.c",
+    "test/test-process-title.c",
+    "test/test-process-title-threadsafe.c",
+    "test/test-process-priority.c"
+  ],
+  "remove": [
+    "src/unix/process.c"
+  ],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-15T01:45:46Z",
+  "task_family": "v3",
+  "library_manifest": "v3/windows_to_kylin/library/manifest.json"
+}

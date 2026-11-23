@@ -439,13 +439,26 @@ def get_task_bundle(
 
 def agent_bundle_prompt(experiment_dir: Path | str | None = None, *, bundle: Path | None = None) -> str:
     """Ask the coding agent to read the complete index and explore components itself."""
-    if bundle is not None and json.loads((bundle / "manifest.json").read_text()).get("schema_version") == 8:
-        return ("Read /testbed/component_bundle/INDEX.md and each relevant component README and audit record. "
-                "Use the existing repository toolchain and the documented component source files. Check each "
-                "entrypoint's validation_status and language before use. Direct reuse and reference-pattern "
-                "adaptation are distinct delivery modes. Keep the supplied bundle read-only and do not download "
-                "dependencies. Record used component IDs and entrypoints in /tmp/component_usage.json as "
-                '{"component_usage": ["component identifier / entrypoint"]}.\n')
+    if bundle is not None:
+        manifest = json.loads((bundle / "manifest.json").read_text())
+        if manifest.get("kind") == "methodology":
+            return (
+                f"Read `{BUNDLE_CONTAINER_PATH}/INDEX.md` for the selected component paths, "
+                "then open each referenced README directly. Apply a component where its "
+                "documented method matches the layer you are changing: map its rules to "
+                "this repository's names and semantics, follow its procedure where it "
+                "applies, and use its verification steps for that layer. Treat the bundle "
+                "as read-only. Record the bundle ids you used in "
+                "/tmp/component_usage.json as "
+                '{"component_usage": ["bundle id"]}.\n'
+            )
+        if manifest.get("schema_version") == 8:
+            return ("Read /testbed/component_bundle/INDEX.md and each relevant component README and audit record. "
+                    "Use the existing repository toolchain and the documented component source files. Check each "
+                    "entrypoint's validation_status and language before use. Direct reuse and reference-pattern "
+                    "adaptation are distinct delivery modes. Keep the supplied bundle read-only and do not download "
+                    "dependencies. Record used component IDs and entrypoints in /tmp/component_usage.json as "
+                    '{"component_usage": ["component identifier / entrypoint"]}.\n')
     template = resolve_prompt(experiment_dir, "usage/agent_bundle_prompt.txt")
     return (
         template.replace("{bundle_path}", BUNDLE_CONTAINER_PATH)

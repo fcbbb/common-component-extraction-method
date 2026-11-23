@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
+import threading
 from pathlib import Path
+from typing import Any
 
 import docker
 
@@ -10,22 +13,63 @@ import docker
 RUNTIME_SUPPORT_DIR = Path(__file__).resolve().parent
 IMAGE_DIR = RUNTIME_SUPPORT_DIR / "runtime_image"
 IMAGE_TAG = "component-method-repo-tools:py312"
+IMAGE_BUILD_TIMEOUT_ENVIRONMENT = "COMPONENT_DSH_IMAGE_BUILD_TIMEOUT"
+DEFAULT_IMAGE_BUILD_TIMEOUT = 300.0
 
 
-def _ensure_image(client: docker.DockerClient) -> tuple[str, str]:
+def _build_timeout(timeout: float | None) -> float:
+    if timeout is not None:
+        return max(1.0, float(timeout))
+    raw = os.environ.get(IMAGE_BUILD_TIMEOUT_ENVIRONMENT, "")
+    try:
+        return max(1.0, float(raw))
+    except ValueError:
+        return DEFAULT_IMAGE_BUILD_TIMEOUT
+
+
+def _build_image(client: docker.DockerClient, *, timeout: float) -> Any:
+    """Build with a hard deadline; a pull with no usable registry must not hang."""
+    outcome: dict[str, Any] = {}
+
+    def build() -> None:
+        try:
+            built, logs = client.images.build(
+                path=str(IMAGE_DIR),
+                tag=IMAGE_TAG,
+                rm=True,
+                pull=True,
+                timeout=int(timeout),
+            )
+            for entry in logs:
+                if "error" in entry:
+                    raise RuntimeError(str(entry["error"]))
+            outcome["image"] = built
+        except BaseException as exc:  # noqa: BLE001 - reported to the caller
+            outcome["error"] = exc
+
+    worker = threading.Thread(target=build, name="component-image-build", daemon=True)
+    worker.start()
+    worker.join(timeout)
+    if worker.is_alive():
+        raise RuntimeError(
+            f"building {IMAGE_TAG} did not finish within {timeout:.0f}s; the base "
+            "image may need to be pulled first. Raise "
+            f"{IMAGE_BUILD_TIMEOUT_ENVIRONMENT} to wait longer, or run with "
+            "COMPONENT_DSH_STAGE_RUNTIME=host"
+        )
+    error = outcome.get("error")
+    if error is not None:
+        raise RuntimeError(f"cannot prepare {IMAGE_TAG}: {error}") from error
+    return outcome["image"]
+
+
+def _ensure_image(
+    client: docker.DockerClient, *, timeout: float | None = None
+) -> tuple[str, str]:
     try:
         image = client.images.get(IMAGE_TAG)
     except docker.errors.ImageNotFound:
-        built, logs = client.images.build(
-            path=str(IMAGE_DIR),
-            tag=IMAGE_TAG,
-            rm=True,
-            pull=True,
-        )
-        for entry in logs:
-            if "error" in entry:
-                raise RuntimeError(str(entry["error"]))
-        image = built
+        image = _build_image(client, timeout=_build_timeout(timeout))
     return image.id, IMAGE_TAG
 
 

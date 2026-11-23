@@ -1,0 +1,33 @@
+{
+  "task_id": "v2_curl_tls",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/curl/curl.git",
+  "commit": "7161cb17c01dcff1dc5bf89a18437d9d729f1ecd",
+  "tag": "curl-8_5_0",
+  "subdir": null,
+  "license": "curl",
+  "source_files": [
+    "lib/vtls/schannel.c",
+    "lib/vtls/schannel_verify.c",
+    "lib/vtls/schannel.h"
+  ],
+  "gold_files": [
+    "lib/vtls/openssl.c"
+  ],
+  "test_files": [
+    "tests/data/test3000",
+    "tests/data/test3001"
+  ],
+  "remove": [
+    "lib/vtls/openssl.c"
+  ],
+  "gold_kind": "implementation",
+  "task_family": "v3",
+  "family": "curl_tls",
+  "family_type": "pattern",
+  "sequence": 12,
+  "library_manifest": "v3/windows_to_kylin/library/manifest.json",
+  "materialized": true,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-20T15:46:43Z"
+}

@@ -1,0 +1,29 @@
+Task ID: {{task_id}}
+
+Problem statement:
+{{problem_statement}}
+
+Task interface:
+{{interface}}
+
+The frozen methodology library is mounted at /component-library. Each component
+lives under components/<bundle_id>/ with README.md and component.json. A compact
+catalog covering every component is mounted at
+/retrieval-tools/component_catalog.json. Read it before opening component files.
+
+Write /component-output/selection.json with this shape and run the validator:
+
+{
+  "schema_version": "methodology-paths-1",
+  "task_id": "{{task_id}}",
+  "selected_bundle_ids": [
+    "<catalog bundle id>"
+  ]
+}
+
+Select at most two components. The angle-bracketed value is a schema
+placeholder: replace it with exact bundle IDs from the catalog. The file contains
+no reason, usage, boundary, evidence or omission fields. The Task Agent reads the
+selected READMEs directly.
+
+The library stays read-only; the path list is the only output.

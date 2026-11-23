@@ -9,7 +9,7 @@ it is written as a recipe whose ``prepare.sh`` clones the pinned commit.
 Usage::
 
     python3 tools/extract_migrate_task.py \
-        --slate cuda_to_musa/slate.yaml \
+        --slate v1/cuda_to_musa/slate.yaml \
         --repo-root MultiKernelBench=/tmp/bench_src/MultiKernelBench \
         --all
 """

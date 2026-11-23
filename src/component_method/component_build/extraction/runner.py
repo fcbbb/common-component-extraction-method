@@ -27,6 +27,7 @@ from component_method.agent_runtime.stage_plane import (
     HOST_STAGE_RUNTIME,
     host_stage_profile,
     stage_runtime,
+    stage_runtime_reason,
 )
 
 from ..workspace import COMPONENT_DIRECTORY, TASK_RUNTIME_ACTIVATION, prepare_component_mount
@@ -36,7 +37,15 @@ from ..context.support import write_json
 
 
 AGENT_CONFIG_DIR = Path(__file__).resolve().parents[1] / "agent_configs"
-AGENT_ROLES = ("extraction", "review", "repair", "proposal", "proposal_review")
+AGENT_ROLES = (
+    "extraction",
+    "review",
+    "repair",
+    "proposal",
+    "proposal_review",
+    "methodology",
+    "methodology_review",
+)
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 
 # Stage execution plane.  ``docker`` gives each stage agent its own container,
@@ -165,7 +174,7 @@ class ComponentAgentRunner:
         self._image_lock = threading.Lock()
         options: dict[str, Any] = {
             "max_output_tokens": int(
-                os.environ.get("COMPONENT_DSH_MAX_OUTPUT_TOKENS", "16384")
+                os.environ.get("COMPONENT_DSH_MAX_OUTPUT_TOKENS", "32768")
             )
         }
         if self.stage_runtime == HOST_STAGE_RUNTIME:
@@ -449,7 +458,7 @@ class ComponentAgentRunner:
         if not workspace_root.is_dir():
             raise FileNotFoundError(f"agent workspace does not exist: {workspace_root}")
         output_dir.mkdir(parents=True, exist_ok=True)
-        task = task.rstrip() + file_submission_instructions()
+        task = task.rstrip() + file_submission_instructions(role=agent_role)
         (output_dir / "agent_task.txt").write_text(task, encoding="utf-8")
         task_argument = task
         mount_task_file = len(task.encode("utf-8")) > 32_000
@@ -694,6 +703,7 @@ class ComponentAgentRunner:
         runtime: dict[str, Any] = {
             "kind": "host",
             "stage_runtime": self.stage_runtime,
+            "stage_runtime_reason": stage_runtime_reason(),
             "declared_runtime_image": self.runtime_image or None,
             "activation": self._runtime_activation() or None,
         }
@@ -751,6 +761,7 @@ class ComponentAgentRunner:
             output_directory=str(submission_directory),
             checker_path=str(checker),
             isolation="host",
+            role=agent_role,
         )
         (output_dir / "agent_task.txt").write_text(task, encoding="utf-8")
         self._write_host_runtime_environment(output_dir)
@@ -766,7 +777,8 @@ class ComponentAgentRunner:
                 "output_tokens": result.output_tokens if result is not None else None,
                 "error": error,
                 "model": self.model,
-                "stage_runtime": "host",
+                "stage_runtime": self.stage_runtime,
+                "stage_runtime_reason": stage_runtime_reason(),
                 "container_image_id": None,
                 "container_network": None,
                 "workspace_mount": "read-only by contract",

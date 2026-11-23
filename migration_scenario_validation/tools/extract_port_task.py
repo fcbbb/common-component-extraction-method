@@ -8,7 +8,7 @@ the upstream commit (evaluator-only) and is listed in ``provenance.json``.
 
 Usage::
 
-    python3 tools/extract_port_task.py --slate windows_to_kylin/slate.yaml --all
+    python3 tools/extract_port_task.py --slate v1/windows_to_kylin/slate.yaml --all
     python3 tools/extract_port_task.py --slate ... --task l1_poco_thread --materialize
 """
 from __future__ import annotations
@@ -23,6 +23,18 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
+
+
+class _PackageDumper(yaml.SafeDumper):
+    """Keep multi-line specs readable as literal blocks in task.yaml."""
+
+
+def _str_representer(dumper: yaml.SafeDumper, value: str):
+    style = "|" if "\n" in value else None
+    return dumper.represent_scalar("tag:yaml.org,2002:str", value, style=style)
+
+
+_PackageDumper.add_representer(str, _str_representer)
 
 
 def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -177,6 +189,13 @@ def _readme(task: Dict[str, Any], provenance: Dict[str, Any]) -> str:
         "",
         f"- **Scenario**: `{task.get('scenario')}`",
         f"- **Level**: `{task.get('level')}`  **Fit**: `{task.get('fit', '')}`",
+    ]
+    if task.get("task_family"):
+        lines.append(f"- **Task family**: `{task.get('task_family')}` "
+                     f"(`{task.get('family', '')}`, `{task.get('family_type', '')}`)")
+    if task.get("library_manifest"):
+        lines.append(f"- **Frozen library**: `{task.get('library_manifest')}`")
+    lines += [
         f"- **Source**: {source.get('repo')} @ `{source.get('commit')}`",
         f"- **License**: {source.get('license')}",
         f"- **Target**: {target.get('os', target.get('backend', ''))} / "
@@ -231,6 +250,11 @@ def _write_package(task: Dict[str, Any], out_root: Path, *, force: bool) -> Path
         "test_files": _as_list(source.get("test_files")),
         "remove": remove,
         "gold_kind": task.get("gold_kind", "implementation"),
+        "task_family": task.get("task_family"),
+        "family": task.get("family"),
+        "family_type": task.get("family_type"),
+        "sequence": task.get("sequence"),
+        "library_manifest": task.get("library_manifest"),
         "materialized": False,
         "generated_by": "tools/extract_port_task.py",
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -241,7 +265,8 @@ def _write_package(task: Dict[str, Any], out_root: Path, *, force: bool) -> Path
     canonical["prepare"] = dict(task.get("prepare") or {})
     canonical["prepare"]["remove"] = remove
     with (root / "task.yaml").open("w", encoding="utf-8") as fh:
-        yaml.safe_dump(canonical, fh, sort_keys=False, allow_unicode=True, width=100)
+        yaml.dump(canonical, fh, Dumper=_PackageDumper, sort_keys=False,
+                  allow_unicode=True, width=100)
 
     with (root / "provenance.json").open("w", encoding="utf-8") as fh:
         json.dump(provenance, fh, indent=2, ensure_ascii=False)
@@ -259,8 +284,14 @@ def _write_package(task: Dict[str, Any], out_root: Path, *, force: bool) -> Path
         "build": task.get("build"),
         "public_tests": task.get("public_tests"),
         "hidden_tests": task.get("hidden_tests"),
+        "regression_tests": task.get("regression_tests"),
         "gates": task.get("gates"),
         "target": task.get("target"),
+        "task_family": task.get("task_family"),
+        "family": task.get("family"),
+        "family_type": task.get("family_type"),
+        "sequence": task.get("sequence"),
+        "library_manifest": task.get("library_manifest"),
         "placeholders": ["{root}", "{work}", "{build}", "{golden}"],
     }
     with (root / "harness" / "config.json").open("w", encoding="utf-8") as fh:

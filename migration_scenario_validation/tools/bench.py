@@ -42,11 +42,17 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "bench.yaml"
 
-SCENARIOS = ("ipp_to_vsipl", "windows_to_kylin", "cuda_to_musa")
+SCENARIOS = (
+    "ipp_to_vsipl",
+    "windows_to_kylin",
+    "windows_to_kylin_v3",
+    "cuda_to_musa",
+)
 TASK_PARENTS = {
-    "ipp_to_vsipl": "ipp_vsipl_tasks",
-    "windows_to_kylin": "windows_to_kylin/tasks",
-    "cuda_to_musa": "cuda_to_musa/tasks",
+    "ipp_to_vsipl": "v1/ipp_vsipl_tasks",
+    "windows_to_kylin": "v1/windows_to_kylin/tasks",
+    "windows_to_kylin_v3": "v3/windows_to_kylin/tasks",
+    "cuda_to_musa": "v1/cuda_to_musa/tasks",
 }
 
 PINNED_NODE = "24.9.0"
@@ -268,6 +274,34 @@ def _image_exists(image: str) -> bool:
     return rc == 0
 
 
+def _check_stage_plane(report: Report, repo: Path) -> None:
+    """Report which plane the method arm's nested stage agents will use."""
+    src = repo / "src"
+    if str(src) not in sys.path:
+        sys.path.insert(0, str(src))
+    try:
+        from component_method.agent_runtime.stage_plane import (
+            DOCKER_STAGE_RUNTIME,
+            stage_runtime,
+            stage_runtime_reason,
+        )
+
+        plane = stage_runtime()
+        reason = stage_runtime_reason()
+    except Exception as exc:  # noqa: BLE001 - preflight must not crash
+        report.warn("stage plane", f"cannot resolve ({exc}); stages default to docker")
+        return
+    if plane == DOCKER_STAGE_RUNTIME:
+        report.ok("stage plane", f"docker ({reason})")
+    else:
+        report.warn(
+            "stage plane",
+            f"host ({reason}); install the docker Python package "
+            "(python3 -m pip install 'docker>=5.0.3') for container stages; "
+            "host stages run without repository masking",
+        )
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     cfg = load_config(Path(args.config).resolve())
     repo = _repo_path(cfg)
@@ -306,6 +340,9 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         report.ok("docker", out.strip())
     else:
         report.fail("docker", out.strip()[-200:] or "docker daemon unreachable")
+
+    if args.arm in (None, "method"):
+        _check_stage_plane(report, repo)
 
     for name in _enabled_scenarios(cfg, args.scenario):
         sc = _scenario_cfg(cfg, name)
@@ -367,12 +404,9 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
-    verify = [
-        sys.executable, str(ROOT / "tools" / "verify_task.py"),
-        "--parent", TASK_PARENTS["ipp_to_vsipl"],
-        "--parent", TASK_PARENTS["windows_to_kylin"],
-        "--parent", TASK_PARENTS["cuda_to_musa"],
-    ]
+    verify = [sys.executable, str(ROOT / "tools" / "verify_task.py")]
+    for parent in TASK_PARENTS.values():
+        verify.extend(["--parent", parent])
     rc, out = _run(verify, timeout=600)
     print(out.rstrip())
     if rc != 0:
@@ -532,7 +566,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     budgets = dict(cfg.get("budgets") or {})
     argv: List[str] = [
         sys.executable,
-        str(ROOT / "tools" / "baseline_trial.py"),
+        str(ROOT / "tools" / "migration_trial.py"),
         "--arm", arm,
         "--dsh-profile", profile,
         "--label", label,
@@ -572,12 +606,18 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if args.method_addendum:
         argv.extend(["--method-addendum", args.method_addendum])
+    if args.method_prompt:
+        argv.extend(["--method-prompt", args.method_prompt])
+    if args.bundle:
+        argv.extend(["--bundle", args.bundle])
 
     stage_image = args.method_stage_image or str(arm_cfg.get("stage_image") or "")
     if stage_image:
         argv.extend(["--method-stage-image", str(stage_image)])
+    if args.method_stage_runtime != "auto":
+        argv.extend(["--method-stage-runtime", args.method_stage_runtime])
 
-    # Model routing is resolved by baseline_trial itself: CLI flag, then the
+    # Model routing is resolved by migration_trial itself: CLI flag, then the
     # repository-root .env, then the inherited environment.  Do not duplicate
     # it here -- that .env must keep winning over a stale shell export.
     if args.model:
@@ -590,6 +630,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         argv.append("--fake-model")
     if args.dry_run:
         argv.append("--dry-run")
+    if args.no_prepare:
+        argv.append("--no-prepare")
     if args.seed_gold:
         argv.append("--seed-gold")
     if args.keep_containers:
@@ -817,6 +859,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--command-timeout", type=int)
     run.add_argument("--total-timeout", type=int)
     run.add_argument("--prepare-timeout", type=int)
+    run.add_argument("--no-prepare", action="store_true",
+                     help="reuse the task work/ tree prepared by an earlier run")
     run.add_argument("--judge-timeout", type=int)
     run.add_argument("--method-main-timeout", type=int)
     run.add_argument("--method-step-limit", type=int)
@@ -824,8 +868,19 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--method-review-workers", type=int)
     run.add_argument("--method-agent-timeout", type=int)
     run.add_argument("--method-stage-image", default="")
+    run.add_argument("--method-stage-runtime", choices=("auto", "docker", "host"),
+                     default="auto",
+                     help="nested method stage plane; auto probes the Docker API and "
+                          "falls back to host when the daemon or its Python client is "
+                          "unavailable")
     run.add_argument("--dsh-profile", default="")
     run.add_argument("--method-addendum", default="")
+    run.add_argument("--method-prompt", default="",
+                     help="replace the fixed method workflow prompt (retrieval-only "
+                          "or extraction-only conditions)")
+    run.add_argument("--bundle", default="",
+                     help="prebuilt component library staged for the method task's "
+                          "retrieval stage (requires --method-prompt)")
     run.add_argument("--model", default="")
     run.add_argument("--api-base", default="")
     run.add_argument("--api-key", default="")

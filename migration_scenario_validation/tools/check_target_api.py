@@ -23,8 +23,8 @@ sys.path.insert(0, str(ROOT))
 from shared.harness import api_removal, taskmodel  # noqa: E402
 
 DEFAULT_PARENTS = {
-    "ipp": ROOT / "ipp_vsipl_tasks",
-    "kylin": ROOT / "windows_to_kylin" / "tasks",
+    "ipp": ROOT / "v1" / "ipp_vsipl_tasks",
+    "kylin": ROOT / "v3" / "windows_to_kylin" / "tasks",
 }
 
 

@@ -1,0 +1,37 @@
+{
+  "bundle_id": "T5",
+  "kind": "transformation",
+  "title": "Build discovery after implementation removal",
+  "capability": "build",
+  "when_to_use": "A platform directory or source set is selected by the build system and the first symptom is a build or link failure.",
+  "covers": [
+    "source selection by glob or explicit list",
+    "configure-time evaluation",
+    "missing or empty platform directory",
+    "build gap versus contract gap",
+    "generated feature headers",
+    "artifact-level verification"
+  ],
+  "boundary": "General build-discovery rules. Build systems differ, so the component identifies what to inspect and which failure shape maps to which cause.",
+  "verification": [
+    "clean configure and build from an empty build directory",
+    "new sources appear in the build graph",
+    "final artifact links",
+    "behavior probes pass",
+    "rebuild without cleaning to detect stale-state dependence"
+  ],
+  "source_migrations": [
+    "l2_libuv_process",
+    "l2_libuv_thread",
+    "l2_libuv_fs",
+    "l2_libarchive_read_disk",
+    "l2_libarchive_write_disk"
+  ],
+  "keywords": [
+    "build",
+    "glob",
+    "configure",
+    "link error",
+    "missing directory"
+  ]
+}

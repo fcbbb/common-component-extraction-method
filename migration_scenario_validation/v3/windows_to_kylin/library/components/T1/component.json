@@ -1,0 +1,34 @@
+{
+  "bundle_id": "T1",
+  "kind": "transformation",
+  "title": "Platform contract recovery",
+  "capability": "platform-abstraction",
+  "when_to_use": "The target platform implementation is missing while shared headers and callers remain visible.",
+  "covers": [
+    "contract inventory from shared headers and callers",
+    "missing boundary symbols",
+    "implicit field and macro dependencies",
+    "feature-gated compatibility aliases",
+    "thin target platform header"
+  ],
+  "boundary": "Assumes the shared contract is visible. Covers contract recovery only; layer semantics and build-system surgery are separate components.",
+  "verification": [
+    "clean configure, compile and link of the final artifact",
+    "declared boundary names matched against defined names",
+    "behavior probes for direct mapping, emulated state and error channel"
+  ],
+  "source_migrations": [
+    "l2_libuv_process",
+    "l2_libuv_thread",
+    "l2_libuv_fs",
+    "l2_libarchive_read_disk",
+    "l2_libarchive_write_disk"
+  ],
+  "keywords": [
+    "platform layer",
+    "contract",
+    "header",
+    "symbol inventory",
+    "compatibility alias"
+  ]
+}

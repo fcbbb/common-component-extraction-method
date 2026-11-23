@@ -4,7 +4,7 @@
 #
 # Used by:
 #   python3 shared/harness/run_remote.py --config env/remote.yaml \
-#       --local-dir cuda_to_musa/tasks/b_l1_leaky_relu/work \
+#       --local-dir v1/cuda_to_musa/tasks/b_l1_leaky_relu/work \
 #       --remote-dir b_l1_leaky_relu/work \
 #       --command "python3 /data/migration-bench/harness/run_task.py --task-root /data/migration-bench/b_l1_leaky_relu"
 #

@@ -1,0 +1,59 @@
+{
+  "task_id": "l2_libarchive_write_disk",
+  "scenario": "windows_to_kylin",
+  "level": "L2",
+  "build": {
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_TAR=OFF -DENABLE_CPIO=OFF -DENABLE_CAT=OFF && cmake --build {build} -j2",
+    "artifact": "{build}/libarchive/libarchive.a"
+  },
+  "public_tests": null,
+  "hidden_tests": {
+    "command": "mkdir -p {build}/test-run && cd {build}/test-run && ../bin/libarchive_test -r {work}/libarchive/test test_write_disk test_write_disk_failures test_write_disk_perms test_write_disk_secure test_write_disk_hardlink"
+  },
+  "gates": {
+    "build": "configure and build libarchive on the target platform",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "libarchive/archive_write_disk_posix.c"
+      ]
+    },
+    "target_api": "the rebuilt layer calls the target platform API rather than a hand-written portable fallback",
+    "behavior": "restore, permission, link and failure-path tests pass",
+    "regression": "the archive read and format suites stay green"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ],
+  "task_family": "v3",
+  "library_manifest": "v3/windows_to_kylin/library/manifest.json",
+  "regression_tests": null,
+  "family": "libarchive",
+  "family_type": "implicit_contract",
+  "sequence": 18
+}

@@ -1,0 +1,38 @@
+## Component retrieval and migration
+
+This session has one workflow tool, `component_run_stage`, plus `controlled_bash` and the
+standard background-job tools (`job_output`, `job_list`, `job_kill`). The component library
+was staged for this task before the session started.
+
+Use exactly the registered `run_id` and `task_id` from the registration line appended to
+this system prompt. Every call has the same shape:
+
+    {"run_id": "<run_id>", "task_id": "<task_id>", "stage": "<stage>"}
+
+### 1. Retrieve and materialize
+
+Call `component_run_stage` with `stage: "retrieval"`. A separate retrieval agent selects the
+components for this task; the same block validates that path list and writes the selected
+components to `/workspace/component_bundle`, with an `INDEX.md` that lists their paths. If the
+call returns `status: "running"` with a `job_id`, wait for it with
+`job_output {"job_id": "<job_id>", "wait": true, "timeout_ms": 600000}` and read the finished
+sheet before continuing.
+
+### 2. Apply
+
+Read `/workspace/component_bundle/INDEX.md` for the selected component paths, then open each
+`components/<id>/README.md` directly. Start with its `when_to_use` and boundary: they name the
+API model and conventions the component was written for. Compare those with the headers, spec
+and tests in the current workspace, then apply a rule when the task shares the stated model.
+A rule with an applicability condition applies only when the target meets that condition.
+The task's public header and observable behavior stay the contract when they differ; note the
+rules you set aside and proceed from the workspace contract for those layers.
+
+### 3. Verify and complete
+
+Use the verification checks of each component you apply for the layer it covers. Then complete
+the migration exactly as the task prompt requires, including its build and completion/submission
+step.
+
+Treat `/workspace/component_bundle` as read-only reference material. For any layer no component
+covers, proceed from the workspace contract and record that layer in your notes.

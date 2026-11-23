@@ -1,0 +1,38 @@
+You repair one transformation component that review marked for rework. The
+workspace is the completed migration: before, after, context and tests. The
+task contains the component and the review's must-change items, each with a
+field, a quoted statement and an instruction.
+
+## Repair
+
+Replace each quoted statement in its field with text that carries the
+instruction and stays grounded in the visible migration. Where the migration
+does not support a claim, remove it; where the limit matters to an implementer,
+state it in `boundary`. Keep every other field, the title and the family scope.
+
+The pipeline keeps the component id; the repaired card is the same component.
+
+## Output
+
+Write `manifest.json` with exactly one entry in `transformations`:
+
+{
+  "transformations": [
+    {
+      "title": "...",
+      "when_to_use": "...",
+      "mapping_rules": "...",
+      "procedure": "...",
+      "semantic_deltas": "...",
+      "pitfalls": "...",
+      "verification": "...",
+      "boundary": "...",
+      "applicability": {
+        "constraints": ["toolchain, version, device or configuration limit"]
+      }
+    }
+  ]
+}
+
+Use the same field meanings as extraction. Each field may stay a paragraph or a
+short list. Write only `manifest.json`.

@@ -1,0 +1,90 @@
+scenario: windows_to_kylin
+task_family: v3
+family: libarchive
+fit: B
+counted: false
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DENABLE_TEST=ON -DENABLE_TAR=OFF -DENABLE_CPIO=OFF
+    -DENABLE_CAT=OFF && cmake --build {build} -j2
+  artifact: '{build}/libarchive/libarchive.a'
+gates:
+  build: configure and build libarchive on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - libarchive/archive_write_disk_posix.c
+  target_api: the rebuilt layer calls the target platform API rather than a hand-written portable fallback
+  behavior: restore, permission, link and failure-path tests pass
+  regression: the archive read and format suites stay green
+id: l2_libarchive_write_disk
+level: L2
+family_type: implicit_contract
+sequence: 18
+domain: archives
+difficulty: hard
+title: Migrate the libarchive disk writer to Kylin V10 SP3
+source:
+  repo: https://github.com/libarchive/libarchive.git
+  commit: 313aa1fa10b657de791e3202c168a6c833bc3543
+  tag: v3.7.4
+  license: BSD-2-Clause
+  windows_files:
+  - libarchive/archive_write_disk_windows.c
+  - libarchive/archive_write_disk_private.h
+  gold_files:
+  - libarchive/archive_write_disk_posix.c
+  test_files:
+  - libarchive/test/test_write_disk.c
+  - libarchive/test/test_write_disk_failures.c
+  - libarchive/test/test_write_disk_perms.c
+  - libarchive/test/test_write_disk_secure.c
+  - libarchive/test/test_write_disk_hardlink.c
+spec: |
+  libarchive is being moved from Windows to Kylin V10 SP3.  The
+  target-platform disk writer has not been written yet.
+
+  Reimplement the writer behind `archive_write_disk`: directory
+  creation, rename, link and symbolic-link restoration under the
+  overwrite, no-overwrite and secure-symlink policies; mode bits,
+  ownership where permitted and timestamps; sparse-file writing and
+  hard-link bookkeeping; and the documented error mapping for the
+  extract flags.  The Win32 implementation, the shared headers and
+  the callers stay visible as the reference.
+
+  Scope: the disk writer only; do not change the public API or the
+  shared private header.  Deliverable: `libarchive.a`, built by the
+  repository CMake entry.
+
+  Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake
+  3.16.5.
+prepare:
+  remove:
+  - libarchive/archive_write_disk_posix.c
+hidden_tests:
+  command: mkdir -p {build}/test-run && cd {build}/test-run && ../bin/libarchive_test -r {work}/libarchive/test
+    test_write_disk test_write_disk_failures test_write_disk_perms test_write_disk_secure test_write_disk_hardlink
+task_id: l2_libarchive_write_disk

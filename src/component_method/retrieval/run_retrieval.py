@@ -17,6 +17,9 @@ from component_method.retrieval import (  # noqa: E402
     RetrievalRequest,
     run_retrieval_agent,
 )
+from component_method.retrieval.selection_bundle import (  # noqa: E402
+    materialize_if_configured,
+)
 
 
 def main() -> None:
@@ -55,6 +58,16 @@ def main() -> None:
             "litellm_model_registry": str(task_execution_root() / "config" / "pricing.json"),
         },
     )
+    bundle = materialize_if_configured(
+        library,
+        Path(
+            os.environ.get("COMPONENT_DSH_SELECTION_PATH")
+            or output / "submission" / "selection.json"
+        ).expanduser().resolve(),
+        config["task_id"],
+    )
+    if bundle is not None:
+        result["bundle"] = bundle
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

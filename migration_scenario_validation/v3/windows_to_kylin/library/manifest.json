@@ -1,0 +1,51 @@
+{
+  "schema_version": "methodology-1",
+  "kind": "methodology",
+  "library_id": "windows-to-posix-transformations",
+  "version": 2,
+  "component_count": 5,
+  "components_file": "INDEX.md",
+  "selection_file": "SELECTION.md",
+  "components": [
+    {
+      "bundle_id": "T1",
+      "title": "Platform contract recovery",
+      "capability": "platform-abstraction",
+      "library": "components/T1/README.md",
+      "readme": "components/T1/README.md",
+      "metadata": "components/T1/component.json"
+    },
+    {
+      "bundle_id": "T2",
+      "title": "File abstraction layer port",
+      "capability": "file-system/io",
+      "library": "components/T2/README.md",
+      "readme": "components/T2/README.md",
+      "metadata": "components/T2/component.json"
+    },
+    {
+      "bundle_id": "T3",
+      "title": "Process creation port",
+      "capability": "process",
+      "library": "components/T3/README.md",
+      "readme": "components/T3/README.md",
+      "metadata": "components/T3/component.json"
+    },
+    {
+      "bundle_id": "T4",
+      "title": "Thread and synchronisation port",
+      "capability": "threading",
+      "library": "components/T4/README.md",
+      "readme": "components/T4/README.md",
+      "metadata": "components/T4/component.json"
+    },
+    {
+      "bundle_id": "T5",
+      "title": "Build discovery after implementation removal",
+      "capability": "build",
+      "library": "components/T5/README.md",
+      "readme": "components/T5/README.md",
+      "metadata": "components/T5/component.json"
+    }
+  ]
+}

@@ -10,7 +10,7 @@ import shutil
 import tempfile
 from typing import Any
 
-from .submission import validate_selection
+from .submission import is_methodology_manifest, validate_selection
 
 
 def _write_json(path: Path, value: object) -> None:
@@ -199,6 +199,120 @@ def _document_stable_import(
     readme.write_text("".join(lines), encoding="utf-8")
 
 
+def _methodology_index(selection: dict[str, Any]) -> str:
+    """List selected component paths without restating their content."""
+    ids = selection["selected_bundle_ids"]
+    lines = [
+        "# Selected component paths",
+        "",
+        f"{len(ids)} methodology {'component' if len(ids) == 1 else 'components'} "
+        "selected for this task. Read each README directly; this index is a path "
+        "list, not a summary.",
+        "",
+    ]
+    for bundle_id in ids:
+        lines.extend([
+            f"- `components/{bundle_id}/README.md`",
+            f"- `components/{bundle_id}/component.json`",
+        ])
+    lines.append("")
+    return "\n".join(lines) + "\n"
+
+
+def materialize_methodology_bundle(
+    source_library: Path,
+    selection: dict[str, Any],
+    destination: Path,
+) -> Path:
+    """Copy selected Markdown methodology components into a task bundle."""
+    source_library = source_library.resolve()
+    destination = destination.resolve()
+    source_manifest = json.loads(
+        (source_library / "manifest.json").read_text(encoding="utf-8")
+    )
+    records_by_id = {
+        record["bundle_id"]: record
+        for record in source_manifest.get("components", [])
+        if isinstance(record, dict) and isinstance(record.get("bundle_id"), str)
+    }
+
+    staging = Path(tempfile.mkdtemp(prefix=".selection-bundle-", dir=destination.parent))
+    staging.chmod(0o755)
+    try:
+        component_root = staging / "components"
+        component_root.mkdir()
+        records = []
+        for bundle_id in selection["selected_bundle_ids"]:
+            source_record = records_by_id[bundle_id]
+            source_relative = source_record.get("readme") or source_record.get("library")
+            if not isinstance(source_relative, str):
+                raise ValueError(f"selected component has no README: {bundle_id}")
+            source_dir = (source_library / source_relative).resolve().parent
+            try:
+                source_dir.relative_to(source_library)
+            except ValueError as exc:
+                raise ValueError(f"selected component path escapes bundle: {source_relative}") from exc
+            if not source_dir.is_dir():
+                raise FileNotFoundError(f"selected component directory is missing: {bundle_id}")
+            target_dir = component_root / bundle_id
+            target_dir.mkdir(parents=True)
+            for path in sorted(source_dir.iterdir()):
+                if path.is_file() and path.suffix in {".md", ".json"}:
+                    shutil.copyfile(path, target_dir / path.name)
+            metadata_relative = source_record.get("metadata")
+            metadata: dict[str, Any] = {}
+            if isinstance(metadata_relative, str):
+                metadata = json.loads(
+                    (source_library / metadata_relative).read_text(encoding="utf-8")
+                )
+            records.append({
+                "bundle_id": bundle_id,
+                "title": metadata.get("title") or source_record.get("title"),
+                "capability": metadata.get("capability") or source_record.get("capability"),
+                "library": f"components/{bundle_id}/README.md",
+                "readme": f"components/{bundle_id}/README.md",
+                "metadata": f"components/{bundle_id}/component.json",
+            })
+
+        (staging / "INDEX.md").write_text(
+            _methodology_index(selection), encoding="utf-8"
+        )
+        # The task bundle carries no generated summary; the Task Agent reads the
+        # selected component READMEs directly.
+        _write_json(staging / "selection.json", selection)
+        source_readme = source_library / "README.md"
+        if source_readme.is_file():
+            shutil.copyfile(source_readme, staging / "README.md")
+        else:
+            (staging / "README.md").write_text(
+                "# Component bundle\n\nRead [INDEX.md](INDEX.md) for the selected components.\n",
+                encoding="utf-8",
+            )
+
+        manifest = {
+            key: source_manifest[key]
+            for key in ("schema_version", "kind", "library_id")
+            if key in source_manifest
+        }
+        manifest.update(
+            generated_at=datetime.now(timezone.utc).isoformat(),
+            component_count=len(records),
+            components_file="INDEX.md",
+            components=records,
+            selection_method="validated_task_retrieval_subset",
+            selection_file="selection.json",
+            selected_bundle_ids=selection["selected_bundle_ids"],
+        )
+        _write_json(staging / "manifest.json", manifest)
+        for path in staging.rglob("*"):
+            path.chmod(0o755 if path.is_dir() else 0o644)
+        os.replace(staging, destination)
+        return destination
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging)
+
+
 def materialize_selected_bundle(
     source_library: Path,
     selection_path: Path,
@@ -222,6 +336,11 @@ def materialize_selected_bundle(
     source_manifest = json.loads(
         (source_library / "manifest.json").read_text(encoding="utf-8")
     )
+    if is_methodology_manifest(source_manifest):
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.exists() or destination.is_symlink():
+            raise FileExistsError(f"selected component bundle already exists: {destination}")
+        return materialize_methodology_bundle(source_library, selection, destination)
     if source_manifest.get("schema_version") == 8:
         from component_method.library_publish.artifacts import select_artifact_bundle
 
@@ -340,3 +459,28 @@ def materialize_selected_bundle(
     finally:
         if staging.exists():
             shutil.rmtree(staging)
+
+
+def materialize_if_configured(
+    source_library: Path,
+    selection_path: Path,
+    task_id: str,
+) -> str | None:
+    """Materialize when the caller configured a bundle destination.
+
+    The retrieval block owns selection *and* bundle materialization, so the
+    migration agent does not need a second stage call.  Batch callers leave
+    ``COMPONENT_DSH_BUNDLE_DESTINATION`` unset and keep retrieval-only
+    behaviour.
+    """
+    destination = os.environ.get("COMPONENT_DSH_BUNDLE_DESTINATION")
+    if not destination:
+        return None
+    return str(
+        materialize_selected_bundle(
+            source_library,
+            selection_path,
+            Path(destination),
+            expected_task_id=task_id,
+        )
+    )

@@ -1,0 +1,43 @@
+{
+  "bundle_id": "T2",
+  "kind": "transformation",
+  "title": "File abstraction layer port",
+  "capability": "file-system/io",
+  "when_to_use": "File descriptors, metadata, directory iteration, symlinks, timestamps, truncation or file mapping must be rebuilt on POSIX.",
+  "covers": [
+    "open and close",
+    "sequential read and write",
+    "positioned read and write",
+    "stat, lstat and fstat",
+    "directory iteration",
+    "rename, unlink, mkdir and rmdir",
+    "symlink and readlink",
+    "timestamps",
+    "truncate and fsync",
+    "mmap and munmap",
+    "errno preservation"
+  ],
+  "boundary": "Local POSIX filesystems. Async I/O, network filesystems, reparse points, ACLs and change notification are outside.",
+  "verification": [
+    "create, append and commit behavior",
+    "short writes complete and interrupted writes retry",
+    "truncate and extend across large offsets",
+    "metadata matrix for file, directory, symlink, missing path and non-directory component",
+    "directory iteration terminates and returns usable entries",
+    "canonicalisation of existing and non-existing paths",
+    "mapping content and unmap"
+  ],
+  "source_migrations": [
+    "l2_libuv_fs",
+    "l2_libarchive_read_disk",
+    "l2_libarchive_write_disk"
+  ],
+  "keywords": [
+    "file",
+    "stat",
+    "directory",
+    "readlink",
+    "errno",
+    "mmap"
+  ]
+}

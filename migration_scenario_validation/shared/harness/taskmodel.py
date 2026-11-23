@@ -164,7 +164,7 @@ def target_api_gate(task: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         dirs = list(api.get("source_dirs") or []) if isinstance(api, dict) else []
         if not dirs:
             dirs = ["src"]
-        if task_id == "l3_curl_build":
+        if task_id.endswith("curl_build"):
             regex = r"(?i)\b(?:cmake|configure|make)\b"
         elif "curl_tls" in task_id:
             regex = r"\b(?:SSL_|OPENSSL_|EVP_)[A-Za-z0-9_]+"

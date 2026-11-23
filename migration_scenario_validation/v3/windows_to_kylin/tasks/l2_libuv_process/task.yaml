@@ -1,0 +1,92 @@
+scenario: windows_to_kylin
+task_family: v3
+family: libuv
+fit: B
+counted: false
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON
+    && cmake --build {build} -j2
+  artifact: '{build}/libuv.a'
+gates:
+  build: configure and build libuv on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/unix/process.c
+  target_api: the rebuilt layer calls the target platform API rather than a hand-written portable fallback
+  behavior: the spawn, stdio, exit, kill and process-title suites pass
+  regression: the loop, timer and file-system suites stay green
+id: l2_libuv_process
+level: L2
+family_type: pattern
+sequence: 15
+domain: async-io
+difficulty: hard
+title: Migrate the libuv process layer to Kylin V10 SP3
+source:
+  repo: https://github.com/libuv/libuv.git
+  commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+  tag: v1.48.0
+  license: MIT
+  windows_files:
+  - src/win/process.c
+  - src/win/process-stdio.c
+  gold_files:
+  - src/unix/process.c
+  test_files:
+  - test/test-spawn.c
+  - test/test-process-title.c
+  - test/test-process-title-threadsafe.c
+  - test/test-process-priority.c
+spec: |
+  libuv is being moved from Windows to Kylin V10 SP3.  The
+  target-platform process backend has not been written yet.
+
+  Reimplement process spawning behind the public `uv_spawn` API:
+  argument and environment construction, executable lookup and
+  validation, the ENOENT and EACCES paths, stdio inheritance, pipe
+  and descriptor remapping, detached processes, process groups,
+  uid and gid switching, window-hide semantics, kill and
+  process-title helpers, and the exit and close callbacks.  The
+  Win32 implementation, the shared headers and the callers stay
+  visible as the reference.
+
+  Scope: the process backend only; do not change public headers or
+  signatures.  Deliverable: `libuv.a`, built by the repository
+  CMake entry.
+
+  Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake
+  3.16.5.
+prepare:
+  remove:
+  - src/unix/process.c
+hidden_tests:
+  command: cd {work} && {build}/uv_run_tests_a spawn_stdout && {build}/uv_run_tests_a spawn_stdin && {build}/uv_run_tests_a
+    spawn_exit_code && {build}/uv_run_tests_a spawn_and_kill && {build}/uv_run_tests_a spawn_detached
+    && {build}/uv_run_tests_a spawn_reads_child_path && {build}/uv_run_tests_a spawn_relative_path &&
+    {build}/uv_run_tests_a process_title && {build}/uv_run_tests_a process_priority
+task_id: l2_libuv_process

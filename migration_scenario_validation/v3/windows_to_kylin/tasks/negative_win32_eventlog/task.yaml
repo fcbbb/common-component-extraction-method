@@ -1,0 +1,75 @@
+scenario: windows_to_kylin
+task_family: v3
+family: poco_foundation
+fit: C
+counted: false
+source_kind: upstream_platform_port
+gold_kind: none
+library_manifest: v3/windows_to_kylin/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  mode: none
+  command: ''
+gates:
+  build: 'not applicable: the module cannot be built on Kylin'
+  api_removal:
+    symbol_regex: ^(ReportEvent|RegisterEventSource|DeregisterEventSource|OpenEventLog)
+    source_regex: windows\.h|ReportEvent|RegisterEventSource|HKEY_|RegCreateKey|pocomsg
+    exclude_globs: []
+    expect_fail: true
+    source_dirs:
+    - Foundation/src/EventLogChannel.cpp
+  target_api: 'not applicable: the correct outcome adds no backend'
+  behavior: PORTING_NOTES.md documents the non-portability and no fake backend is added
+  regression: the rest of Foundation stays unchanged
+id: negative_win32_eventlog
+level: L3
+family_type: negative_control
+sequence: 20
+domain: negative
+difficulty: hard
+title: 'Negative control: Windows Event Log channel has no equivalent'
+negative: true
+expected_api_removal: fail
+source:
+  repo: https://github.com/pocoproject/poco.git
+  commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+  tag: poco-1.13.3-release
+  license: BSL-1.0
+  windows_files:
+  - Foundation/src/EventLogChannel.cpp
+  - Foundation/include/Poco/EventLogChannel.h
+  - Foundation/src/pocomsg.mc
+  gold_files: []
+  test_files: []
+spec: |
+  Poco::EventLogChannel is being assessed for a move from Windows
+  to Kylin V10 SP3.  Windows Event Log reporting has no direct
+  equivalent on the target platform.
+
+  The channel writes records through the Windows Event Log API,
+  registers an event source in the registry and loads message-table
+  resources compiled from Windows resource files.  Kylin has no
+  Event Log service, no equivalent event-source registration and no
+  message-table resource compiler.
+
+  Scope: this task does not port the component.  Write
+  `work/PORTING_NOTES.md` that names the platform-only APIs and
+  their call sites, explains why a system-log service is not a
+  behaviour-preserving replacement, and states what a product team
+  would have to redesign.  Deliverable: the report; do not add a
+  stub backend.
+
+  Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake
+  3.16.5.
+prepare:
+  remove: []
+hidden_tests:
+  command: test -s {work}/PORTING_NOTES.md && grep -qiE 'event ?log|not portable|no (direct )?(linux|posix|kylin)
+    equivalent' {work}/PORTING_NOTES.md
+task_id: negative_win32_eventlog

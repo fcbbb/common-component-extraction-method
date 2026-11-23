@@ -1,0 +1,31 @@
+{
+  "task_id": "l2_cil_fbp",
+  "scenario": "ipp_to_vsipl",
+  "repo": "https://github.com/TomographicImaging/CIL.git",
+  "commit": "b39f95799bf1af891a896fc4be704986284b593e",
+  "license": "Apache-2.0",
+  "vendored": true,
+  "snapshot": "v1/ipp_vsipl_tasks/l2_cil_fbp",
+  "source_files": [
+    "src/Core/FBP_filtering.cpp",
+    "src/Core/include/FBP_filtering.h",
+    "Wrappers/Python/cil/recon/FBP.py"
+  ],
+  "gold_files": [
+    "gold/fbp_filtering_vsipl.c"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/fbp_ops.h",
+    "harness/golden_gen.c",
+    "harness/hidden_test.c",
+    "harness/run_hidden.py"
+  ],
+  "golden_cases": 10,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/unify_ipp_tasks.py",
+  "generated_at": "2026-11-15T03:50:55Z"
+}

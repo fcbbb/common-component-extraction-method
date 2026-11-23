@@ -1,0 +1,34 @@
+{
+  "task_id": "v2_curl_build",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/curl/curl.git",
+  "commit": "7161cb17c01dcff1dc5bf89a18437d9d729f1ecd",
+  "tag": "curl-8_5_0",
+  "subdir": null,
+  "license": "curl",
+  "source_files": [
+    "projects/Windows/VC14.30/lib/libcurl.sln",
+    "winbuild/Makefile.vc"
+  ],
+  "gold_files": [
+    "CMakeLists.txt",
+    "CMake"
+  ],
+  "test_files": [
+    "tests/data/test3000",
+    "tests/data/test3001"
+  ],
+  "remove": [
+    "CMakeLists.txt",
+    "CMake"
+  ],
+  "gold_kind": "implementation",
+  "task_family": "v3",
+  "family": "curl_build",
+  "family_type": "build_system",
+  "sequence": 13,
+  "library_manifest": "v3/windows_to_kylin/library/manifest.json",
+  "materialized": true,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-20T15:46:43Z"
+}

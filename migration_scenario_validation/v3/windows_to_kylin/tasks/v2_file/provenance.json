@@ -1,0 +1,34 @@
+{
+  "task_id": "v2_file",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/pocoproject/poco.git",
+  "commit": "d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b",
+  "tag": "poco-1.13.3-release",
+  "subdir": null,
+  "license": "BSL-1.0",
+  "source_files": [
+    "Foundation/src/File_WIN32U.cpp",
+    "Foundation/include/Poco/File_WIN32U.h"
+  ],
+  "gold_files": [
+    "Foundation/src/File_UNIX.cpp"
+  ],
+  "test_files": [
+    "Foundation/testsuite/src/FileTest.cpp",
+    "Foundation/testsuite/src/FileStreamTest.cpp",
+    "Foundation/testsuite/src/DirectoryIteratorsTest.cpp",
+    "Foundation/testsuite/src/GlobTest.cpp"
+  ],
+  "remove": [
+    "Foundation/src/File_UNIX.cpp"
+  ],
+  "gold_kind": "implementation",
+  "task_family": "v3",
+  "family": "poco_foundation",
+  "family_type": "implicit_contract",
+  "sequence": 2,
+  "library_manifest": "v3/windows_to_kylin/library/manifest.json",
+  "materialized": true,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-20T14:54:51Z"
+}

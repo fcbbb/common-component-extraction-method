@@ -19,6 +19,11 @@
     "scenario": { "enum": ["ipp_to_vsipl", "windows_to_kylin", "cuda_to_ascend"] },
     "level": { "enum": ["L1", "L2", "L3", "negative"] },
     "fit": { "enum": ["A", "B", "C"] },
+    "task_family": { "type": "string" },
+    "family": { "type": "string" },
+    "family_type": { "enum": ["pattern", "implicit_contract", "localization", "sequential"] },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "library_manifest": { "type": "string" },
     "title": { "type": "string" },
     "negative": { "type": "boolean" },
     "expected_api_removal": { "enum": ["pass", "fail"] },
@@ -82,6 +87,14 @@
         "command": { "type": "string" },
         "visible_to_agent": { "type": "boolean" },
         "cases": { "type": "array" }
+      }
+    },
+    "regression_tests": {
+      "type": "object",
+      "required": ["command"],
+      "properties": {
+        "command": { "type": "string" },
+        "visible_to_agent": { "type": "boolean" }
       }
     },
     "gates": {

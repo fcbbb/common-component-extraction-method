@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bring the vendored IPP -> VSIPL tasks onto the shared task-package schema.
 
-The 19 packages under ``ipp_vsipl_tasks/`` predate the unified schema: they
+The 19 packages under ``v1/ipp_vsipl_tasks/`` predate the unified schema: they
 have no ``scenario``/``provenance.json``/``prepare.sh`` and their commands use
 literal paths.  This tool rewrites them in place while preserving every
 hand-written comment and note:
@@ -20,7 +20,7 @@ it copies the package's own ``src/``, ``include/``, ``test/`` and
 
 Usage::
 
-    python3 tools/unify_ipp_tasks.py [--root ipp_vsipl_tasks]
+    python3 tools/unify_ipp_tasks.py [--root v1/ipp_vsipl_tasks]
 """
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-TASKS = ROOT / "ipp_vsipl_tasks"
+TASKS = ROOT / "v1" / "ipp_vsipl_tasks"
 
 # id -> (license, canonical upstream URL or None for synthetic snapshots)
 META: Dict[str, Tuple[str, Optional[str]]] = {
@@ -251,7 +251,7 @@ def write_provenance(root: Path, task_id: str) -> None:
         "commit": str(src.get("commit", "")),
         "license": str(src.get("license", "")),
         "vendored": True,
-        "snapshot": f"ipp_vsipl_tasks/{task_id}",
+        "snapshot": f"v1/ipp_vsipl_tasks/{task_id}",
         "source_files": files,
         "gold_files": [gold_rel] if gold_rel else [],
         "test_files": test_files,

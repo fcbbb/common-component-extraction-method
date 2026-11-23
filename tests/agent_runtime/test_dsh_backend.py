@@ -227,7 +227,11 @@ def test_runtime_identity_changes_with_plugin_bundle(tmp_path):
 def test_component_runner_uses_dsh_by_default(monkeypatch, tmp_path):
     import docker
 
+    from component_method.agent_runtime import stage_plane
+
     monkeypatch.delenv("AGENT_BACKEND", raising=False)
+    monkeypatch.setenv(stage_plane.STAGE_RUNTIME_ENVIRONMENT, "docker")
+    stage_plane._resolve.cache_clear()
     monkeypatch.setattr(docker, "from_env", lambda: object())
     runner = ComponentAgentRunner(
         model="fixture-model",
@@ -239,3 +243,18 @@ def test_component_runner_uses_dsh_by_default(monkeypatch, tmp_path):
     assert runner.backend_name == "dsh"
     assert isinstance(runner.backend, DshHeadlessBackend)
     assert "controlled_bash" in runner._effective_system_prompt("extraction")
+
+
+def test_component_runner_default_output_budget_is_32k(monkeypatch, tmp_path):
+    from component_method.agent_runtime import stage_plane
+
+    monkeypatch.setenv(stage_plane.STAGE_RUNTIME_ENVIRONMENT, "host")
+    monkeypatch.delenv("COMPONENT_DSH_MAX_OUTPUT_TOKENS", raising=False)
+    stage_plane._resolve.cache_clear()
+    runner = ComponentAgentRunner(
+        model="fixture-model",
+        api_key="secret",
+        base_url="https://example.invalid/v1",
+        repository_root=tmp_path,
+    )
+    assert runner.backend.max_output_tokens == 32_768

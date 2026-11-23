@@ -7,17 +7,29 @@ env/remote.yaml
 */tasks/*/work/
 */tasks/*/build*/
 */tasks/*/gold/
-ipp_vsipl_tasks/*/work/
-ipp_vsipl_tasks/*/build*/
-ipp_vsipl_tasks/*/gold/
-archive/**/work/
-archive/**/build*/
-archive/**/gold/
+v1/ipp_vsipl_tasks/*/work/
+v1/ipp_vsipl_tasks/*/build*/
+v1/ipp_vsipl_tasks/*/gold/
+v1/archive/**/work/
+v1/archive/**/build*/
+v1/archive/**/gold/
 
 # Local run configuration and evidence.  Reports stay on the machine that ran
 # them; ship them separately if needed.
 bench.env
 reports/
+
+# Derived history corpus.  Built from the gitignored work/ and gold/ trees, so
+# it is regenerated with tools/build_history_corpus.py rather than committed.
+v3/windows_to_kylin/history/examples/
+v3/windows_to_kylin/history/index.json
+v3/windows_to_kylin/history/lock.json
+v3/windows_to_kylin/history/README.md
+
+# Derived methodology artefacts: extraction runs, curation, reviews and the
+# generated library.  Rebuilt with tools/extract_transformation.py --stage all.
+v3/windows_to_kylin/history/runs/
+v3/windows_to_kylin/library_generated/
 
 # Python
 __pycache__/

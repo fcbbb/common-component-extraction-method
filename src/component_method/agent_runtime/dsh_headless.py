@@ -264,6 +264,8 @@ class DshHeadlessBackend:
             "COMPONENT_DSH_COVERAGE_PATH",
             "COMPONENT_DSH_TASK_ID",
             "COMPONENT_DSH_BUNDLE_DESTINATION",
+            "COMPONENT_DSH_HOST_WORKSPACE",
+            "COMPONENT_DSH_AGENT_WORKSPACE",
         ):
             if value := self.host_environment.get(key):
                 environment[key] = value

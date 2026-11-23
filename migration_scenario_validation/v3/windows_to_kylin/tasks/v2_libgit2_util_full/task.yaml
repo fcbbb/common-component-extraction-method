@@ -1,0 +1,86 @@
+scenario: windows_to_kylin
+task_family: v3
+family: libgit2_util
+fit: B
+counted: false
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF
+    -DUSE_SSH=OFF -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build}
+    -j2
+  artifact: '{build}/libgit2.a'
+gates:
+  build: configure and build Foundation on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/util/unix
+  target_api:
+    source_dirs:
+    - src/util/unix
+    source_regex: \b(?:pthread_[A-Za-z0-9_]+|mmap|munmap|realpath|open|read|write|stat|fstat|unlink|mkdir|rename|opendir|readdir|fork|execve|waitpid|pipe|dup2)\b
+    min_hits: 1
+  behavior: libgit2 builds and the selected offline utility and threading suites pass
+  regression: the library links and the remaining offline suites stay green
+id: v2_libgit2_util_full
+level: L3
+family_type: localization
+sequence: 9
+domain: vcs
+difficulty: hard
+title: Migrate the complete libgit2 utility layer to Kylin V10 SP3
+source:
+  repo: https://github.com/libgit2/libgit2.git
+  commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+  tag: v1.8.1
+  license: GPL-2.0-with-linking-exception
+  windows_files:
+  - src/util/win32
+  gold_files:
+  - src/util/unix
+  test_files:
+  - tests/util
+spec: |
+  libgit2 is being moved from Windows to Kylin V10 SP3.  The entire
+  target-platform utility layer has not been written yet: process
+  creation, memory mapping, path canonicalisation, directory handling,
+  error translation and the thread/synchronisation wrappers shared by the
+  rest of the library.
+
+  Rebuild the layer as one coherent unit, using the visible headers, the
+  callers and the Windows implementation as the reference.  The library
+  and its selected offline utility and threading suites must build and
+  pass with the repository CMake entry.
+
+  Scope: the utility layer only; public libgit2 headers and call sites
+  stay unchanged.  Deliverable: `libgit2.a`.
+prepare:
+  remove:
+  - src/util/unix
+hidden_tests:
+  command: cd {build} && ./util_tests -v -sfilebuf -sftruncate -sstat -spath::core -sprocess::start &&
+    ./libgit2_tests -v -xonline -sthreads::basic
+task_id: v2_libgit2_util_full

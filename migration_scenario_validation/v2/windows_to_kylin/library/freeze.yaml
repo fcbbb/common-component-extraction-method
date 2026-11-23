@@ -1,0 +1,106 @@
+# V2 frozen library: POCO Foundation.
+#
+# The corpus is the source side of one pinned upstream snapshot: production
+# code, public headers and build files.  Tests, samples, Windows project files,
+# every task package and every target-platform (POSIX/UNIX) implementation are
+# excluded.  Extraction runs against this corpus before any task exists
+# (`snapshot.task_blind: true`), and all tasks in the windows_to_kylin V2
+# family read the same lock.
+#
+# Record the corpus:
+#   python3 tools/freeze_library.py snapshot \
+#       --spec v2/windows_to_kylin/library/freeze.yaml
+#
+# Check it again later:
+#   python3 tools/freeze_library.py verify \
+#       --spec v2/windows_to_kylin/library/freeze.yaml --local-cache ~/.cache/migration-bench/repos
+#
+# After review + publication, record the published library tree:
+#   python3 tools/freeze_library.py publish \
+#       --spec v2/windows_to_kylin/library/freeze.yaml \
+#       --library-root <published-library> --component-count <n>
+schema: v2-library-freeze-v1
+
+library:
+  id: poco-foundation
+  version: 1
+  repo: https://github.com/pocoproject/poco.git
+  commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+  tag: poco-1.13.3-release
+  subdir: Foundation
+  license: BSL-1.0
+  language_backend: cpp@1
+  description: >-
+    POCO C++ Libraries, Foundation module.  The source side exposes a clear
+    platform layer (Win32 implementations plus public headers and callers);
+    the target-platform POSIX implementations live in the same upstream commit
+    and stay evaluator-side.
+
+snapshot:
+  task_blind: true
+  description: >-
+    Source-side production code, public headers and the build entry.  The
+    extractor never sees a task spec, a hidden test, a gold implementation or
+    any task package, so the library cannot be tailored to one question.
+  include:
+    - Foundation/include/**
+    - Foundation/src/**
+    - Foundation/cmake/**
+    - Foundation/CMakeLists.txt
+    - CMakeLists.txt
+    - VERSION
+    - cmake/**
+  exclude:
+    - Foundation/testsuite/**
+    - Foundation/samples/**
+    - Foundation/Makefile
+    - Foundation/nonexistent.txt
+    - 'Foundation/*.sln'
+    - 'Foundation/*.vcxproj'
+    - 'Foundation/*.vcxproj.filters'
+    - '**/*.vcproj'
+    - '**/*.filters'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    # Target-platform implementations are the evaluator-side gold for this
+    # family.  They must never enter the frozen corpus, even though they live
+    # in the same upstream commit as the source side.
+    - Foundation/src/*_POSIX.cpp
+    - Foundation/src/*_UNIX.cpp
+  # Assertion list: `freeze_library.py` re-checks that none of these paths
+  # appear in the selected corpus or in an existing lock.  Keep it in sync
+  # with the task family's `gold_files` (here: all 17 platform-layer files).
+  evaluator_side:
+    - Foundation/src/*_POSIX.cpp
+    - Foundation/src/*_UNIX.cpp
+  forbidden_task_inputs:
+    - v2/**/tasks/**
+    - '**/task.yaml'
+    - '**/task_slate.md'
+    - '**/design.md'
+    - '**/gold/**'
+    - '**/hidden_tests/**'
+
+extraction:
+  mode: task_blind
+  language_backend: cpp@1
+  inputs:
+    - source-side production code (including the Windows platform implementation)
+    - public headers and callers
+    - build files
+  workflow:
+    - source_scan
+    - extract
+    - curate
+    - prepare_reviews
+    - review
+    - publish_library
+  output_schema: component library published by publish_library (schema 8)
+  review_policy: >-
+    Only components that pass review are published.  The frozen library is
+    shared by the whole windows_to_kylin V2 family.
+
+publication:
+  # Filled by `freeze_library.py publish` after the library has been built,
+  # reviewed and published.  Until then the family cannot start its B arm.
+  status: pending_publication

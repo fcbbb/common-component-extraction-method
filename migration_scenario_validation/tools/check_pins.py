@@ -19,7 +19,7 @@ for the default mode; ``--offline`` restricts the check to the local cache.
 Usage::
 
     python3 tools/check_pins.py
-    python3 tools/check_pins.py --parent windows_to_kylin/tasks --parent cuda_to_musa/tasks
+    python3 tools/check_pins.py --parent v1/windows_to_kylin/tasks --parent v1/cuda_to_musa/tasks
     python3 tools/check_pins.py --offline --json
     python3 tools/check_pins.py --strict          # warnings become failures
 
@@ -50,9 +50,9 @@ URL_RE = re.compile(r"^(https?://|git@|ssh://)")
 GLOB_CHARS = set("*?[")
 
 DEFAULT_PARENTS = (
-    "ipp_vsipl_tasks",
-    "windows_to_kylin/tasks",
-    "cuda_to_musa/tasks",
+    "v1/ipp_vsipl_tasks",
+    "v1/cuda_to_musa/tasks",
+    "v3/windows_to_kylin/tasks",
 )
 
 FILE_KEYS = (
@@ -484,19 +484,24 @@ def _check_local_only(
                 if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"
             }
             names = {Path(item).name for item in actual}
+
+            def _present(rel: str) -> bool:
+                if rel in actual or Path(rel).name in names:
+                    return True
+                # A declared directory gold (src/os/unix, src/util/unix) is
+                # present when at least one file under it was materialized.
+                prefix = rel.rstrip("/") + "/"
+                return any(item.startswith(prefix) for item in actual)
+
             found = 0
             for rel in gold_files:
-                if rel in actual or Path(rel).name in names:
+                if _present(rel):
                     found += 1
             report.gold_present = found == len(gold_files)
             if found == len(gold_files):
                 report.add("gold", "ok", f"{found} gold file(s) present")
             else:
-                missing = [
-                    rel
-                    for rel in gold_files
-                    if rel not in actual and Path(rel).name not in names
-                ]
+                missing = [rel for rel in gold_files if not _present(rel)]
                 report.add(
                     "gold",
                     "warn",
@@ -516,13 +521,26 @@ def _check_local_only(
                     exact = work / rel
                     if exact.is_file():
                         leaked.append(str(exact.relative_to(root)))
+                    elif exact.is_dir():
+                        leaked.extend(
+                            str(p.relative_to(root))
+                            for p in exact.rglob("*")
+                            if p.is_file()
+                        )
                 gold_digests: Dict[str, set] = {}
                 if gold.is_dir():
                     for rel in gold_files:
                         g = gold / rel
-                        if g.is_file():
-                            gold_digests.setdefault(Path(rel).name, set()).add(
-                                hashlib.sha256(g.read_bytes()).hexdigest()
+                        files = (
+                            [g]
+                            if g.is_file()
+                            else [p for p in g.rglob("*") if p.is_file()]
+                            if g.is_dir()
+                            else []
+                        )
+                        for item in files:
+                            gold_digests.setdefault(item.name, set()).add(
+                                hashlib.sha256(item.read_bytes()).hexdigest()
                             )
                 for path in work.rglob("*"):
                     if not path.is_file():

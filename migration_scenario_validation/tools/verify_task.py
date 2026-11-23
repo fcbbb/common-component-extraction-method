@@ -3,9 +3,9 @@
 
 Usage::
 
-    python3 tools/verify_task.py --parent windows_to_kylin/tasks
-    python3 tools/verify_task.py --parent windows_to_kylin/tasks \
-        --parent cuda_to_musa/tasks --json
+    python3 tools/verify_task.py --parent v1/windows_to_kylin/tasks
+    python3 tools/verify_task.py --parent v1/windows_to_kylin/tasks \
+        --parent v1/cuda_to_musa/tasks --json
 """
 from __future__ import annotations
 

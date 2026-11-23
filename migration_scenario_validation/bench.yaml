@@ -33,7 +33,7 @@ arms:
     # an explicit value because migration/musa:* lives only on the MUSA box.
     stage_image: ${METHOD_STAGE_IMAGE:-}
 
-# Model credentials are deliberately NOT configured here.  baseline_trial
+# Model credentials are deliberately NOT configured here.  migration_trial
 # resolves them in this order: CLI flag, .env at the repository root (../.env),
 # inherited environment; that .env is the project-owned route and must keep
 # winning over a stale shell export.  Put secrets in bench.env or ../.env.
@@ -42,7 +42,7 @@ arms:
 scenarios:
   ipp_to_vsipl:
     enabled: true
-    parent: ipp_vsipl_tasks
+    parent: v1/ipp_vsipl_tasks
     image: ${IPP_IMAGE:-migration/ipp:cpu}
     # Required for this scenario.  Point VSIPL_ROOT at a jvsip tree that has
     # include/vsip.h and lib/libvsip.a; there is no machine-specific default.
@@ -51,14 +51,28 @@ scenarios:
       - ["docker", "build", "-f", "env/Dockerfile.ipp", "-t", "migration/ipp:cpu", "."]
   windows_to_kylin:
     enabled: true
-    parent: windows_to_kylin/tasks
+    parent: v1/windows_to_kylin/tasks
     image: ${KYLIN_IMAGE:-migration/kylin:sp3-p2}
     build:
       - ["docker", "build", "-f", "env/Dockerfile.kylin", "-t", "migration/kylin:sp3", "."]
       - ["docker", "build", "-f", "env/Dockerfile.kylin-agent", "-t", "migration/kylin:sp3-p2", "."]
+  # V3 consolidated task tree.  Every Windows -> Kylin package lives under
+  # v3/windows_to_kylin/tasks/ and the hand-written transformation library
+  # lives under v3/windows_to_kylin/library/.  A task may override the library
+  # with `library_manifest` in task.yaml (v3_poco_fs_stack points at
+  # library_generated/demo_new_flow_v4).  The slate assigns roles (library
+  # source, pilot, held-out, boundary, negative, synthetic), so select the
+  # evaluation subset with --only.  Disabled by default; 19 of the 25 slate
+  # packages are runnable.
+  windows_to_kylin_v3:
+    enabled: false
+    parent: v3/windows_to_kylin/tasks
+    image: ${KYLIN_IMAGE:-migration/kylin:sp3-p2}
+    library_dir: v3/windows_to_kylin/library
+    build: []
   cuda_to_musa:
     enabled: false
-    parent: cuda_to_musa/tasks
+    parent: v1/cuda_to_musa/tasks
     image: ${MUSA_IMAGE:-migration/musa:s4000}
     transport: ${MUSA_TRANSPORT:-auto}
     remote_config: ${MUSA_REMOTE_CONFIG:-env/remote.yaml}

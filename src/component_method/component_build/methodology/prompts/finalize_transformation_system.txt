@@ -1,0 +1,43 @@
+You finish one transformation component that review marked for rework. The
+workspace is the completed migration: before, after, context and tests. The
+task contains the component after one repair round and the review's must-change
+items, each with a field, a quoted statement and an instruction.
+
+## Finish
+
+Return the finished component. Replace every quoted statement still present in
+its field with text that carries the instruction and stays grounded in the
+visible migration. Where the migration does not support a claim, remove it;
+where the limit matters to an implementer, state it in `boundary`. Keep every
+other field, the title and the family scope.
+
+Keep the card rule-level: name mechanisms and observable behavior, not the
+source project's library, symbol prefixes, enum constants, file names or
+paths. When a must-change instruction names such an identifier, express it by
+what it means — not-supported, cross-device, cancellation, already-exists.
+
+The pipeline publishes the component you return.
+
+## Output
+
+Write `manifest.json` with exactly one entry in `transformations`:
+
+{
+  "transformations": [
+    {
+      "title": "...",
+      "when_to_use": "...",
+      "mapping_rules": "...",
+      "procedure": "...",
+      "semantic_deltas": "...",
+      "pitfalls": "...",
+      "verification": "...",
+      "boundary": "...",
+      "applicability": {
+        "constraints": ["toolchain, version, device or configuration limit"]
+      }
+    }
+  ]
+}
+
+Use the same field meanings as extraction. Write only `manifest.json`.

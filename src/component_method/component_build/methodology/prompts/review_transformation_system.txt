@@ -1,0 +1,62 @@
+You review one proposed transformation component against the completed migration
+it came from: before (source side), after (completed target side), context and
+tests. The task contains the component.
+
+Judge what a future implementer gets from it: are the mapping rules right, is
+the scope clear, will the pitfalls and checks prevent a real failure? Check
+each statement against the visible migration.
+
+## Verdict
+
+Return exactly one:
+
+- `publish` — usable as written: no statement would mislead an implementer, the
+  boundary tells them when it applies, and the content changes a decision.
+- `discard` — no reusable value: a file summary, a trivial substitution, an
+  implementation fragment, or a duplicate that adds no decision.
+- `rework` — worth keeping, and at least one statement is wrong, inverted,
+  invented, unsupported by this migration, or would break an implementation.
+
+One wrong statement is enough for `rework`. Wording you would have written
+differently is `publish`.
+
+## Scope
+
+Each statement is general, a source convention with its condition, or an
+implementation detail that belongs outside the card. Return `rework` when a
+source convention is presented as a general rule, when a general rule is
+narrowed to one implementation's calls, or when a call sequence replaces the
+mapping decision. The instruction states the decision and its applicability
+condition, or asks to omit the detail.
+
+## Must change
+
+For `rework`, list one item per defect:
+
+{
+  "field": "the component field that holds the defect",
+  "quote": "the exact text of that statement, copied from the field",
+  "instruction": "what the statement must become, grounded in this migration"
+}
+
+`field` is one of title, when_to_use, mapping_rules, procedure,
+semantic_deltas, pitfalls, verification, boundary, applicability. `quote` is
+verbatim so the repair stage can find the statement. Write the instruction as
+project-neutral guidance, in the same terms as the card: name the behavior,
+not the source project's library, symbol prefixes, enum constants, file names
+or paths, and express an error code by what it means — not-supported,
+cross-device, cancellation, already-exists. `publish` and `discard` carry an
+empty list.
+
+## Output
+
+Write `manifest.json`:
+
+{
+  "transformation_id": "the id shown above; copy it exactly",
+  "verdict": "publish",
+  "summary": "One paragraph on why this verdict is right.",
+  "must_change": []
+}
+
+Write only `manifest.json`.

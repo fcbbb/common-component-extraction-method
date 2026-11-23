@@ -1,0 +1,30 @@
+{
+  "task_id": "l3_comms_demod_frontend",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic (HPEC-style SDR receive chain)",
+  "commit": "-",
+  "license": "synthetic",
+  "vendored": true,
+  "snapshot": "v1/ipp_vsipl_tasks/l3_comms_demod_frontend",
+  "source_files": [
+    "include/demod_frontend.h",
+    "src/demod_frontend_ipp.c"
+  ],
+  "gold_files": [
+    "gold/demod_frontend_vsipl.c"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/dem_run.h",
+    "harness/golden_gen.c",
+    "harness/hidden_test.c",
+    "harness/run_hidden.py"
+  ],
+  "golden_cases": 8,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/unify_ipp_tasks.py",
+  "generated_at": "2026-11-15T03:50:55Z"
+}

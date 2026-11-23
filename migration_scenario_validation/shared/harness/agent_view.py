@@ -9,6 +9,7 @@ pristine tree.
 """
 from __future__ import annotations
 
+import fnmatch
 import os
 import re
 import shutil
@@ -33,6 +34,18 @@ KYLIN_BUILD_FILES = {"CMakeLists.txt", "Makefile.am", "Makefile.in", "configure.
 MUSA_IGNORED_DIRS = {"test", "tests", "utils"}
 MUSA_IGNORED_FILES = {"eval_single_runner.py"}
 GENERAL_IGNORED_FILES = {"TASK.md"}
+# A file name marks a test when "test"/"tests" is a whole word (``test-list.h``,
+# ``runLibTests.sh``), a CamelCase suffix before the extension (``FileTest.cpp``,
+# ``PathTest.h``), or a CamelCase prefix (``TestCase.cpp``).  A plain substring
+# is not enough: it also hides library sources such as ``RotateStrategy.cpp``,
+# ``CreateStatement.cpp`` and ``TextTestResult.cpp``.
+KYLIN_TEST_NAME_RE = re.compile(
+    r"(?i)(?:"
+    r"(?:^|[_\-. ])tests?(?:[_\-. ]|$)"
+    r"|tests?\.(?:c|cc|cpp|cxx|h|hh|hpp|hxx|sh|bash|py|bat|cmd|ps1|txt|in|am|ac)$"
+    r"|^tests?[A-Z_.]"
+    r")"
+)
 
 
 def _sanitize_ipp_cmake(text: str) -> str:
@@ -79,42 +92,133 @@ def _sanitize_ipp_cmake(text: str) -> str:
     return text.strip() + "\n"
 
 
+KYLIN_CMAKE_TEST_RE = re.compile(
+    r"(?i)(?:\btest/|\btests/|\btestsuite/|\btestdata/|nginx-tests|\buv_test_|"
+    r"\badd_test\s*\(|test-list|\benable_testing\s*\(|\bBUILD_TESTING\b|"
+    r"\bBUILD_TESTS\b|\bENABLE_TESTS?\b|LIBUV_BUILD_TESTS|LIBUV_BUILD_BENCH|"
+    r"\btests?\b|BENCH)"
+)
+
+
+def _cmake_depth(line: str, quoted: bool = False) -> tuple[int, bool]:
+    """Paren depth of one CMake line, ignoring comments and quoted strings.
+
+    ``quoted`` is carried in and out because a CMake quoted argument may span
+    several lines (``check_c_source_compiles("...")``).  Resetting it per line
+    makes the closing quote look like an opening one, so the call's final ``)``
+    is mistaken for quoted text and the statement never ends.
+    """
+    depth = 0
+    escaped = False
+    for ch in line:
+        if escaped:
+            # ``\"`` and ``\#`` are literals in unquoted arguments too.
+            escaped = False
+        elif ch == "\\":
+            escaped = True
+        elif quoted:
+            if ch == '"':
+                quoted = False
+        elif ch == '"':
+            quoted = True
+        elif ch == "#":
+            break
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+    return depth, quoted
+
+
+def _cmake_statements(lines: List[str]) -> List[List[str]]:
+    """Group physical lines into statements by their open parentheses.
+
+    A CMake command may continue over several lines (``option(X`` then its
+    description) and a quoted argument may span lines.  Consecutive comment
+    lines form one block, so a block that mentions tests disappears whole
+    instead of leaving a dangling continuation.  ``_sanitize_kylin_cmake``
+    must drop or keep a whole statement: dropping only one continuation line
+    leaves the file unparsable, which hands the agent a broken build before it
+    starts.
+    """
+    out: List[List[str]] = []
+    buf: List[str] = []
+    depth = 0
+    quoted = False
+    last_comment = False
+    for line in lines:
+        stripped = line.strip()
+        if quoted:
+            # Inside a multi-line quoted argument: text is opaque.
+            buf.append(line)
+            step, quoted = _cmake_depth(line, quoted)
+            depth += step
+            if depth <= 0:
+                out.append(buf)
+                buf = []
+                depth = 0
+            last_comment = False
+            continue
+        if buf:
+            # Inside an open command; a comment line is part of it.
+            buf.append(line)
+            if stripped.startswith("#"):
+                continue
+        elif stripped.startswith("#"):
+            if last_comment:
+                out[-1].append(line)
+            else:
+                out.append([line])
+            last_comment = True
+            continue
+        elif not stripped:
+            out.append([line])
+            last_comment = False
+            continue
+        else:
+            buf.append(line)
+        step, quoted = _cmake_depth(line, quoted)
+        depth += step
+        if depth <= 0:
+            out.append(buf)
+            buf = []
+            depth = 0
+        last_comment = False
+    if buf:
+        out.append(buf)
+    return out
+
+
 def _sanitize_kylin_cmake(text: str) -> str:
     """Drop test/benchmark targets and test source lists from CMake.
 
     Kylin repositories often keep their full test suite in the same CMake
     file as the library.  The agent view removes the test directories; this
     removes the corresponding build declarations so the file tree does not
-    reveal test names or paths.
+    reveal test names or paths.  Statements are matched whole, so a
+    multi-line option or command disappears entirely instead of leaving its
+    opening line behind.
     """
     out: List[str] = []
     skip_depth = 0
-    continuation_depth = 0
-    for line in text.splitlines():
-        stripped = line.strip()
-        if continuation_depth:
-            continuation_depth += line.count("(") - line.count(")")
-            continue
+    for statement in _cmake_statements(text.splitlines()):
+        first = statement[0].strip()
         if skip_depth:
-            if re.match(r"^if\s*\(", stripped, re.I):
-                skip_depth += 1
-            elif re.match(r"^endif\s*\(", stripped, re.I):
-                skip_depth -= 1
+            for line in statement:
+                stripped = line.strip()
+                if re.match(r"^if\s*\(", stripped, re.I):
+                    skip_depth += 1
+                elif re.match(r"^endif\s*\(", stripped, re.I):
+                    skip_depth -= 1
             continue
-        if re.match(r"^if\s*\(", stripped, re.I) and re.search(
-            r"(?i)(?:TEST|BENCH)", stripped
+        if re.match(r"^if\s*\(", first, re.I) and re.search(
+            r"(?i)(?:TEST|BENCH)", first
         ):
             skip_depth = 1
             continue
-        if re.search(
-            r"(?i)(?:\btest/|\btests/|\btestsuite/|\btestdata/|nginx-tests|\buv_test_|\badd_test\s*\(|test-list|\benable_testing\s*\(|BUILD_TESTING|BUILD_TESTS|ENABLE_TESTS?\b|LIBUV_BUILD_TESTS|LIBUV_BUILD_BENCH|TESTS?\b|BENCH)",
-            line,
-        ):
-            depth = line.count("(") - line.count(")")
-            if depth > 0:
-                continuation_depth = depth
+        if any(KYLIN_CMAKE_TEST_RE.search(line) for line in statement):
             continue
-        out.append(line)
+        out.extend(statement)
     return "\n".join(out).strip() + "\n"
 
 
@@ -159,14 +263,70 @@ def is_judge_protected(task: Dict[str, Any], rel: str) -> bool:
     if task_scenario(task) == "ipp_to_vsipl" and Path(rel).name == "CMakeLists.txt":
         return True
     if task_scenario(task) == "windows_to_kylin" and Path(rel).name in KYLIN_BUILD_FILES:
-        # l3_curl_build is explicitly a build-migration task; its build files
-        # are part of the submitted change.
-        return str(task.get("task_id") or "") != "l3_curl_build"
+        # curl build-migration tasks (l3_curl_build, v2_curl_build) own their
+        # build files; those files are part of the submitted change.
+        return not str(task.get("task_id") or "").endswith("curl_build")
     return False
 
 
 def task_scenario(task: Dict[str, Any]) -> str:
     return str(task.get("scenario") or "")
+
+
+def removed_patterns(task: Dict[str, Any]) -> List[str]:
+    """Return ``prepare.remove`` / ``prepare.remove_globs`` as normalized globs."""
+    prepare = task.get("prepare") or {}
+    out: List[str] = []
+    for key in ("remove", "remove_globs"):
+        value = prepare.get(key) or []
+        if isinstance(value, str):
+            value = [value]
+        for item in value:
+            rel = str(item).replace("\\", "/")
+            while rel.startswith("./"):
+                rel = rel[2:]
+            rel = rel.lstrip("/")
+            if rel:
+                out.append(rel)
+    return out
+
+
+def is_removed_path(task: Dict[str, Any], rel: str) -> bool:
+    """True when ``rel`` is an implementation the task author removed.
+
+    These paths are the answer, not hidden test material: the agent may create
+    them, so ``copy_overlay`` must keep accepting them.  They are filtered only
+    when building the agent view and when the judge tree is prepared.
+    """
+    rel = rel.replace("\\", "/")
+    while rel.startswith("./"):
+        rel = rel[2:]
+    rel = rel.lstrip("/")
+    for pattern in removed_patterns(task):
+        if any(ch in pattern for ch in "*?["):
+            if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, pattern.rstrip("/") + "/*"):
+                return True
+        elif rel == pattern or rel.startswith(pattern.rstrip("/") + "/"):
+            return True
+    return False
+
+
+def strip_removed_paths(root: Path, task: Dict[str, Any]) -> List[str]:
+    """Delete removed implementation paths from a tree in place.
+
+    ``prepare.sh`` already removes them; this is the defence for a stale or
+    hand-made ``work/`` that still contains the answer.
+    """
+    root = Path(root)
+    deleted: List[str] = []
+    for rel in _walk(root):
+        if not is_removed_path(task, rel):
+            continue
+        path = root / rel
+        if path.is_symlink() or path.is_file():
+            path.unlink()
+            deleted.append(rel)
+    return deleted
 
 
 def is_hidden_path(task: Dict[str, Any], rel: str) -> bool:
@@ -189,6 +349,10 @@ def is_hidden_path(task: Dict[str, Any], rel: str) -> bool:
     if scenario == "windows_to_kylin":
         if parts[-1] == "cppignore.lnx":
             return True
+        if len(parts) == 1 and parts[-1] == "README":
+            # POCO's CPack include names the repository README as its package
+            # description file; without it ``cmake`` cannot configure at all.
+            return False
         if any(part in KYLIN_TEST_DIRS or "test" in part.lower() for part in parts[:-1]):
             return True
         if any(part in KYLIN_DOC_DIRS or part in KYLIN_METADATA_DIRS for part in parts[:-1]):
@@ -196,7 +360,13 @@ def is_hidden_path(task: Dict[str, Any], rel: str) -> bool:
         if parts[-1] in KYLIN_DOC_FILES or parts[-1].upper().startswith("README"):
             return True
         if "test" in parts[-1].lower() or "benchmark" in parts[-1].lower():
-            return True
+            # ``cmake/`` holds build support (e.g. ``test_compiler.cpp`` used
+            # by try_compile), never task test material.
+            if parts[0] != "cmake" and (
+                KYLIN_TEST_NAME_RE.search(parts[-1])
+                or "benchmark" in parts[-1].lower()
+            ):
+                return True
         if Path(parts[-1]).suffix.lower() in KYLIN_METADATA_SUFFIXES:
             return True
         build_cmd = str((task.get("build") or {}).get("command") or "")
@@ -226,6 +396,11 @@ def _walk(source: Path) -> List[str]:
     return out
 
 
+def walk_files(source: Path) -> List[str]:
+    """Return every file (not directory) under ``source`` as a posix path."""
+    return _walk(Path(source))
+
+
 def copy_agent_view(
     source: Path,
     destination: Path,
@@ -249,7 +424,7 @@ def copy_agent_view(
     destination.mkdir(parents=True, exist_ok=True)
     omitted: List[str] = []
     for rel in _walk(source):
-        if is_hidden_path(task, rel):
+        if is_hidden_path(task, rel) or is_removed_path(task, rel):
             omitted.append(rel)
             continue
         src = source / rel

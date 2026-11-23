@@ -12,6 +12,7 @@ import pytest
 from component_method.retrieval import (
     RetrievalRequest,
     build_component_catalog,
+    materialize_if_configured,
     materialize_selected_bundle,
     render_retrieval_task,
     run_retrieval_agent,
@@ -1020,3 +1021,233 @@ def test_materialize_selected_bundle_preserves_incremental_handoff(tmp_path):
         text=True,
     )
     assert imported.strip() == "1"
+
+
+def test_materialize_if_configured_is_opt_in(tmp_path, monkeypatch):
+    monkeypatch.delenv("COMPONENT_DSH_BUNDLE_DESTINATION", raising=False)
+    assert materialize_if_configured(
+        tmp_path / "library", tmp_path / "selection.json", "task-1"
+    ) is None
+
+    calls = []
+
+    def fake(library, selection, destination, *, expected_task_id):
+        calls.append((library, selection, destination, expected_task_id))
+        return destination
+
+    monkeypatch.setenv("COMPONENT_DSH_BUNDLE_DESTINATION", str(tmp_path / "bundle"))
+    monkeypatch.setattr(
+        "component_method.retrieval.selection_bundle.materialize_selected_bundle",
+        fake,
+    )
+    assert materialize_if_configured(
+        tmp_path / "library", tmp_path / "selection.json", "task-1"
+    ) == str(tmp_path / "bundle")
+    assert calls == [
+        (
+            tmp_path / "library",
+            tmp_path / "selection.json",
+            tmp_path / "bundle",
+            "task-1",
+        )
+    ]
+
+
+def test_methodology_catalog_matches_published_component_fields(tmp_path: Path):
+    """The first-pass catalog must expose only fields the library publishes."""
+    from component_method.retrieval.service import PROMPT_DIR
+
+    library = tmp_path / "library"
+    component_root = library / "components" / "c-1"
+    component_root.mkdir(parents=True)
+    metadata = {
+        "bundle_id": "c-1",
+        "kind": "transformation",
+        "title": "A transformation",
+        "capability": "process",
+        "when_to_use": "Use when a process layer must be rebuilt.",
+        "boundary": "Does not cover threads.",
+        "verification": ["Spawn and reap a child."],
+        "mapping_rules": ["source call -> target call"],
+        "semantic_deltas": ["the target reaps asynchronously"],
+        "pitfalls": ["do not busy-wait"],
+        "procedure": ["rebuild the layer"],
+        "applicability": {"os": ["kylin-v10-sp3"], "constraints": []},
+        "provenance": {"projects": ["p"], "commits": ["c"], "task_ids": ["t"]},
+        "evidence": [],
+        "generated_by": "test",
+        "input_digest": "0" * 64,
+        "review": {"verdict": "publish"},
+    }
+    (component_root / "component.json").write_text(json.dumps(metadata), encoding="utf-8")
+    (component_root / "README.md").write_text("# A transformation\n", encoding="utf-8")
+    manifest = {
+        "schema_version": "methodology-1",
+        "kind": "methodology",
+        "library_id": "test-transformations",
+        "components": [
+            {
+                "bundle_id": "c-1",
+                "title": metadata["title"],
+                "capability": metadata["capability"],
+                "library": "components/c-1/README.md",
+                "readme": "components/c-1/README.md",
+                "metadata": "components/c-1/component.json",
+            }
+        ],
+    }
+    (library / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    catalog = build_component_catalog(library)
+    record = catalog["components"][0]
+    assert set(record) == {
+        "bundle_id",
+        "title",
+        "capability",
+        "when_to_use",
+        "boundary",
+        "readme",
+        "metadata",
+    }
+    # Every catalogued value is a published field, not a derived summary.
+    for field in set(record) - {"readme", "metadata"}:
+        assert field in metadata
+    for removed in ("covers", "keywords", "confidence", "leakage_class"):
+        assert removed not in record
+
+    prompt = (PROMPT_DIR / "retrieve_methodology_system.txt").read_text(encoding="utf-8")
+    for field in ("title", "capability", "when_to_use", "boundary"):
+        assert field in prompt
+    for removed in ("covers,", "keywords"):
+        assert removed not in prompt
+
+
+def test_methodology_retrieval_prompt_asks_for_paths_only(tmp_path: Path):
+    prompt = render_retrieval_task(
+        RetrievalRequest(
+            task_id="task-1",
+            problem_statement="Rebuild the file layer.",
+            interface="Poco::File",
+            component_library=tmp_path / "library",
+            output_dir=tmp_path / "output",
+            image="fixture-image",
+            total_timeout_seconds=60,
+            step_limit=10,
+        ),
+        kind="methodology",
+    )
+    assert '"schema_version": "methodology-paths-1"' in prompt
+    assert '"selected_bundle_ids"' in prompt
+    assert '"reason"' not in prompt
+    assert '"evidence"' not in prompt
+    assert "select at most 2 component IDs" in prompt
+
+
+def methodology_library(root: Path) -> Path:
+    components = []
+    for index in range(1, 3):
+        bundle_id = f"c-{index}"
+        component_root = root / "components" / bundle_id
+        component_root.mkdir(parents=True)
+        metadata = {
+            "bundle_id": bundle_id,
+            "kind": "transformation",
+            "title": f"Transformation {index}",
+            "capability": f"capability-{index}",
+            "when_to_use": "Use when the task rebuilds a file layer.",
+            "boundary": "Does not cover sockets.",
+            "verification": ["Check the rebuilt layer."],
+            "mapping_rules": ["source call -> target call"],
+            "semantic_deltas": ["the target differs"],
+            "pitfalls": ["do not copy the source backend"],
+            "procedure": ["rebuild the layer"],
+            "applicability": {"os": ["kylin-v10-sp3"], "constraints": []},
+            "provenance": {"projects": ["p"], "commits": ["c"], "task_ids": ["t"]},
+            "evidence": [],
+            "generated_by": "test",
+            "input_digest": "0" * 64,
+            "review": {"verdict": "publish"},
+        }
+        (component_root / "component.json").write_text(json.dumps(metadata), encoding="utf-8")
+        (component_root / "README.md").write_text(
+            f"# Transformation {index}\n\nSpecific rule {index}.\n", encoding="utf-8"
+        )
+        components.append({
+            "bundle_id": bundle_id,
+            "title": metadata["title"],
+            "capability": metadata["capability"],
+            "library": f"components/{bundle_id}/README.md",
+            "readme": f"components/{bundle_id}/README.md",
+            "metadata": f"components/{bundle_id}/component.json",
+        })
+    (root / "manifest.json").write_text(
+        json.dumps({
+            "schema_version": "methodology-1",
+            "kind": "methodology",
+            "library_id": "test-transformations",
+            "components": components,
+        }),
+        encoding="utf-8",
+    )
+    return root
+
+
+def test_methodology_selection_is_path_only_and_bundle_has_no_summary(tmp_path: Path):
+    library = methodology_library(tmp_path / "library")
+    selection_path = tmp_path / "selection.json"
+    selection_path.write_text(json.dumps({
+        "schema_version": "methodology-paths-1",
+        "task_id": "task-1",
+        "selected_bundle_ids": ["c-1"],
+    }), encoding="utf-8")
+
+    result = validate_selection(
+        library, selection_path, expected_task_id="task-1"
+    )
+    assert result == {
+        "schema_version": "methodology-paths-1",
+        "task_id": "task-1",
+        "selected_bundle_ids": ["c-1"],
+    }
+
+    destination = materialize_selected_bundle(
+        library, selection_path, tmp_path / "bundle", expected_task_id="task-1"
+    )
+    assert not (destination / "SELECTION.md").exists()
+    index = (destination / "INDEX.md").read_text()
+    assert "components/c-1/README.md" in index
+    assert "components/c-1/component.json" in index
+    assert "Transformation 1" not in index
+    assert "Specific rule 1" not in index
+    assert "c-2" not in index
+    manifest = json.loads((destination / "manifest.json").read_text())
+    assert manifest["selected_bundle_ids"] == ["c-1"]
+    assert manifest["component_count"] == 1
+    assert "selection_document" not in manifest
+    persisted = json.loads((destination / "selection.json").read_text())
+    assert persisted == {
+        "schema_version": "methodology-paths-1",
+        "task_id": "task-1",
+        "selected_bundle_ids": ["c-1"],
+    }
+
+
+def test_methodology_selection_rejects_prose_and_unknown_ids(tmp_path: Path):
+    library = methodology_library(tmp_path / "library")
+    base = {
+        "schema_version": "methodology-paths-1",
+        "task_id": "task-1",
+        "selected_bundle_ids": ["c-1"],
+    }
+
+    prose = dict(base, reason="The component applies to this file layer.")
+    path = tmp_path / "prose.json"
+    path.write_text(json.dumps(prose), encoding="utf-8")
+    with pytest.raises(ValueError, match="unexpected fields"):
+        validate_selection(library, path, expected_task_id="task-1")
+
+    unknown = dict(base, selected_bundle_ids=["missing"])
+    path = tmp_path / "unknown.json"
+    path.write_text(json.dumps(unknown), encoding="utf-8")
+    with pytest.raises(ValueError, match="unknown bundle_id"):
+        validate_selection(library, path, expected_task_id="task-1")

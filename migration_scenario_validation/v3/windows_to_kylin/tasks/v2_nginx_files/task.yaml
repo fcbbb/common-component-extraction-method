@@ -1,0 +1,100 @@
+scenario: windows_to_kylin
+task_family: v3
+family: nginx_os
+fit: B
+counted: true
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: ./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module
+    && make -j
+  artifact: '{work}/objs/nginx'
+gates:
+  build: configure and build Foundation on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/os/unix/ngx_files.c
+  target_api: the rebuilt layer calls the target platform API rather than a hand-written portable fallback
+  behavior: the server builds, serves static content, and the rebuilt file layer honours positioned I/O, directory iteration and timestamp contracts
+  regression: the server starts and serves a static file without a crash
+id: v2_nginx_files
+level: L2
+family_type: pattern
+sequence: 10
+domain: networking
+difficulty: medium
+title: Migrate the nginx file layer to Kylin V10 SP3
+source:
+  repo: https://github.com/nginx/nginx.git
+  commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+  tag: release-1.26.3
+  license: BSD-2-Clause
+  windows_files:
+  - src/os/win32/ngx_files.c
+  - src/os/win32/ngx_files.h
+  gold_files:
+  - src/os/unix/ngx_files.c
+  test_files:
+  - src/os/unix/ngx_files.h
+  extra_repos:
+  - name: nginx-tests
+    repo: https://github.com/nginx/nginx-tests.git
+    commit: c0b7894063022fb86d5b5ad732c08507ea03aa78
+    dest: nginx-tests
+spec: |
+  nginx is being moved from Windows to Kylin V10 SP3.  The target-platform
+  file layer has not been written yet.
+
+  Reimplement the file abstraction used by the whole server: file opening
+  and closing, sequential and positioned I/O, metadata queries, rename and
+  deletion, directory creation and iteration, symbolic links, timestamp
+  updates, path canonicalisation and error-code translation.  The module
+  headers, the server core, the Win32 implementation and the configure
+  entry stay visible as the reference.
+
+  Scope: the file layer only; do not change module interfaces or build
+  configuration.  Acceptance: nginx builds with its own configure entry,
+  serves static content, passes the selected upstream file-serving tests,
+  and satisfies the I/O, directory and timestamp contract of the rebuilt
+  layer.
+prepare:
+  remove:
+  - src/os/unix/ngx_files.c
+harness:
+  scripts:
+  - nginx_smoke.sh
+hidden_tests:
+  command: >-
+    cc -I {work}/src/core -I {work}/src/event -I {work}/src/event/modules
+    -I {work}/src/os/unix -I {work}/objs
+    {root}/harness/ngx_files_sensitivity.c
+    $(find {work}/objs -name '*.o' | sort)
+    -ldl -lpthread -lcrypt -Wl,-E -no-pie -o {work}/objs/ngx_files_sensitivity
+    && timeout 120 {work}/objs/ngx_files_sensitivity
+    && bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port 28080
+    && cd {work}/nginx-tests
+    && TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t
+task_id: v2_nginx_files

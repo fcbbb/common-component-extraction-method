@@ -41,7 +41,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 from shared.harness import agent_view, taskmodel  # noqa: E402
 import agent_trial as at  # noqa: E402
-import baseline_trial as bt  # noqa: E402
+import migration_trial as bt  # noqa: E402
 
 ORIGIN_SYSTEM = """You are a one-shot software migration assistant.
 You have no tools and cannot inspect or execute anything. Everything you know is in the
@@ -56,7 +56,7 @@ The schema is:
 
 Write complete replacement files, not unified diffs. Paths are relative to the task
 workspace. For a negative/non-portable task, write the requested report file instead of
-inventing a target implementation. Do not modify tests or evaluator files.
+inventing a target implementation. Do not modify build files.
 """
 
 def origin_system_prompt(task: Dict[str, Any]) -> str:
@@ -71,15 +71,13 @@ def origin_system_prompt(task: Dict[str, Any]) -> str:
     if scenario == "ipp_to_vsipl":
         target = (
             "You are a software engineer migrating a C/C++ component from Intel IPP to VSIPL (jvsip).\n"
-            "The submitted implementation must use the VSIPL C API and link against libvsip; "
-            "a portable fallback is not accepted."
+            "The submitted implementation must use the VSIPL C API and link against libvsip."
         )
     elif scenario == "windows_to_kylin":
         target = (
             "You are a software engineer porting one component to Kylin V10 SP3 with GCC 13.\n"
             "The submitted implementation must use the target Kylin/Linux platform APIs required "
-            "by the task; a portable Windows-independent fallback that avoids the target platform "
-            "is not accepted."
+            "by the task."
         )
     else:
         target = "Use the target platform required by the task."
@@ -473,7 +471,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if not args.task_root and not args.parent:
         if args.only:
-            args.parent = ["ipp_vsipl_tasks", "windows_to_kylin/tasks", "cuda_to_musa/tasks"]
+            args.parent = ["v1/ipp_vsipl_tasks", "v1/windows_to_kylin/tasks", "v1/cuda_to_musa/tasks"]
         else:
             parser.error("give --task-root, --parent, or --only")
     roots = _iter_roots(args)

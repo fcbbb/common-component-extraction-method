@@ -1,0 +1,101 @@
+# V2 frozen library: nginx operating-system layer.
+#
+# The corpus is the source side of one pinned upstream snapshot: the server
+# core and modules, the Win32 OS implementation and the configure/build
+# scripts.  Tests, docs and the POSIX OS layer (the gold for the nginx tasks)
+# are excluded.  Extraction runs against this corpus before any task exists
+# (`snapshot.task_blind: true`).
+#
+# Record the corpus:
+#   python3 tools/freeze_library.py snapshot \
+#       --spec v2/windows_to_kylin/library/nginx/freeze.yaml --offline
+#
+# Check it again later:
+#   python3 tools/freeze_library.py verify \
+#       --spec v2/windows_to_kylin/library/nginx/freeze.yaml --offline
+#
+# After review + publication, record the published library tree:
+#   python3 tools/freeze_library.py publish \
+#       --spec v2/windows_to_kylin/library/nginx/freeze.yaml \
+#       --library-root <published-library> --component-count <n>
+schema: v2-library-freeze-v1
+
+library:
+  id: nginx-os
+  version: 1
+  repo: https://github.com/nginx/nginx.git
+  commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+  tag: release-1.26.3
+  subdir: ''
+  license: BSD-2-Clause
+  language_backend: c@1
+  description: >-
+    nginx's operating-system abstraction.  The source side contains the Win32
+    OS implementation, the server core and modules that call the OS layer,
+    and the auto/configure build entry.  The same upstream commit carries the
+    POSIX implementation under src/os/unix, which is evaluator-side gold for
+    both the file-layer task and the full OS-layer task, so it must never
+    enter the frozen corpus.
+
+snapshot:
+  task_blind: true
+  description: >-
+    Source-side production code, module headers and build scripts.  The
+    extractor never sees a task spec, a hidden test, a gold implementation or
+    any task package, so the library cannot be tailored to one question.
+  include:
+    - src/**
+    - auto/**
+    - conf/**
+    - LICENSE
+    - README
+  exclude:
+    - docs/**
+    - misc/**
+    - contrib/**
+    - html/**
+    - .github/**
+    - .hgtags
+    - '**/*.sln'
+    - '**/*.vcxproj'
+    - '**/*.vcxproj.filters'
+    - '**/*.vcproj'
+    - '**/*.filters'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+  # Assertion list: `freeze_library.py` re-checks that none of these paths
+  # appear in the selected corpus or in an existing lock.  This is the union
+  # of the gold files for the nginx tasks (l2 file layer, l3 full OS layer).
+  evaluator_side:
+    - src/os/unix/**
+  forbidden_task_inputs:
+    - v2/**/tasks/**
+    - '**/task.yaml'
+    - '**/task_slate.md'
+    - '**/design.md'
+    - '**/gold/**'
+    - '**/hidden_tests/**'
+
+extraction:
+  mode: task_blind
+  language_backend: c@1
+  inputs:
+    - source-side production code (including the Win32 OS implementation)
+    - module headers and callers
+    - configure/build scripts
+  workflow:
+    - source_scan
+    - extract
+    - curate
+    - prepare_reviews
+    - review
+    - publish_library
+  output_schema: component library published by publish_library (schema 8)
+  review_policy: >-
+    Only components that pass review are published.  The frozen library is
+    shared by the nginx tasks in the windows_to_kylin V2 tree.
+
+publication:
+  # Filled by `freeze_library.py publish` after the library has been built,
+  # reviewed and published.  Until then the dataset cannot start its B arm.
+  status: pending_publication

@@ -1,0 +1,572 @@
+# Windows -> Kylin V3 task slate.
+#
+# Split unit is the repository, not the task: a repository may appear only on
+# one side of library_source / pilot / held_out.  See SPLIT.md for the rationale.
+#
+# library_source tasks are the corpus the transformation components were built
+# from.  They are never evaluated.  pilot tasks may be run for prompt work but
+# are not blind.  held_out tasks are the test set.
+
+scenario: windows_to_kylin
+split_unit: repository
+
+split:
+  library_source:
+    repos:
+      - libuv
+      - libarchive
+    tasks:
+      - l2_libuv_fs
+      - l2_libuv_process
+      - l2_libuv_thread
+      - l2_libarchive_read_disk
+      - l2_libarchive_write_disk
+  pilot:
+    repos:
+      - libgit2
+    tasks:
+      - v2_libgit2_util_full
+  held_out:
+    repos:
+      - POCO
+      - nginx
+      - curl
+      - opencv
+    tasks:
+      - v2_file
+      - v3_poco_fs_stack
+      - v2_path
+      - v2_thread
+      - v2_rwlock_semaphore
+      - v2_shared_library
+      - v2_foundation_full
+      - v2_poco_process
+      - negative_win32_eventlog
+      - v2_nginx_files
+      - v2_nginx_full
+      - v2_nginx_process
+      - v2_nginx_thread
+      - v2_curl_build
+      - v2_curl_tls
+      - v2_curl_thread
+      - v2_curl_file
+      - l2_opencv_highgui
+  separate:
+    repos:
+      - synthetic
+    tasks:
+      - synthetic_multi_call_site
+  reporting:
+    core:
+      - v2_file
+      - v3_poco_fs_stack
+      - v2_path
+      - v2_thread
+      - v2_rwlock_semaphore
+      - v2_foundation_full
+      - v2_poco_process
+      - v2_nginx_files
+      - v2_nginx_full
+      - v2_nginx_process
+      - v2_nginx_thread
+      - v2_curl_build
+      - v2_curl_thread
+      - v2_curl_file
+    boundary:
+      - v2_shared_library
+      - v2_curl_tls
+      - l2_opencv_highgui
+    negative:
+      - negative_win32_eventlog
+    synthetic:
+      - synthetic_multi_call_site
+  excluded:
+    repos: []
+    tasks:
+      - v2_libgit2_file
+      - v2_libgit2_process
+      - l2_libgit2_file
+      - l2_libgit2_process
+      - l3_libgit2_full
+    reason: >-
+      libgit2_file / libgit2_process are subsets of the pilot task
+      v2_libgit2_util_full; the v1 entries are the same migrations.
+
+rules:
+  - A repository in library_source must not appear in held_out.
+  - The pilot repository is excluded from every pass-rate statistic.
+  - From this pre-registration onward, a task listed in a component's source_migrations is permanently out of the test set.
+  - Tasks from the same repository are clustered, not independent samples.
+  - v1 and v2 packages of the same repository/commit/migration surface count once.
+  - Boundary tasks are reported separately from the core component coverage.
+  - The negative control is excluded from pass rate and scored on the report itself.
+  - The synthetic task is reported separately from upstream repositories.
+
+defaults:
+  scenario: windows_to_kylin
+  fit: B
+  counted: true
+  task_family: v3
+  library_manifest: v3/windows_to_kylin/library/manifest.json
+  source_kind: upstream_platform_port
+
+tasks:
+  # ---------------------------------------------------------------------------
+  # library_source (5)
+  # ---------------------------------------------------------------------------
+  - id: l2_libuv_fs
+    role: library_source
+    repo: libuv
+    package: v3/windows_to_kylin/tasks/l2_libuv_fs
+    level: L2
+    difficulty: medium
+    status: ready
+    counted: false
+    components: [T1, T2, T5]
+    title: 'Migrate the libuv file-system layer to Kylin V10 SP3'
+    notes: Build corpus; excluded from evaluation.
+    source:
+      repo: https://github.com/libuv/libuv.git
+      commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+      tag: v1.48.0
+      license: MIT
+
+  - id: l2_libuv_process
+    role: library_source
+    repo: libuv
+    package: v3/windows_to_kylin/tasks/l2_libuv_process
+    level: L2
+    difficulty: hard
+    status: ready
+    counted: false
+    components: [T1, T3, T5]
+    title: 'Migrate the libuv process layer to Kylin V10 SP3'
+    notes: Build corpus; the only source migration for T3.
+    source:
+      repo: https://github.com/libuv/libuv.git
+      commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+      tag: v1.48.0
+      license: MIT
+
+  - id: l2_libuv_thread
+    role: library_source
+    repo: libuv
+    package: v3/windows_to_kylin/tasks/l2_libuv_thread
+    level: L2
+    difficulty: medium
+    status: ready
+    counted: false
+    components: [T1, T4, T5]
+    title: 'Migrate the libuv thread layer to Kylin V10 SP3'
+    notes: Build corpus; the only source migration for T4.
+    source:
+      repo: https://github.com/libuv/libuv.git
+      commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+      tag: v1.48.0
+      license: MIT
+
+  - id: l2_libarchive_read_disk
+    role: library_source
+    repo: libarchive
+    package: v3/windows_to_kylin/tasks/l2_libarchive_read_disk
+    level: L2
+    difficulty: hard
+    status: ready
+    counted: false
+    components: [T1, T2, T5]
+    title: 'Migrate the libarchive disk reader to Kylin V10 SP3'
+    notes: Build corpus; supplies directory traversal and metadata evidence for T2.
+    source:
+      repo: https://github.com/libarchive/libarchive.git
+      commit: 313aa1fa10b657de791e3202c168a6c833bc3543
+      tag: v3.7.4
+      license: BSD-2-Clause
+
+  - id: l2_libarchive_write_disk
+    role: library_source
+    repo: libarchive
+    package: v3/windows_to_kylin/tasks/l2_libarchive_write_disk
+    level: L2
+    difficulty: hard
+    status: ready
+    counted: false
+    components: [T1, T2, T5]
+    title: 'Migrate the libarchive disk writer to Kylin V10 SP3'
+    notes: Build corpus; supplies restore, permission and link evidence for T2.
+    source:
+      repo: https://github.com/libarchive/libarchive.git
+      commit: 313aa1fa10b657de791e3202c168a6c833bc3543
+      tag: v3.7.4
+      license: BSD-2-Clause
+
+  # ---------------------------------------------------------------------------
+  # pilot (1)
+  # ---------------------------------------------------------------------------
+  - id: v2_libgit2_util_full
+    role: pilot
+    repo: libgit2
+    package: v3/windows_to_kylin/tasks/v2_libgit2_util_full
+    level: L3
+    difficulty: hard
+    status: run_once
+    counted: false
+    components: [T1, T2, T3, T4, T5]
+    title: 'Migrate the complete libgit2 utility layer to Kylin V10 SP3'
+    notes: Already run once; not a blind test and excluded from statistics.
+    source:
+      repo: https://github.com/libgit2/libgit2.git
+      commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+      tag: v1.8.1
+      license: GPL-2.0-with-linking-exception
+
+  # ---------------------------------------------------------------------------
+  # held_out / POCO (9)
+  # ---------------------------------------------------------------------------
+  - id: v2_file
+    source_kind: library_family_port
+    role: held_out
+    repo: POCO
+    package: v3/windows_to_kylin/tasks/v2_file
+    level: L2
+    difficulty: hard
+    status: ready
+    components: [T1, T2, T5]
+    title: 'Migrate the Foundation file subsystem to Kylin V10 SP3'
+    notes: Core file-layer coverage.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  - id: v3_poco_fs_stack
+    source_kind: library_family_port
+    role: held_out
+    repo: POCO
+    package: v3/windows_to_kylin/tasks/v3_poco_fs_stack
+    level: L3
+    difficulty: hard
+    status: ready
+    components: [portable-file-system-request-backend-win32-to-posix-8b91ec99]
+    library_manifest: v3/windows_to_kylin/library_generated/demo_new_flow_v4/library/manifest.json
+    title: 'Migrate the Foundation file stack to Kylin V10 SP3'
+    notes: Complex four-file file stack around the extracted POSIX file-backend component.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  - id: v2_path
+    source_kind: library_family_port
+    role: held_out
+    repo: POCO
+    package: v3/windows_to_kylin/tasks/v2_path
+    level: L2
+    difficulty: hard
+    status: ready
+    components: [T1, T2, T5]
+    title: 'Migrate the Foundation path subsystem to Kylin V10 SP3'
+    notes: Path canonicalisation and byte-path semantics.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  - id: v2_thread
+    source_kind: library_family_port
+    role: held_out
+    repo: POCO
+    package: v3/windows_to_kylin/tasks/v2_thread
+    level: L2
+    difficulty: hard
+    status: ready
+    components: [T1, T4, T5]
+    title: 'Migrate the Foundation thread subsystem to Kylin V10 SP3'
+    notes: Core thread coverage.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  - id: v2_rwlock_semaphore
+    source_kind: library_family_port
+    role: held_out
+    repo: POCO
+    package: v3/windows_to_kylin/tasks/v2_rwlock_semaphore
+    level: L2
+    difficulty: hard
+    status: ready
+    components: [T1, T4, T5]
+    title: 'Migrate the Foundation rwlock and semaphore primitives to Kylin V10 SP3'
+    notes: Synchronisation primitives and static initialisation.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  - id: v2_shared_library
+    source_kind: library_family_port
+    role: boundary
+    repo: POCO
+    package: v3/windows_to_kylin/tasks/v2_shared_library
+    level: L2
+    difficulty: medium
+    status: ready
+    counted: false
+    components: [T1, T5]
+    title: 'Migrate the Foundation dynamic loading subsystem to Kylin V10 SP3'
+    notes: >-
+      Out-of-coverage capability (dlopen).  Tests whether retrieval selects only
+      T1/T5 and does not force T2-T4.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  - id: v2_foundation_full
+    source_kind: library_family_port
+    role: held_out
+    repo: POCO
+    package: v3/windows_to_kylin/tasks/v2_foundation_full
+    level: L3
+    difficulty: hard
+    status: ready
+    components: [T1, T2, T3, T4, T5]
+    title: 'Migrate the Foundation platform layer to Kylin V10 SP3'
+    notes: Whole-layer rebuild; includes Process_UNIX.cpp.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  - id: v2_poco_process
+    source_kind: library_family_port
+    role: held_out
+    repo: POCO
+    package: null
+    planned_package: v3/windows_to_kylin/tasks/v2_poco_process
+    level: L2
+    difficulty: hard
+    status: new
+    components: [T1, T3, T5]
+    title: 'Migrate the Foundation process subsystem to Kylin V10 SP3'
+    notes: Dedicated process task; closes the T3 gap on a cross-project repository.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  - id: negative_win32_eventlog
+    role: negative
+    repo: POCO
+    package: v3/windows_to_kylin/tasks/negative_win32_eventlog
+    level: L3
+    difficulty: hard
+    status: ready
+    fit: C
+    counted: false
+    components: []
+    title: 'Negative control: Windows Event Log channel has no equivalent'
+    notes: >-
+      Correct outcome is an explicit non-portability report.  Upgrade the package
+      to the v2 gate set before use.
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+
+  # ---------------------------------------------------------------------------
+  # held_out / nginx (4)
+  # ---------------------------------------------------------------------------
+  - id: v2_nginx_files
+    role: held_out
+    repo: nginx
+    package: v3/windows_to_kylin/tasks/v2_nginx_files
+    level: L2
+    difficulty: medium
+    status: ready
+    components: [T1, T2, T5]
+    title: 'Migrate the nginx file layer to Kylin V10 SP3'
+    notes: Moved from library_source to held_out; the library no longer cites it.
+    source:
+      repo: https://github.com/nginx/nginx.git
+      commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+      tag: release-1.26.3
+      license: BSD-2-Clause
+
+  - id: v2_nginx_full
+    role: held_out
+    repo: nginx
+    package: v3/windows_to_kylin/tasks/v2_nginx_full
+    level: L3
+    difficulty: hard
+    status: ready
+    components: [T1, T2, T3, T4, T5]
+    title: 'Migrate the complete nginx OS layer to Kylin V10 SP3'
+    notes: Whole src/os/unix rebuild; includes process and thread-pool code.
+    source:
+      repo: https://github.com/nginx/nginx.git
+      commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+      tag: release-1.26.3
+      license: BSD-2-Clause
+
+  - id: v2_nginx_process
+    role: held_out
+    repo: nginx
+    package: null
+    planned_package: v3/windows_to_kylin/tasks/v2_nginx_process
+    level: L2
+    difficulty: hard
+    status: new
+    components: [T1, T3, T5]
+    title: 'Migrate the nginx process layer to Kylin V10 SP3'
+    notes: Dedicated process task (fork/wait/signal), disjoint from the examples.
+    source:
+      repo: https://github.com/nginx/nginx.git
+      commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+      tag: release-1.26.3
+      license: BSD-2-Clause
+
+  - id: v2_nginx_thread
+    role: held_out
+    repo: nginx
+    package: null
+    planned_package: v3/windows_to_kylin/tasks/v2_nginx_thread
+    level: L2
+    difficulty: hard
+    status: new
+    components: [T1, T4, T5]
+    title: 'Migrate the nginx thread pool to Kylin V10 SP3'
+    notes: Cross-project thread coverage.
+    source:
+      repo: https://github.com/nginx/nginx.git
+      commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+      tag: release-1.26.3
+      license: BSD-2-Clause
+
+  # ---------------------------------------------------------------------------
+  # held_out / curl (4)
+  # ---------------------------------------------------------------------------
+  - id: v2_curl_build
+    source_kind: build_system_port
+    role: held_out
+    repo: curl
+    package: v3/windows_to_kylin/tasks/v2_curl_build
+    level: L3
+    difficulty: hard
+    status: ready
+    components: [T1, T5]
+    title: 'Migrate the curl build system to CMake on Kylin V10 SP3'
+    notes: Core build-discovery coverage.
+    source:
+      repo: https://github.com/curl/curl.git
+      commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+      tag: curl-8_5_0
+      license: curl
+
+  - id: v2_curl_tls
+    role: boundary
+    repo: curl
+    package: v3/windows_to_kylin/tasks/v2_curl_tls
+    level: L2
+    difficulty: hard
+    status: ready
+    counted: false
+    components: [T1, T5]
+    title: 'Migrate the curl TLS backend to Kylin V10 SP3'
+    notes: >-
+      Out-of-coverage capability (TLS).  Tests whether retrieval selects only
+      T1/T5 and declines T2-T4.
+    source:
+      repo: https://github.com/curl/curl.git
+      commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+      tag: curl-8_5_0
+      license: curl
+
+  - id: v2_curl_thread
+    role: held_out
+    repo: curl
+    package: null
+    planned_package: v3/windows_to_kylin/tasks/v2_curl_thread
+    level: L2
+    difficulty: hard
+    status: new
+    components: [T1, T4, T5]
+    title: 'Migrate the curl threaded resolver to Kylin V10 SP3'
+    notes: Cross-project thread coverage.
+    source:
+      repo: https://github.com/curl/curl.git
+      commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+      tag: curl-8_5_0
+      license: curl
+
+  - id: v2_curl_file
+    role: held_out
+    repo: curl
+    package: null
+    planned_package: v3/windows_to_kylin/tasks/v2_curl_file
+    level: L2
+    difficulty: hard
+    status: new
+    components: [T1, T2, T5]
+    title: 'Migrate the curl file protocol layer to Kylin V10 SP3'
+    notes: File-layer coverage on curl.
+    source:
+      repo: https://github.com/curl/curl.git
+      commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+      tag: curl-8_5_0
+      license: curl
+
+  # ---------------------------------------------------------------------------
+  # held_out / opencv boundary (1)
+  # ---------------------------------------------------------------------------
+  - id: l2_opencv_highgui
+    role: boundary
+    repo: opencv
+    package: v3/windows_to_kylin/tasks/l2_opencv_highgui
+    level: L2
+    difficulty: medium
+    status: ready
+    counted: false
+    components: [T1, T5]
+    title: 'Migrate the OpenCV highgui backend to Kylin V10 SP3'
+    notes: >-
+      Out-of-coverage capability (GUI).  Upgrade to v2 gates; report separately
+      from core coverage.
+    source:
+      repo: https://github.com/opencv/opencv.git
+      commit: 71d3237a093b60a27601c20e9ee6c3e52154e8b1
+      tag: 4.10.0
+      license: Apache-2.0
+
+  # ---------------------------------------------------------------------------
+  # separate / synthetic (1)
+  # ---------------------------------------------------------------------------
+  - id: synthetic_multi_call_site
+    role: separate
+    repo: synthetic
+    package: null
+    planned_package: v3/windows_to_kylin/tasks/synthetic_multi_call_site
+    level: L3
+    difficulty: hard
+    status: new
+    counted: false
+    source_kind: synthetic
+    components: [T1, T2, T4, T5]
+    title: 'Synthetic multi-call-site consistency migration'
+    notes: >-
+      Exercises 3-5 call sites sharing one implicit convention.  Reported
+      separately from upstream repositories.
+    source:
+      repo: synthetic://windows-to-posix/multi-call-site
+      commit: n/a
+      tag: n/a
+      license: n/a

@@ -6,12 +6,13 @@ from .service import (
     render_retrieval_task,
     run_retrieval_agent,
 )
-from .selection_bundle import materialize_selected_bundle
+from .selection_bundle import materialize_if_configured, materialize_selected_bundle
 from .submission import validate_coverage, validate_selection
 
 __all__ = [
     "RetrievalRequest",
     "build_component_catalog",
+    "materialize_if_configured",
     "materialize_selected_bundle",
     "render_retrieval_task",
     "run_retrieval_agent",

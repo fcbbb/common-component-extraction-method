@@ -1,0 +1,963 @@
+# V2 task family: Windows -> Kylin V10 + GCC/CMake.
+#
+# Each dataset has its own task-blind frozen library, built from its source
+# side before any task exists:
+#
+#   POCO Foundation   v2/windows_to_kylin/library/lock.json
+#   libgit2 utility   v2/windows_to_kylin/library/libgit2/lock.json
+#   nginx OS layer    v2/windows_to_kylin/library/nginx/lock.json
+#   curl TLS/build    v2/windows_to_kylin/library/curl/lock.json
+#
+# Every task expresses only the external migration contract: the target, the
+# public interface, observable behaviour, the target environment and the
+# acceptance scope.  Implementation details stay in the solution space.
+#
+# Each task removes the target-platform implementation from the agent-visible
+# `work/` and keeps it evaluator-side in `gold/`.  The Windows implementation,
+# public headers, callers and build entry stay visible.
+scenario: windows_to_kylin
+
+defaults:
+  scenario: windows_to_kylin
+  task_family: v2
+  family: poco_foundation
+  fit: B
+  counted: true
+  source_kind: library_family_port
+  gold_kind: implementation
+  library_manifest: v2/windows_to_kylin/library/lock.json
+  tolerances: {}
+  target:
+    os: kylin-v10-sp3
+    arch: x86_64
+    toolchain: gcc-13.3
+    cmake: "3.16.5"
+  build:
+    command: >-
+      cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF
+      -DENABLE_TESTS=ON -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF
+      -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF -DENABLE_MONGODB=OFF
+      -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF
+      -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF
+      -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF
+      -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF
+      -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF -DENABLE_APACHECONNECTOR=OFF
+      -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF
+      -DENABLE_DATA_MYSQL=OFF -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF
+      && cmake --build {build} -j2
+    artifact: "{build}/lib/libPocoFoundation.a"
+  gates:
+    build: "configure and build Foundation on the target platform"
+    api_removal:
+      symbol_regex: >-
+        ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+      source_regex: >-
+        windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance
+      exclude_globs:
+        - "**/*_WIN32*"
+        - "**/*_win32*"
+        - "**/*w32*"
+        - "**/*W32*"
+        - "**/*_windows.c"
+        - "**/*_windows.h"
+        - "**/win32/**"
+        - "**/Win32/**"
+        - "**/win/**"
+        - "**/Windows/**"
+        - "**/windows/**"
+        - "**/projects/Windows/**"
+        - "**/winbuild/**"
+    target_api: >-
+      the rebuilt layer calls the target platform API rather than a
+      hand-written portable fallback
+
+tasks:
+  # ---------------------------------------------------------------- thread ---
+  - id: v2_thread
+    level: L2
+    family_type: pattern
+    sequence: 1
+    domain: runtime
+    difficulty: hard
+    title: "Migrate the Foundation thread subsystem to Kylin V10 SP3"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/Thread_WIN32.cpp
+        - Foundation/include/Poco/Thread_WIN32.h
+      gold_files:
+        - Foundation/src/Thread_POSIX.cpp
+      test_files:
+        - Foundation/testsuite/src/ThreadTest.cpp
+        - Foundation/testsuite/src/ThreadPoolTest.cpp
+        - Foundation/testsuite/src/ThreadLocalTest.cpp
+        - Foundation/testsuite/src/TimerTest.cpp
+        - Foundation/testsuite/src/ActivityTest.cpp
+        - Foundation/testsuite/src/ActiveThreadPoolTest.cpp
+    spec: |
+      POCO Foundation is being moved from Windows to Kylin V10 SP3.  The
+      target-platform thread subsystem has not been written yet.
+
+      Port it, using the public headers, the existing callers and the Windows
+      implementation as the reference.  Foundation must build with the
+      repository CMake entry, and Poco::Thread and the components built on it
+      must keep their documented external behavior.
+
+      Scope: the thread subsystem only; do not change public headers or
+      signatures.  Deliverable: `libPocoFoundation.a`, built by the repository
+      CMake entry with Foundation enabled.
+
+      Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm
+      and the standard system threading library.
+    prepare:
+      remove:
+        - Foundation/src/Thread_POSIX.cpp
+    hidden_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        ThreadTest ThreadPoolTest ThreadLocalTest TimerTest ActivityTest
+        ActiveThreadPoolTest
+    regression_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        FileTest PathTest SharedLibraryTest
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/Thread_POSIX.cpp
+      behavior: >-
+        the thread subsystem passes directly and through its Foundation
+        callers (thread pools, timers, activity dispatch, thread-local storage)
+      regression: "filesystem and shared-library suites stay green"
+
+  # ------------------------------------------------------------------ file ---
+  - id: v2_file
+    level: L2
+    family_type: implicit_contract
+    sequence: 2
+    domain: filesystem
+    difficulty: hard
+    title: "Migrate the Foundation file subsystem to Kylin V10 SP3"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/File_WIN32U.cpp
+        - Foundation/include/Poco/File_WIN32U.h
+      gold_files:
+        - Foundation/src/File_UNIX.cpp
+      test_files:
+        - Foundation/testsuite/src/FileTest.cpp
+        - Foundation/testsuite/src/FileStreamTest.cpp
+        - Foundation/testsuite/src/DirectoryIteratorsTest.cpp
+        - Foundation/testsuite/src/GlobTest.cpp
+    spec: |
+      POCO Foundation is being moved from Windows to Kylin V10 SP3.  The
+      target-platform file subsystem has not been written yet.
+
+      Port it, using the public headers, the existing callers and the Windows
+      implementation as the reference.  Foundation must build with the
+      repository CMake entry, and Poco::File and the components built on it
+      must keep their documented external behavior.
+
+      Scope: the file subsystem only; do not change public headers or
+      signatures.  Deliverable: `libPocoFoundation.a`, built by the repository
+      CMake entry.
+
+      Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm.
+    prepare:
+      remove:
+        - Foundation/src/File_UNIX.cpp
+    hidden_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        FileTest FileStreamTest DirectoryIteratorsTest GlobTest
+    regression_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        ThreadTest PathTest SharedLibraryTest
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/File_UNIX.cpp
+      behavior: >-
+        the file subsystem passes directly and through directory iteration,
+        file streams and globbing
+      regression: "threading, path and shared-library suites stay green"
+
+  # ------------------------------------------------------------------ path ---
+  - id: v2_path
+    level: L2
+    family_type: implicit_contract
+    sequence: 3
+    domain: filesystem
+    difficulty: hard
+    title: "Migrate the Foundation path subsystem to Kylin V10 SP3"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/Path_WIN32U.cpp
+        - Foundation/include/Poco/Path_WIN32U.h
+      gold_files:
+        - Foundation/src/Path_UNIX.cpp
+      test_files:
+        - Foundation/testsuite/src/PathTest.cpp
+        - Foundation/testsuite/src/GlobTest.cpp
+        - Foundation/testsuite/src/DirectoryIteratorsTest.cpp
+        - Foundation/testsuite/src/DirectoryWatcherTest.cpp
+    spec: |
+      POCO Foundation is being moved from Windows to Kylin V10 SP3.  The
+      target-platform path subsystem has not been written yet.
+
+      Port it, using the public headers, the existing callers and the Windows
+      implementation as the reference.  Foundation must build with the
+      repository CMake entry, and Poco::Path and the components built on it
+      must keep their documented external behavior.
+
+      Scope: the path subsystem only; do not change public headers or
+      signatures.  Deliverable: `libPocoFoundation.a`, built by the repository
+      CMake entry.
+
+      Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm.
+    prepare:
+      remove:
+        - Foundation/src/Path_UNIX.cpp
+    hidden_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        PathTest GlobTest DirectoryIteratorsTest DirectoryWatcherTest
+    regression_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        FileTest ThreadTest SharedLibraryTest
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/Path_UNIX.cpp
+      behavior: >-
+        the path subsystem passes directly and through directory iteration,
+        globbing and directory watching
+      regression: "file, threading and shared-library suites stay green"
+
+  # -------------------------------------------------------- shared_library ---
+  - id: v2_shared_library
+    level: L2
+    family_type: pattern
+    sequence: 4
+    domain: runtime
+    difficulty: medium
+    title: "Migrate the Foundation dynamic loading subsystem to Kylin V10 SP3"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/SharedLibrary_WIN32U.cpp
+        - Foundation/include/Poco/SharedLibrary_WIN32U.h
+      gold_files:
+        - Foundation/src/SharedLibrary_UNIX.cpp
+      test_files:
+        - Foundation/testsuite/src/SharedLibraryTest.cpp
+        - Foundation/testsuite/src/ClassLoaderTest.cpp
+        - Foundation/testsuite/src/ManifestTest.cpp
+    spec: |
+      POCO Foundation is being moved from Windows to Kylin V10 SP3.  The
+      target-platform dynamic loading subsystem has not been written yet.
+
+      Port it, using the public headers, the existing callers and the Windows
+      implementation as the reference.  Foundation must build with the
+      repository CMake entry, and Poco::SharedLibrary and the components built
+      on it must keep their documented external behavior.
+
+      Scope: the dynamic loading subsystem only; do not change public headers
+      or signatures.  Deliverable: `libPocoFoundation.a`, built by the
+      repository CMake entry.
+
+      Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm.
+    prepare:
+      remove:
+        - Foundation/src/SharedLibrary_UNIX.cpp
+    hidden_tests:
+      command: >-
+        cd {build}/bin && LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH"
+        ./Foundation-testrunner -ignore {work}/cppignore.lnx SharedLibraryTest
+        ClassLoaderTest ManifestTest
+    regression_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        FileTest ThreadTest PathTest
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/SharedLibrary_UNIX.cpp
+      behavior: >-
+        dynamic loading passes directly and through class loading and manifest
+        handling
+      regression: "file, threading and path suites stay green"
+
+  # -------------------------------------------------- rwlock + semaphore ---
+  - id: v2_rwlock_semaphore
+    level: L2
+    family_type: implicit_contract
+    sequence: 5
+    domain: runtime
+    difficulty: hard
+    title: "Migrate the Foundation rwlock and semaphore primitives to Kylin V10 SP3"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/RWLock_WIN32.cpp
+        - Foundation/src/Semaphore_WIN32.cpp
+        - Foundation/include/Poco/RWLock_WIN32.h
+        - Foundation/include/Poco/Semaphore_WIN32.h
+      gold_files:
+        - Foundation/src/RWLock_POSIX.cpp
+        - Foundation/src/Semaphore_POSIX.cpp
+      test_files:
+        - Foundation/testsuite/src/RWLockTest.cpp
+        - Foundation/testsuite/src/SemaphoreTest.cpp
+        - Foundation/testsuite/src/ThreadPoolTest.cpp
+        - Foundation/testsuite/src/TimerTest.cpp
+    spec: |
+      POCO Foundation is being moved from Windows to Kylin V10 SP3.  Neither
+      the reader/writer lock nor the semaphore has a target-platform
+      implementation yet.
+
+      Port both, using the public headers, the existing callers and the
+      Windows implementations as the reference.  Foundation must build with
+      the repository CMake entry, and Poco::RWLock and Poco::Semaphore,
+      together with the components built on them, must keep their documented
+      external behavior.
+
+      Scope: these two primitives only; do not change public headers or
+      signatures.  Deliverable: `libPocoFoundation.a`, built by the repository
+      CMake entry.
+
+      Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm
+      and the standard system threading library.
+    prepare:
+      remove:
+        - Foundation/src/RWLock_POSIX.cpp
+        - Foundation/src/Semaphore_POSIX.cpp
+    hidden_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        RWLockTest SemaphoreTest ThreadPoolTest TimerTest
+    regression_tests:
+      command: >-
+        cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        FileTest PathTest SharedLibraryTest
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/RWLock_POSIX.cpp
+          - Foundation/src/Semaphore_POSIX.cpp
+      behavior: >-
+        both primitives pass directly and through thread pools and timers,
+        including timeout and interruption
+      regression: "filesystem and shared-library suites stay green"
+
+  # ------------------------------------------------------ foundation_full ---
+  - id: v2_foundation_full
+    level: L3
+    family_type: localization
+    sequence: 6
+    domain: runtime
+    difficulty: hard
+    title: "Migrate the Foundation platform layer to Kylin V10 SP3"
+    source:
+      repo: https://github.com/pocoproject/poco.git
+      commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+      tag: poco-1.13.3-release
+      license: BSL-1.0
+      windows_files:
+        - Foundation/src/DirectoryIterator_WIN32U.cpp
+        - Foundation/src/Environment_WIN32U.cpp
+        - Foundation/src/Event_WIN32.cpp
+        - Foundation/src/FileStream_WIN32.cpp
+        - Foundation/src/File_WIN32U.cpp
+        - Foundation/src/Mutex_WIN32.cpp
+        - Foundation/src/NamedEvent_WIN32U.cpp
+        - Foundation/src/NamedMutex_WIN32U.cpp
+        - Foundation/src/Path_WIN32U.cpp
+        - Foundation/src/PipeImpl_WIN32.cpp
+        - Foundation/src/Process_WIN32U.cpp
+        - Foundation/src/RWLock_WIN32.cpp
+        - Foundation/src/Semaphore_WIN32.cpp
+        - Foundation/src/SharedLibrary_WIN32U.cpp
+        - Foundation/src/SharedMemory_WIN32.cpp
+        - Foundation/src/Thread_WIN32.cpp
+        - Foundation/src/Timezone_WIN32.cpp
+      gold_files:
+        - Foundation/src/DirectoryIterator_UNIX.cpp
+        - Foundation/src/Environment_UNIX.cpp
+        - Foundation/src/Event_POSIX.cpp
+        - Foundation/src/FileStream_POSIX.cpp
+        - Foundation/src/File_UNIX.cpp
+        - Foundation/src/Mutex_POSIX.cpp
+        - Foundation/src/NamedEvent_UNIX.cpp
+        - Foundation/src/NamedMutex_UNIX.cpp
+        - Foundation/src/Path_UNIX.cpp
+        - Foundation/src/PipeImpl_POSIX.cpp
+        - Foundation/src/Process_UNIX.cpp
+        - Foundation/src/RWLock_POSIX.cpp
+        - Foundation/src/Semaphore_POSIX.cpp
+        - Foundation/src/SharedLibrary_UNIX.cpp
+        - Foundation/src/SharedMemory_POSIX.cpp
+        - Foundation/src/Thread_POSIX.cpp
+        - Foundation/src/Timezone_UNIX.cpp
+      test_files:
+        - Foundation/testsuite/src
+    spec: |
+      POCO Foundation is being moved from Windows to Kylin V10 SP3.  No part
+      of the platform layer has a target-platform implementation yet.
+
+      Port the whole layer, using the public headers, the existing callers and
+      the Windows implementations as the reference.  Foundation must configure
+      and build with the repository CMake entry, and its platform-backed
+      components must keep their documented external behavior.
+
+      Scope: all platform-dependent parts of Foundation; do not change public
+      headers or signatures, and do not reintroduce Windows platform calls.
+      Deliverable: `libPocoFoundation.a`, built by the repository CMake entry.
+
+      Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm
+      and the standard system runtime libraries.
+    prepare:
+      remove:
+        - Foundation/src/DirectoryIterator_UNIX.cpp
+        - Foundation/src/Environment_UNIX.cpp
+        - Foundation/src/Event_POSIX.cpp
+        - Foundation/src/FileStream_POSIX.cpp
+        - Foundation/src/File_UNIX.cpp
+        - Foundation/src/Mutex_POSIX.cpp
+        - Foundation/src/NamedEvent_UNIX.cpp
+        - Foundation/src/NamedMutex_UNIX.cpp
+        - Foundation/src/Path_UNIX.cpp
+        - Foundation/src/PipeImpl_POSIX.cpp
+        - Foundation/src/Process_UNIX.cpp
+        - Foundation/src/RWLock_POSIX.cpp
+        - Foundation/src/Semaphore_POSIX.cpp
+        - Foundation/src/SharedLibrary_UNIX.cpp
+        - Foundation/src/SharedMemory_POSIX.cpp
+        - Foundation/src/Thread_POSIX.cpp
+        - Foundation/src/Timezone_UNIX.cpp
+    hidden_tests:
+      command: >-
+        cd {build}/bin && LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH"
+        PATH="$PWD:$PATH" ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        ThreadTest ThreadPoolTest ThreadLocalTest TimerTest ActivityTest
+        ActiveThreadPoolTest ConditionTest FileTest FileStreamTest PathTest
+        DirectoryIteratorsTest GlobTest RWLockTest SemaphoreTest
+        SharedLibraryTest ClassLoaderTest ManifestTest ProcessTest
+        ProcessRunnerTest NamedMutexTest NamedEventTest SharedMemoryTest
+        TimezoneTest
+    regression_tests:
+      command: >-
+        cd {build}/bin && LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH"
+        PATH="$PWD:$PATH" ./Foundation-testrunner -ignore {work}/cppignore.lnx
+        CoreTestSuite StreamsTestSuite CryptTestSuite LoggingTestSuite
+        FilesystemTestSuite UUIDTestSuite TextTestSuite URITestSuite
+        HashingTestSuite SharedLibraryTestSuite
+    gates:
+      api_removal:
+        source_dirs:
+          - Foundation/src/DirectoryIterator_UNIX.cpp
+          - Foundation/src/Environment_UNIX.cpp
+          - Foundation/src/Event_POSIX.cpp
+          - Foundation/src/FileStream_POSIX.cpp
+          - Foundation/src/File_UNIX.cpp
+          - Foundation/src/Mutex_POSIX.cpp
+          - Foundation/src/NamedEvent_UNIX.cpp
+          - Foundation/src/NamedMutex_UNIX.cpp
+          - Foundation/src/Path_UNIX.cpp
+          - Foundation/src/PipeImpl_POSIX.cpp
+          - Foundation/src/Process_UNIX.cpp
+          - Foundation/src/RWLock_POSIX.cpp
+          - Foundation/src/Semaphore_POSIX.cpp
+          - Foundation/src/SharedLibrary_UNIX.cpp
+          - Foundation/src/SharedMemory_POSIX.cpp
+          - Foundation/src/Thread_POSIX.cpp
+          - Foundation/src/Timezone_UNIX.cpp
+      behavior: >-
+        Foundation builds and its platform-layer suites pass across threads,
+        synchronization, filesystem, processes, shared memory/libraries,
+        environment and timezone
+      regression: "the remaining Foundation suites stay green"
+
+  # ------------------------------------------------------- libgit2 utility ---
+  - id: v2_libgit2_file
+    level: L2
+    family: libgit2_util
+    family_type: implicit_contract
+    sequence: 7
+    domain: filesystem
+    difficulty: medium
+    source_kind: upstream_platform_port
+    title: "Migrate the libgit2 utility file layer to Kylin V10 SP3"
+    library_manifest: v2/windows_to_kylin/library/libgit2/lock.json
+    source:
+      repo: https://github.com/libgit2/libgit2.git
+      commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+      tag: v1.8.1
+      license: GPL-2.0-with-linking-exception
+      windows_files:
+        - src/util/win32/map.c
+        - src/util/win32/path_w32.c
+        - src/util/win32/posix_w32.c
+      gold_files:
+        - src/util/unix/map.c
+        - src/util/unix/realpath.c
+      test_files:
+        - tests/util/filebuf.c
+        - tests/util/ftruncate.c
+        - tests/util/stat.c
+        - tests/util/path/core.c
+    spec: |
+      libgit2 is being moved from Windows to Kylin V10 SP3.  The
+      target-platform file utility layer has not been written yet.
+
+      Port the memory-mapping and path-canonicalisation behaviour used by the
+      object database, the worktree and clone preparation, using the visible
+      headers, the existing callers and the Windows implementation as the
+      reference.  Preserve the documented error semantics, including the
+      non-existing-path fallback required when a clone target does not exist
+      yet, and the page-size and protection/flag mapping used by the file
+      buffers.
+
+      Scope: the file utility layer only; do not change call sites, public
+      headers or build files.  The library and its selected upstream utility
+      suites must build and pass with the repository CMake entry on Kylin.
+
+      Deliverable: `libgit2.a`.
+    prepare:
+      remove:
+        - src/util/unix/map.c
+        - src/util/unix/realpath.c
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j2"
+      artifact: "{build}/libgit2.a"
+    hidden_tests:
+      command: "cd {build} && ./util_tests -v -sfilebuf -sftruncate -sstat -spath::core"
+    gates:
+      api_removal:
+        source_dirs:
+          - src/util/unix/map.c
+          - src/util/unix/realpath.c
+      target_api:
+        source_dirs:
+          - src/util/unix/map.c
+          - src/util/unix/realpath.c
+        source_regex: >-
+          \b(?:mmap|munmap|sysconf|realpath|open|read|write|stat|fstat|unlink|mkdir|rename|opendir|readdir)\b
+        min_hits: 1
+      behavior: >-
+        the library builds and the selected upstream file, buffer and path
+        utility suites pass offline
+      regression: "the remaining utility suites stay green"
+
+  - id: v2_libgit2_process
+    level: L2
+    family: libgit2_util
+    family_type: pattern
+    sequence: 8
+    domain: runtime
+    difficulty: hard
+    source_kind: upstream_platform_port
+    title: "Migrate the libgit2 process and thread layer to Kylin V10 SP3"
+    library_manifest: v2/windows_to_kylin/library/libgit2/lock.json
+    source:
+      repo: https://github.com/libgit2/libgit2.git
+      commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+      tag: v1.8.1
+      license: GPL-2.0-with-linking-exception
+      windows_files:
+        - src/util/win32/process.c
+        - src/util/win32/thread.c
+        - src/util/win32/thread.h
+      gold_files:
+        - src/util/unix/process.c
+        - src/util/unix/pthread.h
+        - src/util/unix/posix.h
+      test_files:
+        - tests/util/process/start.c
+        - tests/libgit2/threads/basic.c
+        - tests/libgit2/threads/tlsdata.c
+    spec: |
+      libgit2 is being moved from Windows to Kylin V10 SP3.  The
+      target-platform process and thread-synchronisation layer has not been
+      written yet.
+
+      Port process creation with stdout/stderr redirection and environment
+      inheritance, plus the thread, mutex, read-write lock, condition-variable
+      and thread-local-storage primitives used by libgit2.  Preserve the
+      documented error and cleanup semantics, including timed waits and
+      destructor-based cleanup.
+
+      Scope: the process and thread utility layer only; do not change call
+      sites, public headers or build files.  The library and its selected
+      upstream process and thread suites must build and pass with the
+      repository CMake entry on Kylin.
+
+      Deliverable: `libgit2.a`.
+    prepare:
+      remove:
+        - src/util/unix/process.c
+        - src/util/unix/pthread.h
+        - src/util/unix/posix.h
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j2"
+      artifact: "{build}/libgit2.a"
+    hidden_tests:
+      command: >-
+        cd {build} && ./util_tests -v -sprocess::start &&
+        ./libgit2_tests -v -sthreads::basic -sthreads::tlsdata
+    gates:
+      api_removal:
+        source_dirs:
+          - src/util/unix/process.c
+          - src/util/unix/pthread.h
+          - src/util/unix/posix.h
+      target_api:
+        source_dirs:
+          - src/util/unix/process.c
+          - src/util/unix/pthread.h
+          - src/util/unix/posix.h
+        source_regex: >-
+          \b(?:pthread_[A-Za-z0-9_]+|fork|execve|waitpid|pipe|dup2|sem_[A-Za-z0-9_]+)\b
+        min_hits: 1
+      behavior: >-
+        the library builds and the selected upstream process and thread
+        suites pass offline
+      regression: "the remaining utility suites stay green"
+
+  - id: v2_libgit2_util_full
+    level: L3
+    family: libgit2_util
+    family_type: localization
+    sequence: 9
+    domain: vcs
+    difficulty: hard
+    source_kind: upstream_platform_port
+    title: "Migrate the complete libgit2 utility layer to Kylin V10 SP3"
+    library_manifest: v2/windows_to_kylin/library/libgit2/lock.json
+    source:
+      repo: https://github.com/libgit2/libgit2.git
+      commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+      tag: v1.8.1
+      license: GPL-2.0-with-linking-exception
+      windows_files:
+        - src/util/win32
+      gold_files:
+        - src/util/unix
+      test_files:
+        - tests/util
+    spec: |
+      libgit2 is being moved from Windows to Kylin V10 SP3.  The entire
+      target-platform utility layer has not been written yet: process
+      creation, memory mapping, path canonicalisation, directory handling,
+      error translation and the thread/synchronisation wrappers shared by the
+      rest of the library.
+
+      Rebuild the layer as one coherent unit, using the visible headers, the
+      callers and the Windows implementation as the reference.  The library
+      and its selected offline utility and threading suites must build and
+      pass with the repository CMake entry.
+
+      Scope: the utility layer only; public libgit2 headers and call sites
+      stay unchanged.  Deliverable: `libgit2.a`.
+    prepare:
+      remove:
+        - src/util/unix
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=ON -DBUILD_CLI=OFF -DUSE_SSH=OFF -DUSE_HTTPS=OFF -DUSE_BUNDLED_ZLIB=ON -DREGEX_BACKEND=builtin && cmake --build {build} -j2"
+      artifact: "{build}/libgit2.a"
+    hidden_tests:
+      command: >-
+        cd {build} && ./util_tests -v -sfilebuf -sftruncate -sstat
+        -spath::core -sprocess::start && ./libgit2_tests -v -xonline
+        -sthreads::basic
+    gates:
+      api_removal:
+        source_dirs:
+          - src/util/unix
+      target_api:
+        source_dirs:
+          - src/util/unix
+        source_regex: >-
+          \b(?:pthread_[A-Za-z0-9_]+|mmap|munmap|realpath|open|read|write|stat|fstat|unlink|mkdir|rename|opendir|readdir|fork|execve|waitpid|pipe|dup2)\b
+        min_hits: 1
+      behavior: >-
+        libgit2 builds and the selected offline utility and threading suites
+        pass
+      regression: "the library links and the remaining offline suites stay green"
+
+  # ------------------------------------------------------- nginx OS layer ---
+  - id: v2_nginx_files
+    level: L2
+    family: nginx_os
+    family_type: pattern
+    sequence: 10
+    domain: networking
+    difficulty: medium
+    source_kind: upstream_platform_port
+    title: "Migrate the nginx file layer to Kylin V10 SP3"
+    library_manifest: v2/windows_to_kylin/library/nginx/lock.json
+    source:
+      repo: https://github.com/nginx/nginx.git
+      commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+      tag: release-1.26.3
+      license: BSD-2-Clause
+      windows_files:
+        - src/os/win32/ngx_files.c
+        - src/os/win32/ngx_files.h
+      gold_files:
+        - src/os/unix/ngx_files.c
+      test_files:
+        - src/os/unix/ngx_files.h
+      extra_repos:
+        - name: nginx-tests
+          repo: https://github.com/nginx/nginx-tests.git
+          commit: c0b7894063022fb86d5b5ad732c08507ea03aa78
+          dest: nginx-tests
+    spec: |
+      nginx is being moved from Windows to Kylin V10 SP3.  The target-platform
+      file layer has not been written yet.
+
+      Reimplement the file abstraction used by the whole server: file opening
+      and closing, sequential and positioned I/O, metadata queries, rename and
+      deletion, directory creation and iteration, symbolic links, timestamp
+      updates, path canonicalisation and error-code translation.  The module
+      headers, the server core, the Win32 implementation and the configure
+      entry stay visible as the reference.
+
+      Scope: the file layer only; do not change module interfaces or build
+      configuration.  Acceptance: nginx builds with its own configure entry,
+      serves static content, and passes the selected upstream file-serving
+      tests.
+    prepare:
+      remove:
+        - src/os/unix/ngx_files.c
+    harness:
+      scripts:
+        - nginx_smoke.sh
+    build:
+      command: "./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module && make -j"
+      artifact: "{work}/objs/nginx"
+    hidden_tests:
+      command: >-
+        bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx
+        --port 28080 && cd {work}/nginx-tests &&
+        TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t
+    gates:
+      api_removal:
+        source_dirs:
+          - src/os/unix/ngx_files.c
+      behavior: >-
+        the server builds, serves static content, and the selected upstream
+        file-serving tests pass
+      regression: "the server starts and serves a static file without a crash"
+
+  - id: v2_nginx_full
+    level: L3
+    family: nginx_os
+    family_type: localization
+    sequence: 11
+    domain: networking
+    difficulty: hard
+    source_kind: upstream_platform_port
+    title: "Migrate the complete nginx OS layer to Kylin V10 SP3"
+    library_manifest: v2/windows_to_kylin/library/nginx/lock.json
+    source:
+      repo: https://github.com/nginx/nginx.git
+      commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+      tag: release-1.26.3
+      license: BSD-2-Clause
+      windows_files:
+        - src/os/win32/ngx_win32_init.c
+        - src/os/win32/ngx_win32_config.h
+      gold_files:
+        - src/os/unix
+      test_files:
+        - src/os/unix/ngx_files.h
+      extra_repos:
+        - name: nginx-tests
+          repo: https://github.com/nginx/nginx-tests.git
+          commit: c0b7894063022fb86d5b5ad732c08507ea03aa78
+          dest: nginx-tests
+    spec: |
+      nginx is being moved from Windows to Kylin V10 SP3.  The entire
+      target-platform operating-system layer has not been written yet.
+
+      Rebuild the OS layer as one coherent unit: process model and
+      daemonisation, signals and master/worker channels, the event loop and
+      timers, the accept/connect/read/write/sendfile paths, file and directory
+      handling, shared memory, atomics, time and error translation.  The Win32
+      implementation, the server core and modules, and the configure entry
+      stay visible as the reference.
+
+      Scope: the OS layer only; application modules and public module
+      interfaces stay unchanged.  Acceptance: configure still produces a
+      working server binary, it serves static content, and the selected
+      upstream file-serving tests pass.
+    prepare:
+      remove:
+        - src/os/unix
+    harness:
+      scripts:
+        - nginx_smoke.sh
+    build:
+      command: "./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module && make -j"
+      artifact: "{work}/objs/nginx"
+    hidden_tests:
+      command: >-
+        bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx
+        --port 28081 && cd {work}/nginx-tests &&
+        TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t
+    gates:
+      api_removal:
+        source_dirs:
+          - src/os/unix
+      behavior: >-
+        nginx builds, serves static content, and the selected upstream
+        file-serving tests pass
+      regression: "configuration, startup and graceful shutdown stay intact"
+
+  # ------------------------------------------------------------ curl TLS ---
+  - id: v2_curl_tls
+    level: L2
+    family: curl_tls
+    family_type: pattern
+    sequence: 12
+    domain: networking
+    difficulty: hard
+    source_kind: upstream_platform_port
+    title: "Migrate the curl TLS backend to Kylin V10 SP3"
+    library_manifest: v2/windows_to_kylin/library/curl/lock.json
+    source:
+      repo: https://github.com/curl/curl.git
+      commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+      tag: curl-8_5_0
+      license: curl
+      windows_files:
+        - lib/vtls/schannel.c
+        - lib/vtls/schannel_verify.c
+        - lib/vtls/schannel.h
+      gold_files:
+        - lib/vtls/openssl.c
+      test_files:
+        - tests/data/test3000
+        - tests/data/test3001
+    spec: |
+      curl is being moved from Windows to Kylin V10 SP3.  The target-platform
+      TLS backend has not been written yet.
+
+      Implement the backend behind curl's existing TLS abstraction: backend
+      registration and version reporting, certificate and hostname
+      verification, server name indication, ALPN, session reuse, blocking and
+      non-blocking handshakes integrated with the transfer state machine
+      (including would-block return codes), client certificates, revocation
+      checks and public-key pinning.  The generic TLS interface, its callers,
+      the Windows backend and the build entry stay visible as the reference.
+
+      Scope: the TLS backend only; do not change the generic interface or
+      call sites.  The library and tool must build with the repository build
+      entry against the platform TLS library, and a real handshake against a
+      local TLS server must succeed.
+    prepare:
+      remove:
+        - lib/vtls/openssl.c
+    harness:
+      scripts:
+        - tls_probe.sh
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=ON -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF -DBUILD_TESTING=ON -DBUILD_CURL_EXE=ON && cmake --build {build} -j2"
+      artifact: "{build}/src/curl"
+    hidden_tests:
+      command: "bash {root}/harness/tls_probe.sh --port 18443 --path {build}/src/curl"
+    gates:
+      api_removal:
+        source_dirs:
+          - lib/vtls/openssl.c
+      behavior: >-
+        curl builds and completes a real TLS request through the rebuilt
+        backend
+      regression: "the tool still reports its version and exits cleanly"
+
+  - id: v2_curl_build
+    level: L3
+    family: curl_build
+    family_type: build_system
+    sequence: 13
+    domain: build-system
+    difficulty: hard
+    source_kind: build_system_port
+    title: "Migrate the curl build system to CMake on Kylin V10 SP3"
+    library_manifest: v2/windows_to_kylin/library/curl/lock.json
+    source:
+      repo: https://github.com/curl/curl.git
+      commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+      tag: curl-8_5_0
+      license: curl
+      windows_files:
+        - projects/Windows/VC14.30/lib/libcurl.sln
+        - winbuild/Makefile.vc
+      gold_files:
+        - CMakeLists.txt
+        - CMake
+      test_files:
+        - tests/data/test3000
+        - tests/data/test3001
+    spec: |
+      curl is being moved from Windows to Kylin V10 SP3.  The top-level CMake
+      build system has not been written yet; only the Windows project files
+      and the nmake build remain.
+
+      Produce a CMake build for Kylin that builds libcurl and the curl tool
+      with the required TLS and compression support, generates the
+      configuration header with the feature macros the sources expect, accepts
+      the documented cache options, installs headers and libraries, and
+      compiles entirely from this tree.  Do not vendor a prebuilt libcurl.
+
+      Scope: the build system only; the library sources stay unchanged.
+      Acceptance: the build succeeds with the documented options and the tool
+      completes a TLS request against a local TLS server.
+    prepare:
+      remove:
+        - CMakeLists.txt
+        - CMake
+    harness:
+      scripts:
+        - tls_probe.sh
+    build:
+      command: "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=ON -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF && cmake --build {build} -j2"
+      artifact: "{build}/src/curl"
+    hidden_tests:
+      command: "bash {root}/harness/tls_probe.sh --port 18444 --path {build}/src/curl"
+    gates:
+      api_removal:
+        source_dirs:
+          - CMakeLists.txt
+          - CMake
+      target_api:
+        source_dirs:
+          - CMakeLists.txt
+          - CMake
+        source_regex: '(?i)\b(?:cmake|configure|make)\b'
+        min_hits: 1
+      behavior: >-
+        the agent-authored build produces libcurl and the tool from this tree
+        and a real TLS request succeeds
+      regression: "the produced tool reports its version and exits cleanly"

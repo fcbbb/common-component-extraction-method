@@ -472,6 +472,42 @@ def _stage_name(method: str, payload: Mapping[str, Any]) -> str | None:
     return None
 
 
+def _agent_visible_path(text: str) -> str:
+    """Translate a host workspace path into the main agent's namespace.
+
+    Local attempts bind-mount the workspace at ``/workspace``, while the stage
+    kernel sees the host directory.  Paths inside that directory are reported
+    the way ``controlled_bash`` sees them, so a returned path can be opened.
+    Other paths are left alone: the stage plane has no agent-visible form for
+    its own bookkeeping files.
+    """
+    host_root = os.environ.get("COMPONENT_DSH_HOST_WORKSPACE")
+    agent_root = os.environ.get("COMPONENT_DSH_AGENT_WORKSPACE")
+    if not host_root or not agent_root or not os.path.isabs(text):
+        return text
+    host = os.path.realpath(os.path.expanduser(host_root))
+    path = os.path.realpath(os.path.expanduser(text))
+    agent = agent_root.rstrip("/") or "/"
+    if path == host:
+        return agent
+    prefix = host.rstrip("/") + os.sep
+    if not path.startswith(prefix):
+        return text
+    relative = os.path.relpath(path, host).replace(os.sep, "/")
+    return f"{agent}/{relative}"
+
+
+def _agent_visible(value: Any) -> Any:
+    """Apply the workspace translation across a summary/artifact payload."""
+    if isinstance(value, str):
+        return _agent_visible_path(value)
+    if isinstance(value, list):
+        return [_agent_visible(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _agent_visible(item) for key, item in value.items()}
+    return value
+
+
 def _envelope(
     *,
     method: str,
@@ -492,8 +528,8 @@ def _envelope(
         "ok": status == "succeeded",
         "status": status,
         "method": method,
-        "summary": summary if isinstance(summary, dict) else {},
-        "artifacts": artifacts if isinstance(artifacts, dict) else {},
+        "summary": _agent_visible(summary if isinstance(summary, dict) else {}),
+        "artifacts": _agent_visible(artifacts if isinstance(artifacts, dict) else {}),
         "error_code": error_code,
     }
     if stage is not None:
@@ -669,6 +705,8 @@ def _status_job(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[st
                 result["artifacts"] = artifacts
         except (OSError, ValueError):
             pass
+    result["summary"] = _agent_visible(result.get("summary") or {})
+    result["artifacts"] = _agent_visible(result.get("artifacts") or {})
     result.setdefault("error_code", None)
     return result
 
@@ -768,7 +806,7 @@ def _environment(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[s
         "OPENAI_API_BASE",
         "OPENAI_API_KEY",
         # Stage agents build their own model route in this subprocess.  Without
-        # the budget variables they fall back to the runner defaults (16k
+        # the budget variables they fall back to the runner defaults (32k
         # output), and a long source-grounded reasoning turn ends on
         # `max-tokens` before the agent writes its submission.
         "COMPONENT_DSH_MAX_OUTPUT_TOKENS",
@@ -783,6 +821,8 @@ def _environment(payload: Mapping[str, Any], registry: dict[str, Any]) -> dict[s
         "COMPONENT_DSH_COVERAGE_PATH",
         "COMPONENT_DSH_BUNDLE_DESTINATION",
         "COMPONENT_DSH_STAGE_RUNTIME",
+        "COMPONENT_DSH_HOST_WORKSPACE",
+        "COMPONENT_DSH_AGENT_WORKSPACE",
         "DOCKER_HOST",
     ):
         if os.environ.get(name):
@@ -869,6 +909,15 @@ def _stage_prerequisite(method: str, payload: Mapping[str, Any], resolved: Mappi
     return None
 
 
+def _materialized_bundle() -> Path | None:
+    """The bundle the retrieval block wrote, when the caller configured one."""
+    value = os.environ.get("COMPONENT_DSH_BUNDLE_DESTINATION")
+    if not value:
+        return None
+    path = Path(value).expanduser().resolve()
+    return path if (path / "manifest.json").is_file() else None
+
+
 def _step_summary(step: str, resolved: Mapping[str, Any]) -> dict[str, Any]:
     """Read one step's own manifest instead of making the caller parse stdout."""
     task_root = Path(resolved["task_root"]) if resolved.get("task_root") else None
@@ -948,11 +997,17 @@ def _step_summary(step: str, resolved: Mapping[str, Any]) -> dict[str, Any]:
         if step == "retrieval":
             attempt = str(config.get("retrieval_attempt") or "retrieval_v1")
             result = _json_if_file(task_root / "attempts" / attempt / "result.json")
-            if result:
-                return {
-                    "selected_bundle_ids": result.get("selected_bundle_ids"),
-                    "coverage_file": str(task_root / "attempts" / attempt / "submission" / "coverage.json"),
+            bundle = _materialized_bundle()
+            if result or bundle is not None:
+                summary = {
+                    "selected_bundle_ids": (result or {}).get("selected_bundle_ids"),
                 }
+                coverage = task_root / "attempts" / attempt / "submission" / "coverage.json"
+                if coverage.is_file():
+                    summary["coverage_file"] = str(coverage)
+                if bundle is not None:
+                    summary["bundle"] = str(bundle)
+                return summary
         if step == "task":
             attempt = str(config.get("task_attempt") or "task_01")
             result = _json_if_file(task_root / "task_attempts" / attempt / "run_manifest.json")
@@ -1023,7 +1078,12 @@ def _stage_artifacts(method: str, payload: Mapping[str, Any], resolved: Mapping[
         path = artifacts_by_key[STEP_ARTIFACTS[steps[0]]]
     else:
         path = artifacts_by_key[blocks[-1].produces]
-    return {"manifest": str(path)} if path is not None and path.is_file() else {}
+    artifacts = {"manifest": str(path)} if path is not None and path.is_file() else {}
+    if "retrieval" in steps:
+        bundle = _materialized_bundle()
+        if bundle is not None:
+            artifacts["bundle"] = str(bundle)
+    return artifacts
 
 
 def _try_stage_lock(run_root: Path):

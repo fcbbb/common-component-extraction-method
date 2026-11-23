@@ -1,0 +1,93 @@
+scenario: windows_to_kylin
+task_family: v3
+family: libuv
+fit: B
+counted: false
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON
+    && cmake --build {build} -j2
+  artifact: '{build}/libuv.a'
+gates:
+  build: configure and build libuv on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/unix/fs.c
+  target_api: the rebuilt layer calls the target platform API rather than a hand-written portable fallback
+  behavior: the file-system, directory-scan and poll suites pass
+  regression: the loop, timer and thread suites stay green
+id: l2_libuv_fs
+level: L2
+family_type: implicit_contract
+sequence: 14
+domain: async-io
+difficulty: medium
+title: Migrate the libuv file-system layer to Kylin V10 SP3
+source:
+  repo: https://github.com/libuv/libuv.git
+  commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+  tag: v1.48.0
+  license: MIT
+  windows_files:
+  - src/win/fs.c
+  - src/win/fs-event.c
+  gold_files:
+  - src/unix/fs.c
+  test_files:
+  - test/test-fs.c
+  - test/test-fs-event.c
+  - test/test-fs-poll.c
+  - test/test-fs-readdir.c
+spec: |
+  libuv is being moved from Windows to Kylin V10 SP3.  The
+  target-platform file-system backend has not been written yet.
+
+  Reimplement the POSIX file-system backend behind the public
+  `uv_fs_*` API and the internal loop and request contracts:
+  synchronous and asynchronous open, read, write and close; stat,
+  lstat and fstat; mkdir and rmdir; unlink, rename, link and
+  symlink; readlink; chmod, chown and utime; truncate; copyfile
+  and sendfile; access and mkdtemp; directory scanning; and the
+  file-system poll and event integration.  The Win32
+  implementation, the shared headers and the callers stay visible
+  as the reference.
+
+  Scope: the file-system backend only; do not change public
+  headers or signatures.  Deliverable: `libuv.a`, built by the
+  repository CMake entry.
+
+  Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake
+  3.16.5.
+prepare:
+  remove:
+  - src/unix/fs.c
+hidden_tests:
+  command: cd {work} && {build}/uv_run_tests_a fs_file_async && {build}/uv_run_tests_a fs_file_sync &&
+    {build}/uv_run_tests_a fs_copyfile && {build}/uv_run_tests_a fs_stat_missing_path && {build}/uv_run_tests_a
+    fs_readdir_non_empty_dir && {build}/uv_run_tests_a fs_scandir_empty_dir && {build}/uv_run_tests_a
+    fs_poll && {build}/uv_run_tests_a fs_event_watch_dir
+task_id: l2_libuv_fs

@@ -15,8 +15,9 @@ Every result is one sheet with the same four fields: `status`, `summary`, `artif
 and `error_code`. A successful block has `status: "succeeded"`; a failure has
 `status: "failed"` and a stable `error_code`.
 
-This workflow runs the blocks `prepare` → `build` → `audit` → `publish` → `retrieval`,
-then the two selection helpers `validate_selection` and `materialize_selection`.
+This workflow runs the blocks `prepare` → `build` → `audit` → `publish` → `retrieval`.
+The retrieval block also validates its selection and writes the selected bundle; no
+separate selection stage is needed.
 
 1. `stage: "prepare"`
    Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "prepare"}`
@@ -53,36 +54,32 @@ then the two selection helpers `validate_selection` and `materialize_selection`.
    This is a background block like build: it returns a `job_id` with
    `status: "running"`; wait for the finished sheet with
    `job_output {"job_id": "<job_id>", "wait": true, "timeout_ms": 600000}` until it
-   stops reporting `running`. Retrieval selects the components that are relevant to
-   this task.
-
-6. `stage: "validate_selection"`
-   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "validate_selection"}`
-   This checks the selection written by retrieval against the published library.
-
-7. `stage: "materialize_selection"`
-   Arguments: `{"run_id": "<run_id>", "task_id": "<task_id>", "stage": "materialize_selection"}`
-   This writes the selected bundle to `/workspace/component_bundle`; the sheet's
+   stops reporting `running`. Retrieval selects the component paths that are relevant
+   to this task, validates that path list against the published library, and writes
+   the selected bundle to `/workspace/component_bundle`; the finished sheet's
    `summary.bundle` and `artifacts.bundle` name that directory.
 
-8. Verify the result with `controlled_bash`, without modifying anything:
+6. Verify the result with `controlled_bash`, without modifying anything:
    `{"command": "find /workspace/component_bundle -maxdepth 2 -type f | sort | head -50",
    "cwd": "/workspace", "timeout_seconds": 60}`
    Also print `/workspace/component_bundle/manifest.json` and confirm
    `component_count > 0`.
 
-9. Then read `/workspace/component_bundle/INDEX.md`, `SELECTION.md` and the referenced
-   component READMEs. Some components may implement a suboperation directly; others are
-   reference patterns. Use them only where they genuinely fit. The task's public header
-   and observable behavior stay the contract. Do not edit files inside the bundle.
+7. Then read `/workspace/component_bundle/INDEX.md` for the selected component paths and
+   open each referenced README directly. Start with its `when_to_use` and boundary: they
+   name the API model and conventions the component was written for. Compare those with the
+   current headers, spec and tests, then apply a rule when the task shares the stated model.
+   A rule with an applicability condition applies only when the target meets it. The task's
+   public header and observable behavior stay the contract when they differ. Do not edit
+   files inside the bundle.
 
-10. Complete the migration exactly as the task prompt requires, including its build and
+8. Complete the migration exactly as the task prompt requires, including its build and
     completion/submission step. The bundle is background material, not a patch; you are
     responsible for the complete migration.
 
 Rules:
 
-- Until the bundle is verified in step 8, treat `/workspace` as read-only: do not create,
+- Until the bundle is verified in step 6, treat `/workspace` as read-only: do not create,
   edit, or delete files under `/workspace`, including `src/`, `include/`, `test/` and the
   build files. The blocks read the original source state, and a concurrent edit breaks
   their citations. Your only pre-migration writes are `/tmp/build` and the files those
@@ -99,8 +96,8 @@ Rules:
   runs extraction, component review and publication through that one tool and runs the
   migration here.
 - The kernel checks each block's dependencies before it runs. A missing input returns
-  `STAGE_INPUT_MISSING`; the `task` and `report` blocks are not available in this
-  migration workspace and return `STAGE_UNSUPPORTED`. Do not call them.
+  `STAGE_INPUT_MISSING`; the `task` block is not available in this migration
+  workspace and returns `STAGE_UNSUPPORTED`. Do not call it.
 - Do not create, edit or delete files under `/workspace/component_bundle` yourself.
 - If a workflow block cannot be completed, stop and report the failing block,
   `error_code`, and the relevant tool output. Do not continue the migration without a

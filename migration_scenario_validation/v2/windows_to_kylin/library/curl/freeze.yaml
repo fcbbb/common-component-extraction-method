@@ -1,0 +1,109 @@
+# V2 frozen library: curl TLS backend and build system.
+#
+# The corpus is the source side of one pinned upstream snapshot: the library
+# and tool sources, the generic TLS abstraction and the Windows build entry.
+# Tests, docs, examples and the POSIX/TLS target implementation plus the
+# top-level CMake build (the gold for the curl tasks) are excluded.  Extraction
+# runs against this corpus before any task exists
+# (`snapshot.task_blind: true`).
+#
+# Record the corpus:
+#   python3 tools/freeze_library.py snapshot \
+#       --spec v2/windows_to_kylin/library/curl/freeze.yaml --offline
+#
+# Check it again later:
+#   python3 tools/freeze_library.py verify \
+#       --spec v2/windows_to_kylin/library/curl/freeze.yaml --offline
+#
+# After review + publication, record the published library tree:
+#   python3 tools/freeze_library.py publish \
+#       --spec v2/windows_to_kylin/library/curl/freeze.yaml \
+#       --library-root <published-library> --component-count <n>
+schema: v2-library-freeze-v1
+
+library:
+  id: curl-vtls
+  version: 1
+  repo: https://github.com/curl/curl.git
+  commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+  tag: curl-8_5_0
+  subdir: ''
+  license: curl
+  language_backend: c@1
+  description: >-
+    curl's TLS abstraction and build entry.  The source side contains the
+    generic SSL backend interface, the Schannel implementation, the library
+    and tool callers, and the nmake/Visual Studio Windows build.  The same
+    upstream commit carries the system TLS backend implementation and the
+    top-level CMake build used as evaluator-side gold, so they must never
+    enter the frozen corpus.
+
+snapshot:
+  task_blind: true
+  description: >-
+    Source-side production code, headers and Windows build files.  The
+    extractor never sees a task spec, a hidden test, a gold implementation or
+    any task package, so the library cannot be tailored to one question.
+  include:
+    - lib/**
+    - include/**
+    - src/**
+    - winbuild/**
+    - COPYING
+    - README
+    - README.md
+    - CHANGES
+  exclude:
+    - tests/**
+    - docs/**
+    - examples/**
+    - projects/**
+    - packages/**
+    - MacOSX-Framework/**
+    - .github/**
+    - .circleci/**
+    - '**/*.sln'
+    - '**/*.vcxproj'
+    - '**/*.vcxproj.filters'
+    - '**/*.vcproj'
+    - '**/*.filters'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+  # Assertion list: `freeze_library.py` re-checks that none of these paths
+  # appear in the selected corpus or in an existing lock.  This is the union
+  # of the gold files for the curl tasks (l2 TLS backend, l3 build system).
+  evaluator_side:
+    - lib/vtls/openssl.c
+    - CMakeLists.txt
+    - CMake/**
+  forbidden_task_inputs:
+    - v2/**/tasks/**
+    - '**/task.yaml'
+    - '**/task_slate.md'
+    - '**/design.md'
+    - '**/gold/**'
+    - '**/hidden_tests/**'
+
+extraction:
+  mode: task_blind
+  language_backend: c@1
+  inputs:
+    - source-side production code (including the Schannel backend)
+    - the generic TLS abstraction, headers and callers
+    - Windows build files
+  workflow:
+    - source_scan
+    - extract
+    - curate
+    - prepare_reviews
+    - review
+    - publish_library
+  output_schema: component library published by publish_library (schema 8)
+  review_policy: >-
+    Only components that pass review are published.  The frozen library is
+    shared by the curl tasks in the windows_to_kylin V2 tree.
+
+publication:
+  # Filled by `freeze_library.py publish` after the library has been built,
+  # reviewed and published.  Until then the dataset cannot start its B arm.
+  status: pending_publication

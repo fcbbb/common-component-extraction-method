@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Serve the plumbing self-test model on a fixed address.
 
-``baseline_trial --fake-model`` starts this server inside the controller
+``migration_trial --fake-model`` starts this server inside the controller
 process, which only works when DSH runs on the same host.  On a remote
 execution plane the harness has to reach the fixture itself, so this script
 runs the same handler on the execution host:

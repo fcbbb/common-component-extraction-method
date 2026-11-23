@@ -228,6 +228,142 @@ add_library(x STATIC src/impl.c)
     assert ".github/ci.yml" in result["omitted"]
 
 
+def test_kylin_agent_view_drops_multiline_test_options_whole(tmp_path):
+    source = tmp_path / "full"
+    source.mkdir()
+    (source / "src").mkdir()
+    (source / "src" / "impl.c").write_text("source\n", encoding="utf-8")
+    (source / "CMakeLists.txt").write_text(
+        """project(x C)
+option(ENABLE_TESTS
+	"Set to OFF|ON (default is OFF) to control build of POCO tests" OFF)
+
+option(ENABLE_TEST_DEPRECATED
+	"Set to OFF|ON (default is OFF) to enable build of tests for deprecated functionality" OFF)
+
+if(ENABLE_TESTS)
+	include(CTest)
+	enable_testing()
+	if(ENABLE_TEST_DEPRECATED)
+		add_compile_definitions(POCO_TEST_DEPRECATED)
+	endif()
+else()
+	message(STATUS "Building without tests & samples")
+endif()
+
+add_library(x STATIC src/impl.c)
+""",
+        encoding="utf-8",
+    )
+    target = tmp_path / "agent"
+    task = {"task_id": "x", "scenario": "windows_to_kylin"}
+
+    agent_view.copy_agent_view(source, target, task)
+    cmake = (target / "CMakeLists.txt").read_text(encoding="utf-8")
+
+    assert "add_library(x STATIC src/impl.c)" in cmake
+    assert "ENABLE_TESTS" not in cmake
+    assert "ENABLE_TEST_DEPRECATED" not in cmake
+    # Every surviving statement is complete: no option left without its
+    # closing parenthesis.
+    assert cmake.count("(") == cmake.count(")")
+
+
+def test_kylin_agent_view_keeps_library_files_with_test_in_the_name(tmp_path):
+    source = tmp_path / "full"
+    for rel in (
+        "Foundation/src/RotateStrategy.cpp",
+        "Foundation/include/Poco/RotateStrategy.h",
+        "Data/SQLParser/src/sql/CreateStatement.cpp",
+        "cmake/test_compiler.cpp",
+        "Foundation/src/WidgetTest.cpp",
+        "Foundation/testsuite/src/FileTest.cpp",
+    ):
+        path = source / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("source\n", encoding="utf-8")
+    target = tmp_path / "agent"
+    task = {"task_id": "x", "scenario": "windows_to_kylin"}
+
+    agent_view.copy_agent_view(source, target, task)
+
+    # Library sources are not test material just because a longer word ends
+    # in "test", and cmake/ builds the tree.
+    assert (target / "Foundation/src/RotateStrategy.cpp").exists()
+    assert (target / "Foundation/include/Poco/RotateStrategy.h").exists()
+    assert (target / "Data/SQLParser/src/sql/CreateStatement.cpp").exists()
+    assert (target / "cmake/test_compiler.cpp").exists()
+    # Real test sources stay hidden.
+    assert not (target / "Foundation/src/WidgetTest.cpp").exists()
+    assert not (target / "Foundation/testsuite/src/FileTest.cpp").exists()
+
+
+def test_kylin_agent_view_survives_multiline_quoted_arguments(tmp_path):
+    # ``check_c_source_compiles`` embeds a C program in a quoted argument that
+    # spans dozens of lines.  A scanner that resets its quote state per line
+    # treats the closing quote as an opener and swallows the rest of the file
+    # into one statement, which then disappears because the C snippet mentions
+    # ``CURL_TEST_DEFINES``-style names.
+    source = tmp_path / "full"
+    source.mkdir()
+    (source / "src").mkdir()
+    (source / "src" / "impl.c").write_text("source\n", encoding="utf-8")
+    (source / "CMakeLists.txt").write_text(
+        """project(x C)
+check_c_source_compiles("
+  int main(int argc, char ** argv)
+  {
+    BerValue *bvp = NULL;
+    return 0;
+  }" HAVE_X)
+if(NOT HAVE_X)
+  set(NEED_X OFF)
+endif()
+set(CURL_TEST_DEFINES "${CURL_TEST_DEFINES} -DNEED_X")
+add_library(x STATIC src/impl.c)
+""",
+        encoding="utf-8",
+    )
+    target = tmp_path / "agent"
+    task = {"task_id": "x", "scenario": "windows_to_kylin"}
+
+    agent_view.copy_agent_view(source, target, task)
+    cmake = (target / "CMakeLists.txt").read_text(encoding="utf-8")
+
+    assert "check_c_source_compiles(" in cmake
+    assert "if(NOT HAVE_X)" in cmake
+    # ``CURL_TEST_DEFINES`` is a feature-check variable, not test material;
+    # a word-boundary match must not hide the build statement around it.
+    assert 'set(CURL_TEST_DEFINES "' in cmake
+    assert "add_library(x STATIC src/impl.c)" in cmake
+    assert cmake.count("(") == cmake.count(")")
+
+
+def test_kylin_agent_view_handles_escaped_quotes_in_arguments(tmp_path):
+    # ``\"`` in an unquoted argument is a literal quote, not the start of a
+    # multi-line string; treating it as one leaves the command open forever.
+    source = tmp_path / "full"
+    source.mkdir()
+    (source / "src").mkdir()
+    (source / "src" / "impl.c").write_text("source\n", encoding="utf-8")
+    (source / "CMakeLists.txt").write_text(
+        """project(x C)
+target_compile_definitions(x PRIVATE LIBX_FILENAME=\\"${LIBX_FILENAME}\\")
+add_library(x STATIC src/impl.c)
+""",
+        encoding="utf-8",
+    )
+    target = tmp_path / "agent"
+    task = {"task_id": "x", "scenario": "windows_to_kylin"}
+
+    agent_view.copy_agent_view(source, target, task)
+    cmake = (target / "CMakeLists.txt").read_text(encoding="utf-8")
+
+    assert "target_compile_definitions(x PRIVATE LIBX_FILENAME=" in cmake
+    assert "add_library(x STATIC src/impl.c)" in cmake
+    assert cmake.count("(") == cmake.count(")")
+
+
 def test_kylin_judge_overlay_keeps_pristine_cmake(tmp_path):
     full = tmp_path / "full"
     agent = tmp_path / "agent"

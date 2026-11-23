@@ -1,0 +1,59 @@
+{
+  "task_id": "v2_nginx_files",
+  "scenario": "windows_to_kylin",
+  "level": "L2",
+  "build": {
+    "command": "./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module && make -j",
+    "artifact": "{work}/objs/nginx"
+  },
+  "public_tests": null,
+  "hidden_tests": {
+    "command": "cc -I {work}/src/core -I {work}/src/event -I {work}/src/event/modules -I {work}/src/os/unix -I {work}/objs {root}/harness/ngx_files_sensitivity.c $(find {work}/objs -name '*.o' | sort) -ldl -lpthread -lcrypt -Wl,-E -no-pie -o {work}/objs/ngx_files_sensitivity && timeout 120 {work}/objs/ngx_files_sensitivity && bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port 28080 && cd {work}/nginx-tests && TEST_NGINX_BINARY={work}/objs/nginx prove -I lib autoindex.t range.t"
+  },
+  "regression_tests": null,
+  "gates": {
+    "build": "configure and build Foundation on the target platform",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "src/os/unix/ngx_files.c"
+      ]
+    },
+    "target_api": "the rebuilt layer calls the target platform API rather than a hand-written portable fallback",
+    "behavior": "the server builds, serves static content, and the rebuilt file layer honours positioned I/O, directory iteration and timestamp contracts",
+    "regression": "the server starts and serves a static file without a crash"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "task_family": "v3",
+  "family": "nginx_os",
+  "family_type": "pattern",
+  "sequence": 10,
+  "library_manifest": "v3/windows_to_kylin/library/manifest.json",
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ]
+}

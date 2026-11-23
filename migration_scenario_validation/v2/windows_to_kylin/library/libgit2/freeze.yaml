@@ -1,0 +1,106 @@
+# V2 frozen library: libgit2 utility layer.
+#
+# The corpus is the source side of one pinned upstream snapshot: production
+# code, public headers and build files.  Tests, samples, Windows project
+# files, every task package and the POSIX utility layer (the gold for the
+# libgit2 tasks) are excluded.  Extraction runs against this corpus before
+# any task exists (`snapshot.task_blind: true`).
+#
+# Record the corpus:
+#   python3 tools/freeze_library.py snapshot \
+#       --spec v2/windows_to_kylin/library/libgit2/freeze.yaml --offline
+#
+# Check it again later:
+#   python3 tools/freeze_library.py verify \
+#       --spec v2/windows_to_kylin/library/libgit2/freeze.yaml --offline
+#
+# After review + publication, record the published library tree:
+#   python3 tools/freeze_library.py publish \
+#       --spec v2/windows_to_kylin/library/libgit2/freeze.yaml \
+#       --library-root <published-library> --component-count <n>
+schema: v2-library-freeze-v1
+
+library:
+  id: libgit2-util
+  version: 1
+  repo: https://github.com/libgit2/libgit2.git
+  commit: 36f7e21ad757a3dacc58cf7944329da6bc1d6e96
+  tag: v1.8.1
+  subdir: ''
+  license: GPL-2.0-with-linking-exception
+  language_backend: c@1
+  description: >-
+    libgit2's utility layer.  The source side contains the Win32 platform
+    implementation, the internal headers that describe the utility contract,
+    the callers across the object database/worktree/transport code and the
+    CMake build entry.  The same upstream commit also carries the POSIX
+    utility implementation used as evaluator-side gold, so it must never
+    enter the frozen corpus.
+
+snapshot:
+  task_blind: true
+  description: >-
+    Source-side production code, internal/public headers and build files.
+    The extractor never sees a task spec, a hidden test, a gold implementation
+    or any task package, so the library cannot be tailored to one question.
+  include:
+    - src/**
+    - include/**
+    - cmake/**
+    - CMakeLists.txt
+    - COPYING
+    - README.md
+  exclude:
+    - tests/**
+    - deps/**
+    - docs/**
+    - examples/**
+    - fuzzers/**
+    - script/**
+    - ci/**
+    - .github/**
+    - .devcontainer/**
+    - .vscode/**
+    - '**/*.sln'
+    - '**/*.vcxproj'
+    - '**/*.vcxproj.filters'
+    - '**/*.vcproj'
+    - '**/*.filters'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+  # Assertion list: `freeze_library.py` re-checks that none of these paths
+  # appear in the selected corpus or in an existing lock.  This is the union
+  # of the gold files for the libgit2 tasks (l2 file, l2 process, l3 full).
+  evaluator_side:
+    - src/util/unix/**
+  forbidden_task_inputs:
+    - v2/**/tasks/**
+    - '**/task.yaml'
+    - '**/task_slate.md'
+    - '**/design.md'
+    - '**/gold/**'
+    - '**/hidden_tests/**'
+
+extraction:
+  mode: task_blind
+  language_backend: c@1
+  inputs:
+    - source-side production code (including the Win32 platform implementation)
+    - internal and public headers plus callers
+    - build files
+  workflow:
+    - source_scan
+    - extract
+    - curate
+    - prepare_reviews
+    - review
+    - publish_library
+  output_schema: component library published by publish_library (schema 8)
+  review_policy: >-
+    Only components that pass review are published.  The frozen library is
+    shared by the libgit2 tasks in the windows_to_kylin V2 tree.
+
+publication:
+  # Filled by `freeze_library.py publish` after the library has been built,
+  # reviewed and published.  Until then the dataset cannot start its B arm.
+  status: pending_publication

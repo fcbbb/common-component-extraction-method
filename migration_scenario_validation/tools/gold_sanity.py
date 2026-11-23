@@ -30,11 +30,11 @@ After a run the task's ``work/`` tree contains the answer.  Re-run
 
 Usage::
 
-    python3 tools/gold_sanity.py --parent windows_to_kylin/tasks --level L1
-    python3 tools/gold_sanity.py --parent windows_to_kylin/tasks --exclude negative_win32_eventlog
-    python3 tools/gold_sanity.py --parent cuda_to_musa/tasks --only b_l1_leaky_relu
-    python3 tools/gold_sanity.py --parent archive/cuda_to_ascend/tasks --only b_l1_mk_leaky_relu
-    python3 tools/gold_sanity.py --task-root windows_to_kylin/tasks/l1_poco_thread --dry-run
+    python3 tools/gold_sanity.py --parent v1/windows_to_kylin/tasks --level L1
+    python3 tools/gold_sanity.py --parent v1/windows_to_kylin/tasks --exclude negative_win32_eventlog
+    python3 tools/gold_sanity.py --parent v1/cuda_to_musa/tasks --only b_l1_leaky_relu
+    python3 tools/gold_sanity.py --parent v1/archive/cuda_to_ascend/tasks --only b_l1_mk_leaky_relu
+    python3 tools/gold_sanity.py --task-root v1/windows_to_kylin/tasks/l1_poco_thread --dry-run
 
 Exit codes: 0 = all executed gold runs passed (skips allowed),
 1 = at least one gold run failed, 2 = setup/evaluation error, 3 = no tasks.

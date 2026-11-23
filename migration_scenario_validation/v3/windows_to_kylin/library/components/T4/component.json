@@ -1,0 +1,35 @@
+{
+  "bundle_id": "T4",
+  "kind": "transformation",
+  "title": "Thread and synchronisation port",
+  "capability": "threading",
+  "when_to_use": "Thread creation, mutexes, condition variables, read-write locks or thread-local storage must be rebuilt on POSIX.",
+  "covers": [
+    "thread create, join and exit",
+    "mutex lifecycle",
+    "condition variable wait and signal",
+    "read-write lock lifecycle and static init",
+    "thread-local storage ownership",
+    "error return convention"
+  ],
+  "boundary": "Primitive mapping and the common locking contract. Thread pools, work queues, async notification, atomics and futex tuning are outside.",
+  "verification": [
+    "thread result and abrupt exit values",
+    "parallel mutation without corruption",
+    "statically initialized lock",
+    "read and write lock serialization",
+    "per-thread TLS values and destructor order",
+    "build with and without the threading feature flag"
+  ],
+  "source_migrations": [
+    "l2_libuv_thread"
+  ],
+  "keywords": [
+    "thread",
+    "pthread",
+    "mutex",
+    "condition variable",
+    "rwlock",
+    "TLS"
+  ]
+}

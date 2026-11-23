@@ -1,0 +1,31 @@
+{
+  "task_id": "v2_nginx_files",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/nginx/nginx.git",
+  "commit": "1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5",
+  "tag": "release-1.26.3",
+  "subdir": null,
+  "license": "BSD-2-Clause",
+  "source_files": [
+    "src/os/win32/ngx_files.c",
+    "src/os/win32/ngx_files.h"
+  ],
+  "gold_files": [
+    "src/os/unix/ngx_files.c"
+  ],
+  "test_files": [
+    "src/os/unix/ngx_files.h"
+  ],
+  "remove": [
+    "src/os/unix/ngx_files.c"
+  ],
+  "gold_kind": "implementation",
+  "task_family": "v3",
+  "family": "nginx_os",
+  "family_type": "pattern",
+  "sequence": 10,
+  "library_manifest": "v3/windows_to_kylin/library/manifest.json",
+  "materialized": true,
+  "generated_by": "tools/extract_port_task.py",
+  "generated_at": "2026-11-20T16:02:20Z"
+}

@@ -1,0 +1,124 @@
+scenario: windows_to_kylin
+task_family: v3
+family: poco_foundation
+fit: B
+counted: true
+source_kind: library_family_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library_generated/demo_new_flow_v4/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON
+    -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF
+    -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF
+    -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF
+    -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF
+    -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF
+    -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j2
+  artifact: '{build}/lib/libPocoFoundation.a'
+gates:
+  build: configure and build Foundation on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - Foundation/src/File_UNIX.cpp
+    - Foundation/src/FileStream_POSIX.cpp
+    - Foundation/src/DirectoryIterator_UNIX.cpp
+    - Foundation/src/Path_UNIX.cpp
+  target_api: the rebuilt layer calls the target platform API rather than a hand-written portable fallback
+  behavior: the file stack copies every byte across interrupted and short writes, keeps a file intact when it is copied onto itself, creates links at the requested paths, hides dot entries, and keeps file, stream, directory and path behavior
+  regression: threading and shared-library suites stay green
+id: v3_poco_fs_stack
+level: L3
+family_type: localization
+sequence: 7
+domain: filesystem
+difficulty: hard
+title: Migrate the Foundation file stack to Kylin V10 SP3
+source:
+  repo: https://github.com/pocoproject/poco.git
+  commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+  tag: poco-1.13.3-release
+  license: BSL-1.0
+  windows_files:
+  - Foundation/src/File_WIN32U.cpp
+  - Foundation/include/Poco/File_WIN32U.h
+  - Foundation/src/FileStream_WIN32.cpp
+  - Foundation/src/DirectoryIterator_WIN32U.cpp
+  - Foundation/src/Path_WIN32U.cpp
+  gold_files:
+  - Foundation/src/File_UNIX.cpp
+  - Foundation/src/FileStream_POSIX.cpp
+  - Foundation/src/DirectoryIterator_UNIX.cpp
+  - Foundation/src/Path_UNIX.cpp
+  test_files:
+  - Foundation/testsuite/src/FileTest.cpp
+  - Foundation/testsuite/src/FileStreamTest.cpp
+  - Foundation/testsuite/src/DirectoryIteratorsTest.cpp
+  - Foundation/testsuite/src/GlobTest.cpp
+  - Foundation/testsuite/src/PathTest.cpp
+spec: |
+  POCO Foundation is being moved from Windows to Kylin V10 SP3.  The
+  target-platform file stack has not been written yet: Poco::File,
+  Poco::FileStream, Poco::DirectoryIterator and Poco::Path have no POSIX
+  implementation.
+
+  Port the four missing files, using the public headers, the existing
+  callers and the Windows implementations as the reference.  Foundation
+  must build with the repository CMake entry, and the file-facing suites
+  must keep their documented external behavior.
+
+  The rebuilt stack must preserve the complete file contract: open,
+  create, read, write, copy, move, rename, remove, hard and symbolic
+  links, timestamps, permissions, size and space queries, file and
+  directory classification; buffered file streams with seek and tell;
+  directory iteration without dot entries; and path expansion for the
+  current directory, the running executable and the user's home.
+  `File::exists` reports false for a missing path, while attribute queries
+  on that path raise a Poco exception.  A new file requested by
+  `File::createFile` uses mode 0666 and the process umask determines the
+  effective permissions.
+
+  Scope: the four platform files below; do not change public headers or
+  signatures, and do not introduce Win32 calls.  Deliverable:
+  `libPocoFoundation.a`, built by the repository CMake entry.
+
+  Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm.
+prepare:
+  remove:
+  - Foundation/src/File_UNIX.cpp
+  - Foundation/src/FileStream_POSIX.cpp
+  - Foundation/src/DirectoryIterator_UNIX.cpp
+  - Foundation/src/Path_UNIX.cpp
+hidden_tests:
+  command: >-
+    cd {build}/bin
+    && c++ -std=c++17 -DPOCO_STATIC -D_FILE_OFFSET_BITS=64 -D_REENTRANT -D_THREAD_SAFE -D_XOPEN_SOURCE=500 -I {work}/Foundation/include -I {build}/Foundation/include
+    {root}/harness/poco_fs_sensitivity.cpp {build}/lib/libPocoFoundation.a
+    -lpthread -ldl -lrt -o {build}/bin/poco_fs_sensitivity
+    && ./poco_fs_sensitivity
+    && ./Foundation-testrunner -ignore {work}/cppignore.lnx
+    FileTest FileStreamTest DirectoryIteratorsTest GlobTest PathTest
+regression_tests:
+  command: cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx ThreadTest SharedLibraryTest
+task_id: v3_poco_fs_stack

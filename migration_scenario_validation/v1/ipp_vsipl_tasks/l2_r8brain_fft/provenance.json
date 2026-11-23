@@ -1,0 +1,31 @@
+{
+  "task_id": "l2_r8brain_fft",
+  "scenario": "ipp_to_vsipl",
+  "repo": "https://github.com/avaneev/r8brain-free-src.git",
+  "commit": "5792291ad66b04e87fd61a3d92606214632c6cfc",
+  "license": "MIT",
+  "vendored": true,
+  "snapshot": "v1/ipp_vsipl_tasks/l2_r8brain_fft",
+  "source_files": [
+    "CDSPRealFFT.h",
+    "r8bbase.h",
+    "r8bconf.h"
+  ],
+  "gold_files": [
+    "gold/CDSPRealFFT_vsipl.cpp"
+  ],
+  "test_files": [
+    "harness/cases.h",
+    "harness/check_api_removal.sh",
+    "harness/golden_gen.cpp",
+    "harness/hidden_test.cpp",
+    "harness/r8b_ops.h",
+    "harness/run_hidden.py"
+  ],
+  "golden_cases": 16,
+  "remove": [],
+  "gold_kind": "implementation",
+  "materialized": true,
+  "generated_by": "tools/unify_ipp_tasks.py",
+  "generated_at": "2026-11-15T03:50:55Z"
+}

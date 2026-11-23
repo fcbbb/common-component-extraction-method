@@ -73,11 +73,19 @@ rc=$?
 
 cat <<'EOF'
 
+Python packages (methods, PyYAML, Docker SDK) -- run once, in a venv:
+  python3 -m venv .venv && . .venv/bin/activate
+  python -m pip install -e ..
+  # extras for the full pipeline: pip install -e '..[embeddings,test]'
+
 Prerequisites doctor cannot install (see REQUIREMENTS.md):
   - Docker daemon, and network to Docker Hub / GitHub / npm / PyPI
   - VSIPL_ROOT: a jvsip tree with include/vsip.h and lib/libvsip.a
   - model credentials in ../.env or bench.env
   - MUSA: a real MTT S4000 and env/remote.yaml (copy env/remote.yaml.example)
+
+Without the Docker SDK in the active interpreter the method stages fall back
+to the host plane; `doctor` prints that choice and the reason.
 
 Next:
   ./run-default.sh --dry-run

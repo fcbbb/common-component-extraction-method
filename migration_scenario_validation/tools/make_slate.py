@@ -4,7 +4,7 @@
 Usage::
 
     python3 tools/make_slate.py \
-        --slate windows_to_kylin/slate.yaml --out-md windows_to_kylin/task_slate.md \
+        --slate v1/windows_to_kylin/slate.yaml --out-md v1/windows_to_kylin/task_slate.md \
         --out-csv provenance.csv
 """
 from __future__ import annotations

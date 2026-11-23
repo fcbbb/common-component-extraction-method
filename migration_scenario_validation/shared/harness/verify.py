@@ -7,7 +7,7 @@ recipe files that let a package be regenerated from its upstream commit.
 Usage::
 
     python3 shared/harness/verify.py --task-root tasks/l1_poco_thread
-    python3 shared/harness/verify.py --parent windows_to_kylin/tasks --json
+    python3 shared/harness/verify.py --parent v1/windows_to_kylin/tasks --json
 """
 from __future__ import annotations
 
@@ -20,12 +20,12 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 try:  # package import
-    from . import taskmodel
+    from . import agent_view, taskmodel
 except ImportError:  # direct script execution
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-    from shared.harness import taskmodel  # type: ignore
+    from shared.harness import agent_view, taskmodel  # type: ignore
 
 SCENARIOS = {"ipp_to_vsipl", "windows_to_kylin", "cuda_to_musa", "cuda_to_ascend"}
 REQUIRED_GATES = ("build", "api_removal", "behavior")
@@ -149,6 +149,15 @@ def verify_task(root: os.PathLike | str, *, strict: bool = False) -> Dict[str, A
             for hit in visible.rglob(gname):
                 errors.append(f"gold file visible in source tree: {hit}")
                 break
+
+    # A materialized work/ is the agent view: the removed implementation must
+    # not be there.  prepare.sh removes it, but a stale materialization used to
+    # ship the answer silently, so check it statically.
+    work = root / "work"
+    if work.is_dir():
+        for rel in agent_view.walk_files(work):
+            if agent_view.is_removed_path(task, rel):
+                errors.append(f"removed implementation still in work/: {rel}")
 
     if task.get("tolerances") is None:
         warnings.append("no tolerances declared")

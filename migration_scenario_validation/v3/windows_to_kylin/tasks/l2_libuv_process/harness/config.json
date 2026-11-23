@@ -1,0 +1,59 @@
+{
+  "task_id": "l2_libuv_process",
+  "scenario": "windows_to_kylin",
+  "level": "L2",
+  "build": {
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON && cmake --build {build} -j2",
+    "artifact": "{build}/libuv.a"
+  },
+  "public_tests": null,
+  "hidden_tests": {
+    "command": "cd {work} && {build}/uv_run_tests_a spawn_stdout && {build}/uv_run_tests_a spawn_stdin && {build}/uv_run_tests_a spawn_exit_code && {build}/uv_run_tests_a spawn_and_kill && {build}/uv_run_tests_a spawn_detached && {build}/uv_run_tests_a spawn_reads_child_path && {build}/uv_run_tests_a spawn_relative_path && {build}/uv_run_tests_a process_title && {build}/uv_run_tests_a process_priority"
+  },
+  "gates": {
+    "build": "configure and build libuv on the target platform",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "src/unix/process.c"
+      ]
+    },
+    "target_api": "the rebuilt layer calls the target platform API rather than a hand-written portable fallback",
+    "behavior": "the spawn, stdio, exit, kill and process-title suites pass",
+    "regression": "the loop, timer and file-system suites stay green"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ],
+  "task_family": "v3",
+  "library_manifest": "v3/windows_to_kylin/library/manifest.json",
+  "regression_tests": null,
+  "family": "libuv",
+  "family_type": "pattern",
+  "sequence": 15
+}

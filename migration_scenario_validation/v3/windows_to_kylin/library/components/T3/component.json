@@ -1,0 +1,37 @@
+{
+  "bundle_id": "T3",
+  "kind": "transformation",
+  "title": "Process creation port",
+  "capability": "process",
+  "when_to_use": "Child process creation, captured stdio, environment merge, working directory or exit status must be rebuilt on POSIX.",
+  "covers": [
+    "spawn mechanism choice",
+    "argv and envp construction",
+    "environment merge and precedence",
+    "pipe and stdio redirection",
+    "exec failure status channel",
+    "wait status and signal reporting",
+    "SIGPIPE handling"
+  ],
+  "boundary": "Covers spawn, stdio, environment, working directory and wait. Detached processes, process groups, uid/gid switching and terminal control need separate rules.",
+  "verification": [
+    "normal exit code round trip",
+    "non-existent executable fails at start",
+    "stdin and stdout payload round trip and EOF on close",
+    "working directory honored",
+    "signal-terminated child reports the signal",
+    "failure path leaves no zombie or leaked descriptor"
+  ],
+  "source_migrations": [
+    "l2_libuv_process"
+  ],
+  "keywords": [
+    "process",
+    "fork",
+    "exec",
+    "posix_spawn",
+    "environment",
+    "pipe",
+    "waitpid"
+  ]
+}

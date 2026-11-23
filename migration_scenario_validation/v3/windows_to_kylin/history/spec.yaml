@@ -1,0 +1,93 @@
+# Migration examples used to build the V3 transformation library.
+#
+# Only `library_source` repositories may appear here.  Held-out repositories
+# (POCO, nginx, curl, opencv) must never be added: the extraction input is the
+# completed migration, and a held-out repository would leak its answer.
+#
+# `api_symbols` are used to pick shared callers deterministically.  They are
+# matching hints, not part of the extracted component.
+schema: migration-history-spec-v1
+scenario: windows_to_kylin
+library_id: windows-to-posix-transformations
+
+# Scenario policy.  Another scenario supplies its own spec: the corpus builder
+# only accepts repositories listed here and never reads held-out ones.
+language: cpp
+library_source_repos: [libuv, libarchive]
+held_out_repos: [poco, nginx, curl, opencv]
+
+# Relative to this file.
+dataset_root: ../tasks
+output_root: .
+
+examples:
+  - task_id: l2_libuv_fs
+    capability: file-system/io
+    api_symbols:
+      - uv_fs_
+      - uv_fs_event_
+      - uv_fs_poll_
+      - uv_fs_t
+      - uv_dir_t
+    include_roots: [include]
+    caller_roots: [src]
+    caller_exclude_dirs: [win, unix, test, tests]
+    caller_exclude_globs: []
+    caller_limit: 8
+
+  - task_id: l2_libuv_process
+    capability: process
+    api_symbols:
+      - uv_spawn
+      - uv_process_
+      - uv_process_t
+      - uv_process_options_t
+      - uv_kill
+      - uv_disable_stdio_inheritance
+    include_roots: [include]
+    caller_roots: [src]
+    caller_exclude_dirs: [win, unix, test, tests]
+    caller_exclude_globs: []
+    caller_limit: 8
+
+  - task_id: l2_libuv_thread
+    capability: threading
+    api_symbols:
+      - uv_thread_
+      - uv_mutex_
+      - uv_rwlock_
+      - uv_sem_
+      - uv_cond_
+      - uv_barrier_
+      - uv_once
+      - uv_key_
+      - uv_threadpool
+      - uv_queue_work
+      - uv_cancel
+    include_roots: [include]
+    caller_roots: [src]
+    caller_exclude_dirs: [win, unix, test, tests]
+    caller_exclude_globs: []
+    caller_limit: 8
+
+  - task_id: l2_libarchive_read_disk
+    capability: file-system/metadata
+    api_symbols:
+      - archive_read_disk_
+      - archive_read_disk
+    include_roots: [libarchive]
+    caller_roots: [libarchive]
+    caller_exclude_dirs: [test, tests]
+    caller_exclude_globs: ["*_windows.c", "*_posix.c", "*_test.c"]
+    caller_limit: 8
+
+  - task_id: l2_libarchive_write_disk
+    capability: file-system/metadata
+    api_symbols:
+      - archive_write_disk_
+      - archive_write_disk
+    include_roots: [libarchive]
+    caller_roots: [libarchive]
+    caller_exclude_dirs: [test, tests]
+    caller_exclude_globs: ["*_windows.c", "*_posix.c", "*_test.c"]
+    caller_limit: 8

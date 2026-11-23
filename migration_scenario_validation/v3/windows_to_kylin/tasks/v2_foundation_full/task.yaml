@@ -1,0 +1,159 @@
+scenario: windows_to_kylin
+task_family: v3
+family: poco_foundation
+fit: B
+counted: true
+source_kind: library_family_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON
+    -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF
+    -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF
+    -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF
+    -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF
+    -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF
+    -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j2
+  artifact: '{build}/lib/libPocoFoundation.a'
+gates:
+  build: configure and build Foundation on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - Foundation/src/DirectoryIterator_UNIX.cpp
+    - Foundation/src/Environment_UNIX.cpp
+    - Foundation/src/Event_POSIX.cpp
+    - Foundation/src/FileStream_POSIX.cpp
+    - Foundation/src/File_UNIX.cpp
+    - Foundation/src/Mutex_POSIX.cpp
+    - Foundation/src/NamedEvent_UNIX.cpp
+    - Foundation/src/NamedMutex_UNIX.cpp
+    - Foundation/src/Path_UNIX.cpp
+    - Foundation/src/PipeImpl_POSIX.cpp
+    - Foundation/src/Process_UNIX.cpp
+    - Foundation/src/RWLock_POSIX.cpp
+    - Foundation/src/Semaphore_POSIX.cpp
+    - Foundation/src/SharedLibrary_UNIX.cpp
+    - Foundation/src/SharedMemory_POSIX.cpp
+    - Foundation/src/Thread_POSIX.cpp
+    - Foundation/src/Timezone_UNIX.cpp
+  target_api: the rebuilt layer calls the target platform API rather than a hand-written portable fallback
+  behavior: Foundation builds and its platform-layer suites pass across threads, synchronization, filesystem,
+    processes, shared memory/libraries, environment and timezone
+  regression: the remaining Foundation suites stay green
+id: v2_foundation_full
+level: L3
+family_type: localization
+sequence: 6
+domain: runtime
+difficulty: hard
+title: Migrate the Foundation platform layer to Kylin V10 SP3
+source:
+  repo: https://github.com/pocoproject/poco.git
+  commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+  tag: poco-1.13.3-release
+  license: BSL-1.0
+  windows_files:
+  - Foundation/src/DirectoryIterator_WIN32U.cpp
+  - Foundation/src/Environment_WIN32U.cpp
+  - Foundation/src/Event_WIN32.cpp
+  - Foundation/src/FileStream_WIN32.cpp
+  - Foundation/src/File_WIN32U.cpp
+  - Foundation/src/Mutex_WIN32.cpp
+  - Foundation/src/NamedEvent_WIN32U.cpp
+  - Foundation/src/NamedMutex_WIN32U.cpp
+  - Foundation/src/Path_WIN32U.cpp
+  - Foundation/src/PipeImpl_WIN32.cpp
+  - Foundation/src/Process_WIN32U.cpp
+  - Foundation/src/RWLock_WIN32.cpp
+  - Foundation/src/Semaphore_WIN32.cpp
+  - Foundation/src/SharedLibrary_WIN32U.cpp
+  - Foundation/src/SharedMemory_WIN32.cpp
+  - Foundation/src/Thread_WIN32.cpp
+  - Foundation/src/Timezone_WIN32.cpp
+  gold_files:
+  - Foundation/src/DirectoryIterator_UNIX.cpp
+  - Foundation/src/Environment_UNIX.cpp
+  - Foundation/src/Event_POSIX.cpp
+  - Foundation/src/FileStream_POSIX.cpp
+  - Foundation/src/File_UNIX.cpp
+  - Foundation/src/Mutex_POSIX.cpp
+  - Foundation/src/NamedEvent_UNIX.cpp
+  - Foundation/src/NamedMutex_UNIX.cpp
+  - Foundation/src/Path_UNIX.cpp
+  - Foundation/src/PipeImpl_POSIX.cpp
+  - Foundation/src/Process_UNIX.cpp
+  - Foundation/src/RWLock_POSIX.cpp
+  - Foundation/src/Semaphore_POSIX.cpp
+  - Foundation/src/SharedLibrary_UNIX.cpp
+  - Foundation/src/SharedMemory_POSIX.cpp
+  - Foundation/src/Thread_POSIX.cpp
+  - Foundation/src/Timezone_UNIX.cpp
+  test_files:
+  - Foundation/testsuite/src
+spec: |
+  POCO Foundation is being moved from Windows to Kylin V10 SP3.  No part
+  of the platform layer has a target-platform implementation yet.
+
+  Port the whole layer, using the public headers, the existing callers and
+  the Windows implementations as the reference.  Foundation must configure
+  and build with the repository CMake entry, and its platform-backed
+  components must keep their documented external behavior.
+
+  Scope: all platform-dependent parts of Foundation; do not change public
+  headers or signatures, and do not reintroduce Windows platform calls.
+  Deliverable: `libPocoFoundation.a`, built by the repository CMake entry.
+
+  Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm
+  and the standard system runtime libraries.
+prepare:
+  remove:
+  - Foundation/src/DirectoryIterator_UNIX.cpp
+  - Foundation/src/Environment_UNIX.cpp
+  - Foundation/src/Event_POSIX.cpp
+  - Foundation/src/FileStream_POSIX.cpp
+  - Foundation/src/File_UNIX.cpp
+  - Foundation/src/Mutex_POSIX.cpp
+  - Foundation/src/NamedEvent_UNIX.cpp
+  - Foundation/src/NamedMutex_UNIX.cpp
+  - Foundation/src/Path_UNIX.cpp
+  - Foundation/src/PipeImpl_POSIX.cpp
+  - Foundation/src/Process_UNIX.cpp
+  - Foundation/src/RWLock_POSIX.cpp
+  - Foundation/src/Semaphore_POSIX.cpp
+  - Foundation/src/SharedLibrary_UNIX.cpp
+  - Foundation/src/SharedMemory_POSIX.cpp
+  - Foundation/src/Thread_POSIX.cpp
+  - Foundation/src/Timezone_UNIX.cpp
+hidden_tests:
+  command: cd {build}/bin && LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH" PATH="$PWD:$PATH" ./Foundation-testrunner
+    -ignore {work}/cppignore.lnx ThreadTest ThreadPoolTest ThreadLocalTest TimerTest ActivityTest ActiveThreadPoolTest
+    ConditionTest FileTest FileStreamTest PathTest DirectoryIteratorsTest GlobTest RWLockTest SemaphoreTest
+    SharedLibraryTest ClassLoaderTest ManifestTest ProcessTest ProcessRunnerTest NamedMutexTest NamedEventTest
+    SharedMemoryTest TimezoneTest
+regression_tests:
+  command: cd {build}/bin && LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH" PATH="$PWD:$PATH" ./Foundation-testrunner
+    -ignore {work}/cppignore.lnx CoreTestSuite StreamsTestSuite CryptTestSuite LoggingTestSuite FilesystemTestSuite
+    UUIDTestSuite TextTestSuite URITestSuite HashingTestSuite SharedLibraryTestSuite
+task_id: v2_foundation_full

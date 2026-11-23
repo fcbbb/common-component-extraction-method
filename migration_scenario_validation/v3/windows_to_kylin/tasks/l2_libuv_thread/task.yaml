@@ -1,0 +1,94 @@
+scenario: windows_to_kylin
+task_family: v3
+family: libuv
+fit: B
+counted: false
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DLIBUV_BUILD_SHARED=ON
+    && cmake --build {build} -j2
+  artifact: '{build}/libuv.a'
+gates:
+  build: configure and build libuv on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/unix/thread.c
+  target_api: the rebuilt layer calls the target platform API rather than a hand-written portable fallback
+  behavior: the thread, synchronisation, TLS and thread-pool suites pass
+  regression: the loop, timer and process suites stay green
+id: l2_libuv_thread
+level: L2
+family_type: pattern
+sequence: 16
+domain: runtime
+difficulty: medium
+title: Migrate the libuv thread layer to Kylin V10 SP3
+source:
+  repo: https://github.com/libuv/libuv.git
+  commit: e9f29cb984231524e3931aa0ae2c5dae1a32884e
+  tag: v1.48.0
+  license: MIT
+  windows_files:
+  - src/win/thread.c
+  gold_files:
+  - src/unix/thread.c
+  test_files:
+  - test/test-thread.c
+  - test/test-thread-affinity.c
+  - test/test-thread-equal.c
+  - test/test-thread-priority.c
+  - test/test-threadpool.c
+spec: |
+  libuv is being moved from Windows to Kylin V10 SP3.  The
+  target-platform threading backend has not been written yet.
+
+  Reimplement the threading layer behind the public `uv_thread`,
+  `uv_mutex`, `uv_rwlock`, `uv_sem`, `uv_cond` and `uv_barrier`
+  APIs: thread creation, join, equality and self; thread names,
+  affinity and priority; lock, semaphore, condition-variable and
+  barrier behaviour; one-time initialisation; TLS keys; and the
+  thread pool behind `uv_queue_work` and `uv_cancel`.  Preserve the
+  documented return codes and the exhaustion behaviour.  The Win32
+  implementation, the shared headers and the callers stay visible
+  as the reference.
+
+  Scope: the threading backend only; do not change public headers
+  or signatures.  Deliverable: `libuv.a`, built by the repository
+  CMake entry.
+
+  Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake
+  3.16.5.
+prepare:
+  remove:
+  - src/unix/thread.c
+hidden_tests:
+  command: cd {work} && {build}/uv_run_tests_a thread_create && {build}/uv_run_tests_a thread_equal &&
+    {build}/uv_run_tests_a thread_affinity && {build}/uv_run_tests_a thread_priority && {build}/uv_run_tests_a
+    thread_mutex && {build}/uv_run_tests_a thread_rwlock && {build}/uv_run_tests_a thread_local_storage
+    && {build}/uv_run_tests_a barrier_serial_thread && {build}/uv_run_tests_a condvar_1 && {build}/uv_run_tests_a
+    semaphore_1 && {build}/uv_run_tests_a threadpool_queue_work_simple && {build}/uv_run_tests_a threadpool_cancel_single
+task_id: l2_libuv_thread

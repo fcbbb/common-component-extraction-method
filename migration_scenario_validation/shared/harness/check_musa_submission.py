@@ -18,7 +18,7 @@ adds the checks that do not need a GPU:
 It is deliberately a presence/alias check, not a proof that the kernel
 implements every floating-point op.  A submission that adds a dummy kernel and
 does the math in Python still passes this gate; that limitation is recorded in
-``cuda_to_musa/design.md``.
+``v1/cuda_to_musa/design.md``.
 
 Usage::
 

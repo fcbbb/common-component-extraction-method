@@ -42,7 +42,7 @@ if TYPE_CHECKING:  # the component_method package lives in the repository's src/
 def _runtime_modules() -> Tuple[Any, ...]:
     """Import the controller's DSH types on first use.
 
-    ``baseline_trial`` imports this module before it resolves ``--repository-root``
+    ``migration_trial`` imports this module before it resolves ``--repository-root``
     and puts that repository's ``src`` on ``sys.path``, so the imports cannot
     happen at module import time.
     """

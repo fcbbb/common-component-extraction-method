@@ -68,6 +68,9 @@ def _make_judge_work(
     """Copy the full pristine tree and overlay only agent-visible files."""
     judge_work = temp_root / "work"
     shutil.copytree(base_work, judge_work, symlinks=True)
+    # A stale base work/ must never hand the judge the answer: the removed
+    # implementation has to come from the agent's overlay.
+    agent_view.strip_removed_paths(judge_work, task)
     agent_view.copy_overlay(agent_work, judge_work, task, delete_missing=True)
     return judge_work
 
@@ -81,6 +84,7 @@ def run(
     golden: Optional[str] = None,
     skip_build: bool = False,
     skip_hidden: bool = False,
+    skip_regression: bool = False,
     skip_api: bool = False,
     run_public: bool = False,
     timeout: int = 3600,
@@ -105,6 +109,7 @@ def run(
         "build": "skipped",
         "public_tests": "skipped",
         "tests": "skipped",
+        "regression": "skipped",
         "api_removal": "skipped",
         "target_api": "skipped",
         "log": "",
@@ -170,6 +175,19 @@ def run(
             result["tests"] = "pass" if rc == 0 else "fail"
             result["log"] += out[-6000:]
             result.update(taskmodel.parse_summary(out))
+            if rc != 0:
+                result["status"] = "fail"
+                return result
+
+        regression_cmd = taskmodel.command_of(task, "regression_tests")
+        if not skip_hidden and not skip_regression and regression_cmd:
+            cmd = taskmodel.expand_command(
+                regression_cmd, root=root, work=work, build=build, golden=golden_path, extra=extra
+            )
+            rc, out = taskmodel.run_command(cmd, cwd=work, env=env, timeout=timeout)
+            result["regression"] = "pass" if rc == 0 else "fail"
+            result["log"] += out[-4000:]
+            result.update({f"regression_{k}": v for k, v in taskmodel.parse_summary(out).items()})
             if rc != 0:
                 result["status"] = "fail"
                 return result
@@ -249,6 +267,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--golden", default=None, help="hidden golden/case directory")
     ap.add_argument("--skip-build", action="store_true")
     ap.add_argument("--skip-hidden", action="store_true")
+    ap.add_argument("--skip-regression", action="store_true")
     ap.add_argument("--skip-api", action="store_true")
     ap.add_argument("--public", action="store_true", help="also run public tests")
     ap.add_argument("--timeout", type=int, default=3600)
@@ -263,6 +282,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             golden=args.golden,
             skip_build=args.skip_build,
             skip_hidden=args.skip_hidden,
+            skip_regression=args.skip_regression,
             skip_api=args.skip_api,
             run_public=args.public,
             timeout=args.timeout,

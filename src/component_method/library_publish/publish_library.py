@@ -18,7 +18,30 @@ from component_method.workflow.experiment_common import (
 
 
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--mode",
+        choices=("reviewed", "unreviewed", "migration_direct"),
+        default=None,
+        help="publish gate to apply; defaults to the workspace configuration",
+    )
+    args = parser.parse_args()
     config = load_json(ROOT / "config.json")
+    nested = config.get("publish")
+    configured_mode = nested.get("mode") if isinstance(nested, dict) else None
+    mode = args.mode or configured_mode or config.get("publish_mode") or "reviewed"
+    if mode == "migration_direct":
+        from component_method.library_publish.publish_migration import main as migration_main
+
+        migration_main()
+        return
+    if mode == "unreviewed":
+        from component_method.library_publish.publish_unreviewed import main as unreviewed_main
+
+        unreviewed_main()
+        return
     frozen_path = ROOT / "inputs" / "frozen_components.json"
     frozen = load_json(frozen_path)
     records_by_id = {record["component_id"]: record for record in frozen["records"]}

@@ -1,0 +1,3874 @@
+{
+  "schema": "v2-library-lock-v1",
+  "spec_sha256": "6720a1233d64472c27622dd5c7c457b6ed1f6cf903bb379987897ae6119cc3f7",
+  "library": {
+    "id": "poco-foundation",
+    "version": 1,
+    "repo": "https://github.com/pocoproject/poco.git",
+    "commit": "d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b",
+    "tag": "poco-1.13.3-release",
+    "subdir": "Foundation",
+    "license": "BSL-1.0",
+    "language_backend": "cpp@1",
+    "task_blind": true
+  },
+  "corpus": {
+    "include": [
+      "Foundation/include/**",
+      "Foundation/src/**",
+      "Foundation/cmake/**",
+      "Foundation/CMakeLists.txt",
+      "CMakeLists.txt",
+      "VERSION",
+      "cmake/**"
+    ],
+    "exclude": [
+      "Foundation/testsuite/**",
+      "Foundation/samples/**",
+      "Foundation/Makefile",
+      "Foundation/nonexistent.txt",
+      "Foundation/*.sln",
+      "Foundation/*.vcxproj",
+      "Foundation/*.vcxproj.filters",
+      "**/*.vcproj",
+      "**/*.filters",
+      "**/__pycache__/**",
+      "**/.git/**",
+      "Foundation/src/*_POSIX.cpp",
+      "Foundation/src/*_UNIX.cpp"
+    ],
+    "evaluator_side": [
+      "Foundation/src/*_POSIX.cpp",
+      "Foundation/src/*_UNIX.cpp"
+    ],
+    "file_count": 635,
+    "total_bytes": 6477368,
+    "digest": "eff13f0cf703b37bd7307e5213ff5dfdc66f33858d3086f5725122aac92baa38",
+    "algorithm": "sha256",
+    "mode": "content",
+    "files": [
+      {
+        "path": "CMakeLists.txt",
+        "sha256": "7c260b8ffaa41dd20e7444f4105cb58cfb49d413fdf9f684c5e696ac50fe3689",
+        "size": 18294,
+        "blob": "af6af0359124e984b6398b6118ab22c5dc2e60b1"
+      },
+      {
+        "path": "Foundation/CMakeLists.txt",
+        "sha256": "68b2226d47d6b51543f40deee130471a7170025c7cf257cb5a8d59f871a1a812",
+        "size": 6257,
+        "blob": "41ba9993673309e32814c10dd183d20775b2f756"
+      },
+      {
+        "path": "Foundation/cmake/PocoFoundationConfig.cmake",
+        "sha256": "fa55f79a86f4860573b7d388571ecdf98a08ade208e1c0d51c4d718f91af667d",
+        "size": 255,
+        "blob": "82c57889405d1818f60168f28566f2c5ec0d5d79"
+      },
+      {
+        "path": "Foundation/include/Poco/ASCIIEncoding.h",
+        "sha256": "e03a58d6318615a8fcd3f8c7b33d60105c5414d244885c38a2c9a29862ca1507",
+        "size": 1100,
+        "blob": "d839508dbb45a9be008b3aff99051b1ab64db0ed"
+      },
+      {
+        "path": "Foundation/include/Poco/AbstractCache.h",
+        "sha256": "e25c74b72c94d7d0896a8debcea9169e718f15fb1be8830af9d6a1b5353e5182",
+        "size": 10446,
+        "blob": "91bd9b1742ae62a2d4f399e26b07e6fe0ef76608"
+      },
+      {
+        "path": "Foundation/include/Poco/AbstractDelegate.h",
+        "sha256": "e24a5b73e27b06eb7b4f7c3642578004bdb341618eeba003847943cc2f773a2c",
+        "size": 2309,
+        "blob": "0a2b830f0e08a1f2c1a293a0b57150ae0e9ebb35"
+      },
+      {
+        "path": "Foundation/include/Poco/AbstractEvent.h",
+        "sha256": "6adc1d8d6f0ecbb86564b565d26d7c8be69bdb608178843e919ab7cf67094eaf",
+        "size": 16939,
+        "blob": "032f1477d89ce389552ab86a6e9aaa2893a69041"
+      },
+      {
+        "path": "Foundation/include/Poco/AbstractObserver.h",
+        "sha256": "72592a4e2f6fb52f3040a542e258d93fc1ee10cd3376864b02c9d92bbab84447",
+        "size": 1129,
+        "blob": "7606878bec20fbdcb8b2e69e3eb8278648dea423"
+      },
+      {
+        "path": "Foundation/include/Poco/AbstractPriorityDelegate.h",
+        "sha256": "c70e0725b8aa755e9aead1f1db31553852915a795fe056fd5dc79bd82356ac26",
+        "size": 1119,
+        "blob": "dbe367a4e01dc3b36649f71161f7bf20dd106a8a"
+      },
+      {
+        "path": "Foundation/include/Poco/AbstractStrategy.h",
+        "sha256": "8999e544dff79793568a1a513aceda37f2727d9795c6c9cf00ede763c0e74997",
+        "size": 1986,
+        "blob": "265804ac4cfafc72079128feb751f8537be5ab14"
+      },
+      {
+        "path": "Foundation/include/Poco/AccessExpirationDecorator.h",
+        "sha256": "2129af14e7146db577d589bd5ae602a2464399d2d2bedf1d1929a69bc587b0dd",
+        "size": 1459,
+        "blob": "ea02106753de65c4dc5538fc37d410239e57a9eb"
+      },
+      {
+        "path": "Foundation/include/Poco/AccessExpireCache.h",
+        "sha256": "c80b8eee3d4719b9f2229ff86622bf8a3f019c2ff4227f3e633333d072a50eb5",
+        "size": 1705,
+        "blob": "b8b87339d36a4bc39d7909d12dfc158364b2d01d"
+      },
+      {
+        "path": "Foundation/include/Poco/AccessExpireLRUCache.h",
+        "sha256": "d096632ff6a298ba9f3d62c40a4d2d84b16e8ea331764741150ca43d4d6896ea",
+        "size": 1613,
+        "blob": "4618a353ff2e66350959ce620a0d0df271ae4fec"
+      },
+      {
+        "path": "Foundation/include/Poco/AccessExpireStrategy.h",
+        "sha256": "a2a726867a8f9d831da87d8978e1cc76fb6350cb06eb40f7a3e34297e812fb6a",
+        "size": 1787,
+        "blob": "3bfa45c21f1d9ecf4679bc50ae9c9ae2e3fb867f"
+      },
+      {
+        "path": "Foundation/include/Poco/ActiveDispatcher.h",
+        "sha256": "191fed233b12c4254ab08a27dd01944221ab9aa93d64aafd8b88c7b3e32b981a",
+        "size": 2958,
+        "blob": "81c5fbef108296a681d3fc2cbc36ab74c9b3f18a"
+      },
+      {
+        "path": "Foundation/include/Poco/ActiveMethod.h",
+        "sha256": "d9b3d30079b6095c1ba0efd2ca32d32ad434412f894414b8d44ebedea10552f1",
+        "size": 5907,
+        "blob": "fba1549380d42c9c60adec341ea28031c0ef5f34"
+      },
+      {
+        "path": "Foundation/include/Poco/ActiveResult.h",
+        "sha256": "1b3b00421b4e339650c037f68fbc9e851c33993560c0578589e99c2ed8d7a5aa",
+        "size": 10509,
+        "blob": "640c55b96845d1865d7a8ea13f01a0092a7aa789"
+      },
+      {
+        "path": "Foundation/include/Poco/ActiveRunnable.h",
+        "sha256": "be9c893d0166b4c50b803938d51980711186145fb6e98c387866411a45a2a28b",
+        "size": 4647,
+        "blob": "051f3478d70e5c2881d671909eae604e104105d9"
+      },
+      {
+        "path": "Foundation/include/Poco/ActiveStarter.h",
+        "sha256": "48869a328af9082439cada6ee30f0d3e5a9e11b61480c057d0d5affd9ab1c359",
+        "size": 985,
+        "blob": "66c300ac00c95a454e43b1c790b24423f42b1ca1"
+      },
+      {
+        "path": "Foundation/include/Poco/ActiveThreadPool.h",
+        "sha256": "e5a3e3ffbc4e50dded7d1ded4f36d1957e44e04cffea9bbae25a0a751c315c79",
+        "size": 4032,
+        "blob": "5c04a8ff0220ab67fbbbf2a7a4f67f586669be37"
+      },
+      {
+        "path": "Foundation/include/Poco/Activity.h",
+        "sha256": "f73c9a06f1b4437f9c9c32e7feba5258d0225b4f948cfb8b28ab965b432824de",
+        "size": 4009,
+        "blob": "9f50816250f5e4ba2f72b69c369c72d333de2349"
+      },
+      {
+        "path": "Foundation/include/Poco/Alignment.h",
+        "sha256": "93612c0670156048fa3d1297195cad8e720626ecb8a125379357c1f943b988b9",
+        "size": 436,
+        "blob": "bf88db04649398799293dd8c19ee99b34efa6d97"
+      },
+      {
+        "path": "Foundation/include/Poco/Any.h",
+        "sha256": "b813ddc89c9c72ff0bbd02e8db38f48696b29e28b2780f90e1414bef72cf1f87",
+        "size": 12666,
+        "blob": "42b8da0a98ced4699999f70707c5a5690ffdf298"
+      },
+      {
+        "path": "Foundation/include/Poco/ArchiveStrategy.h",
+        "sha256": "e00be2d95501e7514722a0f062e8b8acfef4e0511a8e53a6f708d12458644087",
+        "size": 3456,
+        "blob": "f78127986164b8d56f64904dc7dd7db2b21f11ba"
+      },
+      {
+        "path": "Foundation/include/Poco/Array.h",
+        "sha256": "c5e321dbd591c9fbaf3fafd296e9fba5e939778a76bab072b7342ed1346e53c8",
+        "size": 5114,
+        "blob": "ff598b85f690b95e57a25b484ba49e57a2f85597"
+      },
+      {
+        "path": "Foundation/include/Poco/Ascii.h",
+        "sha256": "c69f06b722744807290c1362735ef24197bbba43d7fcbd5b1113b0b8ab7d8dd1",
+        "size": 4739,
+        "blob": "5121dba871b7f49b15d2bbff4179b8fed0dfbacb"
+      },
+      {
+        "path": "Foundation/include/Poco/AsyncChannel.h",
+        "sha256": "f46753a1449c3f0005d28e410ea523c5e0f8755993eed5f1f635b5cb8baa018d",
+        "size": 3286,
+        "blob": "190bae7ddf716c26a19e8c9f07d68f1cb71b4200"
+      },
+      {
+        "path": "Foundation/include/Poco/AtomicCounter.h",
+        "sha256": "ef6d0b79241f71c2a871f1c86ef3699eabd417a588463b510caeaf65a2e14e12",
+        "size": 2760,
+        "blob": "1377fd4c96670c4f03411c4c67a256dd5364d398"
+      },
+      {
+        "path": "Foundation/include/Poco/AtomicFlag.h",
+        "sha256": "d859473fd100bc48d7ce388cf12ca18019b624940d6ccf3db0bb31eba7f7ae8a",
+        "size": 2385,
+        "blob": "d9191ea720130f4d97c116d5b4128dfd40018cbd"
+      },
+      {
+        "path": "Foundation/include/Poco/AutoPtr.h",
+        "sha256": "6aa7796152fd90780c006a435de853f50b9c1bfa47ecd5d648d56d51507d935a",
+        "size": 7046,
+        "blob": "27f68a6b61488d206b21f1ea42dd89c3bc4ad4ba"
+      },
+      {
+        "path": "Foundation/include/Poco/AutoReleasePool.h",
+        "sha256": "f2b9123ca8a81cab922336a36d3968930baec854fd70360d6d82d8ab9ad6aa9c",
+        "size": 1754,
+        "blob": "80e11e558ed2e5331cc85cbbf73b2eef185354a7"
+      },
+      {
+        "path": "Foundation/include/Poco/Base32Decoder.h",
+        "sha256": "cc5e6569e5b25f8217f46236e233267faadb4abec513ac7d716449f0517bf831",
+        "size": 2417,
+        "blob": "bc87205d37e76c6e6cafdb39812bf0569081b034"
+      },
+      {
+        "path": "Foundation/include/Poco/Base32Encoder.h",
+        "sha256": "2ce0a6f49995c04f1b1bb1695db702fd2542f3f5ca967eb8d2d8906e197a0caf",
+        "size": 2639,
+        "blob": "f36eac89d7b5f3ea4143e52a267b9b3e36e8d28b"
+      },
+      {
+        "path": "Foundation/include/Poco/Base64Decoder.h",
+        "sha256": "a04133799657c5f0e402170527602da06244139d01f85b4279201f0a8807c805",
+        "size": 2619,
+        "blob": "678da50ec69334679af0f5317ac185dac72e5031"
+      },
+      {
+        "path": "Foundation/include/Poco/Base64Encoder.h",
+        "sha256": "12ddb64216bdf6aeecac70db7dfe507011464fcf93d91e53b67d0983618b3857",
+        "size": 3371,
+        "blob": "bc39d826b841cd703f9e37e12e767fed79f25989"
+      },
+      {
+        "path": "Foundation/include/Poco/BasicEvent.h",
+        "sha256": "8085bdec3b0abd979139b604f9daa4fbc3e6783ac5ddf49409fe58cfedaa2281",
+        "size": 1106,
+        "blob": "a4b53101e9b2fc5f0c4118a28afb49336dd7cacc"
+      },
+      {
+        "path": "Foundation/include/Poco/BinaryReader.h",
+        "sha256": "335b14bfc232f6c1ed3e6f2b8445301ff6abaa0d3e681b6f29636dd4e062ef7d",
+        "size": 6378,
+        "blob": "de5ab8054cf7b06b37115099630d4ae326da97c0"
+      },
+      {
+        "path": "Foundation/include/Poco/BinaryWriter.h",
+        "sha256": "29895aa922b956ec1221939987d96ba2dbaa3dd573a770434f3ae681830a014f",
+        "size": 7221,
+        "blob": "730a61dbbfc213e0beeefd35db834be4e0a77d7a"
+      },
+      {
+        "path": "Foundation/include/Poco/Buffer.h",
+        "sha256": "ddb85cb4178b86c05165d35cf106e539d7ed100670b3ad31129668b01e762d05",
+        "size": 8432,
+        "blob": "34981e556004c99552c96c34729a066cb5820586"
+      },
+      {
+        "path": "Foundation/include/Poco/BufferAllocator.h",
+        "sha256": "5b3eebb56f0b45d6a4ad8f307969f89b64b79bf5a907612ff89292cd9bb6bad2",
+        "size": 911,
+        "blob": "9a3083eee7bd1e6145865ef34b7a056f32ab791b"
+      },
+      {
+        "path": "Foundation/include/Poco/BufferedBidirectionalStreamBuf.h",
+        "sha256": "f490cf9e5e8b16b8f0f40402c2b648043890458bd63ff49819cc1d6a2ec2bb2d",
+        "size": 4592,
+        "blob": "bcb839fe86b3486b4b5428c641dfd9f851bc28f2"
+      },
+      {
+        "path": "Foundation/include/Poco/BufferedStreamBuf.h",
+        "sha256": "40a4395a3d044b3c6fb73424a6ae7acedf9e6d30b0249e5769e7acb971e739f7",
+        "size": 4189,
+        "blob": "2c64a9f99211fd4276feaa05232243251f9a5361"
+      },
+      {
+        "path": "Foundation/include/Poco/Bugcheck.h",
+        "sha256": "192d387974a5ca592a0e3ede708fc1a6f837cd1318567b60225074690016750c",
+        "size": 5891,
+        "blob": "6e1e4aae7899a0d73df07d2b02e79d6a89a55233"
+      },
+      {
+        "path": "Foundation/include/Poco/ByteOrder.h",
+        "sha256": "413db6fc4bd56d437aa8107b50bdc7bb49aaa6becdd7c71f1469a2e78dd6aba0",
+        "size": 6935,
+        "blob": "04159cfbdbb16ecb7b0a6f8a283b9fdca60f1eae"
+      },
+      {
+        "path": "Foundation/include/Poco/Channel.h",
+        "sha256": "cac06fe07029bbf56d53750d6fc2cdf5217bf238ba138a0bc41bb61db19514c5",
+        "size": 1779,
+        "blob": "8b97fc616dc2160e1fb26d47d480b98ebfaa5ee9"
+      },
+      {
+        "path": "Foundation/include/Poco/Checksum.h",
+        "sha256": "c40b3fa0012ea13cc2dd01444ee98fca42f69977ba563aef7e66e0d7691df85b",
+        "size": 2179,
+        "blob": "9a020f3cc5a511b9d776bb0a9930bca1c671802d"
+      },
+      {
+        "path": "Foundation/include/Poco/ClassLibrary.h",
+        "sha256": "2c6b88f29df69a49b3c16d20d89b688fa5ceffce2964031b60952a349be03c02",
+        "size": 2497,
+        "blob": "e10dbcbfb1ba2821a9328f0933bc580ea176431b"
+      },
+      {
+        "path": "Foundation/include/Poco/ClassLoader.h",
+        "sha256": "6cef9e8b8610880a26cdbe76f181115a6639c21d63ad4a9f28f0933ef1616108",
+        "size": 9570,
+        "blob": "a55c63fdcb40208b0355e1e4d3013c293844753c"
+      },
+      {
+        "path": "Foundation/include/Poco/Clock.h",
+        "sha256": "81a34181f2b085fb24af7c71459a17367b117a33c1bfbc367f85a3235dc02cde",
+        "size": 4917,
+        "blob": "570866c4562b971dbe60521d845bf5803a194a6a"
+      },
+      {
+        "path": "Foundation/include/Poco/Condition.h",
+        "sha256": "99b0f600ff6ea7b1a999e682007a50d1ba5a6109bf9d95df29cb23615640ea47",
+        "size": 3280,
+        "blob": "35e73d7795a7586e47d8e0d404022fa23f8b8a0a"
+      },
+      {
+        "path": "Foundation/include/Poco/Config.h",
+        "sha256": "87fb601783d47e2ec51f37e49fdac8801947385685f04ab790ffeb944861bd01",
+        "size": 5022,
+        "blob": "cd01069d7b9ba26cae2fed82eeecd3037688cc35"
+      },
+      {
+        "path": "Foundation/include/Poco/Configurable.h",
+        "sha256": "2314e6226441f271c989db238b9586896064bba0b7a8103ef3e03249eddbe6c5",
+        "size": 1834,
+        "blob": "6a5dd8fd50be31d0d18c06450e83d001d7e7452d"
+      },
+      {
+        "path": "Foundation/include/Poco/ConsoleChannel.h",
+        "sha256": "34a119f71f35b4581c5d7eca213c36b1f540e8b92c06422c74e55f234d808c28",
+        "size": 4920,
+        "blob": "d02eb78a9072e43235efe8cfcde532d3621601aa"
+      },
+      {
+        "path": "Foundation/include/Poco/CountingStream.h",
+        "sha256": "e1352f4e4c40b03b15328f0967bb0349b719f4a8db7e1d66380b793b02c0605e",
+        "size": 5365,
+        "blob": "459d4f338d022479ece4cfc3782014b9e1a9df60"
+      },
+      {
+        "path": "Foundation/include/Poco/DataURIStream.h",
+        "sha256": "692f80521b633ebe8e20c7500a75be7c316e8acf89a74b48498005fce19e40c4",
+        "size": 1782,
+        "blob": "154f3fb352fa0f39447eb50ba6518ab8bc119c8b"
+      },
+      {
+        "path": "Foundation/include/Poco/DataURIStreamFactory.h",
+        "sha256": "35a98d079be1640c630930725a7093bd605c329444dbf4e11224519e67e536d3",
+        "size": 1414,
+        "blob": "6297c59a077d8b9dbe8b674b99fe586b1029d588"
+      },
+      {
+        "path": "Foundation/include/Poco/DateTime.h",
+        "sha256": "127838601852300a70536ccb1963de124d18b96770e4f0ad6864b11eaf722183",
+        "size": 10938,
+        "blob": "b95af903909c0b0825d5c659c157e298c295cf8e"
+      },
+      {
+        "path": "Foundation/include/Poco/DateTimeFormat.h",
+        "sha256": "613adc6d63a82482c38b71ef38b604c30e11e266b02712c4b654efc136ca3a4a",
+        "size": 3644,
+        "blob": "291bf18b226857acba9b3ef09821c21989d93256"
+      },
+      {
+        "path": "Foundation/include/Poco/DateTimeFormatter.h",
+        "sha256": "2c5398bff87864b14fa48be2dad240040b95ba12b7b8b5e43b828376bca188e3",
+        "size": 7403,
+        "blob": "0a6267d129b77a054701af463f38c3f005dc4e02"
+      },
+      {
+        "path": "Foundation/include/Poco/DateTimeParser.h",
+        "sha256": "3f1e51d1bfce43fe50313094bc8ce04e99fc5e8f310fd9017e7f10bb46d96855",
+        "size": 6003,
+        "blob": "2d1882d83713f2173dd97c4a4b2f0609451e121b"
+      },
+      {
+        "path": "Foundation/include/Poco/Debugger.h",
+        "sha256": "d9126fc9313f18d297d3ba0d157f9aaafd0de0bf704f5e4d250fc728682d0a34",
+        "size": 1978,
+        "blob": "f1de9fc38bbb06f8127c403e5f893753aeebda5a"
+      },
+      {
+        "path": "Foundation/include/Poco/DefaultStrategy.h",
+        "sha256": "7a13fad5c2d11d4d2b57df5e6b037de6ed6ff53692717b6724c50960996272b2",
+        "size": 4370,
+        "blob": "ede9d051e47ac3b3c92cefeb73e9f2b0b20ef280"
+      },
+      {
+        "path": "Foundation/include/Poco/DeflatingStream.h",
+        "sha256": "af4926e63d802a133b43c5e5bcab31745c806ee1dbfe19197b96386e7d53b5b2",
+        "size": 6395,
+        "blob": "d7557071492114d0d71744ef3b1f69348f9eba56"
+      },
+      {
+        "path": "Foundation/include/Poco/Delegate.h",
+        "sha256": "aef9d5b73a2bf9ce62977df91d7f1563107e3709f70d1fd0be90fec5a82afe3a",
+        "size": 10107,
+        "blob": "b0b2c7615a70e71c6c0556eb153328aa36c0ff46"
+      },
+      {
+        "path": "Foundation/include/Poco/DigestEngine.h",
+        "sha256": "559d94517cb21d83aa4c8c9b1061ea95e7966f4300b403b7902bc5a6e277d7a3",
+        "size": 2885,
+        "blob": "e52167d2f4c4d23cffac7a2d2cbd4400d6188379"
+      },
+      {
+        "path": "Foundation/include/Poco/DigestStream.h",
+        "sha256": "6bb4fbf3e3db58cbbbf06b41652706dfe09df104a674b03b7eb780182161a0e9",
+        "size": 2370,
+        "blob": "5d1de54c32ff3e7f8b873a96c030275fddd86b83"
+      },
+      {
+        "path": "Foundation/include/Poco/DirectoryIterator.h",
+        "sha256": "cddf8174b62e302f9e1781b65c056415b597440cc4c90426581d25e1d0fae954",
+        "size": 3279,
+        "blob": "fd8e89db171b6e05869c5b53f86b4fcaada2b4f9"
+      },
+      {
+        "path": "Foundation/include/Poco/DirectoryIteratorStrategy.h",
+        "sha256": "a526a2ed4d199c99d2dfb053a21a9f2025a1e59d64395774e4c233719e6adfe6",
+        "size": 2051,
+        "blob": "495fcab7c30a962ad86069d0e9aa5abc2b136b23"
+      },
+      {
+        "path": "Foundation/include/Poco/DirectoryIterator_UNIX.h",
+        "sha256": "d61b8b29474cfba0478a6d3d72d1d84be86df0b8b83fe3c48942cae43e028c45",
+        "size": 1106,
+        "blob": "61e5f9b4aac834f2cf06a88b7565d4728dc6d441"
+      },
+      {
+        "path": "Foundation/include/Poco/DirectoryIterator_WIN32U.h",
+        "sha256": "98226657f96349b7b369c3e76c95914e2b0752fb06df7203295988e49ea02c15",
+        "size": 1142,
+        "blob": "8035e0adf78c57df8a494c89b93b0b485f46b09c"
+      },
+      {
+        "path": "Foundation/include/Poco/DirectoryWatcher.h",
+        "sha256": "225b1e87d4f8370f589201fb98237d2e75e06a9c76c73d6b8bc020f0014e3789",
+        "size": 6596,
+        "blob": "2de0c9f2a242155d7df8a22b7e3a79bb3fc17d75"
+      },
+      {
+        "path": "Foundation/include/Poco/Dynamic/Pair.h",
+        "sha256": "8e44821fcbbf50e7824c0328d4d953986e937e6d02231b7411120405294b50c5",
+        "size": 6979,
+        "blob": "166dc28a9f299ba75d3ee39fccaaa040a3df0c27"
+      },
+      {
+        "path": "Foundation/include/Poco/Dynamic/Struct.h",
+        "sha256": "c359a332be464244a7dc3e56165d913095a2c21e86fa404334b00c45ef38f03e",
+        "size": 18731,
+        "blob": "f5c9cffbb98dc47e12c41c39894e30aff9a5da39"
+      },
+      {
+        "path": "Foundation/include/Poco/Dynamic/Var.h",
+        "sha256": "11467912eb27e649fb8ccc2ca29d0c2d7d937ecf378c397bd7735c41027871e8",
+        "size": 57218,
+        "blob": "4b6b03b30e7a14e7440ea63a69074cd808504cac"
+      },
+      {
+        "path": "Foundation/include/Poco/Dynamic/VarHolder.h",
+        "sha256": "fd6030e9cc73b181b2df9f1ae5f4ea7b1b7a28c561f0561aeafce8fa89a75f49",
+        "size": 72136,
+        "blob": "0ae246ab76782b9f2401a2828b2b0ebbd84e6c45"
+      },
+      {
+        "path": "Foundation/include/Poco/Dynamic/VarIterator.h",
+        "sha256": "c5dd191645d79a72f94eb16b27ac79677bd0f21c3260d50084a3bf18f3c42107",
+        "size": 3797,
+        "blob": "eb9129fbc667d33f4bb75908b56f2e14868557dc"
+      },
+      {
+        "path": "Foundation/include/Poco/Dynamic/VarVisitor.h",
+        "sha256": "e9e8b7f965121d796e39212ff8278eb72d8f14126b18633babde18ebb2750cd5",
+        "size": 2464,
+        "blob": "b3b3d1ce2de54c9b72f9bf8d40d25ec771388f74"
+      },
+      {
+        "path": "Foundation/include/Poco/DynamicAny.h",
+        "sha256": "31185c17ac81a5370983ca432e062e3dad4099a8a1feb76b5ffd591bfbf4a9c6",
+        "size": 457,
+        "blob": "214a2967924e9540d3f42e64a1eb26943a452ff5"
+      },
+      {
+        "path": "Foundation/include/Poco/DynamicAnyHolder.h",
+        "sha256": "07e95c0fdffe11156a656e2439593d6429bbed057d4fb476ec7aa1d5a0e0a0dc",
+        "size": 498,
+        "blob": "4400af3ec9bf29a0660fd960a7ddf19217f10811"
+      },
+      {
+        "path": "Foundation/include/Poco/DynamicFactory.h",
+        "sha256": "7e6363403151c1eeeb6c17bd0ff4636297d37e049276345c4c17aa5538ad0f0d",
+        "size": 3436,
+        "blob": "f8d10ef3d039527c8f8edb549c1c9aefb42e67e4"
+      },
+      {
+        "path": "Foundation/include/Poco/DynamicStruct.h",
+        "sha256": "401b561701ffc138a95158a06f02d6d09ad65681335dd0a95b0e0ec74e00116c",
+        "size": 478,
+        "blob": "1f0fb56b7595b7f6e66f3e57e4b21ecf0342b1ab"
+      },
+      {
+        "path": "Foundation/include/Poco/Environment.h",
+        "sha256": "0474d8281cbd685ad77021f7a441c2db1786f44a2cf2b86e4a792e303d08a17b",
+        "size": 3572,
+        "blob": "a422109129bb92292dcb404dd3181f5045742ed1"
+      },
+      {
+        "path": "Foundation/include/Poco/Environment_UNIX.h",
+        "sha256": "d972750871f59e42f775bc016310afb4cd7f8b9d60373ab575440077db5ed73c",
+        "size": 1198,
+        "blob": "1efb4ea15273d191d14225521e2b1cfd1b26b610"
+      },
+      {
+        "path": "Foundation/include/Poco/Environment_VX.h",
+        "sha256": "414d88932a491a079ac05319254a4f8539b8420903e333db65ece023497626c8",
+        "size": 1193,
+        "blob": "8feb6b9f05020d92cab934238be6437cf8107915"
+      },
+      {
+        "path": "Foundation/include/Poco/Environment_WIN32U.h",
+        "sha256": "48e6503934a9b368b2eb030bd12c9594a00c9ea33a8d490d14006bb7245fed77",
+        "size": 1047,
+        "blob": "f7f5e793b9f250bf131375b1e6cdf1cc28c962ea"
+      },
+      {
+        "path": "Foundation/include/Poco/Error.h",
+        "sha256": "e37f3d10650b807fb5d2354ddb141d0852d25b111d24497f5820c42de220e92c",
+        "size": 961,
+        "blob": "935ee22343724ba99235927df49250807206fed3"
+      },
+      {
+        "path": "Foundation/include/Poco/ErrorHandler.h",
+        "sha256": "a32fe19e5854da02b5deec73335b273e5881d210cf6c894253b9a1d9c9c5db45",
+        "size": 3037,
+        "blob": "bc5a6ae04192c117f83d39168b9736799a3bc57e"
+      },
+      {
+        "path": "Foundation/include/Poco/Event.h",
+        "sha256": "14dfd12d17f10ac00e00f0b07c22351a0bfd0dcffd04e65305ef7824faf41793",
+        "size": 2539,
+        "blob": "c59f29acd6e668bbc5cfbe73fbe9f1b9c866d483"
+      },
+      {
+        "path": "Foundation/include/Poco/EventArgs.h",
+        "sha256": "6fb558242c564aa9400a5effcba6e3ab7a5b4b42d255b2428a1a9fc513c385c9",
+        "size": 773,
+        "blob": "a611995c8aa4338ee8e4ae341b221d983592c03c"
+      },
+      {
+        "path": "Foundation/include/Poco/EventChannel.h",
+        "sha256": "ac6865f75f83b1cd874a0e1c6983f41aa7de29e3fe60edd4c24c501553d89522",
+        "size": 1129,
+        "blob": "94a94cfb026de067d6f9c803abeab91b43e530c8"
+      },
+      {
+        "path": "Foundation/include/Poco/EventLogChannel.h",
+        "sha256": "dd923fbe66f057bc6a019571ad34704505d73e8a10f35bb80d932d3b07129acd",
+        "size": 2861,
+        "blob": "c6f96932f8394b3b5412312901ceb6f33700eafc"
+      },
+      {
+        "path": "Foundation/include/Poco/Event_POSIX.h",
+        "sha256": "fb72955b8c2a1634e6c4e76a7568f4f0e92950b9c1cf5d1a07f098276b0ca6d9",
+        "size": 1351,
+        "blob": "0852563c7c782a82439f5499f4f9bfa98325a495"
+      },
+      {
+        "path": "Foundation/include/Poco/Event_VX.h",
+        "sha256": "ad617ace2dc94fef236aea452e2357e86d6be7893f331912052ac83100f48a25",
+        "size": 771,
+        "blob": "81cc1be63959ea82d8a7786fc2f51c62b851020d"
+      },
+      {
+        "path": "Foundation/include/Poco/Event_WIN32.h",
+        "sha256": "b739ec818f518239fe4adfb667868ad0fdfb567c687ab72c38d8aa415625c7bc",
+        "size": 1023,
+        "blob": "2862887e632bbed0721af00c2c09d96c0f423117"
+      },
+      {
+        "path": "Foundation/include/Poco/Exception.h",
+        "sha256": "4f378ed2e1bd3538d1b494ed8673f2ed0c287998aa2f9210c1a5f925f9497ce7",
+        "size": 9359,
+        "blob": "d09d4ff998918d101ad0b1d3da24d68093a8733b"
+      },
+      {
+        "path": "Foundation/include/Poco/ExpirationDecorator.h",
+        "sha256": "6a7dce619d6e09ccf85000259708c47f45f1f6f3006ca10749ac9b13c2e4abde",
+        "size": 1652,
+        "blob": "15c8e6a8fa5d7e841b90b5a7569361860314e0e3"
+      },
+      {
+        "path": "Foundation/include/Poco/Expire.h",
+        "sha256": "5c4e5f5f63c57433d8335733a8339ba16ee130735943d137e0907a4e5a8e1350",
+        "size": 3502,
+        "blob": "672ddfc020f82350f92ec1e05551d894960e6ff9"
+      },
+      {
+        "path": "Foundation/include/Poco/ExpireCache.h",
+        "sha256": "b3680db3c403e0a9bf80014c7c70404d091da6e44aff96ad1af715f6fd8f7f01",
+        "size": 1675,
+        "blob": "5dd8ff7204dba30ccdac38eed3f9adf5bac55bfc"
+      },
+      {
+        "path": "Foundation/include/Poco/ExpireLRUCache.h",
+        "sha256": "f9a81df3754eed7b5bb65183d407ba751438390908a793f211a67d2f24753916",
+        "size": 1516,
+        "blob": "4921212620427a76c0a9a8374d2e5c457898c590"
+      },
+      {
+        "path": "Foundation/include/Poco/ExpireStrategy.h",
+        "sha256": "1fba03e915c0452568e5f0b3d8ccc583393effaac03b97d2aa59ed63cd6910d4",
+        "size": 3126,
+        "blob": "157286ada4e4f14ab7e1289ecf58d02b90a6acbb"
+      },
+      {
+        "path": "Foundation/include/Poco/FIFOBuffer.h",
+        "sha256": "a56ea81343bbd6a79e3719bd275e12d3bec4193fc2f46833ef607d557a1ae771",
+        "size": 14390,
+        "blob": "c1a6d996639fa40ec2c2b698417366a6fb7465a7"
+      },
+      {
+        "path": "Foundation/include/Poco/FIFOBufferStream.h",
+        "sha256": "8748633c136e5dc9da8e598952457a86f72d29d2d72c86bc118c24997aed5416",
+        "size": 3766,
+        "blob": "08673a7adb0676ebcca52ec1f85fc67ffea000f6"
+      },
+      {
+        "path": "Foundation/include/Poco/FIFOEvent.h",
+        "sha256": "ffb18071a1ceb2c5689c13fcec43f2c9865f7f42c62ce9ea3928ad1a7fcca611",
+        "size": 1184,
+        "blob": "f4c5007e7eea3bf0a49e5dcf25100959972e2077"
+      },
+      {
+        "path": "Foundation/include/Poco/FIFOStrategy.h",
+        "sha256": "05b5a3300310a11067f7bf737dad445e23ea48e02e61c461e3f0c1e6535e980a",
+        "size": 1240,
+        "blob": "577bb4ee29f498e6987da57ce9223f80c04b8d48"
+      },
+      {
+        "path": "Foundation/include/Poco/FPEnvironment.h",
+        "sha256": "1bbb72386a87f93e6239cf899b5cedd01727548121cfac911c8c49cdb632aefa",
+        "size": 4492,
+        "blob": "4602f57f91e18f1b1e72c8247eefe0828f1ce941"
+      },
+      {
+        "path": "Foundation/include/Poco/FPEnvironment_C99.h",
+        "sha256": "72b83ab02a14f347c70a43015f4340b948c05787657fa91d41f9e9f7e1a98a9f",
+        "size": 3737,
+        "blob": "bb835b66990b27eb0b2d540b28666ca860d96b60"
+      },
+      {
+        "path": "Foundation/include/Poco/FPEnvironment_DEC.h",
+        "sha256": "574a18ec599277302be62148eb32d8032d955b0bd831c0327a77045ae17f2b6c",
+        "size": 2202,
+        "blob": "e4b89219d248bb38be8731082fafe77303c77b2e"
+      },
+      {
+        "path": "Foundation/include/Poco/FPEnvironment_DUMMY.h",
+        "sha256": "9c3d673e65d8d46b56cad185dc89b0776c9e06afb6edfb06189252b49cf7be37",
+        "size": 2591,
+        "blob": "5571c128c2c6badda11d9ddbfe23c11769c176a9"
+      },
+      {
+        "path": "Foundation/include/Poco/FPEnvironment_QNX.h",
+        "sha256": "567c8e23d1026e7981eb05ed99e2beb652976a69f0ac54898865e0d12554da98",
+        "size": 2832,
+        "blob": "c048bcdf5c691011b379db030eba079528396bf2"
+      },
+      {
+        "path": "Foundation/include/Poco/FPEnvironment_SUN.h",
+        "sha256": "45ee7ac0ddd1d1a4910c5faab43a715af21c6cd01d3a30a1de10c5c4b718331a",
+        "size": 1808,
+        "blob": "8a570571a1914f7ac09007d0825c9224d70cdc64"
+      },
+      {
+        "path": "Foundation/include/Poco/FPEnvironment_WIN32.h",
+        "sha256": "9cacae22bdbefe63315192397beb48716e11478aa3ed233dc5a1117eef9d6781",
+        "size": 3488,
+        "blob": "79ab6176111d6b586778629006b8d4edc056be8c"
+      },
+      {
+        "path": "Foundation/include/Poco/File.h",
+        "sha256": "ca2f29aa0c4b534ab823daaf03eba73b977ac7e9764699ef551c7b5f9e2068fb",
+        "size": 8522,
+        "blob": "c13159da2519b1ab2ce02d0acb38610ec6406ca2"
+      },
+      {
+        "path": "Foundation/include/Poco/FileChannel.h",
+        "sha256": "1d1430759f773f21b029924b7d0554d9ba06b1ade3ac48c20191ee0d47fc3456",
+        "size": 11439,
+        "blob": "10aea1066fc028eda427f97d0a72957b8556f5a5"
+      },
+      {
+        "path": "Foundation/include/Poco/FileStream.h",
+        "sha256": "b1d95cf20e2e4afc8b8d36f1d9278d445ee1a09ab862c695618c9b734848bd55",
+        "size": 6746,
+        "blob": "768364bbd6f0f34c20774d0834bc812928ac30e9"
+      },
+      {
+        "path": "Foundation/include/Poco/FileStreamFactory.h",
+        "sha256": "1ecfbade9133d0654053cf18cab65180b797bdf6db1c26d936fdfd1d202a383c",
+        "size": 1333,
+        "blob": "e82d2f3ac675cb02722e0ef4270efdb98c8b4e5f"
+      },
+      {
+        "path": "Foundation/include/Poco/FileStream_POSIX.h",
+        "sha256": "3f78e41934d96df6330c1c05727baaf9b880754182670dc6a75f2328d39b50a7",
+        "size": 1803,
+        "blob": "8e7ef8fb29c1cd04848ce53ec3d933a0da8b43fd"
+      },
+      {
+        "path": "Foundation/include/Poco/FileStream_WIN32.h",
+        "sha256": "4133480521f301b3c51fc4dc247cb76d9d0a88f4818e36e291ef6b158709c965",
+        "size": 1789,
+        "blob": "d26f1ffed05943b5b32f74445b8e5ee8e2427f99"
+      },
+      {
+        "path": "Foundation/include/Poco/File_UNIX.h",
+        "sha256": "16fdaa30092386658c2aac509396bd404f482044c9f6cde8e1bab33fec8a041d",
+        "size": 2055,
+        "blob": "46ee32028195e94985f61d0ead3c6995214429b1"
+      },
+      {
+        "path": "Foundation/include/Poco/File_VX.h",
+        "sha256": "073a47932fb98da8090f60e906c81170c5ecc1c63a15b77dab9353ea2fad92a3",
+        "size": 1894,
+        "blob": "8b2f909732efe197526e3ca0224d6fc91d68c506"
+      },
+      {
+        "path": "Foundation/include/Poco/File_WIN32U.h",
+        "sha256": "a064a42ff070496638abc569903800e3e831f30a3495bed77d72c9ca02ccaf53",
+        "size": 2186,
+        "blob": "c97cb2efa56e95271f0de968e23369249c068643"
+      },
+      {
+        "path": "Foundation/include/Poco/Format.h",
+        "sha256": "f137132d74bce969e9e6dc8fa4a010da7014deb0791e77977761e29c8551587b",
+        "size": 6881,
+        "blob": "d82b107be64a9ccc6be94ada976199dd07f8a828"
+      },
+      {
+        "path": "Foundation/include/Poco/Formatter.h",
+        "sha256": "3f0a74f7d9f57d241fce076ac13e9590e80fd2a110d97a980df235891a72f2a0",
+        "size": 1990,
+        "blob": "e051992893171e474c5d5ec0f7dc08a4f0d2d76d"
+      },
+      {
+        "path": "Foundation/include/Poco/FormattingChannel.h",
+        "sha256": "ca5b371fd9fe13165e8813f274da4e418fd009980ff7b543027b4e28c7953343",
+        "size": 2506,
+        "blob": "af9d0d6c2b7ebd66aa9eb91ca99f9cb898badf17"
+      },
+      {
+        "path": "Foundation/include/Poco/Foundation.h",
+        "sha256": "063965c23393722db1ebc259686910feb3c8308dd969bee2129b4da2b493aa23",
+        "size": 3825,
+        "blob": "139a93d7560eecdf684386605250f3ef5a7b98f4"
+      },
+      {
+        "path": "Foundation/include/Poco/FunctionDelegate.h",
+        "sha256": "8b524f743f53b02c9db9345956fc7d87cfdd7a371c7067fb03e8a1fe451c4f32",
+        "size": 7999,
+        "blob": "b5676a3b5324802e1f198f4fd072eb8b1cc2dc6b"
+      },
+      {
+        "path": "Foundation/include/Poco/FunctionPriorityDelegate.h",
+        "sha256": "3eada8120014327286e941c29a37eb085a2ce382a312faa4a639731e53a0bdb5",
+        "size": 9468,
+        "blob": "a1b94b6b2bae3481f59946d7620eda9b7152ded7"
+      },
+      {
+        "path": "Foundation/include/Poco/Glob.h",
+        "sha256": "4d5eeb05bef2e80b8748f357905d7b81e653b57dca4d272525222806b8dbc178",
+        "size": 5286,
+        "blob": "e23e9b214e0467ef35d6f006ad057e1a6c08d65b"
+      },
+      {
+        "path": "Foundation/include/Poco/HMACEngine.h",
+        "sha256": "0e5fc769736dad7b3e0147c052b8b0ad769b713485bff85a91b0f6d1f59a86a5",
+        "size": 2914,
+        "blob": "f37a117256c0e2d752f761780f186e7fe3f9b679"
+      },
+      {
+        "path": "Foundation/include/Poco/Hash.h",
+        "sha256": "3e6a4dff0dab54254eae1361dc5bfb1b6dbc2f1636fd25ec7153f2c6f3491dce",
+        "size": 3521,
+        "blob": "99a9352dc9458ee0717353424c32041d26615931"
+      },
+      {
+        "path": "Foundation/include/Poco/HashFunction.h",
+        "sha256": "1780e40232e46ba860a036c41c33db85b1732bc08cc1ac524404c840b41a7221",
+        "size": 1028,
+        "blob": "c451d0699d3b50ace12275da3caeb3e6a1f353d9"
+      },
+      {
+        "path": "Foundation/include/Poco/HashMap.h",
+        "sha256": "36298134632ed2a28550902edec3f493692fd29f8d4b09427523e5865a066fce",
+        "size": 3929,
+        "blob": "63def8bf9e66514c65f3a4abfd564127d753bb12"
+      },
+      {
+        "path": "Foundation/include/Poco/HashSet.h",
+        "sha256": "81d95b34296188cd06bf6d58259105d58438628237eab85bc845bb3e7627747d",
+        "size": 3431,
+        "blob": "ee0dcb7ce4342a6df682eb82b1b3b052b4f8ed31"
+      },
+      {
+        "path": "Foundation/include/Poco/HashStatistic.h",
+        "sha256": "423adcf4a75328f74f80389c99c15940ae673ffbcb3eb1461d867fbda651cdb7",
+        "size": 3195,
+        "blob": "b2541ee23042499ce3e3d9c171c13ba73bdf8e64"
+      },
+      {
+        "path": "Foundation/include/Poco/HashTable.h",
+        "sha256": "7cca6319fbe7971a53b0425d1ebc78e86a58d05c26b85c7cef793bc0807c47db",
+        "size": 8645,
+        "blob": "259ce8da34b840b8e6eaa72b256cdd821bb2ace0"
+      },
+      {
+        "path": "Foundation/include/Poco/HexBinaryDecoder.h",
+        "sha256": "d40b42fad05c3818f640593fc1a38de05fb390f6e4ead7c6eb4e9fe8701ef762",
+        "size": 2463,
+        "blob": "408e38d4206a041bb2f097bedf8653403c6f80c2"
+      },
+      {
+        "path": "Foundation/include/Poco/HexBinaryEncoder.h",
+        "sha256": "944bdac716ffceeb5d5d54ee4fd0734e457f84658f9bc28d479ec4307f4ed999",
+        "size": 3112,
+        "blob": "bd7653982a97df8b7426a741034fde6aa8160195"
+      },
+      {
+        "path": "Foundation/include/Poco/InflatingStream.h",
+        "sha256": "1229e9050abb36f8806e8b76fc0b0370b0ff0ee03bab49fe4a32f6eb1c8258f9",
+        "size": 6799,
+        "blob": "61064dc87cc22d5a1098e39004ff368272a5e357"
+      },
+      {
+        "path": "Foundation/include/Poco/Instantiator.h",
+        "sha256": "ca193982a1fb85b50b01a48e323274295c564dca33213584d8999cfc3428a357",
+        "size": 1495,
+        "blob": "323a523e058e77e8628a3bbfa5371423b788a458"
+      },
+      {
+        "path": "Foundation/include/Poco/JSONString.h",
+        "sha256": "ca284bab2e38613412592bd02323df99733cf1c3fa33ad7fe71d5103be14de01",
+        "size": 2079,
+        "blob": "2c7102f9a339c28f215d98c725e5f8f7545771f0"
+      },
+      {
+        "path": "Foundation/include/Poco/KeyValueArgs.h",
+        "sha256": "67e16623bf207c479b5aa0117d1383f54b84d8495dc704559dc9cb4fff5d1b22",
+        "size": 1206,
+        "blob": "6c3009da198e7bb1fa4310ab5415bd501758cb47"
+      },
+      {
+        "path": "Foundation/include/Poco/LRUCache.h",
+        "sha256": "3cc4d8a1175086e40ca39402248acc0273fea401236f2434a904c3cf4f139928",
+        "size": 1062,
+        "blob": "d73bbf0469af514575fb39fac5477f9d84ed93d7"
+      },
+      {
+        "path": "Foundation/include/Poco/LRUStrategy.h",
+        "sha256": "fd9099315c9260efb026f20e89b04c9b524a84bb5b7037bf12704ece2f1103c5",
+        "size": 3016,
+        "blob": "6bb2744434958da9ab4d2c707a03efb35c197f0f"
+      },
+      {
+        "path": "Foundation/include/Poco/Latin1Encoding.h",
+        "sha256": "97b375ccb06ef17e3185f2edc36a29107d3ae27e7095a5977cc29153f90a7f67",
+        "size": 1118,
+        "blob": "532da2b9d3c27e77c0e298d2165cc8fe631b32a6"
+      },
+      {
+        "path": "Foundation/include/Poco/Latin2Encoding.h",
+        "sha256": "f00e029af06df517c204b127a961deb41dcfc47aa00789d1efa13cf62a100f1c",
+        "size": 1220,
+        "blob": "b82475596eb831754b8e333bca42b79496c420e5"
+      },
+      {
+        "path": "Foundation/include/Poco/Latin9Encoding.h",
+        "sha256": "adf281ad00017483c1df42fb54d4da6efe0142d8fde9f7ee8689f9cc13a435cb",
+        "size": 1213,
+        "blob": "0eac73349b619f1001119124b88573962ee5876a"
+      },
+      {
+        "path": "Foundation/include/Poco/LineEndingConverter.h",
+        "sha256": "a31b474a1ceffa75ccce1c61881fc757be7a889f34105af35768291536996558",
+        "size": 5561,
+        "blob": "b519b51ec9aeb9f9b2aa4d8d73fdfb6f932605c0"
+      },
+      {
+        "path": "Foundation/include/Poco/LinearHashTable.h",
+        "sha256": "6fd69d55cfa4bd0579d6ca21b1b73baec971e482f822b959c0ef70e85e3307af",
+        "size": 11254,
+        "blob": "5d7c1f856866d5b9f169b9924381c34ae9c310db"
+      },
+      {
+        "path": "Foundation/include/Poco/ListMap.h",
+        "sha256": "2c4999fb6490cd6b8b1db49dfe167d12a3d7f8ef7d7f90e90b9e3736535f32a0",
+        "size": 5583,
+        "blob": "2e41af0a3b35bf044ff440f1401f2248ab6ed1f2"
+      },
+      {
+        "path": "Foundation/include/Poco/LocalDateTime.h",
+        "sha256": "bab5a780f52c88fd027dd00b1e1d6c6bfa9edea7c7712a32f7b37cbe197c073e",
+        "size": 10761,
+        "blob": "5562309fef3eebedea8a88684899739cf501be54"
+      },
+      {
+        "path": "Foundation/include/Poco/LogFile.h",
+        "sha256": "75b5d3d1f9edee4b52f605d725720d185a8c2df0b1024a9dea4db95b190c5734",
+        "size": 1567,
+        "blob": "3e1ec21f4e6d7c1a60844397dcb3b93c3cec078d"
+      },
+      {
+        "path": "Foundation/include/Poco/LogFile_STD.h",
+        "sha256": "f5ae7e96eb6c943133063c17a3f25dc1d15eeb5f1efe7bd2f6166a01f1c65440",
+        "size": 1058,
+        "blob": "a178cb0babf42dd133cee8c6296bb201658ba817"
+      },
+      {
+        "path": "Foundation/include/Poco/LogFile_WIN32U.h",
+        "sha256": "1cacf5acf8abbf6a85b6cc89dc9d3a8a9c8a858b48ab1135e346fb8d3cb87fc9",
+        "size": 1058,
+        "blob": "ed558a7da702f38706130b07c835ab55c8fd4d01"
+      },
+      {
+        "path": "Foundation/include/Poco/LogStream.h",
+        "sha256": "d313e3a7f2ceaa329a7e7cb1225098fd3d4f7dc549e49bf9eb4129473571e1be",
+        "size": 5358,
+        "blob": "83d61a976d797fedb4e67a1c4f30e3224546a500"
+      },
+      {
+        "path": "Foundation/include/Poco/Logger.h",
+        "sha256": "28bb31a26be0425b5d2203b74e728a4d32b211b2f6be681741a7bf5530ec39c3",
+        "size": 33261,
+        "blob": "84e3b985a58c62b79590c50a2e3201cb6d8110ff"
+      },
+      {
+        "path": "Foundation/include/Poco/LoggingFactory.h",
+        "sha256": "0fcba45cda358b8ecbcebe4c21e6ea161af75790b884c280be1837105e51e4cb",
+        "size": 2392,
+        "blob": "390b1b67726ddaaf282ed58b3bf8efed57f3ccfc"
+      },
+      {
+        "path": "Foundation/include/Poco/LoggingRegistry.h",
+        "sha256": "58be8696036a46dc032775dbacd30ca485fd8f2bb3bfb17f5a92499dab7e0214",
+        "size": 2542,
+        "blob": "397b81993f9510332494f6ad130ed0d829b47755"
+      },
+      {
+        "path": "Foundation/include/Poco/MD4Engine.h",
+        "sha256": "cb73e5884942c908ee10fa3ce5aa2207479c6123bbf2f3c09fc128f6bc077eb8",
+        "size": 2395,
+        "blob": "291c561f631e69ae821fad85a1f134b2be340b0c"
+      },
+      {
+        "path": "Foundation/include/Poco/MD5Engine.h",
+        "sha256": "21030910683ee22d95a1242d872baafefb18726d67b0a4a5d3203b9d65b848c5",
+        "size": 2395,
+        "blob": "e67b10a99434c281a78f98160d2eed7b04d75f40"
+      },
+      {
+        "path": "Foundation/include/Poco/Manifest.h",
+        "sha256": "1a7997e68b286946dcd549152ea3c4f29899ff3c304a353f402bfa66c461a081",
+        "size": 3303,
+        "blob": "11e3470ea88d95bacb4faddd022e5e536cec3252"
+      },
+      {
+        "path": "Foundation/include/Poco/MemoryPool.h",
+        "sha256": "1735f00b3f9f5c96b24634a010c64776b75aa01e08edcfcf3c0fc72bc3527d5d",
+        "size": 11986,
+        "blob": "a68f2dc2f99803509c958aa70f7fd5f0b2675655"
+      },
+      {
+        "path": "Foundation/include/Poco/MemoryStream.h",
+        "sha256": "1585a0c7e02d8f27f75efeba448f883b6dc171915ee932f6628ae2b735d4046c",
+        "size": 5787,
+        "blob": "a53730767400bfa8f2c21d02e7399de3d7f79be3"
+      },
+      {
+        "path": "Foundation/include/Poco/Message.h",
+        "sha256": "b678b40bcfb5ef4778ef2869fc9396361c4f77b858e2add33eca755f87ca3bec",
+        "size": 7618,
+        "blob": "fd3262caff65853e0e351923480d102b3ea27487"
+      },
+      {
+        "path": "Foundation/include/Poco/MetaObject.h",
+        "sha256": "75f5557b8aadaa1999f9fe7e81faa76a617f0be4010cc8b81b8be3146c606bc9",
+        "size": 4042,
+        "blob": "907c9d73d64e8a9902a8efe94bfcda15b114bc38"
+      },
+      {
+        "path": "Foundation/include/Poco/MetaProgramming.h",
+        "sha256": "6447e85b9c178dbdbcbcc821515bbacc2e4f127f43d46ff35e6814ea2454aab5",
+        "size": 1934,
+        "blob": "620d77dea5ca9515aedaec4338cd40048f0443af"
+      },
+      {
+        "path": "Foundation/include/Poco/Mutex.h",
+        "sha256": "d070b2757a1b06e453f70ab6d8456800bc6a1f61154be3a0af3b488669998920",
+        "size": 8712,
+        "blob": "a7a4100fa210a63698df26e29f33422ce841f8c8"
+      },
+      {
+        "path": "Foundation/include/Poco/Mutex_POSIX.h",
+        "sha256": "a845337ab37f69df135ca411d043b3a7c72e3045aedccdb6b1fd69ddc71d6941",
+        "size": 1381,
+        "blob": "6e6c42a5254fa4c0c5a370d089348b04739bb429"
+      },
+      {
+        "path": "Foundation/include/Poco/Mutex_STD.h",
+        "sha256": "f2a48817a2960d30b0126d485410722286e26054520e67cf5aff61fcc68a045c",
+        "size": 2084,
+        "blob": "26ce25acb5b96ccbb6640a04cffda949abf22a04"
+      },
+      {
+        "path": "Foundation/include/Poco/Mutex_VX.h",
+        "sha256": "318332f3b4b21e0b485c83ece4cdabd0f5c0ddb10c2e9c247994c43fdb0e8dfd",
+        "size": 1223,
+        "blob": "7d9f24df23b272d3483dbd7461d0da7afd00abfd"
+      },
+      {
+        "path": "Foundation/include/Poco/Mutex_WIN32.h",
+        "sha256": "db80016d8be514fec58b770d9f4647d25c92e45cf990c4cbc87b5987e154804d",
+        "size": 1192,
+        "blob": "b99981b20fc4cf93cccfb40561eebe8410ccabce"
+      },
+      {
+        "path": "Foundation/include/Poco/NObserver.h",
+        "sha256": "50f15e54ba45587abe76701832152659a4bc6dde58cf85fb8b87ac4dc78b8bb3",
+        "size": 2614,
+        "blob": "95b61fabd3e425418a53bd11e784b7279c06936e"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedEvent.h",
+        "sha256": "112eef1c995219463f59bc3e8cd158bd2d2b1059b8c13909f53009146a85dbaf",
+        "size": 1950,
+        "blob": "93c4b27f7e2581e41702c5ba8e79bd1b151227ab"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedEvent_Android.h",
+        "sha256": "b0a4788a01a60014caec3fc05f7db511b7046f36f09933bd6750ab419f001b2d",
+        "size": 667,
+        "blob": "27c9bca82c592781d40824952b3710d8c9b169e3"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedEvent_UNIX.h",
+        "sha256": "200c5be9bdf2a7899a64ff382493678e08bd34f56b753497761aac16e8c0b088",
+        "size": 1030,
+        "blob": "f4b5255f793546456f450c8d8720055cf51576a0"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedEvent_WIN32U.h",
+        "sha256": "a651ad67d13b7b0eca5111893f1d441d8947227b3bc5fcd0309686f23d0de63a",
+        "size": 765,
+        "blob": "35f5d45feef61520999d8d9f778ede9aff8eab43"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedMutex.h",
+        "sha256": "0aeab7680c75aace2a0e2ec62c403442f43fa73faa9da1193891487f795c4cb1",
+        "size": 2375,
+        "blob": "197fe38fb9acfe1ab776eb2f76cd091854268f73"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedMutex_Android.h",
+        "sha256": "cf0796b989d353322c580f6a2c5b88520e51db6b3f2c378e42439ba3f2528b1c",
+        "size": 691,
+        "blob": "c570b862924dda7ef2de69a129e293828668fb51"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedMutex_UNIX.h",
+        "sha256": "387c659a0bb16785efd60a4b2e026abc389514b262bf6f939c5e1b11679df528",
+        "size": 1113,
+        "blob": "b60d6bc2a6750874e1bc1b20f45726def2c7d9ba"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedMutex_WIN32U.h",
+        "sha256": "2e17ccb6dbea5c52c2d38ec2ea62eb1882b46eaac2b6e3c7f93599937d9e4e4c",
+        "size": 790,
+        "blob": "04305436f4890f71cb0f46a48cb25e8d0a410da0"
+      },
+      {
+        "path": "Foundation/include/Poco/NamedTuple.h",
+        "sha256": "ba61efed8e2b376737279fcb50cf56718c47f964d4a6967be64c55dbca07613c",
+        "size": 446047,
+        "blob": "fa0b41efa5cc2726a54b48dd19bc088e9bf5a335"
+      },
+      {
+        "path": "Foundation/include/Poco/NestedDiagnosticContext.h",
+        "sha256": "5f1957370f7601cc592bf234ae7156c10690d3b0b888515e8408dc78070fdab6",
+        "size": 4405,
+        "blob": "80b0c223efb24271170685c94e79550ebd9ace05"
+      },
+      {
+        "path": "Foundation/include/Poco/Notification.h",
+        "sha256": "2b5300803f375ac2de8ab1495534d4d11dbe00aab30f125c6e29facc01ccf11f",
+        "size": 1109,
+        "blob": "4226ebf7d0a15fecd722d2d9c8665f25215b26eb"
+      },
+      {
+        "path": "Foundation/include/Poco/NotificationCenter.h",
+        "sha256": "119ee8a6be7f022a1ec7197c582db54a0920018a10dcaa6a3b91272aab16c6b5",
+        "size": 5133,
+        "blob": "dd77972b29864430bb1b5a384140101547bcebff"
+      },
+      {
+        "path": "Foundation/include/Poco/NotificationQueue.h",
+        "sha256": "e72e8e9fc8bce4e818fd9765dc16a593f142b8fcb75d7d457b91a008e7cb3217",
+        "size": 5037,
+        "blob": "e34219c72d8038532f010a896b66e9cd66fc009c"
+      },
+      {
+        "path": "Foundation/include/Poco/NotificationStrategy.h",
+        "sha256": "be42de44854434a1d4d519498b3b3e70a8a4dc1b5d9cee59c0d86c146b572e68",
+        "size": 2949,
+        "blob": "63e820916cb91984bab2458284679d8991a435ea"
+      },
+      {
+        "path": "Foundation/include/Poco/NullChannel.h",
+        "sha256": "a09f9f240ad30e9e9f1fbfb455f2be61c1a46dc674e96ce37f35acf24835f6a2",
+        "size": 1167,
+        "blob": "bd3ab3f577ac18cb8979c49657312bcf9f36ce6e"
+      },
+      {
+        "path": "Foundation/include/Poco/NullStream.h",
+        "sha256": "1fb182d4f10d934f25f1c6314e4994c3ecc28f6e82a73b55b3bd1a13735ca55d",
+        "size": 1782,
+        "blob": "07c6895907eaef37431f57d2c9865b92a6ca705b"
+      },
+      {
+        "path": "Foundation/include/Poco/Nullable.h",
+        "sha256": "92037f8edc91f28f5e537b1ec20f6e0f4245ed479a6821975dc384c096ad9a18",
+        "size": 7042,
+        "blob": "5a22cc94d7c8d6933d50d8e686be5cae2346e399"
+      },
+      {
+        "path": "Foundation/include/Poco/NumberFormatter.h",
+        "sha256": "ab61be0f225488e2acb7457e83df8f813e58a1e8fddc3883708290facf98b251",
+        "size": 36897,
+        "blob": "bb9ff309e02a813e3c515add866a4f87b0af8cf7"
+      },
+      {
+        "path": "Foundation/include/Poco/NumberParser.h",
+        "sha256": "cd28d90ab1079e6e7c60192cd27de78b574824cf8bee60e5549c58d6f95fd499",
+        "size": 6706,
+        "blob": "2383a02e57b6fc7935b79a6a9bf4e8459e86f661"
+      },
+      {
+        "path": "Foundation/include/Poco/NumericString.h",
+        "sha256": "70f8b38f81b6522f782db7baae1247c0eb33e01fdd581fe061166135b18b27df",
+        "size": 19457,
+        "blob": "ac571301ecc9e2d54816862d775f8c6e1e0fb213"
+      },
+      {
+        "path": "Foundation/include/Poco/ObjectPool.h",
+        "sha256": "3bff99344c506b5b499254829f907dc7d9cda60286458cd939dad29bc12c6f6c",
+        "size": 7244,
+        "blob": "76497a36f923a03fffb1d2d986c9e2e8ad75ec77"
+      },
+      {
+        "path": "Foundation/include/Poco/Observer.h",
+        "sha256": "cf02b0ff713192ab64688a163b1070a40f0099d6ab7bcc91659fd0d514f28bf6",
+        "size": 2500,
+        "blob": "e7bc67413a61a53efe3ddac4b2d1993f32ffa832"
+      },
+      {
+        "path": "Foundation/include/Poco/Optional.h",
+        "sha256": "9a85185ed95eeeefc54f18d7145890ddd6158d2607715b3c3b3d028ffa83a281",
+        "size": 4014,
+        "blob": "31c38fd5a824e6a1b579cc33d513a4da242ef0cd"
+      },
+      {
+        "path": "Foundation/include/Poco/OrderedMap.h",
+        "sha256": "c624a722bda0f3d94feef491874314498bdbf8e80b14f252f2e231a9ba9016d0",
+        "size": 975,
+        "blob": "3d31cae46a2a6004227c17cbb830076bc7c08d29"
+      },
+      {
+        "path": "Foundation/include/Poco/OrderedSet.h",
+        "sha256": "ee06d08b6d75e6d5e2c633f083977d79b58b4a9772753082023d65d1e646aaae",
+        "size": 932,
+        "blob": "c0ca6800adc578655db150b6cf4f56e5ef5230ce"
+      },
+      {
+        "path": "Foundation/include/Poco/PBKDF2Engine.h",
+        "sha256": "1ffb66453dd89bf94858c6750dd4c9d1bd476003589fab34a08232728d3b189c",
+        "size": 3979,
+        "blob": "4c6a34eb249bad52837985bf98a381e15a732dae"
+      },
+      {
+        "path": "Foundation/include/Poco/PIDFile.h",
+        "sha256": "f9c30da8f7c9989d59c3c11250118deb5622b250c083402bd95e83ec92e252ec",
+        "size": 1910,
+        "blob": "ba508708633f54cf80079cdf5503d5e817806b3c"
+      },
+      {
+        "path": "Foundation/include/Poco/Path.h",
+        "sha256": "2a294a87f48a60e8bb2806289cc5f74786a364cc701216c3c5dc27900a554ac9",
+        "size": 13688,
+        "blob": "cf6b76abd56442e38c041237c90bbe84abe6113c"
+      },
+      {
+        "path": "Foundation/include/Poco/Path_UNIX.h",
+        "sha256": "705a143f6cfcc808e4793dc6ebbe86f45bdcfa02e47c1ddb9d8c4d3c81613fc8",
+        "size": 977,
+        "blob": "8e27bd9622a0440167ab73334a39c341a3840026"
+      },
+      {
+        "path": "Foundation/include/Poco/Path_WIN32U.h",
+        "sha256": "010117d2f08570704ddd66281e2216040f7a6a0b970658372e2f09a9bb41ae03",
+        "size": 1066,
+        "blob": "c72d78ef501a9c46d8e4922abcbe8c6a986b9e1d"
+      },
+      {
+        "path": "Foundation/include/Poco/PatternFormatter.h",
+        "sha256": "95624baad8054189748faf0fdd6c00d716b4dd96e4ec77b4ea229a602d542d8f",
+        "size": 5642,
+        "blob": "9f259bd61bc725c85a01333fb8707eeabf406285"
+      },
+      {
+        "path": "Foundation/include/Poco/Pipe.h",
+        "sha256": "032cd1f2c5347c1822638fc931c734ccdaf32a558f18eb4db8807a390bbc6e28",
+        "size": 3444,
+        "blob": "e27a0d25d15980433c5eaf9f425784b9e5dfafdb"
+      },
+      {
+        "path": "Foundation/include/Poco/PipeImpl.h",
+        "sha256": "86b8d343adc45b1ece3c5daad74ba41f91211cf484b9372682c31dd32a85badb",
+        "size": 600,
+        "blob": "1d94003a18cc8f88d252ec6f38adce179f2f7662"
+      },
+      {
+        "path": "Foundation/include/Poco/PipeImpl_DUMMY.h",
+        "sha256": "13e7d51f4c880a4ae9b41d01395a72cad370eeb9eeb00fc9677dfa2cd92bdce7",
+        "size": 913,
+        "blob": "e7616ff6c276899f8d8cc5ed990f5055cb6f7bab"
+      },
+      {
+        "path": "Foundation/include/Poco/PipeImpl_POSIX.h",
+        "sha256": "2f89604550c5acdf407b8735f87c2a0231ff22e5ac9a0a158e849e36b55b2d37",
+        "size": 956,
+        "blob": "5b62fefc63e77f7d9a7e11ed8fb9012d9a0c446d"
+      },
+      {
+        "path": "Foundation/include/Poco/PipeImpl_WIN32.h",
+        "sha256": "cb0ca4f2a1de3f119d39846ff8439588146a151328ccf5015cca49ac1b4e33a3",
+        "size": 1001,
+        "blob": "3e5bcd8e464b7f4ac6b5f1e9fe30e3fd94c553cd"
+      },
+      {
+        "path": "Foundation/include/Poco/PipeStream.h",
+        "sha256": "d2591af52499fffc9de037b5deed5629af95e4ef5ce9e6f22a8efb769692a228",
+        "size": 2565,
+        "blob": "5f107986c94525f92fead1661d05f60801f6a7ad"
+      },
+      {
+        "path": "Foundation/include/Poco/Platform.h",
+        "sha256": "343904fdd088ded4757244cdb85645b619bf9e0effccfce24d830e13c7221770",
+        "size": 9532,
+        "blob": "7a4e7e2fb8c3e46af740e5fe8b300dab5af5df20"
+      },
+      {
+        "path": "Foundation/include/Poco/Platform_POSIX.h",
+        "sha256": "eb0f8a73df808978b1ebac5e0626cb19e49627fb6ef64f52a94073b8279720dc",
+        "size": 1070,
+        "blob": "699735ea2b26eec591948b0f8048ddf524388617"
+      },
+      {
+        "path": "Foundation/include/Poco/Platform_VX.h",
+        "sha256": "547faae718b53d1f9e6ce448dbe295c5865f9f7d6af994cae715631c6b373742",
+        "size": 598,
+        "blob": "fbe566f7da8169e37100f361a8c9ea6d02c78327"
+      },
+      {
+        "path": "Foundation/include/Poco/Platform_WIN32.h",
+        "sha256": "264dcfda32b8241bc099da45d98734b095fe8116deb53f5f68b126f8139b3c45",
+        "size": 3483,
+        "blob": "9e88b8678a361cb7a91d056501766240e8c7711f"
+      },
+      {
+        "path": "Foundation/include/Poco/Poco.h",
+        "sha256": "71b12fe52afad0da8b02429634e10e492855c4bdc36c49e0ecfc9f4082a07e33",
+        "size": 399,
+        "blob": "cc5dd0ee17c820967167d1f3f27ff0354241310f"
+      },
+      {
+        "path": "Foundation/include/Poco/PriorityDelegate.h",
+        "sha256": "2c46de0aec9eab565fd35c87c246d9b72f5f7e3232b7cc7f15093e76dd3a333d",
+        "size": 12206,
+        "blob": "4cd664aab059050c031b69488906d6b25e5b6ba0"
+      },
+      {
+        "path": "Foundation/include/Poco/PriorityEvent.h",
+        "sha256": "2956f982e50d05021632112e5f31978e462c86eeb7b4d48ae11e0439df849be5",
+        "size": 1304,
+        "blob": "1ccfb89c5a328a5a25eb42d76475569076af51d8"
+      },
+      {
+        "path": "Foundation/include/Poco/PriorityExpire.h",
+        "sha256": "689cdb78c9b97fe0f9564370126e580ecae6082b52fa179ad64e665dabbf4e37",
+        "size": 4091,
+        "blob": "d9fc5a4fa71491c3e78355623f164317d1c1a639"
+      },
+      {
+        "path": "Foundation/include/Poco/PriorityNotificationQueue.h",
+        "sha256": "d512d361e1744ae3dd73bcca4fc6313304fc899c0e952e3d1dc8ff4afcce9bdd",
+        "size": 5237,
+        "blob": "d1131746542571ba3ccd301345c938496a2e1262"
+      },
+      {
+        "path": "Foundation/include/Poco/PriorityStrategy.h",
+        "sha256": "9ff96e91a84ab17e87af3f55e08947f7e6c82cebc11b0b3b5cd549385a9f1552",
+        "size": 4404,
+        "blob": "db031e4e3aac319ccc56753de4abbd0bc8480970"
+      },
+      {
+        "path": "Foundation/include/Poco/Process.h",
+        "sha256": "c2c6245e95962c1d63dd8c57ae32d14e0c484911132fc1d2976eb35ee90a2411",
+        "size": 8247,
+        "blob": "717040444fc0afb55b979d84e5fbce997dfd3577"
+      },
+      {
+        "path": "Foundation/include/Poco/ProcessOptions.h",
+        "sha256": "8f3d08f8f9c01f05fe95c941c7b1795b851b88f5045cabfd16e0955693999807",
+        "size": 806,
+        "blob": "02b169d042c0eea87a7fc833df7b02655f94dead"
+      },
+      {
+        "path": "Foundation/include/Poco/ProcessRunner.h",
+        "sha256": "10f83981b91d76fd2f51d9abb7b94014dcf6713880bb6b44ed380f99a492ccea",
+        "size": 5264,
+        "blob": "ed2fa9fdfe02d9b8081a9d0da2be642677c9cd32"
+      },
+      {
+        "path": "Foundation/include/Poco/Process_UNIX.h",
+        "sha256": "058290a45de55179d410adf4ecef503a902b3edce7359784acca46774d08915f",
+        "size": 1793,
+        "blob": "10124358575786fbd6a0ce1d2526f67f0e7dca96"
+      },
+      {
+        "path": "Foundation/include/Poco/Process_VX.h",
+        "sha256": "b6a3d0f5c24c940d663019352d3cffdbc89b8dfee57bc812b25011323d655530",
+        "size": 1482,
+        "blob": "189828e3a3f9845726d5aeb7eea31f367333b151"
+      },
+      {
+        "path": "Foundation/include/Poco/Process_WIN32U.h",
+        "sha256": "2d12d8873478626adedcf99993adce82656d6fff5b3a4b021e1bdd66acedf2f9",
+        "size": 1890,
+        "blob": "6e789e9842f665514a2c7c5332b1857822688d98"
+      },
+      {
+        "path": "Foundation/include/Poco/PurgeStrategy.h",
+        "sha256": "bc9216de4acce42f5ca5e7654afe2ef61d4c6b3611aa739b92e608c6c87427e4",
+        "size": 2409,
+        "blob": "bfe34e17a809ee52493c39dbbb92f422a6bb921d"
+      },
+      {
+        "path": "Foundation/include/Poco/RWLock.h",
+        "sha256": "43776de783341c66d4ba8c1680ae3e6f8bdab3a49311069e7413e622a4b5c9c1",
+        "size": 3556,
+        "blob": "b0ea3e456c340b8e0c1c6ae475b0114884f71484"
+      },
+      {
+        "path": "Foundation/include/Poco/RWLock_Android.h",
+        "sha256": "bed6782111c43178eddeb4c82e68f669050e35eb459eb2693fe4921aa7c7374d",
+        "size": 1681,
+        "blob": "b95aa8422494c91775158c8764efc5da631c5613"
+      },
+      {
+        "path": "Foundation/include/Poco/RWLock_POSIX.h",
+        "sha256": "1fc91702b9ea4545f8f1549b38e08cf0eece21b8ba3f1c6e9534a1195ceed2ca",
+        "size": 1662,
+        "blob": "0b50fd30ffca04567788ed2c38a11156f8b56e44"
+      },
+      {
+        "path": "Foundation/include/Poco/RWLock_VX.h",
+        "sha256": "c3e0d9ec18a7a28b19be977430985e690e5e71419e2ef90102c51593914b4a3f",
+        "size": 1408,
+        "blob": "e5a18e052b388c3661f2a987f9e5b92ceaf8c561"
+      },
+      {
+        "path": "Foundation/include/Poco/RWLock_WIN32.h",
+        "sha256": "c69ff0fa93c47e984c4d023ef6d58dbd76e9ded0eb8a14e647a609a3cea594ca",
+        "size": 943,
+        "blob": "0b7cb2b959e94968689d9767a2ffcd9d366f53cf"
+      },
+      {
+        "path": "Foundation/include/Poco/Random.h",
+        "sha256": "4a0f431784820183f97ee63754f1375b3d6688a71fff714f316c08dbefef0e2a",
+        "size": 4248,
+        "blob": "46d97b8ec406013bad0b3fc30c4c8c357da1bb06"
+      },
+      {
+        "path": "Foundation/include/Poco/RandomStream.h",
+        "sha256": "bc56c55153f562e5ec6ea23f1be3027e540bf2ea8f82e2e605fef4c55edce65a",
+        "size": 1485,
+        "blob": "152b95c835bbafc8b05e120fb79ef9176fb69670"
+      },
+      {
+        "path": "Foundation/include/Poco/RecursiveDirectoryIterator.h",
+        "sha256": "de76f3ac90b6000f8ee47d7e8b8500ad2a757d87f484ce84e431b96d6ae1d00a",
+        "size": 5887,
+        "blob": "869feb8f613d1f7bcaf4f8bf66b5b5606b0fe6b4"
+      },
+      {
+        "path": "Foundation/include/Poco/RecursiveDirectoryIteratorImpl.h",
+        "sha256": "67a534bee8356610caaf3b97e7adabfe5e819014a01a30f92916d943d23f4d61",
+        "size": 2030,
+        "blob": "0b96ad0a11edd77b605b59975dbe5720d5ff541b"
+      },
+      {
+        "path": "Foundation/include/Poco/RefCountedObject.h",
+        "sha256": "a7b4ad055f548d227b07c5f1d24b69f6cb4535a03d4072622dcdf953ae090a99",
+        "size": 1683,
+        "blob": "66d4ac6f24c63754ed6b2ec7bbad6f721e0a5ecf"
+      },
+      {
+        "path": "Foundation/include/Poco/RegularExpression.h",
+        "sha256": "8de9ad7eb978d6e69fb6c6d95b7445f894b9f25b710819f7cb5691dc1631d0fb",
+        "size": 11409,
+        "blob": "6597a249f536d7176d9c6ec11d406cc719dfcc33"
+      },
+      {
+        "path": "Foundation/include/Poco/RotateStrategy.h",
+        "sha256": "dc39e48973c55fdd8cdb83a8bd6593ace1f7bfe4132cf8a5c97d1edb76ed49a9",
+        "size": 3846,
+        "blob": "ce04031cf365bdafef862498825e498b0272b9e3"
+      },
+      {
+        "path": "Foundation/include/Poco/Runnable.h",
+        "sha256": "fabd966c8ee110e701d2d76f3f127b2ef6f9fc3c43d4238e0f8c128784174a78",
+        "size": 775,
+        "blob": "8a08012f22787bda1b39a1ea6da3d77212369c8f"
+      },
+      {
+        "path": "Foundation/include/Poco/RunnableAdapter.h",
+        "sha256": "6a3e71b4eb8e1de95bfabe042359809a05410de22d6cb3c508942c23c97422da",
+        "size": 1415,
+        "blob": "0fa16ef8bb28dfad725e64639e9ee504c7b0d0f8"
+      },
+      {
+        "path": "Foundation/include/Poco/SHA1Engine.h",
+        "sha256": "1d889bcd22fbc586c17efad40a9896f0379a14d743ac18c4df9a3648e89a4e4d",
+        "size": 1613,
+        "blob": "6d9c0764489269f240a63e9eea0d88ae0ed0c7e7"
+      },
+      {
+        "path": "Foundation/include/Poco/SHA2Engine.h",
+        "sha256": "37f2659a4e19bf3485427c2ce2faa4c504199d9225fd3ff679076364899384d2",
+        "size": 2368,
+        "blob": "c1de5cd508542c34b300f5af624e50a3e0e6f73a"
+      },
+      {
+        "path": "Foundation/include/Poco/ScopedLock.h",
+        "sha256": "ffb118d425ca1f6da5a2c85e81c655f5ac8e7f2ea5bb71987b20dee9885ef707",
+        "size": 2012,
+        "blob": "4b1f5ce71a50b86e1ca6e0af88345f1293b178ce"
+      },
+      {
+        "path": "Foundation/include/Poco/ScopedUnlock.h",
+        "sha256": "16ee43234ec8c5b760eaa805f08dd76c47bba9c9672a231cf41368600a2e5fe7",
+        "size": 1034,
+        "blob": "a62fbb33b0179c6850ce1fd27ac80f3d66df87ee"
+      },
+      {
+        "path": "Foundation/include/Poco/Semaphore.h",
+        "sha256": "98f5cd3b1bebd14cb9e301d9b214d06e6f628d1dcc5a7ad8567184dc01891335",
+        "size": 3393,
+        "blob": "67b7dddc0923ed84d2c9af6e869fd931b14330a8"
+      },
+      {
+        "path": "Foundation/include/Poco/Semaphore_POSIX.h",
+        "sha256": "76687455063cc018b70d23e4ef0ce99ce028ed8d2f06a5da1640b4649b01641d",
+        "size": 1344,
+        "blob": "30ba2abbc2204ce4c351d558fb3c6d99420e37c6"
+      },
+      {
+        "path": "Foundation/include/Poco/Semaphore_VX.h",
+        "sha256": "a8aaa5b49f83de19e1f1c44252530a06cfc18fc773b011693176aaff32f76472",
+        "size": 875,
+        "blob": "2ec1dda6582fc34c67dc6f345de1b432a9ec98fc"
+      },
+      {
+        "path": "Foundation/include/Poco/Semaphore_WIN32.h",
+        "sha256": "aac8c35ecfbee38abfbbd1d25615944a39e59df1b229c7416e8d97878fb3a078",
+        "size": 913,
+        "blob": "97515c5b8aaeb0658ec7944da36b690f9ee9d486"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedLibrary.h",
+        "sha256": "32a3118f5a7d19bdfc218ebf21e5079653298354e4d6dcb65995fcb859e6299a",
+        "size": 4139,
+        "blob": "008da32fde8b4eafb43c84379bd6885407c11cbd"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedLibrary_HPUX.h",
+        "sha256": "542eb2939332d268a9293bfed0ef7037ef72df3a89824e2e7a8241278ce6aa51",
+        "size": 1018,
+        "blob": "06a6f51bcf5e97cbb851aa5ac1b886c358c4d249"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedLibrary_UNIX.h",
+        "sha256": "1c504c94ce2816d5333121a8bcf78bb95b43e258a92eda2d679c34f920727b93",
+        "size": 1079,
+        "blob": "1f0c288ad509b0222d0bbb491f6892751d280d0c"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedLibrary_VX.h",
+        "sha256": "0595cacffc51bb551dc102acaaf185d05ee7f1ec6cb4ddc55cbfb783b3523227",
+        "size": 1025,
+        "blob": "916edad47eef792bfbf9634973b62cc4a4ad74bb"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedLibrary_WIN32U.h",
+        "sha256": "a1630fb8749ad5fbcadbff642124deef6c9bab2f29c28af8910e946fd2d5b2a2",
+        "size": 1010,
+        "blob": "3e51c9c95d1489e9168ff83cbd15b99ab5427d95"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedMemory.h",
+        "sha256": "725933f4b8c2241a98f4e3cf759fdb2716cacce129f9d910a66f8e1e78cf07a9",
+        "size": 3074,
+        "blob": "e0bc1614b8509f25de7d16b9468f551fc1133baf"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedMemory_DUMMY.h",
+        "sha256": "d2a0203513552d5b0873980f4acffc8d3800da9a6342bc35c708930559c00b08",
+        "size": 2261,
+        "blob": "6b740f70919294c30bbbf2b000c5f77f19ba9838"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedMemory_POSIX.h",
+        "sha256": "aa94ed94cf06407a1d69c08061973d984c0031d92e6d8c2bf4188a6860451bd7",
+        "size": 2760,
+        "blob": "8b7f34e654512cf5aaddadc06b0e3ac976eacc45"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedMemory_WIN32.h",
+        "sha256": "0d8da3e3259903bf5c5e8d9be94dafd46665115a2bbdfac6473755268942af0f",
+        "size": 2630,
+        "blob": "b39bd39ab075bd2d26b456717fd66c4cb8aef7dd"
+      },
+      {
+        "path": "Foundation/include/Poco/SharedPtr.h",
+        "sha256": "5e483f96bc9213bf81245c9336c79a7014ea8186c61952403936dfea96635791",
+        "size": 8696,
+        "blob": "9a4fd69e6a9ba8ff089f5da2c0f489f6c3c50fa7"
+      },
+      {
+        "path": "Foundation/include/Poco/SignalHandler.h",
+        "sha256": "6f45e897b0e477974d429b881371eb41b02dfb298d372621af8df8b5e46a0cc5",
+        "size": 3234,
+        "blob": "471d7a7f035c8cfbf32a8f828f98701bdc11aaac"
+      },
+      {
+        "path": "Foundation/include/Poco/SimpleFileChannel.h",
+        "sha256": "ba0ffd24862e87e5606d8c87594283ab5d837eca1a836b6df3f42c6633c0dd57",
+        "size": 4577,
+        "blob": "0e03178d8c960e01a3a2d097930a2a7f08e51bd9"
+      },
+      {
+        "path": "Foundation/include/Poco/SimpleHashTable.h",
+        "sha256": "2e79acfa49c42962390d8e5f06ab5662ac39bde1930457591907523e560f26ff",
+        "size": 8482,
+        "blob": "ef8b7d634fd6ca4c284b8e640001f478e42fa8c9"
+      },
+      {
+        "path": "Foundation/include/Poco/SingletonHolder.h",
+        "sha256": "5348f9307c9e1e63e9f32f58d6af82b9908c3021910903bb58f871d1f5594a0d",
+        "size": 1401,
+        "blob": "3f0b997b5d19eaab1fa78557142d48deb899fd3b"
+      },
+      {
+        "path": "Foundation/include/Poco/SortedDirectoryIterator.h",
+        "sha256": "f56a6564adfcbbb409650d36bcb00b56d2462c00e4d6da99ab1dc140a9410830",
+        "size": 1730,
+        "blob": "94c822be41219928293858487498c2a9f86f3a1f"
+      },
+      {
+        "path": "Foundation/include/Poco/SplitterChannel.h",
+        "sha256": "e5b7c3d42958389817958b56d885383edc735bcf0b6cd5523e6cef0280203825",
+        "size": 1778,
+        "blob": "cdac8f578134b5563f5f0b67c2b778b844f8a028"
+      },
+      {
+        "path": "Foundation/include/Poco/Stopwatch.h",
+        "sha256": "0ffd42ba3e1d4ed7e114ad5266b85ec8a7a43f373d36f63a8e01c96c84129cee",
+        "size": 1743,
+        "blob": "add8e4c8bf5e793a938d91ddd3a088c808ad791a"
+      },
+      {
+        "path": "Foundation/include/Poco/StrategyCollection.h",
+        "sha256": "66deae0d28c4395dc1774f30bd4ba54f0cbab5f2c8a44db7e8b8a22e496e6000",
+        "size": 2939,
+        "blob": "b67370ddc642daf9d16dae7ed6608ae715b80747"
+      },
+      {
+        "path": "Foundation/include/Poco/StreamChannel.h",
+        "sha256": "dfd117edc392a51ef1ecf0c6a6da612c4c5cf1b514435c5dc8b9cec2943fdc34",
+        "size": 1148,
+        "blob": "ab8ae57f062edb1433cc1c58d79e6a70c9e94b57"
+      },
+      {
+        "path": "Foundation/include/Poco/StreamConverter.h",
+        "sha256": "a4a5ecc6bc52ea05392bb51aacbec9854708fc55e4001ef790802995b4e1e8e0",
+        "size": 4135,
+        "blob": "99701aadb0dbf45dd33533bb6ca06cf5181ac1e3"
+      },
+      {
+        "path": "Foundation/include/Poco/StreamCopier.h",
+        "sha256": "5125d3f6ea7b829f80f118f7216be01056c364dc8023a06d110dc91857fa9e34",
+        "size": 2626,
+        "blob": "fda660c43c4808eb14c4255092b44db5362139cb"
+      },
+      {
+        "path": "Foundation/include/Poco/StreamTokenizer.h",
+        "sha256": "bb43dcb1f34785079baecf5565608e1d03e1bbec31161c71bb41659d7b91358b",
+        "size": 2412,
+        "blob": "2b5ad5c13330dc4ed08e05141f31ad6e3a6afb20"
+      },
+      {
+        "path": "Foundation/include/Poco/StreamUtil.h",
+        "sha256": "eb037ef27e282f23d2486ed0f7c12f9d8ac1fcd18eaaaf6bbcdb8d2287acad31",
+        "size": 2370,
+        "blob": "a77b0e63031809335b025166747e3d43651171a3"
+      },
+      {
+        "path": "Foundation/include/Poco/String.h",
+        "sha256": "c8670dadec3a9b5109d08fd2d79d50500e13fe7751aa18557ce07748beff51e3",
+        "size": 19378,
+        "blob": "32574ae9d5bf5abbe8a78377c8e318725ffd3ef8"
+      },
+      {
+        "path": "Foundation/include/Poco/StringTokenizer.h",
+        "sha256": "7af7ad38481a75324d53c7687ea533cd0d32b80e56204aa89f3e4e7c87faedeb",
+        "size": 3317,
+        "blob": "a3c6258896c012c7b31d7a90ff3110d20767e133"
+      },
+      {
+        "path": "Foundation/include/Poco/SynchronizedObject.h",
+        "sha256": "186d9f8db2fe4eee7c8e3036398c8c01d3ce3c6e2964357631a50a9c6c6a5a84",
+        "size": 2583,
+        "blob": "a201f7c8615b2759bc67df7c25dcc7a157c531a9"
+      },
+      {
+        "path": "Foundation/include/Poco/SyslogChannel.h",
+        "sha256": "59d8573e0bf1681bccceca96546e76552a82a0c329b7d767b2722e7420796b55",
+        "size": 3361,
+        "blob": "2b3e398b713e07fdcee7ad141032e073e7ce2a5b"
+      },
+      {
+        "path": "Foundation/include/Poco/Task.h",
+        "sha256": "f3f13ddab0f576a99fccc03f1cfa26511b07597ea38f52d066a6d35b1d2c2860",
+        "size": 4732,
+        "blob": "b2c4441a351aab1b3d24332ce8748278fdde09ac"
+      },
+      {
+        "path": "Foundation/include/Poco/TaskManager.h",
+        "sha256": "70ca364ad01136286c84773a5a34c7695ef2138bc3b6931b327b435ca4f1272d",
+        "size": 3971,
+        "blob": "6ca0c2f9fc59aa4fc7aad99c59d0f0e9df319e5d"
+      },
+      {
+        "path": "Foundation/include/Poco/TaskNotification.h",
+        "sha256": "3782e25203c00542dbfd2ba1e6f298dd567db23a7e66510f1f64a558a836f955",
+        "size": 3208,
+        "blob": "120643fff116d8324e7470a4060dc6bb2f2483e7"
+      },
+      {
+        "path": "Foundation/include/Poco/TeeStream.h",
+        "sha256": "9a84fea4ffe0575c1cf745d9e21526261a5c169040a75d778c1c8a3548cfa68e",
+        "size": 2935,
+        "blob": "ad6f2940ced89d8d481f916ac2887266067f71db"
+      },
+      {
+        "path": "Foundation/include/Poco/TemporaryFile.h",
+        "sha256": "ca77389aa0b89968af71a742ac25f46535ca41f49c49f405beab555eddcad644",
+        "size": 2306,
+        "blob": "9314613b3b05302bf68e050d03b46e2d27889427"
+      },
+      {
+        "path": "Foundation/include/Poco/TextBufferIterator.h",
+        "sha256": "6ab569fc5c533f11f89c530c1a8c85138e535db656359325ee39e3f2617d4cc2",
+        "size": 3759,
+        "blob": "1d395628377c99897179a68a0ce9108071dfbfaa"
+      },
+      {
+        "path": "Foundation/include/Poco/TextConverter.h",
+        "sha256": "a99498c3dc6019c1f13936826a56e034d8bca4f8a16a489cba0d5e2b767d2f36",
+        "size": 2784,
+        "blob": "88e2d3191e64fe3794a5981ffc52d8d8ba80e435"
+      },
+      {
+        "path": "Foundation/include/Poco/TextEncoding.h",
+        "sha256": "2af1ccaac676151c8dca8e4ca69f8fbbd21a19af4d3394fd3e6ef006302cbfcb",
+        "size": 6926,
+        "blob": "2a5db0f4de55d8c61a42eed87c827b985c639b0e"
+      },
+      {
+        "path": "Foundation/include/Poco/TextIterator.h",
+        "sha256": "5b0a46eb888ef9450792b69b474c3bab72049dce6812bcd6449a977fe91943ba",
+        "size": 3416,
+        "blob": "f78fb868b6bd1dd173875056cbafc515d01178f2"
+      },
+      {
+        "path": "Foundation/include/Poco/Thread.h",
+        "sha256": "3eed9eb52fc5570ad32deb137396d6a48c4372d326f55af5fda6ad2d24234324",
+        "size": 10682,
+        "blob": "00d3da09e83f061cd7f936ddea63f236d829b548"
+      },
+      {
+        "path": "Foundation/include/Poco/ThreadLocal.h",
+        "sha256": "a9321eeedbda5b13aa73fedbe383c0f7aa9f80b3c473cfa9d75ab4f2e7dab7fa",
+        "size": 3146,
+        "blob": "9cdd01521baeedc88c3a412605792bf14dcceee0"
+      },
+      {
+        "path": "Foundation/include/Poco/ThreadPool.h",
+        "sha256": "156be3f1d3dab2c3efa080c8f63c150efbff10fb5524ef97e7a710f5dddbc4bd",
+        "size": 5933,
+        "blob": "04fcc2141f5a78a735d1159079886d7f467e1e19"
+      },
+      {
+        "path": "Foundation/include/Poco/ThreadTarget.h",
+        "sha256": "194091999dda1d8632cbce37bfabac554ca2033521c637b24c3888c98c6fe17b",
+        "size": 1643,
+        "blob": "5cf9c4e60023be1d5e22ce0d1890f4fcf1932bd0"
+      },
+      {
+        "path": "Foundation/include/Poco/Thread_POSIX.h",
+        "sha256": "604dbd84f3281ffe2ac221599193e393080061c640b85471484d9ffdec2b9f0b",
+        "size": 4366,
+        "blob": "f758353d76e093b1815a5992f26e06cdf1bf1ca6"
+      },
+      {
+        "path": "Foundation/include/Poco/Thread_VX.h",
+        "sha256": "88044a75ec91b19bf1f2b8306b43152f9a881c3928a36db179094983b3fc990d",
+        "size": 3628,
+        "blob": "f9af4542c82274d2b4db969382fe6cec59abfc53"
+      },
+      {
+        "path": "Foundation/include/Poco/Thread_WIN32.h",
+        "sha256": "bd3da5a12dca3dfff110fbb8bbae75d55bb88f810adf76a734915887f1ecf8b5",
+        "size": 3531,
+        "blob": "3aa34277f9f2f5fe30bc686075dd285a063c8433"
+      },
+      {
+        "path": "Foundation/include/Poco/TimedNotificationQueue.h",
+        "sha256": "b4846b1e1590f55c9b55160ad9eb1ebd1b9a5d18118416cc1078d5a600a9cc70",
+        "size": 5318,
+        "blob": "8a48b85610fc53139343e3bbc4a6ab84fd71e35a"
+      },
+      {
+        "path": "Foundation/include/Poco/Timer.h",
+        "sha256": "71ddb4e772a338f3642cad794a995925f760a537c94739fd607b6da5a6a1da04",
+        "size": 6834,
+        "blob": "ce77ae2d18195679e280177ffe8660487e8decdd"
+      },
+      {
+        "path": "Foundation/include/Poco/Timespan.h",
+        "sha256": "2d4a9707b46f1e7ff6e10c86d8d2a89bebb76a9e8ce383d9a758c4d434946c60",
+        "size": 6630,
+        "blob": "d00f9c23fb383d524d785be0c5db6c7146684016"
+      },
+      {
+        "path": "Foundation/include/Poco/Timestamp.h",
+        "sha256": "2963a74fc71fd18d545c1cc92d701aeb8291be313c18f588b0ce4fbab56bfff1",
+        "size": 6256,
+        "blob": "cb7ae662db95afd24f558292b55f667234cb2604"
+      },
+      {
+        "path": "Foundation/include/Poco/Timezone.h",
+        "sha256": "1733cf1d9b15693971ed64e310d676169c7566a944be2f1008300039c45694c4",
+        "size": 1894,
+        "blob": "3084509796d622966a9b70195de24c06fc12587a"
+      },
+      {
+        "path": "Foundation/include/Poco/Token.h",
+        "sha256": "e1d1847ad46ccb3a91f0f238bc1c08cec3fb4604b8a94bb1006e94adc65428cc",
+        "size": 3619,
+        "blob": "be1eea2395d95ba22e8d18e55d95c77c6541793a"
+      },
+      {
+        "path": "Foundation/include/Poco/Tuple.h",
+        "sha256": "8cc30d1a08d459bc98e2cc4e50ca15757fb1f4b916211d4a95c4617d26871641",
+        "size": 200095,
+        "blob": "ee1e7aee7bce249e0a53255f49ba6b2036d2d37b"
+      },
+      {
+        "path": "Foundation/include/Poco/TypeList.h",
+        "sha256": "34f5eaf60d0e4c899c912ba5d43a99b740cdee17916e120cd06452ef0bc02606",
+        "size": 10238,
+        "blob": "a4022c5a7d78aa94b0db4646258953547de4e618"
+      },
+      {
+        "path": "Foundation/include/Poco/Types.h",
+        "sha256": "8ca290781078dc9e24046bb3b2bbb6e0244faaef998128490d6085c962884232",
+        "size": 1841,
+        "blob": "8aa919e3dcabc3125ad28facde2f438d2de0a090"
+      },
+      {
+        "path": "Foundation/include/Poco/URI.h",
+        "sha256": "29b08b662af3fe8ad1f9e31b1172885a5ba4660909be3688e8877e4feddf51ff",
+        "size": 14131,
+        "blob": "b36b935b43cc2c5de1cf6f64511fe78e72d88f82"
+      },
+      {
+        "path": "Foundation/include/Poco/URIStreamFactory.h",
+        "sha256": "e48262236ad05ec419963dc5f80c0e4110801f0cfa4452a0cb4d3da051d1693c",
+        "size": 2005,
+        "blob": "207bc3a93064edc47c4a5559e0c4c7b1e9ca9ff4"
+      },
+      {
+        "path": "Foundation/include/Poco/URIStreamOpener.h",
+        "sha256": "a31ebb0daac572b5c988fa9484507f5e49f35e2ca67af5c5091b953ce160cee7",
+        "size": 4078,
+        "blob": "0099238822ef025dc1ec03d9e4fd07d63b172321"
+      },
+      {
+        "path": "Foundation/include/Poco/UTF16Encoding.h",
+        "sha256": "8bc821817c010f9d9dbd6d2882005ce1b6a7d411cbf83e11312ac94bd0ba1cb8",
+        "size": 2176,
+        "blob": "5e95d0aa2e3598b85a4b7b80e60226707a498274"
+      },
+      {
+        "path": "Foundation/include/Poco/UTF32Encoding.h",
+        "sha256": "a3688e610c02362c76f66d39dc2adf03d1b8b7344fa2b053282419942dd5ce2d",
+        "size": 2172,
+        "blob": "2c216e6e094f8fa7616134f2f6d2f3dd67cc7c75"
+      },
+      {
+        "path": "Foundation/include/Poco/UTF8Encoding.h",
+        "sha256": "b4a43898a20770ced07780e90fc51769a7613cd3f79e1f82e24462f952668837",
+        "size": 1660,
+        "blob": "984c163f4f768ec9d4fe273921940f363a3b9698"
+      },
+      {
+        "path": "Foundation/include/Poco/UTF8String.h",
+        "sha256": "b8e84b7e1b3096b224cf4460505c3745f96970dda69efd3526ac8033017f907f",
+        "size": 3753,
+        "blob": "f1330d571809371ca612cdc2d8709b7525ed0933"
+      },
+      {
+        "path": "Foundation/include/Poco/UTFString.h",
+        "sha256": "f885a0f76c92d83c1b445130624b4ea91745c4fbca7d3c08ec17f6f775a7b21b",
+        "size": 6921,
+        "blob": "e631ac3494288eb7801e28fd7e2df4d8b5ae62c7"
+      },
+      {
+        "path": "Foundation/include/Poco/UUID.h",
+        "sha256": "dcec1946649d03be63dcad4a2c52056418769f656740a04536d789771c806783",
+        "size": 5396,
+        "blob": "0e72f31c2b3cdeaa0417e00860b825607c4c97db"
+      },
+      {
+        "path": "Foundation/include/Poco/UUIDGenerator.h",
+        "sha256": "fcd3ff8d06a4cd6db66fde2a9f8c680de0ec0cc26cc5eb8b8b82c6ad48ff62b2",
+        "size": 3128,
+        "blob": "b91c2d895e0e3b4d31730ca367631a9a723d635d"
+      },
+      {
+        "path": "Foundation/include/Poco/UnWindows.h",
+        "sha256": "0e040509c1334682fbdaff0c3b6243ec54fa4aaa1a0ad8e8ca789e9edd4bf3d6",
+        "size": 798,
+        "blob": "32257e21fc0758db4ddc7684b580319c9f7de859"
+      },
+      {
+        "path": "Foundation/include/Poco/UnbufferedStreamBuf.h",
+        "sha256": "7a8e84f8d02a9ec45cb6f532d3df83f924926400fe6955e6e9a03d59d265fb19",
+        "size": 3612,
+        "blob": "15eea4daf4367490f824cd19363c9ce66dace790"
+      },
+      {
+        "path": "Foundation/include/Poco/Unicode.h",
+        "sha256": "64815d99f3f999fc0707be372620065e0a0bae84736f15ce39cfaeb568335f64",
+        "size": 6208,
+        "blob": "c6a534592baf892a19dfb97ba1448db34dfe2767"
+      },
+      {
+        "path": "Foundation/include/Poco/UnicodeConverter.h",
+        "sha256": "75e588f2e2ac9cc99be6257f1e732c2db847c1f9c7c27014ea2cf5cabfe1884f",
+        "size": 4187,
+        "blob": "54cda407d167cfe1be7c7e170675f94ebbfd9d11"
+      },
+      {
+        "path": "Foundation/include/Poco/UniqueAccessExpireCache.h",
+        "sha256": "e5602166365d14dd7f4eb1dbfb413ecbad038da514e85aca545345c6fc820814",
+        "size": 2269,
+        "blob": "17db350725abe1f3d97f46a0e4b871d91fff538f"
+      },
+      {
+        "path": "Foundation/include/Poco/UniqueAccessExpireLRUCache.h",
+        "sha256": "ff51b8926dd6b7c6199536ad1df26072c1bb8c1220340ad554deed50ed45cf6f",
+        "size": 2176,
+        "blob": "c8bbddde82d4a425a8f9539e440c416ecd84365f"
+      },
+      {
+        "path": "Foundation/include/Poco/UniqueAccessExpireStrategy.h",
+        "sha256": "78552b3893daf00dd9abee1fcf83e2e6507084a81021e097d86bd9b5457e6ec9",
+        "size": 3938,
+        "blob": "811a350e5720f740633c1ad02c7f01cf72b29880"
+      },
+      {
+        "path": "Foundation/include/Poco/UniqueExpireCache.h",
+        "sha256": "3c642b2f16ec20dc8604ed76f6d97827c9c8ef7377510e7da93dfa4bdc0aa923",
+        "size": 2059,
+        "blob": "9c1b67fb985f51a50a3a02949ae4bf13c5dff51f"
+      },
+      {
+        "path": "Foundation/include/Poco/UniqueExpireLRUCache.h",
+        "sha256": "d2b4b354a2f25d854d1837deb9e28c7c4c8d68bd4cdaecc3ea9e416d4a67ef8b",
+        "size": 1982,
+        "blob": "1c25a0eff6a493f6bc542ad76e6511aa035c86bf"
+      },
+      {
+        "path": "Foundation/include/Poco/UniqueExpireStrategy.h",
+        "sha256": "4f6325e17ec89e1497faa511484978b9ffb4238e4846111763387526bc3244c0",
+        "size": 3366,
+        "blob": "12858af9c896a7bbe2987dda2d249f2530f9feed"
+      },
+      {
+        "path": "Foundation/include/Poco/ValidArgs.h",
+        "sha256": "157375e39c4694c5390bf05df6970c779509ad64a855220abcfcaaab5365d3e8",
+        "size": 932,
+        "blob": "04afd775a538f703b5681967dad4b3d2e3ffedba"
+      },
+      {
+        "path": "Foundation/include/Poco/Version.h",
+        "sha256": "862f26c7f856911cb10386265ca176acf210d93d44aa0df2402d48d87c888839",
+        "size": 953,
+        "blob": "eff51fededbaeeb87461b67ba5a4cd604af058fa"
+      },
+      {
+        "path": "Foundation/include/Poco/Void.h",
+        "sha256": "774a2a2f5cc24049c95fa3a2bca88c3be1441b02d59740fcf82a0796aae20571",
+        "size": 1312,
+        "blob": "fa3911a718572c89a4e8f6721891fed9935e0830"
+      },
+      {
+        "path": "Foundation/include/Poco/Windows1250Encoding.h",
+        "sha256": "3a434c7ca6b28f70c7cbb586dcbaeea2537d3363ab4efd615c6e9b1227c749dd",
+        "size": 1229,
+        "blob": "35a4707401b3bd1ce2cc3bda94971948ea1b1d2d"
+      },
+      {
+        "path": "Foundation/include/Poco/Windows1251Encoding.h",
+        "sha256": "77552c95e94c8e18124a0ba743e49af0a0b8055f82dd54e0c564c34a289293f6",
+        "size": 1229,
+        "blob": "d44ba8d2bee574e08d169213fe409b88458eedd3"
+      },
+      {
+        "path": "Foundation/include/Poco/Windows1252Encoding.h",
+        "sha256": "dcdba11d330df2fc0deee3b8d802cb37ed138db41bdb0075b3a2f0f8a5406eaa",
+        "size": 1164,
+        "blob": "cd35a29d7311c9dfab0a19e6a28d8db11ec1402b"
+      },
+      {
+        "path": "Foundation/include/Poco/WindowsConsoleChannel.h",
+        "sha256": "749389d14d07e8b2110be5d241d05b99b2327c123f2038adabc03b8fa28ef7fb",
+        "size": 4955,
+        "blob": "41c2f88fe5977d9ff8cfe386fb4b8b63b38b848b"
+      },
+      {
+        "path": "Foundation/include/Poco/ordered_hash.h",
+        "sha256": "0d4583f520b6cc99191988e9e254772a77d171b2006264d30c7d37149f5a332a",
+        "size": 41764,
+        "blob": "560de79916f53db1491779ca1c3430c23b677484"
+      },
+      {
+        "path": "Foundation/include/Poco/ordered_map.h",
+        "sha256": "e2788afa0e75025a46bd7facfc1af16273eeab3435770a98830cbc9d5f5d70d1",
+        "size": 30070,
+        "blob": "870a139756f74fd806f480257698ee5f348fbc1d"
+      },
+      {
+        "path": "Foundation/include/Poco/ordered_set.h",
+        "sha256": "075e4893c10b4ff7c77faa869af05cde66dcea47c1a618a22201861a0b9d5fc7",
+        "size": 24872,
+        "blob": "db707529936b9fa366ee66941a441db7df331764"
+      },
+      {
+        "path": "Foundation/include/Poco/zconf.h",
+        "sha256": "8f1ea03be4e70354187aafec635ad7c72af33fe8be44f6a82c0c8dfa3aac9108",
+        "size": 16682,
+        "blob": "fb76ffe312ae45cf5d5d5e448f81e06fa79ab874"
+      },
+      {
+        "path": "Foundation/include/Poco/zlib.h",
+        "sha256": "6f1c7ebe0ac0f0794852b770c20efae041a451f833c91f60f837b599ea81679e",
+        "size": 96778,
+        "blob": "6b7244f9943219c7b6e5a08d4913f2a15810d0c4"
+      },
+      {
+        "path": "Foundation/src/ASCIIEncoding.cpp",
+        "sha256": "11229686431a5303278671a7690b86a523594858993f8ceaec308482377d5744",
+        "size": 3165,
+        "blob": "862a0f5e7a4aba7e45386492ae446aca1ff52f60"
+      },
+      {
+        "path": "Foundation/src/AbstractObserver.cpp",
+        "sha256": "153eb51dde85bb742e1fd0a49dde0bdbc5ba7b4cfe7f24bd0dbc9500867be6c9",
+        "size": 602,
+        "blob": "715048981d1b9f66d05734c152add12d5b44e9be"
+      },
+      {
+        "path": "Foundation/src/ActiveDispatcher.cpp",
+        "sha256": "e688984fdc14ba865a5d075f1b53f105d080d0650c33e2e3ebb4b82bf38078ab",
+        "size": 1819,
+        "blob": "a39e5f7cff3d95c12b49791afcf5b6d50835c2de"
+      },
+      {
+        "path": "Foundation/src/ActiveThreadPool.cpp",
+        "sha256": "1937814273484ac42a5bc1ceaef6c8de80f82a97097504d5eb009b2cb105b369",
+        "size": 6730,
+        "blob": "628c78d6daf076b624c60a1a7959bde9323e3522"
+      },
+      {
+        "path": "Foundation/src/ArchiveStrategy.cpp",
+        "sha256": "0182c3247bb8ed359ed49433cea16eba2d5a85e26b3edcba3cc7fa8fec20ed5e",
+        "size": 3350,
+        "blob": "bab2bfa0a95f774d511a930907baaabb00fca0fe"
+      },
+      {
+        "path": "Foundation/src/Ascii.cpp",
+        "sha256": "22bf4d334093baf3dbd30f853f0e173a4d17a5df81740cec3cf31d7c1b471cb4",
+        "size": 6623,
+        "blob": "5d5fab79218311816d919e443dc79508b1919457"
+      },
+      {
+        "path": "Foundation/src/AsyncChannel.cpp",
+        "sha256": "cc35f07f63c3ce5450d2b0ceb0d19c4675868de6065f1692557b728bdc5789d4",
+        "size": 3352,
+        "blob": "37cdec477e5ecccaea08196542335f635647ed62"
+      },
+      {
+        "path": "Foundation/src/AtomicCounter.cpp",
+        "sha256": "d5a0992736324eaaf08e0695763b921bc85f4662b38dcbdd53648e9d961ece57",
+        "size": 839,
+        "blob": "32a4ef6a00ed996ff0c13e6162dbc17efbdc644f"
+      },
+      {
+        "path": "Foundation/src/AtomicFlag.cpp",
+        "sha256": "fb25bd3c9b597deb9b3c43b98741afeb8905f569fb961c2e2aced21fac3f0d22",
+        "size": 258,
+        "blob": "a7b54eb13cc669f618eed073227459e56f94eae9"
+      },
+      {
+        "path": "Foundation/src/Base32Decoder.cpp",
+        "sha256": "a1bce5b5dc5ebbd7de151d877ae8e6eeeba6b9ceefad5f89ff80b4782418c2f2",
+        "size": 3806,
+        "blob": "0e04871c957a406040c99cc40b2d75c7730c162f"
+      },
+      {
+        "path": "Foundation/src/Base32Encoder.cpp",
+        "sha256": "4c2c2c16d528755a65b99d708ec8ac0b5b79fa8c36267daf7f2b40943d280c6e",
+        "size": 5084,
+        "blob": "881d442994e4bec8e6fdd92a7840577b2d49bdcc"
+      },
+      {
+        "path": "Foundation/src/Base64Decoder.cpp",
+        "sha256": "3b60f6b4954e5c9ebb7a1e61100d471a1e0bb8259a226e6f1b249e8fe93c0e5b",
+        "size": 3944,
+        "blob": "6f826d6bf5ed88a43a9f66cf544ad4bf98401c03"
+      },
+      {
+        "path": "Foundation/src/Base64Encoder.cpp",
+        "sha256": "a86d22855e0e8ff128734a4ffaccae0b96706a7c70173d5587bfef8760b47b79",
+        "size": 3885,
+        "blob": "8f76f6cffb51accc25e0f403aa366d41c4d41963"
+      },
+      {
+        "path": "Foundation/src/BinaryReader.cpp",
+        "sha256": "f48a812e13d1220aa24540da09670fe020efd8747bb6b1f678bce29b7b2a35a4",
+        "size": 5511,
+        "blob": "aff078c1c3eebaddf1cf455c76e4bc87ad3304cc"
+      },
+      {
+        "path": "Foundation/src/BinaryWriter.cpp",
+        "sha256": "f0022f0e90d41b9cea56bf39942b0b9b9206705affeb12ec81da84aa0605dfb0",
+        "size": 6741,
+        "blob": "ea389ac11d1aac0087aa4e9dbac49eb7a7ab3b6b"
+      },
+      {
+        "path": "Foundation/src/Bugcheck.cpp",
+        "sha256": "86ebb2cc9b57d1c6fff67ce50349066eaaa6e6c7e22488d4e701952c7e8db557",
+        "size": 2187,
+        "blob": "36a250dc5d5526f32e4f07db50d4b85b86a0f162"
+      },
+      {
+        "path": "Foundation/src/ByteOrder.cpp",
+        "sha256": "db01bb6cab48ccfc1068394b2d9df0321ab1c3db9d2b535d7e84da298ada9376",
+        "size": 256,
+        "blob": "dd627bcb6ab0a2b47d44af064e7dae77a30c4b8f"
+      },
+      {
+        "path": "Foundation/src/Channel.cpp",
+        "sha256": "b49a895080c749e41109d8c3789c63537c84c9c20831381158ef07504d710164",
+        "size": 645,
+        "blob": "aa225b5eb4f1794c28a6b638eeb026c4eed12be5"
+      },
+      {
+        "path": "Foundation/src/Checksum.cpp",
+        "sha256": "784b6724c580b95153a7271ec831810441ad3441186d3b1271958c2985fc717f",
+        "size": 872,
+        "blob": "097ffd9e7369d3a65032a67e8b3c4de67d03fbbc"
+      },
+      {
+        "path": "Foundation/src/Clock.cpp",
+        "sha256": "c6c7eed41759bf6ccc5b92fcb27c73ba2d59efb7c3a4fa17ffc08e7b7b9d8c2b",
+        "size": 4619,
+        "blob": "3ac4d0d76ea6edfc2a9e9de5059be6d7e8e669de"
+      },
+      {
+        "path": "Foundation/src/Condition.cpp",
+        "sha256": "25a921ced379d8327981ae4e4b8a19904004e2dd1f8b017ce9ecd16f2c4db529",
+        "size": 962,
+        "blob": "64bd88f2455c06557d9187bfe425f6a545f65ccd"
+      },
+      {
+        "path": "Foundation/src/Configurable.cpp",
+        "sha256": "f853a7c624cffed02a5c77003242e0c2c003339adba38287283511b4d1576f2b",
+        "size": 380,
+        "blob": "822ecab24a231475be1d5b12c602bf0d93e78f19"
+      },
+      {
+        "path": "Foundation/src/ConsoleChannel.cpp",
+        "sha256": "2ab4fb618a7e712044cd002cdf8cd20a4ffffba28d08ef7457c5ecba388f8085",
+        "size": 5916,
+        "blob": "9fecaa6c06efdac017124e9c10fbaf56933868a4"
+      },
+      {
+        "path": "Foundation/src/CountingStream.cpp",
+        "sha256": "ec425267d4490439b8b3fab45ae44cc459442c98d785cfd2f1d5f5facf7d377b",
+        "size": 2637,
+        "blob": "7b4b7ccf57759012436e3c6896d3169a50b7f2f8"
+      },
+      {
+        "path": "Foundation/src/DataURIStream.cpp",
+        "sha256": "882d0bef80e06214532b0d568ea4c00ac10bf34a050fcbf7ba7892c785436064",
+        "size": 1422,
+        "blob": "6167baf7740c0383207de7e746bb3bc897280130"
+      },
+      {
+        "path": "Foundation/src/DataURIStreamFactory.cpp",
+        "sha256": "0edcdfa179d40dca69af0b8eccdf67c7ebcd3a32d29261d6b5f9c12776a1723d",
+        "size": 918,
+        "blob": "37cb0bb3ef83b39fed1d891b984cc576861c098c"
+      },
+      {
+        "path": "Foundation/src/DateTime.cpp",
+        "sha256": "15a84419a5e275df9bb79bbecdb8b9850cecbe531a01251d8fb2978e971e531c",
+        "size": 11319,
+        "blob": "36ec1c1aa05c03dd33d588177b8834279ed084ed"
+      },
+      {
+        "path": "Foundation/src/DateTimeFormat.cpp",
+        "sha256": "e79d73b1b5bf1d3329a6edb1e5e962946513f37fd6270e750018f23f0fa99e80",
+        "size": 5058,
+        "blob": "27057143a0db73798ebe83340a3553e6193d1ec8"
+      },
+      {
+        "path": "Foundation/src/DateTimeFormatter.cpp",
+        "sha256": "5fe5a1d9acf48082d5e0afaa8e050b275b1f658b25f6a76ddbc942069ae273f0",
+        "size": 5111,
+        "blob": "7eb2969a658605bc3da833a8da993680296c7311"
+      },
+      {
+        "path": "Foundation/src/DateTimeParser.cpp",
+        "sha256": "e033d254a3ee91b89d077316f3a3470677a822ba2bdd024eb6a9d6d1b24ee4ef",
+        "size": 10668,
+        "blob": "9eb85f8c233cda77b06f09c07cd29e96ba70838f"
+      },
+      {
+        "path": "Foundation/src/Debugger.cpp",
+        "sha256": "75382f8ddadc029d338530ec4bd7c66b489d6a9a9b2a5db2efbf3dc5f2430802",
+        "size": 2383,
+        "blob": "3e9915fd119588f41a194600e241fb9ce8675277"
+      },
+      {
+        "path": "Foundation/src/DeflatingStream.cpp",
+        "sha256": "f7a108a895b93428c44acf4ee61fb1d1f7558a81a8157f37098ffdf6d93ba5a7",
+        "size": 8620,
+        "blob": "eba64d0533b5b5084cfd456e02468bda6c7b3a17"
+      },
+      {
+        "path": "Foundation/src/DigestEngine.cpp",
+        "sha256": "3b709b6bce82b5bab5f07142082962a451f0825b71be9f690cbc2a0ff1a2b6f9",
+        "size": 2262,
+        "blob": "39c8512cade476392c783cef10762aa2cff9274e"
+      },
+      {
+        "path": "Foundation/src/DigestStream.cpp",
+        "sha256": "eed5fa4483f346f687f95c13b6327f116868a9aad26a61823a61243bcbbdcb82",
+        "size": 2248,
+        "blob": "27394d1ccc1465cdf9fa56c439447dfc3b52dc14"
+      },
+      {
+        "path": "Foundation/src/DirectoryIterator.cpp",
+        "sha256": "e74dc59cdfbf0c3842ff3d9c3b4bf1fb74c5db14375540b58b2381de7aa0b84e",
+        "size": 2746,
+        "blob": "432c593f957771ee32043886eb8784f41bd0e0d6"
+      },
+      {
+        "path": "Foundation/src/DirectoryIteratorStrategy.cpp",
+        "sha256": "4640137e01342a624ac91767bdbf5ab372e6a0aa32ee84371e793ef56e7eb17b",
+        "size": 3280,
+        "blob": "4737903a79b72bd662d160ae6f3c7108b6231f08"
+      },
+      {
+        "path": "Foundation/src/DirectoryIterator_WIN32U.cpp",
+        "sha256": "2a6793023a1230c89f36284f46b9e3db1e2c9b6d4079e3876ec6feaa18183b9e",
+        "size": 1359,
+        "blob": "7655ac3fa95d684b91c417f1bd5809d8e57fdc3e"
+      },
+      {
+        "path": "Foundation/src/DirectoryWatcher.cpp",
+        "sha256": "6521dc5277dace02e1917f740209b4dfc9cd6180a3e63e3bdc15eb344808954b",
+        "size": 12957,
+        "blob": "6b2c373f271269b28065b84807a25f4288a3d0e3"
+      },
+      {
+        "path": "Foundation/src/Environment.cpp",
+        "sha256": "cf354f09c2f0071caca9b2e0daab46ee9654fdc1a9e01f96bc1b22f648ce47ab",
+        "size": 2407,
+        "blob": "d59ef409eec90393d089a94df1a545148e525cbd"
+      },
+      {
+        "path": "Foundation/src/Environment_VX.cpp",
+        "sha256": "c8c64113c7a1b6845df6f61c794f43a15ad41520f7a8daf4525a11d2c6cfcf53",
+        "size": 2780,
+        "blob": "f6869bab563b44e213642d600c85cdb7065029fb"
+      },
+      {
+        "path": "Foundation/src/Environment_WIN32U.cpp",
+        "sha256": "28fc2cf3e5ddbb48acb8986655202716d9eebd5f6270dfa60e4e61f150385617",
+        "size": 7118,
+        "blob": "bf36b7e0fcb4489c15b804d0b07d0dec14ebb937"
+      },
+      {
+        "path": "Foundation/src/Error.cpp",
+        "sha256": "3b6b11c185b97af59fa5eb8de34ff0a0edc3adb714b81177ed0633cac402b14f",
+        "size": 1843,
+        "blob": "f7aaae6c678acd98a304ac7901e737a342f7f6c6"
+      },
+      {
+        "path": "Foundation/src/ErrorHandler.cpp",
+        "sha256": "b6042490c5ebcf9ec3e698f9576faaa71473f9fd018696b755f8a51824cbaee4",
+        "size": 1467,
+        "blob": "d8bfe7dc1b6fc4c571d81a9307d893e1cd02e5be"
+      },
+      {
+        "path": "Foundation/src/Event.cpp",
+        "sha256": "1913a847548aa9fcb34647b8ed652416cdd4ed47449c0ba376ade71f90a25231",
+        "size": 597,
+        "blob": "2d8f327e1d237d4daefd901dfe4a068bfa96d5f8"
+      },
+      {
+        "path": "Foundation/src/EventArgs.cpp",
+        "sha256": "63246517f1a3f4f4bb96c60ba099136bc4ae66b75fb9fbfaf7602684b4d7ad87",
+        "size": 387,
+        "blob": "f5be955ddf37867640452e0ddcf8feb06ff391d7"
+      },
+      {
+        "path": "Foundation/src/EventChannel.cpp",
+        "sha256": "a644506d02b556db8c5947e485cd47846a2f9460674860470b5d36f013116e2c",
+        "size": 451,
+        "blob": "dc5bce726a06bde13e83ef411a2327391219670a"
+      },
+      {
+        "path": "Foundation/src/EventLogChannel.cpp",
+        "sha256": "20bc724499b78edd46195fe18474405c17e01ff269bb2c44b39f4341e70ca230",
+        "size": 5560,
+        "blob": "f9a9fb150ef2b5453722b825e225a8508534f16c"
+      },
+      {
+        "path": "Foundation/src/Event_VX.cpp",
+        "sha256": "9aaa240f319d2ae6cc88fae8b31775477c12b6ae1ac13ca2afb85c9d528ee49c",
+        "size": 1149,
+        "blob": "18f667156edae3af69be0d41ac6bc2fa85efdb4f"
+      },
+      {
+        "path": "Foundation/src/Event_WIN32.cpp",
+        "sha256": "5409d44f5683b8bb6d9fca2427ab94e4750ad0c39f3b29c253ab1007993b13b9",
+        "size": 1005,
+        "blob": "c6c39941146abb64dbfe8224d269f868b3289771"
+      },
+      {
+        "path": "Foundation/src/Exception.cpp",
+        "sha256": "6852da3313d45ae3ef17f1392c3739ae5ef8435a1a2cacd86c94530b98f33b37",
+        "size": 5961,
+        "blob": "a1460406ee7f78f9e682c3ab5845f020df74e958"
+      },
+      {
+        "path": "Foundation/src/FIFOBufferStream.cpp",
+        "sha256": "809e0f1c44c1bf64ec6cfe601b7c1aae47d7d230a8a88eba326a777ade0b66f6",
+        "size": 3417,
+        "blob": "232bc4811e815364312e505a03d490ff32ddc992"
+      },
+      {
+        "path": "Foundation/src/FPEnvironment.cpp",
+        "sha256": "6ba2f9530d8e0735c97e8a78a6e57ecf25fc1e957972bbe4524f42ac0916dac9",
+        "size": 1439,
+        "blob": "3b853ddc6c15fe9b278f234e822acb53856fc1e6"
+      },
+      {
+        "path": "Foundation/src/FPEnvironment_C99.cpp",
+        "sha256": "8633ff4855c78d19779bf09ffeffe8c497d1b40dec0ed4f079b4a9c74ba69fdf",
+        "size": 1280,
+        "blob": "4bd3e31ba93b68614120e80fff127f0d42984356"
+      },
+      {
+        "path": "Foundation/src/FPEnvironment_DEC.cpp",
+        "sha256": "85594066d9dfd400bba06ffec0c19b0885409a7652bfc43c26fd396e84acfdb5",
+        "size": 3491,
+        "blob": "037e28df76c0be1fd241661955640ede639e4b23"
+      },
+      {
+        "path": "Foundation/src/FPEnvironment_DUMMY.cpp",
+        "sha256": "a49f5666063c6f1d74c3f60fd2ac568284d023699be1ed538eb78495afa3be93",
+        "size": 1201,
+        "blob": "b473d0dfb9311f2b988aa49765f07dffa3a2dff6"
+      },
+      {
+        "path": "Foundation/src/FPEnvironment_QNX.cpp",
+        "sha256": "f1b96c0a93501177dbdbbcfedbec53b44ac0f8e01b067346486485a138946d30",
+        "size": 1280,
+        "blob": "057eb8eb7bcd271a29d9f9bd5a4c5e62aeee6634"
+      },
+      {
+        "path": "Foundation/src/FPEnvironment_SUN.cpp",
+        "sha256": "22899c1b0e2b0018d5ba43eb6e0fb932ac3e3bdb9c65639693daf10c11445493",
+        "size": 2289,
+        "blob": "36ee36431df3918d107a58e73f1b41e26273b878"
+      },
+      {
+        "path": "Foundation/src/FPEnvironment_WIN32.cpp",
+        "sha256": "65a8fbfefe6d93e750f3daae3aba2631697abca60ac324e9e3bbe2e1c73147ec",
+        "size": 1139,
+        "blob": "32c7f65e7b747ea80d0971ed4487947eeb5adfed"
+      },
+      {
+        "path": "Foundation/src/File.cpp",
+        "sha256": "54362ee8c04ccf9d9b1cab0194e0450a5ead4a53fe0c63b17491a63900b9250b",
+        "size": 5473,
+        "blob": "9fe69ee2d16c160b62abb9e33cd2ffd37787ef7a"
+      },
+      {
+        "path": "Foundation/src/FileChannel.cpp",
+        "sha256": "dc7a0497771aff784a32fec5540ad0afd326a9785935905819d88cbbb9d30298",
+        "size": 10999,
+        "blob": "3b57d1013c9b4f925bc4c989e699b89aba0814f7"
+      },
+      {
+        "path": "Foundation/src/FileStream.cpp",
+        "sha256": "eff3657f3d90960f97b2fa6d5139c8d99b727d99ed7c47106c27a930fe10efd7",
+        "size": 1890,
+        "blob": "28b49eb2468da6daee09b46d83db8b9ea0a7f5f6"
+      },
+      {
+        "path": "Foundation/src/FileStreamFactory.cpp",
+        "sha256": "ecd3796cf46ee1145622e809fe2857e63d5bfc5d5dafb8bcdd67fe355808c602",
+        "size": 1162,
+        "blob": "ba22dafff4430800d8cda2944534beb2be50a234"
+      },
+      {
+        "path": "Foundation/src/FileStream_WIN32.cpp",
+        "sha256": "c725ede072551ae79a6e048513c8713d049c6f55cc2796ec0d20192530e92364",
+        "size": 4568,
+        "blob": "5e1986c99a9995b710d4f0bb767326605eee7bee"
+      },
+      {
+        "path": "Foundation/src/File_VX.cpp",
+        "sha256": "a24ffb7d643138c9a73e027999d916d0d4ad0d3b3cf13acc7653d14f24a71637",
+        "size": 7536,
+        "blob": "ad6b2e63b48bb267c53ce3470ea89685e21bfa63"
+      },
+      {
+        "path": "Foundation/src/File_WIN32U.cpp",
+        "sha256": "9f5fe55f3be2fa6ff0a100f73f916d5f328b32cd51ad1745c63ecb396a260a72",
+        "size": 11012,
+        "blob": "ae9a80c18488dadcd086045694530eda81f884a4"
+      },
+      {
+        "path": "Foundation/src/Format.cpp",
+        "sha256": "229403c5671dc1291b3ce00854dad033d564a0e10f519fbf1ad1147895d3c4c4",
+        "size": 7187,
+        "blob": "df1f37bfe898ce37af9bc927948cc46817e8ccfb"
+      },
+      {
+        "path": "Foundation/src/Formatter.cpp",
+        "sha256": "8267e63166528ead88f17244e8d3f9d5ff514479a70f92b6f3786f5d8251c485",
+        "size": 636,
+        "blob": "e14e46e87305990f5c3753afe974c2cefd188490"
+      },
+      {
+        "path": "Foundation/src/FormattingChannel.cpp",
+        "sha256": "a8f55740f16ee9c6b643fb3db409dd3a06d870a487758e097c3609e0a2ce15c4",
+        "size": 1836,
+        "blob": "a884fd936271f2810e49253b907bc922687b1380"
+      },
+      {
+        "path": "Foundation/src/Glob.cpp",
+        "sha256": "a87de7d9798ebe6542a984996bbbfdf4c156b6188876a470e4973ec1711ef5e0",
+        "size": 6090,
+        "blob": "0f9fb4fc2f53a23ccabedd3f95a993d5a74ff576"
+      },
+      {
+        "path": "Foundation/src/Hash.cpp",
+        "sha256": "0ac5e8e8056f7d2c084387fb56509a54280d7c54b3c6529d6ff1ed7b5b2ff504",
+        "size": 504,
+        "blob": "c8a2772f59acf5301a1a80e6365d7faebcab6d56"
+      },
+      {
+        "path": "Foundation/src/HashStatistic.cpp",
+        "sha256": "58458154aaff579d8dee0679aff8a7d3d04daacbd14c288994ffd75c709c3f88",
+        "size": 1350,
+        "blob": "0203636c7bb6c9e9a7c42c095c690cc1d6077f16"
+      },
+      {
+        "path": "Foundation/src/HexBinaryDecoder.cpp",
+        "sha256": "c4dc943726f3d9fe5ddd2bfb0cdc34fa6f8e77c79fef65a6ac02a02e0b95dc7b",
+        "size": 1564,
+        "blob": "dc14ad5dc9bf5b234e08eca7be9c22cdda8e0bf9"
+      },
+      {
+        "path": "Foundation/src/HexBinaryEncoder.cpp",
+        "sha256": "ee47c7a55b74b4ba082489b829c0be509e90f2c3a4e55a7ca6897c3a3951d163",
+        "size": 1752,
+        "blob": "5e1b2f2745200e495deed27bb322ae7b9e2b3914"
+      },
+      {
+        "path": "Foundation/src/InflatingStream.cpp",
+        "sha256": "2266669351ee9183faeecf044b4cf7d0ca4c3af2b088ae928b19330d45da1811",
+        "size": 7011,
+        "blob": "cb59b4d09194df1ef22b65b96521a5dd81798ed3"
+      },
+      {
+        "path": "Foundation/src/JSONString.cpp",
+        "sha256": "2035763ebd403b237d903b7adf0a33ba5d3e9337e54a84194ca5cbabad566e26",
+        "size": 1782,
+        "blob": "5f648eea772f781dee7a4f3d61dc4ed9fd357ec5"
+      },
+      {
+        "path": "Foundation/src/Latin1Encoding.cpp",
+        "sha256": "7e94bc51712fbb6bf3701dcebfe51155cec243ee8efb43e1bd299a25ff412da8",
+        "size": 3278,
+        "blob": "abab7a536f68217c8150a1b9aca3ee5a46393505"
+      },
+      {
+        "path": "Foundation/src/Latin2Encoding.cpp",
+        "sha256": "6ee03fab132f741079646d0bb6625c9cec04c01bcf14905b6bffb512243ace3b",
+        "size": 7589,
+        "blob": "2d8e8ba01b1d6464a5e0e19e82ab5883cb928f27"
+      },
+      {
+        "path": "Foundation/src/Latin9Encoding.cpp",
+        "sha256": "6ff1cf19890800b62e3bf63d0b3db0a9be3ca2134826663ef837b4bc8333fb0b",
+        "size": 4423,
+        "blob": "bb33b48dbab18a56377aa98fb8f50d3e585e89c1"
+      },
+      {
+        "path": "Foundation/src/LineEndingConverter.cpp",
+        "sha256": "ba0a233101c124b4277d13d5b7503753f44fb7d748f19ca13fe779546a1e22d1",
+        "size": 3236,
+        "blob": "2f802fab9426dd439f6bb18a75462367d6391a1d"
+      },
+      {
+        "path": "Foundation/src/LocalDateTime.cpp",
+        "sha256": "1d727e23f198effe6de80012b1a8f00542c6343fc7048849020695cd43bcbd0b",
+        "size": 7111,
+        "blob": "7449d901f33b84d3590f6125b046b61510b3f373"
+      },
+      {
+        "path": "Foundation/src/LogFile.cpp",
+        "sha256": "dcad8c09741f3a04da601bdcae79cc01740d0651a6ed94f5b6ddabcd7575b0fa",
+        "size": 495,
+        "blob": "5380110fda216ac595fc1c86faedcbce8af1a4d2"
+      },
+      {
+        "path": "Foundation/src/LogFile_STD.cpp",
+        "sha256": "79f40c56ae7fc7eba5916ba0ffc3582689b52f55f48f6771229fb9fb8315dcf6",
+        "size": 1374,
+        "blob": "e5c6587425640cf58dcf750e485a5942851c7de6"
+      },
+      {
+        "path": "Foundation/src/LogFile_WIN32U.cpp",
+        "sha256": "0099af35f1c58b9d5f115b78412de4ca5dba0d52eeef5870726baba0febf3cf7",
+        "size": 2870,
+        "blob": "293031072758194fbadf23798a63f1841fd298e8"
+      },
+      {
+        "path": "Foundation/src/LogStream.cpp",
+        "sha256": "9113e42a85c5a6ad64aa90011ba5859d64f63d15a791495557efe1997fbb61ed",
+        "size": 3477,
+        "blob": "96adeb1860a855d708b64ccd4b8065b11d6e7728"
+      },
+      {
+        "path": "Foundation/src/Logger.cpp",
+        "sha256": "79eac7db0a60c0c77abc243b5b78d635ebdc7164dd3aca88a4256252b268c8ce",
+        "size": 8350,
+        "blob": "e8005a69cff63be9d3261125ad245155d599b3fe"
+      },
+      {
+        "path": "Foundation/src/LoggingFactory.cpp",
+        "sha256": "711dc854d0cc5bd311812c2808bbc9589d1252ba4f7e01110a73314cedf413df",
+        "size": 3317,
+        "blob": "049c49e50e99ab57da5e52c17863b752811835f0"
+      },
+      {
+        "path": "Foundation/src/LoggingRegistry.cpp",
+        "sha256": "4e2260a39f84c6321bd9b9831379ee371459ff8fcb0df9f999310b2067b905aa",
+        "size": 2131,
+        "blob": "652d93d49cfa0e6315bb23d7b4ce179f4af1ed36"
+      },
+      {
+        "path": "Foundation/src/MD4Engine.cpp",
+        "sha256": "d3914423e42d8021fb9a5fd11d490103cbceaa5a551759dcca9c02c0ec756998",
+        "size": 7712,
+        "blob": "918d20724f58aaafc0ec74634ec40d1a67cb5d15"
+      },
+      {
+        "path": "Foundation/src/MD5Engine.cpp",
+        "sha256": "2fb656648ed65c85a38a1806fa440643aa6c896bcc2e8d0f519af47105761481",
+        "size": 9396,
+        "blob": "3c817cb882ec63f47a57827403d323801f82fd01"
+      },
+      {
+        "path": "Foundation/src/MSG00001.bin",
+        "sha256": "1438a0262ac86d2b06706768d74bd408f9d73b3f2f3afffccb854fdc2e87be0a",
+        "size": 232,
+        "blob": "45ecf37e0e191493b11a2f0fb3028bfbaf9b3945"
+      },
+      {
+        "path": "Foundation/src/Manifest.cpp",
+        "sha256": "0141cc957867a9135f83fb9143997efc21e3848eca9ff90ee028950e9d1ba813",
+        "size": 377,
+        "blob": "c4e828c5e97dc6d4975d1947ec59660d1716c433"
+      },
+      {
+        "path": "Foundation/src/MemoryPool.cpp",
+        "sha256": "7c5e5801114b4e77f474c3be7b7cc61509a9f10bd663cb6586559845ea33f7c6",
+        "size": 1526,
+        "blob": "4ee008b7db8f7ab60bf6c4c8225f2857345b4968"
+      },
+      {
+        "path": "Foundation/src/MemoryStream.cpp",
+        "sha256": "a5862b652bd8bf7811e9724aab23afdfba94f5898e1800ac69ba6ccf8ab17c79",
+        "size": 858,
+        "blob": "699fc6849a3b2d5372dfcd174715595cd23bc767"
+      },
+      {
+        "path": "Foundation/src/Message.cpp",
+        "sha256": "691fe438d0072dc1c55224f424207aa9be0a86ed0e086e04cb09eee113eba177",
+        "size": 5047,
+        "blob": "7de6dc3544fa7945159311dc63343c984552daca"
+      },
+      {
+        "path": "Foundation/src/Mutex.cpp",
+        "sha256": "84785f860454b4e0ccf0fa1d1f8c4d986f7bcf6bee6a5ce64fe102fd6162959e",
+        "size": 685,
+        "blob": "aa8fb2c260afc9a370a13503e4a3eff637bee088"
+      },
+      {
+        "path": "Foundation/src/Mutex_STD.cpp",
+        "sha256": "6ecbea6d4ee2869e775dc277857b5b19a1667a5c529917d469f808dd17843d40",
+        "size": 2052,
+        "blob": "867ef0b9afe3e610fe0a7337b8203a59e7de2972"
+      },
+      {
+        "path": "Foundation/src/Mutex_VX.cpp",
+        "sha256": "376768653d2f2e7196425a011702d44bfb7dcabbf189a240a07d4e3bfe2949d3",
+        "size": 991,
+        "blob": "a4b32acbbf61e394e2d19ed9980ec2a257a6fed1"
+      },
+      {
+        "path": "Foundation/src/Mutex_WIN32.cpp",
+        "sha256": "e8eb19306058ad9d496ac7b24a79a6c99886558784bb932edd60b1d7c9f975b4",
+        "size": 1028,
+        "blob": "446f4affcef855f2be43609344157207237ba7ea"
+      },
+      {
+        "path": "Foundation/src/NamedEvent.cpp",
+        "sha256": "691ad5da58fdf2cdcfa45a8e0a57668a4fe8e928e33aff612d519e0909664b99",
+        "size": 625,
+        "blob": "0cdeddbdcb776d114e37815d20f5743fa5472769"
+      },
+      {
+        "path": "Foundation/src/NamedEvent_Android.cpp",
+        "sha256": "d22fc0058710948af1b48ef2e2575ea6e7793b613c1a0514733407e1028316ae",
+        "size": 678,
+        "blob": "f8dfb0468b82869be3d4814abd2afc0ae1f3aa77"
+      },
+      {
+        "path": "Foundation/src/NamedEvent_WIN32U.cpp",
+        "sha256": "627ac04426857dae0bd1930263876c7dc0715e569b026b19154eac2d4d8765a4",
+        "size": 1175,
+        "blob": "a4fec5b7a002a346ad6187a40b221a858b92ac14"
+      },
+      {
+        "path": "Foundation/src/NamedMutex.cpp",
+        "sha256": "e62846b97da64bb9259476b8b6a5a86dfdf2c9cdc6d890cc42e075fb9cb6a89d",
+        "size": 625,
+        "blob": "98c2f87143768987887aec5b4fe3d8fba9efb533"
+      },
+      {
+        "path": "Foundation/src/NamedMutex_Android.cpp",
+        "sha256": "9fa9adbc878479cc100c3b6cfff3f8d3bef697c1d9e3ad7bfd75727bee437432",
+        "size": 816,
+        "blob": "892839cd86bcefc8df9faa436bed458bead9e40f"
+      },
+      {
+        "path": "Foundation/src/NamedMutex_WIN32U.cpp",
+        "sha256": "af95049a33a75069d9454497e8569eba358dd1c88949a73d925be943f9215999",
+        "size": 1358,
+        "blob": "40d99ed3935ad5c4094d7af362d666c55db27e9e"
+      },
+      {
+        "path": "Foundation/src/NestedDiagnosticContext.cpp",
+        "sha256": "15f1a5ea4b2cb13174ba5b886d64b3aef7e1764f7ab315d0ee15a9c832fff319",
+        "size": 1982,
+        "blob": "64004b55c2216358a11eb3283796a5f23ffe8b62"
+      },
+      {
+        "path": "Foundation/src/Notification.cpp",
+        "sha256": "22d2d555d8f325c407ea5bed27587781dcb321cb3136324a7aa4feb2103aec29",
+        "size": 481,
+        "blob": "b2d6b489a6577a5049c2b2e91d5477dbb23f67aa"
+      },
+      {
+        "path": "Foundation/src/NotificationCenter.cpp",
+        "sha256": "b15166407d24da2f80cffdbd662086391ed8efc4508c42bb1a046d586707acaa",
+        "size": 1946,
+        "blob": "ea235ef56da6eada7b7640413dc566567e24ec58"
+      },
+      {
+        "path": "Foundation/src/NotificationQueue.cpp",
+        "sha256": "3e6fa0be17078ee2a3838a43bc2634cc1a23d7d694611de9f79e40c5c4189a8f",
+        "size": 3774,
+        "blob": "2eabc63a91e27f68625e3ebd9998068931553067"
+      },
+      {
+        "path": "Foundation/src/NullChannel.cpp",
+        "sha256": "f34d7b13b3bd07d4587366c142c96c08712445c821360550af7a247f70b2351f",
+        "size": 493,
+        "blob": "605151cd5493f69e7293404e4039d7985dcafc3e"
+      },
+      {
+        "path": "Foundation/src/NullStream.cpp",
+        "sha256": "aada39a4c9a7b7527507caef4910f4067411d6ef660fffad8fe0660613a61a43",
+        "size": 787,
+        "blob": "70062a5ca70c08d768de2a10dc9797c0ee15fa5c"
+      },
+      {
+        "path": "Foundation/src/NumberFormatter.cpp",
+        "sha256": "d7382a927eeacc87fc126f8385fe99983a17f132850cd9728e0e64b4330d9660",
+        "size": 15311,
+        "blob": "1b8eb0b151e0aac878521394f7eee315ef5d3052"
+      },
+      {
+        "path": "Foundation/src/NumberParser.cpp",
+        "sha256": "fcdc4bea46b839d91ea289a9f7b63983a372c418d926a89f37099b000a6251c7",
+        "size": 4824,
+        "blob": "ab3ec14f84fb6e261f101561c8bf2163a41c9fd2"
+      },
+      {
+        "path": "Foundation/src/NumericString.cpp",
+        "sha256": "05431d001c7218959774662e85e10363000d4e868726b197663696f2d1ac501f",
+        "size": 9590,
+        "blob": "3815c95b4860f1a65044aba9d217db8fe77a7f41"
+      },
+      {
+        "path": "Foundation/src/PIDFile.cpp",
+        "sha256": "2a5eab26652917fdfce56557404af6f0e569e60003b1d87f72c0dbf1794f0516",
+        "size": 1899,
+        "blob": "ed657bf1c610aa06b20af33d64ce2c402368b7e8"
+      },
+      {
+        "path": "Foundation/src/Path.cpp",
+        "sha256": "964fd1f224370e17e93972794a6b6a7d538f2c827d09069a0fff5df05068defd",
+        "size": 18293,
+        "blob": "d69c4031876f9a88dde9ae5bbc184920bd45fd3b"
+      },
+      {
+        "path": "Foundation/src/Path_WIN32U.cpp",
+        "sha256": "8508df630e07cf5a0431112f3cae5c8507539263ab8820dd5fd95fe64e4536ee",
+        "size": 5111,
+        "blob": "1643864651140871b06b2528d837006c7a07df5f"
+      },
+      {
+        "path": "Foundation/src/PatternFormatter.cpp",
+        "sha256": "ea2ee5559e5e9902843eaf12e0f9e37c85c94be3febb701ec84bf08c1ef9dea0",
+        "size": 7386,
+        "blob": "c014eef0cc3739d81306a2eeec513991bdf02c96"
+      },
+      {
+        "path": "Foundation/src/Pipe.cpp",
+        "sha256": "6450a31cec483d7f452da332f8b16e83ac31ba543194e7235ac4ff73748884e7",
+        "size": 833,
+        "blob": "ccf4cf79f7f9dfc3f488402e2a987cbf4354674a"
+      },
+      {
+        "path": "Foundation/src/PipeImpl.cpp",
+        "sha256": "c4c1b5a02a169e7f614a3efb8c4734290807139c6920de8c15c516a83fb91659",
+        "size": 434,
+        "blob": "1922bee484775c9cf4bed1983f39ececdc1c1cca"
+      },
+      {
+        "path": "Foundation/src/PipeImpl_DUMMY.cpp",
+        "sha256": "917aa33502cd054c2c887ba7c2353036c74397fcfb3a43e1754c74aeaa35dbdc",
+        "size": 701,
+        "blob": "b0faf7b68ba19f2eed514ce86f5708dc0709ee8b"
+      },
+      {
+        "path": "Foundation/src/PipeImpl_WIN32.cpp",
+        "sha256": "5c8bb2e2c94a81ce534c20b3f0dea21ba8caccc05069bf04051d195cfc4a751b",
+        "size": 1711,
+        "blob": "ac3372116d4e5c2026affa24d9bd323875b91ac5"
+      },
+      {
+        "path": "Foundation/src/PipeStream.cpp",
+        "sha256": "d34a171715860c3e7076d475e0c564aa87be5cd0a3b269b04faf867586c8fcf4",
+        "size": 1478,
+        "blob": "9d40bd3a3d63ced818f0464f837627a7721ad491"
+      },
+      {
+        "path": "Foundation/src/PriorityNotificationQueue.cpp",
+        "sha256": "694d7aa01fae548addf757212a1608def1c5e69308c0ee50bb93fcbbbcc1715a",
+        "size": 3378,
+        "blob": "b9baa7de76d8c99d1ab648c54542904f5a5a2b81"
+      },
+      {
+        "path": "Foundation/src/Process.cpp",
+        "sha256": "d2dfcee483e2db18318c9e6f2fccaa25c83e17a94aa39119fe5a0c299c94fa40",
+        "size": 4275,
+        "blob": "5068908577ba138a9b0f4683955f532b9a58f4b6"
+      },
+      {
+        "path": "Foundation/src/ProcessRunner.cpp",
+        "sha256": "67bdbddc2fef1dc5403407531e0cc5143b0c3c88537bf84d3b98e56bb6c145fd",
+        "size": 4256,
+        "blob": "a4f868dda9a6ec26af255473f6d609aa20d9d737"
+      },
+      {
+        "path": "Foundation/src/Process_VX.cpp",
+        "sha256": "38fa5f6bcaede76caaade1a270604019b10cab990ddef5227230adb1e64b9b20",
+        "size": 1765,
+        "blob": "7bb4dca945e6396a47ec2c80c9ad32e23677efee"
+      },
+      {
+        "path": "Foundation/src/Process_WIN32U.cpp",
+        "sha256": "2876c60ba895e731cf4d199163c108e54ad808b53ccb924b2e3a9e12580f65dc",
+        "size": 10322,
+        "blob": "57f1a807281ab29a57a457e017a93e70121dcd89"
+      },
+      {
+        "path": "Foundation/src/PurgeStrategy.cpp",
+        "sha256": "ba7a4b2f4685fac1e74680e5c3dcf96e8abea6784f584fe2cadc27a1277d3db8",
+        "size": 2126,
+        "blob": "ad9e87f3d2dec73b863b7599ddafc94456e0e43d"
+      },
+      {
+        "path": "Foundation/src/RWLock.cpp",
+        "sha256": "1a5fb35eb1ab6e47df8f453a40f825ffc0c299af00e7259ce47ca62998f1acb8",
+        "size": 563,
+        "blob": "9bf18cc65c4d73bf9f745ca9483800dac70cdfec"
+      },
+      {
+        "path": "Foundation/src/RWLock_Android.cpp",
+        "sha256": "979a3bf243ff6d9f4c1231a970cfdf894a1f288899f68eb1d0a8ea47cca65bf7",
+        "size": 629,
+        "blob": "7f1ef96657bcaeb6eb144589767cee57052b9203"
+      },
+      {
+        "path": "Foundation/src/RWLock_VX.cpp",
+        "sha256": "1632db0db5eb5682cadbcf9b8216563fb7967bcf3b6bd226faf80569c0906be6",
+        "size": 922,
+        "blob": "44167d97e6457a88bb44437c7122f4c9103c4898"
+      },
+      {
+        "path": "Foundation/src/RWLock_WIN32.cpp",
+        "sha256": "ad2a8a98ab989d1061a3ddfc45a4b8356d2a8642fea5ec38d8c8af3544c1a0df",
+        "size": 3949,
+        "blob": "e4f922225387207beb7b623c21486d175a338349"
+      },
+      {
+        "path": "Foundation/src/Random.cpp",
+        "sha256": "3554e38e239cb2f382a88f4e55d15f7b223a83a1867bcd1301018d7543419f4a",
+        "size": 11917,
+        "blob": "51d027c968aa4d051c6148c391135e6d94706a1a"
+      },
+      {
+        "path": "Foundation/src/RandomStream.cpp",
+        "sha256": "7e76a07eeb675d1f0ee4e063a6b6208f2d777c9415bae870b18f133f671399d3",
+        "size": 2255,
+        "blob": "21ce6a3784c5a643a4bef026073b014effd04042"
+      },
+      {
+        "path": "Foundation/src/RefCountedObject.cpp",
+        "sha256": "176980dda16ccb8be6356da695ddb7081fe5d9860d9be0f8cc22023e581852c6",
+        "size": 418,
+        "blob": "4f3317ead1407898f78747b6ad5388d39dde1463"
+      },
+      {
+        "path": "Foundation/src/RegularExpression.cpp",
+        "sha256": "02d39597398978c7c1436e6863a191e7a82f9c2a657066786e8919080c413192",
+        "size": 11077,
+        "blob": "0e8c64f43d5aaadf8cbd1f9a7f56629c6a52672e"
+      },
+      {
+        "path": "Foundation/src/RotateStrategy.cpp",
+        "sha256": "6179e301927dd6f69ea7d52a28eed0a1216b69e2d34191b675b6bdad1a12390c",
+        "size": 2263,
+        "blob": "3bd3c7a85ea5a074e962d6fc9ec604febd2cf8c1"
+      },
+      {
+        "path": "Foundation/src/Runnable.cpp",
+        "sha256": "ebbcfb8d2c9aae870db990383966805d023152527e25a3fa47f5087e52ea5b9c",
+        "size": 377,
+        "blob": "5bc17ffcf8aae36bc1e299d8021f45bad5bbd02f"
+      },
+      {
+        "path": "Foundation/src/SHA1Engine.cpp",
+        "sha256": "ee516d76ff7dff9d36b771481fc98c973127166083fbab1da4f4cfebf2684d71",
+        "size": 8301,
+        "blob": "55d10b0793c0e0e2c5e44a56b1b7d1e76bfa1f16"
+      },
+      {
+        "path": "Foundation/src/SHA2Engine.cpp",
+        "sha256": "254bd09b4a391b721697afcebe4ec112b0f1c8b0797454772f11359467724f17",
+        "size": 17782,
+        "blob": "84fd285f5a7f483580618c03e419720fb2e4aebc"
+      },
+      {
+        "path": "Foundation/src/Semaphore.cpp",
+        "sha256": "e1d61fbc614e7d72b8f736a44eea91a893db9d06c31e74014108778288733331",
+        "size": 622,
+        "blob": "3403125bdccf163222596138d0cf673dc8549fc5"
+      },
+      {
+        "path": "Foundation/src/Semaphore_VX.cpp",
+        "sha256": "8a7ea915c8141cafedb4a30a5cc79acb3122b68224ab16eabf649559e168cc62",
+        "size": 864,
+        "blob": "5bc63b530c79f0f688558399a8ff0bec370298fe"
+      },
+      {
+        "path": "Foundation/src/Semaphore_WIN32.cpp",
+        "sha256": "15e170e8c734beb24136d92c88294b367896f6b6f823c23da8b53885db83b7e1",
+        "size": 1025,
+        "blob": "99b15a69ddaa119578e1555b8b78ec9c5f6db3cd"
+      },
+      {
+        "path": "Foundation/src/SharedLibrary.cpp",
+        "sha256": "04d8fe793e457bcc0ca5912894d35e4debd97f3b09ed94d8336582f998ba001a",
+        "size": 1668,
+        "blob": "a2bdce57ae2fdebffc3286af840420ab4c89596f"
+      },
+      {
+        "path": "Foundation/src/SharedLibrary_HPUX.cpp",
+        "sha256": "ae77357673495ee164ff177a8b5813b2bfbedf999c0b28bf768b223519b3e1f2",
+        "size": 1618,
+        "blob": "610ae718b9497afecae8e279fd86c1f2db8ad66c"
+      },
+      {
+        "path": "Foundation/src/SharedLibrary_VX.cpp",
+        "sha256": "dead51886bd2aeafdb90046107468e18fe114b0829ae9257bca65fdfda559d49",
+        "size": 2521,
+        "blob": "d30c35e9d8d726a51678e602ad1178aa9a33210b"
+      },
+      {
+        "path": "Foundation/src/SharedLibrary_WIN32U.cpp",
+        "sha256": "0335d5d62fcb0ae2aa0b7b525077ebaa208e630e577833689846eef8f73cb740",
+        "size": 2221,
+        "blob": "4432fbc8fb641fa8ad4981f633edc5a65728032f"
+      },
+      {
+        "path": "Foundation/src/SharedMemory.cpp",
+        "sha256": "a3f6ca18becfb66529d6532664c3686064956acc5b99ea0f449479f36dcd48e0",
+        "size": 1486,
+        "blob": "da43a421c02cdeab81b0e40d303d334d0b1e89c0"
+      },
+      {
+        "path": "Foundation/src/SharedMemory_DUMMY.cpp",
+        "sha256": "3f473cdbafc1174860ba443739a5e7378dc80fc7f1b29c8c3bce8b7dbb51d8b0",
+        "size": 582,
+        "blob": "385863238061b3979964ac5edaacf433894eb58c"
+      },
+      {
+        "path": "Foundation/src/SharedMemory_WIN32.cpp",
+        "sha256": "332d2c5696a90671591cebe5e117e02fcb4cf514b3ab4ee8959acb6e4c5ad804",
+        "size": 4152,
+        "blob": "f653eddf07a5f8d757466142cdae347e6a111ef1"
+      },
+      {
+        "path": "Foundation/src/SignalHandler.cpp",
+        "sha256": "1b256c224f5948134bf77e0ff6d8246aff3f066480cb34f15ef8ebdfb15600a1",
+        "size": 1930,
+        "blob": "6bbc0fb644e82d0b4f8c0b7750c4e85da100088c"
+      },
+      {
+        "path": "Foundation/src/SimpleFileChannel.cpp",
+        "sha256": "7426b52ae21eeba1c2d832f9e7eff87d198ce600e588a249c6929c38f00cb31e",
+        "size": 4081,
+        "blob": "e87061bac0532acaa2fe3a0eddcb0764d6d9eaa9"
+      },
+      {
+        "path": "Foundation/src/SortedDirectoryIterator.cpp",
+        "sha256": "b2a3bd53280d07709fb6816750789686aa64f7426fe73505c20b7bf959c70272",
+        "size": 2021,
+        "blob": "15bd8e4be25617b5bd4a1134763b65e9c3b2a097"
+      },
+      {
+        "path": "Foundation/src/SplitterChannel.cpp",
+        "sha256": "bfb7ba5309120ab5d0851b26c735067f67fffc35ea77ec22787bb356d952cb56",
+        "size": 1851,
+        "blob": "2b8192a65ecaf1755b9d1e8407970f0a19effe56"
+      },
+      {
+        "path": "Foundation/src/Stopwatch.cpp",
+        "sha256": "3062a0df16939638ed781b518b92027a62403aa7d304aa7a87bcc63b557990d2",
+        "size": 696,
+        "blob": "4ce02e577b564efdcb4310b92368a5a5110d0b4f"
+      },
+      {
+        "path": "Foundation/src/StreamChannel.cpp",
+        "sha256": "44b7c4b283333903846fe9c570512f0fb1d3eade3c18e1b143ffffc8c3b1d99e",
+        "size": 566,
+        "blob": "046db76d3598fd7379ce16e65f9d3f6f38025fb7"
+      },
+      {
+        "path": "Foundation/src/StreamConverter.cpp",
+        "sha256": "cf0fbdd00596119dd1c253ee834f876b3dea659150f813dec0a423bf2622afca",
+        "size": 3762,
+        "blob": "2433c9b9e51782c0c1f57f1f52e9f70989b08e66"
+      },
+      {
+        "path": "Foundation/src/StreamCopier.cpp",
+        "sha256": "75a9ab1134f953213ab86299b9aaf91e357fc4f04319b264310b4839c4dfbdbc",
+        "size": 2804,
+        "blob": "6f34cc233a25623a5f13c1f1aa8a54a2b7c58aee"
+      },
+      {
+        "path": "Foundation/src/StreamTokenizer.cpp",
+        "sha256": "87fb18b0bb3ef0f749ded1c54f75232df4eb7b888040219d4ab7319eb70d9b5c",
+        "size": 1658,
+        "blob": "bb57d47026c758bdbeec5e8c81ab20f8153cfd02"
+      },
+      {
+        "path": "Foundation/src/String.cpp",
+        "sha256": "ad9526e78685dcf13541e9b2cc690b4c100bcc80f7516884a16afdc66d60e350",
+        "size": 5957,
+        "blob": "1e0e9431487a2be54d833f592cab856c2f2c305e"
+      },
+      {
+        "path": "Foundation/src/StringTokenizer.cpp",
+        "sha256": "1abb842073568c3456eca2b6171b776f188ae9b9ff64151b3eda8f540cfb9d3f",
+        "size": 2980,
+        "blob": "baa830316a21a9260780cd7ae50e2ec2ea349d18"
+      },
+      {
+        "path": "Foundation/src/SynchronizedObject.cpp",
+        "sha256": "f5e29e78decfda3bd68cb482417d6f2874b8fc3b2bc8840e981a22b505917e63",
+        "size": 424,
+        "blob": "3a00c25c5678b592f681dd0e747e26df5a248f2b"
+      },
+      {
+        "path": "Foundation/src/SyslogChannel.cpp",
+        "sha256": "7b0a190b4e63d9253e796ec0998dfc41fbdf79bc800adab8c660eaa9bb1a916e",
+        "size": 5630,
+        "blob": "754d98c12997f3332af75dc6e104767913acce82"
+      },
+      {
+        "path": "Foundation/src/Task.cpp",
+        "sha256": "164122116e428ae72d66bb86fabff3904996b143a50f1fa96b0c1fb9326a633a",
+        "size": 2038,
+        "blob": "3a06c9e4ba2431667140c2afbfe37d94f2cb35b0"
+      },
+      {
+        "path": "Foundation/src/TaskManager.cpp",
+        "sha256": "fe4ad12c5c9500387ea7cc018fd286ff41066d2414866a106ce44fe4b77780d8",
+        "size": 3298,
+        "blob": "3daee633fe7fb041c1f04bd4350dd6356abb9aeb"
+      },
+      {
+        "path": "Foundation/src/TaskNotification.cpp",
+        "sha256": "47c94f04f74201fc1954aae317c31b71547ab44f8feb69ed61c9a7182111f2a3",
+        "size": 1368,
+        "blob": "c14244ca8b1ca3fb5da59ebc59cb046d1adbcf97"
+      },
+      {
+        "path": "Foundation/src/TeeStream.cpp",
+        "sha256": "11e274256ca80895e73dd055cd74eedf8d941e9c98261138906cf184026b91d0",
+        "size": 1576,
+        "blob": "da789b02561bb3746024466eb72644f43c6180a9"
+      },
+      {
+        "path": "Foundation/src/TemporaryFile.cpp",
+        "sha256": "5fe1a8d2d1e3f7fd24fc4fb0f2dd00fe9039e5eaf664ded772c7ab46062e5548",
+        "size": 2815,
+        "blob": "463ee32d19d550a9b5b41cf4cac1d5142f3849c3"
+      },
+      {
+        "path": "Foundation/src/TextBufferIterator.cpp",
+        "sha256": "6e212fa370d65417db24b185ace68db222d4d5cfe717878d8e05e35374c7d913",
+        "size": 2867,
+        "blob": "2534b3e8056fda4f7e3ed60322eccf95f1af2324"
+      },
+      {
+        "path": "Foundation/src/TextConverter.cpp",
+        "sha256": "743294b3c886db9829a42b755dd6c7a41b96df96e931974d83b53ae0d55a3642",
+        "size": 2492,
+        "blob": "1e1d989688c2ad9e997d179f8ee85b069feb3808"
+      },
+      {
+        "path": "Foundation/src/TextEncoding.cpp",
+        "sha256": "272a795ea64a25d43da9aead135d231f1a029d4aabbe627b41a49e674742b26c",
+        "size": 3667,
+        "blob": "f13fe06e56f03d7cbb8f5f113035586c0d45fc14"
+      },
+      {
+        "path": "Foundation/src/TextIterator.cpp",
+        "sha256": "a8c425cbaca5aa07dd72ece555a28fdacf082d331a27b1b3b37415979a6a8d2e",
+        "size": 2689,
+        "blob": "eae2ef5ddbbcab8c23d1665e9fe6ca8f346947db"
+      },
+      {
+        "path": "Foundation/src/Thread.cpp",
+        "sha256": "08746d519ad34d9259389fffc646fee54355d2044866653b2caf7b22b91159fd",
+        "size": 2782,
+        "blob": "19171262bddf259acf7d2b85d11e8b4447f92e6a"
+      },
+      {
+        "path": "Foundation/src/ThreadLocal.cpp",
+        "sha256": "96182fcb5abac9ec517ac38f596307db9a3629410869ac8aafce44056049b271",
+        "size": 1124,
+        "blob": "16bf9d69e46223236216d373f1ae2c9093a5afe2"
+      },
+      {
+        "path": "Foundation/src/ThreadPool.cpp",
+        "sha256": "97e6b4dbfe4d807302d8441ec2891d49ce513833ad0b199ed10321f48804b12b",
+        "size": 8664,
+        "blob": "0aeb11d2bacaed8047c9ef619079a6f50cbfe004"
+      },
+      {
+        "path": "Foundation/src/ThreadTarget.cpp",
+        "sha256": "0e29036cda002a5aed207ee0577a4ee794797d34bd297e834db1fdda74b212fb",
+        "size": 596,
+        "blob": "054cee8cbd335205e905f6cf7c3efa1d693560f5"
+      },
+      {
+        "path": "Foundation/src/Thread_VX.cpp",
+        "sha256": "1f1e1efa1487eae9e07a9961eaa402964762d675c2fc097637db0a737210ec0d",
+        "size": 5599,
+        "blob": "4a4d13e95a394cca6715426b5c7b65e376d896f0"
+      },
+      {
+        "path": "Foundation/src/Thread_WIN32.cpp",
+        "sha256": "c812e0a6a4f23323bd080b3dafc7c7633fd025063d2bc4724197d4dee82f5e87",
+        "size": 5916,
+        "blob": "dad6246f4f12fe60eeb5700ea99d71a4e840ebf8"
+      },
+      {
+        "path": "Foundation/src/TimedNotificationQueue.cpp",
+        "sha256": "b62d166bdafc740ab114b2fd1c01530f531fac2c98b94ca7836c6239e4e024ed",
+        "size": 4043,
+        "blob": "8e2fbc09e049272a32520fc153496bc708a37082"
+      },
+      {
+        "path": "Foundation/src/Timer.cpp",
+        "sha256": "6e701aaae4606ec42470a74e9408c7f001a767156554a17225284a6ec39f1c70",
+        "size": 4086,
+        "blob": "83364527897d6d912264152c0ef17c2ea0a4bbfc"
+      },
+      {
+        "path": "Foundation/src/Timespan.cpp",
+        "sha256": "db99b2c6c09c17430f622cfdec82d0ca7243f8ef13219bc0f7e06cd76da1930b",
+        "size": 2666,
+        "blob": "49f14bf95e9ac132ba5d7ab691f2f09704ef52a2"
+      },
+      {
+        "path": "Foundation/src/Timestamp.cpp",
+        "sha256": "701e597c89ede93fbdf5e1213521e2ba2443843bf2786dccf7001bb876e326cc",
+        "size": 3850,
+        "blob": "1bfccf61392a45a771ae3cd78646f6b24a6849e0"
+      },
+      {
+        "path": "Foundation/src/Timezone.cpp",
+        "sha256": "5e510c0222a8b8f9c2f9db069f9551d591147ef9e8e704d54ea4996ca171fdc4",
+        "size": 635,
+        "blob": "550824f3d43b19cf90028cb92c67453583d1b080"
+      },
+      {
+        "path": "Foundation/src/Timezone_VX.cpp",
+        "sha256": "04f1218d1d3720cd8810fd931d06a72141951559f61efb3babbe70ee07fc388b",
+        "size": 1755,
+        "blob": "4601dd21c5c6fc13194f8320f8d7e9217d01fe69"
+      },
+      {
+        "path": "Foundation/src/Timezone_WIN32.cpp",
+        "sha256": "364e6770703df28ffb07746403212786e5bc0dde35d9adf7f19412232661891a",
+        "size": 1932,
+        "blob": "7ea0375d1c6af40a8ff4a6599ad17a78f165cade"
+      },
+      {
+        "path": "Foundation/src/Token.cpp",
+        "sha256": "3c8b84b1e905b83ec51fec5eaf6a19d88439c32c0134189d0e4a53a8b5c14134",
+        "size": 1905,
+        "blob": "c15b9a4e63c3f0023af56fc1fee53171ee87e32c"
+      },
+      {
+        "path": "Foundation/src/URI.cpp",
+        "sha256": "ded143480fb24651e9df3a77c9af33198888ed52bd1179619ffacb2ece6371d1",
+        "size": 18730,
+        "blob": "bc7582b48979ee92dac35bb08dc1e1321f04d0bf"
+      },
+      {
+        "path": "Foundation/src/URIStreamFactory.cpp",
+        "sha256": "36fb6ce1fec59f285bfe0ad7e81af7acb09b8bf5a99fa9f73e1d0dac1b32194f",
+        "size": 811,
+        "blob": "c0ebd2361988094663ae8f4fc7591fbd2dcaab78"
+      },
+      {
+        "path": "Foundation/src/URIStreamOpener.cpp",
+        "sha256": "caaef899bda0c32e3e45302c6ae25746dba4cc802234c47b262b3bd9fa90395e",
+        "size": 4298,
+        "blob": "79243ffdecd9f0f3905acd114cdd4da2107859ea"
+      },
+      {
+        "path": "Foundation/src/UTF16Encoding.cpp",
+        "sha256": "274cc4a2e03293da4bc7db19d8b6961c7cc80ba689a0cbad7f2fb54a297aeb93",
+        "size": 5386,
+        "blob": "ae7ac887338917522d73f272a61f6f095475bdfe"
+      },
+      {
+        "path": "Foundation/src/UTF32Encoding.cpp",
+        "sha256": "f594a8bf468b726895a1dd5dbad65881d6392507b3a64bb313e6c4923a4d2bb8",
+        "size": 3932,
+        "blob": "5b8606605f1349d584d70760010cfb45f094bd88"
+      },
+      {
+        "path": "Foundation/src/UTF8Encoding.cpp",
+        "sha256": "a9c57c6badcd5c03960f87433537961689a6cc98c35a53338426340faf9333b4",
+        "size": 5600,
+        "blob": "78fc6d4a84259526a7f06933046b937b1c98adec"
+      },
+      {
+        "path": "Foundation/src/UTF8String.cpp",
+        "sha256": "61f84c363862c484606adf91b852b9becb20f6a2decb19b5faa26c5b461f5025",
+        "size": 8885,
+        "blob": "d9298b203c0fc7e4887a8bc1ed50fa4d7a361d7e"
+      },
+      {
+        "path": "Foundation/src/UUID.cpp",
+        "sha256": "d0d1a1a8280cc38e3a6744315498d103a4765f323cf2df31d74cd457690e0ec9",
+        "size": 7489,
+        "blob": "885708c0a3fd11d08b872c30b7a21ec37215e5ca"
+      },
+      {
+        "path": "Foundation/src/UUIDGenerator.cpp",
+        "sha256": "11c257036bd027c69fde7f142a51fe358b0034503221d48cdcf11143eaa40178",
+        "size": 3041,
+        "blob": "078e669fda1f2b9b73920efb6c89f4a1334102ec"
+      },
+      {
+        "path": "Foundation/src/Unicode.cpp",
+        "sha256": "bb10bcc9f838279e2300f8c63ed3fc47c003418c6f601c17cc84e7700cd638f4",
+        "size": 980,
+        "blob": "93dbf4f27bdfd5ec62418d4c2e6df58e2dc6386a"
+      },
+      {
+        "path": "Foundation/src/UnicodeConverter.cpp",
+        "sha256": "60813871b28d2f6f5f6e8e2f0d318276ad337bf5b930d1184805a8d96b477be9",
+        "size": 3652,
+        "blob": "7ca9454b76671602438ad238607f0d158b3a8e29"
+      },
+      {
+        "path": "Foundation/src/Var.cpp",
+        "sha256": "da46263245385d5d9d3a1c6f999fa2f57dee177d81588eb9384e27cae5d5ea19",
+        "size": 12000,
+        "blob": "3af2bcfcf837b4b1ac7b50e4273a6f1037a6a159"
+      },
+      {
+        "path": "Foundation/src/VarHolder.cpp",
+        "sha256": "02f60738ff13436f8a1682170dd5253b65586fed81348e4418a3e3bda1060caf",
+        "size": 2155,
+        "blob": "7482f19c3765d09e056d1d07162879928f43ed30"
+      },
+      {
+        "path": "Foundation/src/VarIterator.cpp",
+        "sha256": "59e4f836eedfb7ef8381cd7b97b8896a940a8a7047f200f6dca72f6b0e36178d",
+        "size": 3219,
+        "blob": "f4f66e3955cd1d5eea72039c7133797439ff9af7"
+      },
+      {
+        "path": "Foundation/src/VarVisitor.cpp",
+        "sha256": "7fc822b15984039e024e0ac26291a1e46380ec76924e5d4926975a4c78f44139",
+        "size": 537,
+        "blob": "1c23ea2d84465cfac482e75479e2e185c107de09"
+      },
+      {
+        "path": "Foundation/src/Void.cpp",
+        "sha256": "beeae218a5a2fb5556a489784f8e7a22a83eafeebf3e8a6ac8af8061122467af",
+        "size": 404,
+        "blob": "7566bc00d09cbe24b7b399a5106fa2ed05262fb2"
+      },
+      {
+        "path": "Foundation/src/Windows1250Encoding.cpp",
+        "sha256": "08c6c9cb9145b67c72fb67de5a4abeca992a7fa0591d3d21b3a9d9ad4917ed5e",
+        "size": 8816,
+        "blob": "03c8d8ed633b162b9640494aa1a4a2b98ea51121"
+      },
+      {
+        "path": "Foundation/src/Windows1251Encoding.cpp",
+        "sha256": "082c3136efbb962fc5f96f9fad11763906a925904706b9872a8bf05708d66e31",
+        "size": 11457,
+        "blob": "f0bfd52603a5a74a21b929c4891d9eba70728181"
+      },
+      {
+        "path": "Foundation/src/Windows1252Encoding.cpp",
+        "sha256": "8228567b75a77d71d18114dc5904cb037dbe0dd3a5b49298e2e530332c6c0031",
+        "size": 5780,
+        "blob": "206a1836aa8ea4755b751894239b9bfdc6f07c53"
+      },
+      {
+        "path": "Foundation/src/WindowsConsoleChannel.cpp",
+        "sha256": "83396239a053cd93faac1f97059ffaa9f99a323a39a9ed7c6032ea4a20bd7adb",
+        "size": 6799,
+        "blob": "3659874b63441753ebb8a68947c8acf9109a7712"
+      },
+      {
+        "path": "Foundation/src/adler32.c",
+        "sha256": "9cd1443a24ff2a3053961695bd432035c58347386a420d3388232376ebabe211",
+        "size": 4964,
+        "blob": "04b81d29bad1691878648d7ae1680726abd905e4"
+      },
+      {
+        "path": "Foundation/src/bignum-dtoa.cc",
+        "sha256": "85a803ff5eaea5acc840182ab03dc1205b77519cb61d6615682314eb8aa90914",
+        "size": 27617,
+        "blob": "15123e6a63cfad9d497d9de8885145ccf3101714"
+      },
+      {
+        "path": "Foundation/src/bignum-dtoa.h",
+        "sha256": "d11517ebb69107c515c5b45d820e1a2ff665ac64182f62fdd25bac804acf1d1f",
+        "size": 4300,
+        "blob": "34b961992d672c1713bc19dde430939d28dffb53"
+      },
+      {
+        "path": "Foundation/src/bignum.cc",
+        "sha256": "cc33c3775d66d138aa49ea5a18e73ad6766ecca17009225811c33cea64bcd11b",
+        "size": 24858,
+        "blob": "5c74d70d3df28f0bef37939cda2f0dba0411223b"
+      },
+      {
+        "path": "Foundation/src/bignum.h",
+        "sha256": "6b63faea13f36f6026b56855aa8d28329ba1a91c564b9abc94b21608ca42cbfb",
+        "size": 5891,
+        "blob": "14d1ca86fc7fdefbcd394585026165225de71a14"
+      },
+      {
+        "path": "Foundation/src/cached-powers.cc",
+        "sha256": "f0cabcc74f54ca33072671cc6c2819e39e8cd9b55db508946f2bd5acc1b48367",
+        "size": 9913,
+        "blob": "56bdfc9d6361119c668bbe2734c72de18a26f588"
+      },
+      {
+        "path": "Foundation/src/cached-powers.h",
+        "sha256": "1da91324ffd4200b3cb41d1f0707277175cdd28fcbffa13104e14df431f00744",
+        "size": 3021,
+        "blob": "f38c26d201fad654612c81bca05f71feafc16111"
+      },
+      {
+        "path": "Foundation/src/compress.c",
+        "sha256": "86f802c16a965e7a28737e3730b4e576c5ba40981753967e3e30916f4dc1b4b1",
+        "size": 2613,
+        "blob": "f43bacf7ab97073455a08bfed03408851682bf22"
+      },
+      {
+        "path": "Foundation/src/crc32.c",
+        "sha256": "8fd16f0a7714d51c89c2eb37eb98ec15e8a4dc57ba343e7b7398b19144039fda",
+        "size": 31605,
+        "blob": "6c38f5c04c6a87e711ecb50b668e17131fa8fae2"
+      },
+      {
+        "path": "Foundation/src/crc32.h",
+        "sha256": "9a2223575183ac2ee8a247f20bf3ac066e8bd0140369556bdbdffc777435749e",
+        "size": 591749,
+        "blob": "137df68d616c5ed38913579ba37b4e4c533fa903"
+      },
+      {
+        "path": "Foundation/src/deflate.c",
+        "sha256": "45a600ccf05e0fc45398295daae9852a355f6f738723df8c1b0702a429f9915b",
+        "size": 80985,
+        "blob": "bd011751920a87a6d94694751f1c36f3f48f86f2"
+      },
+      {
+        "path": "Foundation/src/deflate.h",
+        "sha256": "0db1b5ef79ca6ba0f508b7b8bdaa11af45c5ebe2c89ab4f1086dc22b963a52fa",
+        "size": 13125,
+        "blob": "1a06cd5f25d10711b2d90c21b1a957b02fa81b3b"
+      },
+      {
+        "path": "Foundation/src/diy-fp.h",
+        "sha256": "f8f5d66be5684ac547f68b997d41fdc57e8dc2ca1ef2ef2e3b10c6a76c9c5b75",
+        "size": 5030,
+        "blob": "a2200c4ded0cddd173eab631223b58bfa0447a0e"
+      },
+      {
+        "path": "Foundation/src/double-conversion.h",
+        "sha256": "2754e5e7ef1a158d00f529da03dcf943dd239ccc70e798a594f22e13e8dd0f94",
+        "size": 1804,
+        "blob": "6e8884d84ca56dbfd05964e463dd7999364b3b35"
+      },
+      {
+        "path": "Foundation/src/double-to-string.cc",
+        "sha256": "a74266a3b5b69e5c563023d6d01d54e0b09eb57656257c2dadee04648a8b931d",
+        "size": 16149,
+        "blob": "215eaa96d473c6714b3b0af827f82d89bdc77576"
+      },
+      {
+        "path": "Foundation/src/double-to-string.h",
+        "sha256": "7e2a5e08fd57f476e789d05b789ac0376ebbb78172ebcf68db493dc1e1e5e4ef",
+        "size": 23867,
+        "blob": "abe60e8810e1bf3188c4a765839dbebf79eb2271"
+      },
+      {
+        "path": "Foundation/src/fast-dtoa.cc",
+        "sha256": "c2042b7bdd218435bcb4881a86a033bbd5dddbb6bd386a3a099247ca67882440",
+        "size": 31645,
+        "blob": "d7a23984df2de338354fd7c7b3896f8e5fe63613"
+      },
+      {
+        "path": "Foundation/src/fast-dtoa.h",
+        "sha256": "523d778935995dea5d21e59f55629ba40eaf68dedfe99e82b71efd4ae75f4e40",
+        "size": 4064,
+        "blob": "5f1e8eee5e56e7c496c84dc0a5bf9dad0b97fc9f"
+      },
+      {
+        "path": "Foundation/src/fixed-dtoa.cc",
+        "sha256": "6cbef46bd0f6a482f4c79e34d14e49b448094d85bcefc25177957d84b62b2144",
+        "size": 15352,
+        "blob": "e739b19804cdc219376fc9e85f825d2e6af41ab7"
+      },
+      {
+        "path": "Foundation/src/fixed-dtoa.h",
+        "sha256": "5c22077d3d333998b87c578aa1a015503d162895e20e5f2ee92721c834748ee1",
+        "size": 2770,
+        "blob": "3bdd08e21f59d5fece37eb14a6f510f464c3f2ba"
+      },
+      {
+        "path": "Foundation/src/gzguts.h",
+        "sha256": "fa85c9dabe24e42ba95c702870416ff67ecc58906321f8e74b72a50dfd7df400",
+        "size": 6843,
+        "blob": "57faf37165a3546c3d0a783457a51e7dedff49ae"
+      },
+      {
+        "path": "Foundation/src/ieee.h",
+        "sha256": "bc9a4adae492f692e19db9c279eac52d4933ddf872aff43056bceee42d65a8f5",
+        "size": 15223,
+        "blob": "9203f4d558e0cea52007cc5809a715042451e8f9"
+      },
+      {
+        "path": "Foundation/src/infback.c",
+        "sha256": "62df9a6dd3eef126f1d81d0ad7a534504610dec44482b0a472b61c93cbab6554",
+        "size": 22669,
+        "blob": "e7b25b307a3072e0259b02de2dc5e8ac94a68fac"
+      },
+      {
+        "path": "Foundation/src/inffast.c",
+        "sha256": "e6ef64ce5dc0a4cd5c7ad08ceeb2b2a698b8447f6bd156057caeb2edab68c0cb",
+        "size": 12924,
+        "blob": "9354676e786ee7a6a31668adf9d25c712d57e657"
+      },
+      {
+        "path": "Foundation/src/inffast.h",
+        "sha256": "7d8c1c873ce9bc346ad6005bb9d75cce5c6352aaf7395385be216a9452a34908",
+        "size": 427,
+        "blob": "e5c1aa4ca8cd5244423680865609c71ab68f9ab6"
+      },
+      {
+        "path": "Foundation/src/inffixed.h",
+        "sha256": "237ba710f090e432b62ebf963bee8b302867e9691406b2d3f8ee89ee7bfef9b0",
+        "size": 6332,
+        "blob": "d6283277694802ce7938f537f12990d6eead4924"
+      },
+      {
+        "path": "Foundation/src/inflate.c",
+        "sha256": "3752b0215abc56fbb7630a9dfc63b801ac41e49b3e97acbf94ef9bec33534b2d",
+        "size": 55519,
+        "blob": "b0757a9b249e120ebbbafe4046d1ceca6342d03f"
+      },
+      {
+        "path": "Foundation/src/inflate.h",
+        "sha256": "e8d4a51b07694bf48cb91979c19974cf6a5ab0b8a09d26ec0d14df349230673e",
+        "size": 6683,
+        "blob": "f127b6b1fa5f7d0266e3b502701948dfd3c6abc8"
+      },
+      {
+        "path": "Foundation/src/inftrees.c",
+        "sha256": "df572ab56df7f51952b76fc1f5d7d4c3ced275f01572c5ff7c6da178ab32c716",
+        "size": 13023,
+        "blob": "8a208c2daa8cee7a6214c13f25e2cbe243d32f22"
+      },
+      {
+        "path": "Foundation/src/inftrees.h",
+        "sha256": "44084a93673386db6282dcb61d739c84518e10dff66d1c6850715137c827464c",
+        "size": 2927,
+        "blob": "f53665311c1624daba5958d3910040b6265584e0"
+      },
+      {
+        "path": "Foundation/src/pcre2.h",
+        "sha256": "3cf411a9d72a9f37550576c782219f8aaae8fefe5b3c789999af36aabf90c2de",
+        "size": 47251,
+        "blob": "7e43d43fb992dc92bfe0c3fa4aaeb2328a22c50c"
+      },
+      {
+        "path": "Foundation/src/pcre2_auto_possess.c",
+        "sha256": "c711778c54593792c8a6f6ec191b282a233a07af78267db8b964669dd9ae427b",
+        "size": 40393,
+        "blob": "9863d524205a3bc6867e9bea792a0a102d7c59ba"
+      },
+      {
+        "path": "Foundation/src/pcre2_chartables.c",
+        "sha256": "a1be4846c4215c8fb9b749aa2c650a21906a00f305018f35134e062e90a171e6",
+        "size": 8082,
+        "blob": "5849a1983255e043e9e33d4d3cd6c3b07253ebe0"
+      },
+      {
+        "path": "Foundation/src/pcre2_compile.c",
+        "sha256": "48dc4e24a12c3f9f3b393db429969f0900e4c864693e8ea41aef365af1b7ee6f",
+        "size": 353695,
+        "blob": "f31144bd6a94d4a5f5071677de6ad25c73a7ec08"
+      },
+      {
+        "path": "Foundation/src/pcre2_config.c",
+        "sha256": "1a1946411be771b62133548681c3926c5e268ff6c3a3837214c1d74a62737598",
+        "size": 7718,
+        "blob": "2bc39c613f1e8ebf836bf041efd9f760ab1872a6"
+      },
+      {
+        "path": "Foundation/src/pcre2_config.h",
+        "sha256": "cc02bb8ed1a1a90452f02149fdf74b4c87d2f15b128d978afbca6ab21e4b8dc7",
+        "size": 17529,
+        "blob": "70a1c4e6eb81a148a22a83d54e17189425fd697c"
+      },
+      {
+        "path": "Foundation/src/pcre2_context.c",
+        "sha256": "1ba74e05cf8b5e4ca5907c290fd13b16aabfa890468f01d1104a0d4cfc74ef15",
+        "size": 15217,
+        "blob": "415c4f4abcf8dcdd6a17cc5570a6a5cd207374bc"
+      },
+      {
+        "path": "Foundation/src/pcre2_convert.c",
+        "sha256": "e7de8cf62db45be9f6f53976a7007f03c94fb44dfc98bead02302de33a26fbbb",
+        "size": 30858,
+        "blob": "98421f3a48ba414efebffb4bafff4427597861de"
+      },
+      {
+        "path": "Foundation/src/pcre2_dfa_match.c",
+        "sha256": "b3081dd03b3b3b545d1e12a9eaebc41dcf5ff8d983a260f1013d171400bbaeba",
+        "size": 141613,
+        "blob": "b564d4e90317b2fd689224c394ef614302c94f6f"
+      },
+      {
+        "path": "Foundation/src/pcre2_error.c",
+        "sha256": "18549cda73a85f240a396f60b19eed933ce88a07667c80a6b0382cea7b3a344a",
+        "size": 13299,
+        "blob": "3cc1d1d3ca70f154ed6152fe56f9ceaf1a730d3c"
+      },
+      {
+        "path": "Foundation/src/pcre2_extuni.c",
+        "sha256": "d07ad7f74c21bad70bab7dab0bc5dc05380f5c0ad64aa137931a12ea6598a802",
+        "size": 4795,
+        "blob": "7b08b65712f32e02e170851a4f364948a5922402"
+      },
+      {
+        "path": "Foundation/src/pcre2_find_bracket.c",
+        "sha256": "459c7dc1779b2a399c211ee9c1af05ba722008ddd710243c42134d14650e7971",
+        "size": 6802,
+        "blob": "d365be8bbcdd092df8a904fc89af41b8a01ae972"
+      },
+      {
+        "path": "Foundation/src/pcre2_internal.h",
+        "sha256": "fc6a54bee4129ba66af8442eede5f5ea7ba92560393551252ef2050a4ee806fe",
+        "size": 93685,
+        "blob": "92dd3138d4a0a01587e77a2e3b5071a2fe1d85db"
+      },
+      {
+        "path": "Foundation/src/pcre2_intmodedep.h",
+        "sha256": "649e31a305d381138a998435345a9c95be015f07cfbb741cb320a345118c481d",
+        "size": 37605,
+        "blob": "390e737a6ef871195017711207b3c9b104d4f6f0"
+      },
+      {
+        "path": "Foundation/src/pcre2_jit_compile.c",
+        "sha256": "0b9672049c258c83af30ec02b53fb0a4d61522573d1cb05c1b1cad3c94f7730f",
+        "size": 446511,
+        "blob": "2095ed10f7ba945411e86bb859c74b1601af5a53"
+      },
+      {
+        "path": "Foundation/src/pcre2_jit_match.c",
+        "sha256": "9ed7502da343b9fe57494a94fcdeed22e497db0731d28c77b516ae82b5a87116",
+        "size": 6409,
+        "blob": "1ab3af073e6aea34f8a343601afa25f51a3cee38"
+      },
+      {
+        "path": "Foundation/src/pcre2_jit_misc.c",
+        "sha256": "a59113f3a5d16c4968f5493c328ab0954d4183d1f23114d34cf549d7efd8fb79",
+        "size": 7061,
+        "blob": "bb6a5589cb711a91b9ef233a066da19e942edb39"
+      },
+      {
+        "path": "Foundation/src/pcre2_maketables.c",
+        "sha256": "17af0f0e0a907b14cffd4b6a1b3ca6e63e95539c5026efae61eac0b5f6680943",
+        "size": 6537,
+        "blob": "69278d250eafccf142a0b495b56a2483ea6ad4de"
+      },
+      {
+        "path": "Foundation/src/pcre2_match.c",
+        "sha256": "5ff0091d12c24e3c36919b8f35791ec11517540481750e0dfc1285e6ed0c2096",
+        "size": 228166,
+        "blob": "c9020542b37ece630f1e970a4bfb90f783644a0b"
+      },
+      {
+        "path": "Foundation/src/pcre2_match_data.c",
+        "sha256": "509fc69af662530d20f5df03686a003f47bc15b5ece99451367bf003325fd075",
+        "size": 5749,
+        "blob": "7b22ca8ff770edd264a8bf63d181eaab8f4e6589"
+      },
+      {
+        "path": "Foundation/src/pcre2_newline.c",
+        "sha256": "0bef2df727d5ba213e7302b93e4ee5ea563cf93de95469249c893c9993e12060",
+        "size": 6333,
+        "blob": "5e08e08faef2ef6de6f728d2444c7492941c0161"
+      },
+      {
+        "path": "Foundation/src/pcre2_ord2utf.c",
+        "sha256": "bbe1423a8f571fc96514ece3b8687ee9a22494d74184ab04e17cc8f83a09a0b1",
+        "size": 3718,
+        "blob": "75da597a9e4cd8f086f2b495d1445a28ddd4b81e"
+      },
+      {
+        "path": "Foundation/src/pcre2_pattern_info.c",
+        "sha256": "7280adb9b0ba41fdbda3408bc926e61c04712fe13d188c9b032717b2c13288c8",
+        "size": 11715,
+        "blob": "bee3003a4600d55545f87ea16471cacca4661f01"
+      },
+      {
+        "path": "Foundation/src/pcre2_script_run.c",
+        "sha256": "b7a5df372a986c1d6182febee638d50feb187afcd28f1a1c7da7f30e2b079e9c",
+        "size": 11905,
+        "blob": "03eba29f00addeef10e49c9d750d307189a45c5f"
+      },
+      {
+        "path": "Foundation/src/pcre2_serialize.c",
+        "sha256": "80bab9e51b15ff7080cf9a17cb2d2f1acd21bdcaecd59237f9370bab890de4ab",
+        "size": 9997,
+        "blob": "a56ffa1e8ef5b0f03869efd417ee3d1e108cddd1"
+      },
+      {
+        "path": "Foundation/src/pcre2_string_utils.c",
+        "sha256": "a88630fe16c1118903da04c9fd0d6cfdd2690a6c6cdbf17bb5fdd9b5544bd297",
+        "size": 6143,
+        "blob": "41f3d2673d41918b085ccb2f32aaa8e8e216d44a"
+      },
+      {
+        "path": "Foundation/src/pcre2_study.c",
+        "sha256": "b12ba0b8f5fc9960dd99346dc18f0e8be958b0f4a330e68358220e454bd725c4",
+        "size": 53551,
+        "blob": "0f5a64ea23256380925dde5df6993ebcd2159995"
+      },
+      {
+        "path": "Foundation/src/pcre2_substitute.c",
+        "sha256": "bf926bda2d4349700f3b026bdfe2ae48a8ae1e8cbe9b61a728b1ec67bb34daab",
+        "size": 30153,
+        "blob": "d587d9e6db2b8ec96e5715af448e359a2614b50e"
+      },
+      {
+        "path": "Foundation/src/pcre2_substring.c",
+        "sha256": "1e7d32e3c1b0208ec34583b612b86bcefd3aa0b13ff3693fc0a4b52dc12aec41",
+        "size": 18221,
+        "blob": "0a21177bf0252e7a632d28f9fb48fd44cb2343af"
+      },
+      {
+        "path": "Foundation/src/pcre2_tables.c",
+        "sha256": "60512ee5f805f38c2656f45315ed0db6b58f48b9077cda47e981609a6125118b",
+        "size": 9668,
+        "blob": "e7a461679f4469f055485a44f4735c734175aa63"
+      },
+      {
+        "path": "Foundation/src/pcre2_ucd.c",
+        "sha256": "280951dd91f2568ea73d672c5a5f384218226f10dbd544f49b3f7413a55f031f",
+        "size": 331352,
+        "blob": "74e2e9e9d2d0710e91c24e1e9a40b3e741c5b218"
+      },
+      {
+        "path": "Foundation/src/pcre2_ucp.h",
+        "sha256": "df4b736caac10a6e324424e07d9d873a298c85ece84b0bd82207d9c4b7a3e021",
+        "size": 10214,
+        "blob": "282238982dc941d757672bfeef5beb349eacc066"
+      },
+      {
+        "path": "Foundation/src/pcre2_ucptables.c",
+        "sha256": "d75b17614f689832af74a44de85699f5b082e273e6ab804bc8d8e6efeb8dd120",
+        "size": 60761,
+        "blob": "bd1b67a9f1b4ea2103a96c36fb23409b67b5a182"
+      },
+      {
+        "path": "Foundation/src/pcre2_valid_utf.c",
+        "sha256": "c07714818f7e6fb7439051aa20748e6ad0f5eacef9cb2fe32c176355b4906522",
+        "size": 12874,
+        "blob": "f247b91fed11d1d3ed84a5139857d05be0ff2719"
+      },
+      {
+        "path": "Foundation/src/pcre2_xclass.c",
+        "sha256": "a61a6b2a14b9ac0d8049c11e4e61390fb2241756fc5351a3b5f95bf55060bfdd",
+        "size": 8909,
+        "blob": "59fa34667194cbb3ed708f60643e12366eb96480"
+      },
+      {
+        "path": "Foundation/src/pocomsg.mc",
+        "sha256": "15492c313bd6be3be6c220dba1b9d2cc42201dac08875a34de74b9dc3464d541",
+        "size": 2330,
+        "blob": "d1f6d6e7a8ed3a9e9d8c4bc6bf8de58b87d596b6"
+      },
+      {
+        "path": "Foundation/src/string-to-double.cc",
+        "sha256": "9aafd7e77a23164ee94903cfd16bd1e84344a5d7a18b4ee430e35e76568b108d",
+        "size": 27899,
+        "blob": "972956ca6907d58a26d9cc5bfcb9b185f3e7d839"
+      },
+      {
+        "path": "Foundation/src/string-to-double.h",
+        "sha256": "1976310fdd04e3bc350c5f8f4b443ba0287abb4004b318f048ac41611278e4c9",
+        "size": 10848,
+        "blob": "fdf302d4c38cec67f3bc9830231e58052ed7300d"
+      },
+      {
+        "path": "Foundation/src/strtod.cc",
+        "sha256": "923f15ce6bff38b9aaa1f3bced157c468978ac9443fbb781f0826daeae5cd4ee",
+        "size": 23469,
+        "blob": "5fb1b2f104e545342cefca64b168546bb3877451"
+      },
+      {
+        "path": "Foundation/src/strtod.h",
+        "sha256": "08c3a8f9852b6e3399b694ead7511e0ecadc96a6a61431fc1f9df003f2ff41d8",
+        "size": 3038,
+        "blob": "77221fb9d5388f4fc869cdc40b345165c2a86872"
+      },
+      {
+        "path": "Foundation/src/trees.c",
+        "sha256": "27f69f26e124549b3c0bd6d56d86614cac71113a79c3c06716390e12d235ad96",
+        "size": 40639,
+        "blob": "8dbdc40bacce1d101285b5944bf06e2647537f68"
+      },
+      {
+        "path": "Foundation/src/trees.h",
+        "sha256": "bb0a9d3ca88ee00c81adb7c636e73b97085f6ef1b52d6d58edbe2b6dc3adeb4d",
+        "size": 8472,
+        "blob": "d35639d82a27807e49ea35c334f8bbcf64720f82"
+      },
+      {
+        "path": "Foundation/src/ucp.h",
+        "sha256": "ea98e4eb999d8e777f2ba709e68b5aff7108a4eaa169f4eefa4510056551b724",
+        "size": 5215,
+        "blob": "2fa00296e422ec4d10c1b82a34821f49e47b201a"
+      },
+      {
+        "path": "Foundation/src/utils.h",
+        "sha256": "ab745c4b74fdd27d967d8026d082bff3ef59ca2ca581c163dcf266bebd413795",
+        "size": 15556,
+        "blob": "4f4dd71bf75080d5fff3dada66bc908ab6186793"
+      },
+      {
+        "path": "Foundation/src/zconf.h",
+        "sha256": "8f1ea03be4e70354187aafec635ad7c72af33fe8be44f6a82c0c8dfa3aac9108",
+        "size": 16682,
+        "blob": "fb76ffe312ae45cf5d5d5e448f81e06fa79ab874"
+      },
+      {
+        "path": "Foundation/src/zlib.h",
+        "sha256": "6f1c7ebe0ac0f0794852b770c20efae041a451f833c91f60f837b599ea81679e",
+        "size": 96778,
+        "blob": "6b7244f9943219c7b6e5a08d4913f2a15810d0c4"
+      },
+      {
+        "path": "Foundation/src/zutil.c",
+        "sha256": "8ced40d8c88588811edd2bdb35b7439983d5e1f8e9e32b8a3b244731f3c317b7",
+        "size": 7179,
+        "blob": "b1c5d2d3c6daf5a4b7a337dafe3e862ca177b41c"
+      },
+      {
+        "path": "Foundation/src/zutil.h",
+        "sha256": "cf94d865e3a9162c0571cba7f74c8f01efbdca26b981d6cc9c545d4c3991e3c2",
+        "size": 7297,
+        "blob": "0bc7f4ecd1c0e53b147dd3f2f231d119adfbb17c"
+      },
+      {
+        "path": "VERSION",
+        "sha256": "b6770efe1470652a52fc50268fda9a10698bc4e13a959f8096d64d87948fb1df",
+        "size": 7,
+        "blob": "01b7568230ebcecf9cc90b9dad60fd345abeb2dc"
+      },
+      {
+        "path": "cmake/CXX1x.cmake",
+        "sha256": "ac194c4123836f512f3416faa7f25a7c88e318d95e2751fa60d6b30acebdf1b3",
+        "size": 2531,
+        "blob": "608fd8f27a5c7ada9edbb2ad29951078801bafc9"
+      },
+      {
+        "path": "cmake/DefinePlatformSpecifc.cmake",
+        "sha256": "c83171d094d1b381a4f3626210a23e2655caf1978c5e95472e88d7e45b1d5d78",
+        "size": 3303,
+        "blob": "1b09993b01639366a4057664d70471f992e3653d"
+      },
+      {
+        "path": "cmake/ExecuteOnAndroid.cmake",
+        "sha256": "0b76155059c6bb16159ffde5e64e17876ea1f81fd26e39f14728e1a2cc0fd50e",
+        "size": 2248,
+        "blob": "407b95959d235ce4fde55cb5b7f7913a16f34665"
+      },
+      {
+        "path": "cmake/FindAPR.cmake",
+        "sha256": "2c34e63a17b27e1c7509631f553bc409e12a655fd8ca7337e1a066be3e5ae447",
+        "size": 1900,
+        "blob": "fdcabed3ace302811df6267c6f2e63161fd1c62b"
+      },
+      {
+        "path": "cmake/FindAPRUTIL.cmake",
+        "sha256": "080284ee8e8e18804dd0ae9f31421ca3550b76a3b2a683719e4d16095c6a88d4",
+        "size": 1996,
+        "blob": "018e7a279cb5bca9f8b938940962697b67616d91"
+      },
+      {
+        "path": "cmake/FindApache2.cmake",
+        "sha256": "0d317a6078387714bd40d4c9652a4aca7a4d6f8e5db3789befe1c1cfe9e389da",
+        "size": 1160,
+        "blob": "52c8eb6a3ce639152c5600ce8a3ac1cfa9dfd2e4"
+      },
+      {
+        "path": "cmake/FindMySQL.cmake",
+        "sha256": "30cf801cc3fa04f7639863d0bc50169223422be3d927172b88f4de54d1c4b23d",
+        "size": 3318,
+        "blob": "614c667782fbeb2d601adffa55c98e63c4ce3e93"
+      },
+      {
+        "path": "cmake/FindODBC.cmake",
+        "sha256": "7374f9a87ca2efb58de99b4e272bb07c6fba95514fabf568b5236f26301ccde4",
+        "size": 3886,
+        "blob": "3c59fd3807d22823fc4131b2fa16c7c1ce9abc5c"
+      },
+      {
+        "path": "cmake/FindPCRE2.cmake",
+        "sha256": "caaae0adb862abe06db9a8a108b6b45954fc1b2de3a57e6cdcd257d4e944ebeb",
+        "size": 2538,
+        "blob": "e730f32a17133d3171280b1043a92f9a9d4de01d"
+      },
+      {
+        "path": "cmake/FindPostgreSQL.cmake",
+        "sha256": "ba44771bf7d66cd46bbaeb34b0a0aa9fd65ed056f91e68130d576cf7a0cacd88",
+        "size": 8577,
+        "blob": "9163b90fa369bd16ba8001131d2f3f7ee8167738"
+      },
+      {
+        "path": "cmake/PocoConfig.cmake.in",
+        "sha256": "100f0e50a42e4e57da2d9ccb946a22ff17489ee16140e8d0c3f1a0a88a971be6",
+        "size": 1818,
+        "blob": "173eacd8c33fef092b5be7b3f0cbf85b965255c7"
+      },
+      {
+        "path": "cmake/PocoConfigVersion.cmake.in",
+        "sha256": "a226a17ccdb7ba4ad9e91d7e4c3b825a9ca46425950ec9028a52042adca53771",
+        "size": 393,
+        "blob": "98f292c06c31791baff85cc273691c1f1a01b13f"
+      },
+      {
+        "path": "cmake/PocoMacros.cmake",
+        "sha256": "936e43167156ada2f3276f5eaed0f971eaca44b09fe7265778c7a92ed7d7b70c",
+        "size": 10941,
+        "blob": "2ef58c5a41779af60bcc40cc1a464a7a5b3db57f"
+      },
+      {
+        "path": "cmake/README",
+        "sha256": "63fc99219bbf0472d635d07064545f12a364aa9274aea580948cfb377fc29a67",
+        "size": 1248,
+        "blob": "fae4a15afcc1a2f0b4184a931c7966d64245eb90"
+      },
+      {
+        "path": "cmake/UseEmbeddedOpenSSL.cmake",
+        "sha256": "ff00534a73842423201c14e65d366825cd28fa1a6250a7ffd6933b51857d97a0",
+        "size": 3662,
+        "blob": "ab6d2477971b6915855721ee7d31f110ea64bf54"
+      },
+      {
+        "path": "cmake/V313/FindSQLite3.cmake",
+        "sha256": "6e7374f2552741ffcb8cbf7bcbed984a9949d873599333276f0f8594f9f71cc5",
+        "size": 1990,
+        "blob": "c144ca1d8fbde336fdc74634ec9d068399df0db8"
+      },
+      {
+        "path": "cmake/V33/FindOpenSSL.cmake",
+        "sha256": "95fb459cca840e97dc3bbba91f2b2d0d91b20023c6c1ac1a6054ae5a6047404e",
+        "size": 14513,
+        "blob": "d44a3aa3ab9428765e133bfabf79f35fcaf2abc5"
+      },
+      {
+        "path": "cmake/V39/FindEXPAT.cmake",
+        "sha256": "37383d4ff161ee5e58a64b3db57a90e02f0272c4c50f1b2a4972660ecf8d4008",
+        "size": 2498,
+        "blob": "1412fafc46312c15333404ad28c634c71c6121d3"
+      },
+      {
+        "path": "cmake/cmake_uninstall.cmake.in",
+        "sha256": "3dc1416236a83bafce45d58eef90823a5abb3475c10f7ff030742efcb6929fdd",
+        "size": 968,
+        "blob": "03137d5aff74e7c5a6be3a28f54c04390b9d7115"
+      },
+      {
+        "path": "cmake/test_compiler.cpp",
+        "sha256": "228a7a53d4f6b81a3c8245fb4d9780318b46d6995f28117a8e43c149f83bec32",
+        "size": 132,
+        "blob": "d9b7398e720f9bbee30d0524fe6d60d5e19e6d8e"
+      }
+    ],
+    "tree": {
+      "commit_tree": "4e2548322d7407413917f026c320921b6c11bc71",
+      "subdir_tree": "cfa022469cce7617a25506918c9ad93d158b3ebf"
+    }
+  },
+  "publication": {
+    "status": "pending_publication",
+    "library_digest": null,
+    "component_count": null,
+    "published_at": null
+  },
+  "generated_by": "tools/freeze_library.py",
+  "generated_at": "2026-11-20T14:34:58Z"
+}

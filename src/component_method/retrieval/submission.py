@@ -39,6 +39,19 @@ COVERAGE_SIGNALS = {
 }
 DIRECT_MATCH_SIGNALS = {"capability", "semantic_domain", "reuse_interface"}
 
+# Methodology libraries carry Markdown components instead of executable code.
+# Their selection contract is a path list: choose bundle IDs and stop.  Reasons,
+# usage notes, boundaries and evidence belong in the component README, which the
+# Task Agent reads directly.  Coverage matrices, audits and protocol contracts do
+# not apply.
+METHODOLOGY_SCHEMA = "methodology-1"
+METHODOLOGY_SELECTION_SCHEMA = "methodology-paths-1"
+METHODOLOGY_KIND = "methodology"
+METHODOLOGY_MAX_SELECTED = 2
+# The legacy schema is still accepted so existing run artifacts remain readable.
+METHODOLOGY_MIN_TEXT = 20
+METHODOLOGY_MIN_OMISSION = 10
+
 # Single source for the concreteness thresholds.  ``concreteness_minimums_text``
 # renders these numbers into the retrieval prompt, so the instruction the agent
 # reads and the check the validator applies cannot drift apart.
@@ -84,6 +97,15 @@ def concreteness_minimums_text() -> str:
     return "Concreteness minimums enforced by the validator: " + "; ".join(sentences) + "."
 
 
+def methodology_minimums_text() -> str:
+    """Render the methodology validator's limits for the retrieval prompt."""
+    return (
+        "Validator limits: select at most "
+        f"{METHODOLOGY_MAX_SELECTED} component IDs. The file contains only "
+        "schema_version, task_id and selected_bundle_ids."
+    )
+
+
 def _inside(root: Path, relative: str) -> Path:
     if not relative or Path(relative).is_absolute():
         raise ValueError(f"evidence path must be relative: {relative!r}")
@@ -123,6 +145,189 @@ def _concrete_string_list(
             raise ValueError(f"{field} must not repeat values")
         normalized.append(item)
     return normalized
+
+
+def is_methodology_manifest(manifest: dict[str, Any]) -> bool:
+    """Whether a library uses the Markdown methodology contract."""
+    return (
+        manifest.get("kind") == METHODOLOGY_KIND
+        or manifest.get("schema_version") == METHODOLOGY_SCHEMA
+    )
+
+
+def _checked_citation(
+    library: Path, citation: Any, *, label: str
+) -> dict[str, Any]:
+    if not isinstance(citation, dict):
+        raise ValueError(f"{label} must be an object")
+    relative = citation.get("path")
+    start = citation.get("line_start")
+    end = citation.get("line_end")
+    excerpt = citation.get("excerpt")
+    if not isinstance(relative, str):
+        raise ValueError(f"{label}.path is missing")
+    if not isinstance(start, int) or not isinstance(end, int) or start < 1 or end < start:
+        raise ValueError(f"{label} line range is invalid")
+    source = _inside(library, relative)
+    lines = source.read_text(encoding="utf-8", errors="replace").splitlines()
+    if end > len(lines):
+        raise ValueError(f"{label} line range exceeds {relative}")
+    cited = "\n".join(lines[start - 1 : end])
+    if not isinstance(excerpt, str) or not excerpt.strip() or excerpt.strip() not in cited:
+        raise ValueError(f"{label} excerpt is not exact in {relative}")
+    return {
+        "path": relative,
+        "line_start": start,
+        "line_end": end,
+        "excerpt": excerpt.strip(),
+    }
+
+
+def validate_methodology_selection(
+    library: Path,
+    selection_path: Path,
+    *,
+    expected_task_id: str | None = None,
+) -> dict[str, Any]:
+    """Validate a path-only selection over Markdown methodology components.
+
+    The current schema names bundle IDs only.  The Task Agent reads the selected
+    READMEs directly, so the retrieval step never produces a task-specific
+    summary.  The legacy reason/usage/evidence schema remains readable.
+    Coverage matrices and protocol contracts belong to code components and are
+    intentionally absent here.
+    """
+    library = library.resolve()
+    manifest = json.loads((library / "manifest.json").read_text(encoding="utf-8"))
+    components = [
+        item for item in manifest.get("components", []) if isinstance(item, dict)
+    ]
+    if not components:
+        raise ValueError("component library manifest has no components")
+    valid_ids = {item.get("bundle_id") for item in components}
+    if None in valid_ids or len(valid_ids) != len(components):
+        raise ValueError("component library manifest has invalid or repeated bundle IDs")
+    component_dir_by_id = {
+        item["bundle_id"]: Path(item["readme"]).parent.as_posix()
+        for item in components
+        if isinstance(item.get("readme"), str)
+    }
+
+    value = json.loads(selection_path.read_text(encoding="utf-8"))
+    schema_version = value.get("schema_version")
+    supported = {METHODOLOGY_SELECTION_SCHEMA, METHODOLOGY_SCHEMA}
+    if schema_version not in supported:
+        raise ValueError(
+            f"schema_version must be {METHODOLOGY_SELECTION_SCHEMA!r} "
+            f"(legacy {METHODOLOGY_SCHEMA!r} is also accepted)"
+        )
+    task_id = value.get("task_id")
+    if not isinstance(task_id, str) or not task_id.strip():
+        raise ValueError("task_id must be a non-empty string")
+    if expected_task_id is not None and task_id != expected_task_id:
+        raise ValueError(f"task_id must be {expected_task_id!r}")
+
+    if schema_version == METHODOLOGY_SELECTION_SCHEMA:
+        unexpected = set(value) - {"schema_version", "task_id", "selected_bundle_ids"}
+        if unexpected:
+            raise ValueError(
+                "selection.json must contain only schema_version, task_id and "
+                f"selected_bundle_ids; unexpected fields: {sorted(unexpected)}"
+            )
+        selected_ids = value.get("selected_bundle_ids")
+        if not isinstance(selected_ids, list) or len(selected_ids) > METHODOLOGY_MAX_SELECTED:
+            raise ValueError(
+                "selected_bundle_ids must be a list of at most "
+                f"{METHODOLOGY_MAX_SELECTED} component IDs"
+            )
+        normalized_ids: list[str] = []
+        for index, bundle_id in enumerate(selected_ids):
+            if not isinstance(bundle_id, str) or bundle_id not in valid_ids:
+                raise ValueError(
+                    f"selected_bundle_ids[{index}] has unknown bundle_id: {bundle_id!r}"
+                )
+            if bundle_id in normalized_ids:
+                raise ValueError(f"selected_bundle_ids repeats bundle_id: {bundle_id}")
+            normalized_ids.append(bundle_id)
+        return {
+            "schema_version": METHODOLOGY_SELECTION_SCHEMA,
+            "task_id": task_id,
+            "selected_bundle_ids": normalized_ids,
+        }
+
+    selected = value.get("selected")
+    if not isinstance(selected, list) or len(selected) > METHODOLOGY_MAX_SELECTED:
+        raise ValueError(
+            f"selected must be a list of at most {METHODOLOGY_MAX_SELECTED} components"
+        )
+    normalized_selected = []
+    seen: set[str] = set()
+    for index, item in enumerate(selected):
+        if not isinstance(item, dict):
+            raise ValueError(f"selected[{index}] must be an object")
+        bundle_id = item.get("bundle_id")
+        if bundle_id not in valid_ids:
+            raise ValueError(f"selected[{index}] has unknown bundle_id: {bundle_id!r}")
+        if bundle_id in seen:
+            raise ValueError(f"selected repeats bundle_id: {bundle_id}")
+        seen.add(bundle_id)
+        reason = _concrete_text(item, "reason", index, METHODOLOGY_MIN_TEXT)
+        usage = _concrete_text(item, "usage", index, METHODOLOGY_MIN_TEXT)
+        boundary = item.get("boundary")
+        if boundary is not None and (
+            not isinstance(boundary, str) or len(boundary.strip()) < METHODOLOGY_MIN_TEXT
+        ):
+            raise ValueError(f"selected[{index}].boundary must be concrete when present")
+        evidence = item.get("evidence")
+        if not isinstance(evidence, list) or not evidence:
+            raise ValueError(f"selected[{index}].evidence must not be empty")
+        checked_evidence = [
+            _checked_citation(library, citation, label=f"selected[{index}].evidence[{position}]")
+            for position, citation in enumerate(evidence)
+        ]
+        component_dir = component_dir_by_id.get(bundle_id)
+        for citation in checked_evidence:
+            if component_dir and not citation["path"].startswith(component_dir + "/"):
+                raise ValueError(
+                    f"selected[{index}] evidence must cite {component_dir}/: "
+                    f"{citation['path']}"
+                )
+        normalized_selected.append({
+            "bundle_id": bundle_id,
+            "reason": reason,
+            "usage": usage,
+            "boundary": boundary.strip() if isinstance(boundary, str) else "",
+            "evidence": checked_evidence,
+        })
+
+    omitted = value.get("omitted", [])
+    if not isinstance(omitted, list):
+        raise ValueError("omitted must be a list when present")
+    normalized_omitted = []
+    omitted_ids: set[str] = set()
+    for index, item in enumerate(omitted):
+        if not isinstance(item, dict):
+            raise ValueError(f"omitted[{index}] must be an object")
+        bundle_id = item.get("bundle_id")
+        if bundle_id not in valid_ids:
+            raise ValueError(f"omitted[{index}] has unknown bundle_id: {bundle_id!r}")
+        if bundle_id in omitted_ids:
+            raise ValueError(f"omitted repeats bundle_id: {bundle_id}")
+        if bundle_id in seen:
+            raise ValueError(f"omitted bundle is also selected: {bundle_id}")
+        omitted_ids.add(bundle_id)
+        reason = item.get("reason")
+        if not isinstance(reason, str) or len(reason.strip()) < METHODOLOGY_MIN_OMISSION:
+            raise ValueError(f"omitted[{index}].reason must be concrete")
+        normalized_omitted.append({"bundle_id": bundle_id, "reason": reason.strip()})
+
+    return {
+        "schema_version": METHODOLOGY_SCHEMA,
+        "task_id": task_id,
+        "selected_bundle_ids": [item["bundle_id"] for item in normalized_selected],
+        "selected": normalized_selected,
+        "omitted": normalized_omitted,
+    }
 
 
 def _normalize_change_model(
@@ -441,6 +646,10 @@ def validate_selection(
     """Validate selected IDs, marginal-value statements, and exact evidence."""
     library = library.resolve()
     manifest = json.loads((library / "manifest.json").read_text(encoding="utf-8"))
+    if is_methodology_manifest(manifest):
+        return validate_methodology_selection(
+            library, selection_path, expected_task_id=expected_task_id
+        )
     components = manifest.get("components", [])
     if not isinstance(components, list) or not components:
         raise ValueError("component library manifest has no components")

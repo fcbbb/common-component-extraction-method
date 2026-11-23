@@ -257,6 +257,96 @@ def _validate_mounted_review_citations(value: Any, source_root: Path) -> None:
         _validate_mounted_review_citations(item, source_root)
 
 
+def validate_methodology_extraction(result: dict[str, Any]) -> None:
+    """Structural check for a transformation extraction manifest.
+
+    Semantic admission (provenance, leakage, mapping completeness) belongs to
+    ``component_build.methodology.contracts``; this only keeps the transport
+    contract honest so a malformed submission is rejected at the agent boundary.
+    The agent contract is the minimal experience card; ids, status, evidence and
+    provenance are derived by the pipeline and need not be submitted.
+    """
+    if not isinstance(result, dict):
+        raise ValueError("methodology extraction manifest must be an object")
+    transformations = result.get("transformations")
+    if not isinstance(transformations, list):
+        raise ValueError("methodology extraction needs a transformations list")
+    if len(transformations) != 1:
+        raise ValueError(
+            "one example yields exactly one component; the manifest contained "
+            f"{len(transformations)}"
+        )
+    if result.get("status") is not None and result.get("status") not in {
+        "ready",
+        "uncertain",
+    }:
+        raise ValueError("methodology extraction has an invalid status")
+    audit = result.get("workspace_audit")
+    if audit is not None:
+        if not isinstance(audit, dict):
+            raise ValueError("workspace_audit must be an object")
+        checked = audit.get("checked_files")
+        gaps = audit.get("gaps", [])
+        if not isinstance(checked, list) or any(not isinstance(item, str) for item in checked):
+            raise ValueError("workspace_audit.checked_files must be a list of paths")
+        if not isinstance(gaps, list) or any(not isinstance(item, str) for item in gaps):
+            raise ValueError("workspace_audit.gaps must be a list of strings")
+    required = (
+        "title",
+        "when_to_use",
+        "mapping_rules",
+        "procedure",
+        "semantic_deltas",
+        "pitfalls",
+        "verification",
+        "boundary",
+    )
+    for index, item in enumerate(transformations):
+        if not isinstance(item, dict):
+            raise ValueError(f"transformation {index} must be an object")
+        if item.get("status", "draft_ready") not in {"draft_ready", "uncertain", "not_extractable"}:
+            raise ValueError(f"transformation {index} has an invalid status")
+        missing = [field for field in required if field not in item]
+        if missing:
+            raise ValueError(f"transformation {index} is missing fields: {missing}")
+
+
+def validate_methodology_review(result: dict[str, Any]) -> None:
+    """Structural check for a transformation review manifest.
+
+    The transport contract is the reviewer's three-way verdict plus the
+    must-change list; severity grading no longer exists.
+    """
+    verdict = result.get("verdict")
+    if verdict not in {"publish", "discard", "rework"}:
+        raise ValueError("methodology review needs publish, discard or rework verdict")
+    if not isinstance(result.get("transformation_id"), str) or not result["transformation_id"]:
+        raise ValueError("methodology review needs a transformation_id")
+    if not isinstance(result.get("summary"), str) or not result["summary"].strip():
+        raise ValueError("methodology review needs a summary")
+    changes = result.get("must_change", [])
+    if changes in (None, ""):
+        changes = []
+    if not isinstance(changes, list):
+        raise ValueError("methodology review must_change must be a list of change objects")
+    for index, item in enumerate(changes):
+        if not isinstance(item, dict):
+            raise ValueError(
+                f"methodology review must_change[{index}] must be an object with "
+                "field, quote and instruction"
+            )
+        for key in ("field", "quote", "instruction"):
+            if not isinstance(item.get(key), str) or not item[key].strip():
+                raise ValueError(
+                    f"methodology review must_change[{index}].{key} must be "
+                    "a non-empty string"
+                )
+    if verdict == "rework" and not changes:
+        raise ValueError("rework verdict needs a must_change list")
+    if verdict != "rework" and changes:
+        raise ValueError(f"{verdict} verdict cannot carry must_change")
+
+
 def load_submission(output_root: Path, role: str) -> dict[str, Any]:
     """Read and check files, then hydrate the existing internal result schema."""
     root = output_root.resolve()
@@ -367,6 +457,10 @@ def load_submission(output_root: Path, role: str) -> dict[str, Any]:
         validate_proposal_review(result)
     elif role == "repair":
         validate_repair(result)
+    elif role == "methodology":
+        validate_methodology_extraction(result)
+    elif role == "methodology_review":
+        validate_methodology_review(result)
     elif role != "proposal":
         raise ValueError(f"unknown submission role: {role}")
     return result
@@ -379,12 +473,15 @@ def file_submission_instructions(
     output_directory: str = OUTPUT_DIRECTORY,
     checker_path: str = CHECKER_PATH,
     isolation: str = "container",
+    role: str = "extraction",
 ) -> str:
     """Describe the file submission protocol for one stage agent.
 
     Container stages name the bind-mounted paths and the controlled shell.
     Host stages (``isolation="host"``) run on the machine that owns the
     workspace, so the same protocol names the real directories instead.
+    Methodology stages submit rules, not source files, and get a matching
+    protocol.
     """
     if isolation not in {"container", "host"}:
         raise ValueError(f"unknown stage isolation: {isolation}")
@@ -402,6 +499,23 @@ def file_submission_instructions(
             f"{output_directory}), never host paths. "
             "The original repository and supplied artifacts are read-only; this "
             "output directory is writable."
+        )
+    if role in {"methodology", "methodology_review"}:
+        return (
+            "\n\nFile submission protocol (applies to this run, including saved prompt templates):\n"
+            f"Write the result metadata to {output_directory}/{MANIFEST_NAME}. "
+            "It must be one JSON object with the exact schema described in the task. "
+            "This role submits rules and findings; do not write, copy or reference "
+            "source files. "
+            + paths
+            + " "
+            f"Check your files with python3 {checker_path} --role {role} "
+            f"--output {output_directory}; this validates the metadata contract. "
+            "Fix errors and check again. Finish by running the same checker with "
+            f"--submit as a standalone {tool_name} command; do not chain it with "
+            "ls/find/echo or other commands. It prints the completion marker only "
+            "when your files are valid. The program checks the files before "
+            "accepting completion; errors are returned so you can correct them."
         )
     return (
         "\n\nFile submission protocol (applies to this run, including saved prompt templates):\n"
@@ -444,7 +558,15 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=Path(OUTPUT_DIRECTORY))
     parser.add_argument(
         "--role",
-        choices=("extraction", "review", "repair", "proposal", "proposal_review"),
+        choices=(
+            "extraction",
+            "review",
+            "repair",
+            "proposal",
+            "proposal_review",
+            "methodology",
+            "methodology_review",
+        ),
         required=True,
     )
     parser.add_argument("--submit", action="store_true", help="Check files, then print the completion marker on success")

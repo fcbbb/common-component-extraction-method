@@ -408,6 +408,32 @@ def test_stage_result_reports_manifest_summary_and_artifacts(tmp_path, monkeypat
     assert result["artifacts"]["manifest"] == str(summary)
 
 
+def test_retrieval_result_names_the_materialized_bundle(tmp_path, monkeypatch):
+    _, registry = _registry(tmp_path)
+    task_root = tmp_path / "run" / "tasks" / "task-a"
+    _write_task_json(task_root / "config.json", {"task_id": "task-a"})
+    _write_task_json(task_root / "outputs" / "full_library" / "manifest.json", {"component_count": 1})
+    result_path = task_root / "attempts" / "retrieval_v1" / "result.json"
+    _write_task_json(result_path, {"selected_bundle_ids": ["component-1"]})
+    bundle = tmp_path / "bundle"
+    _write_task_json(bundle / "manifest.json", {"component_count": 1})
+    monkeypatch.setenv("COMPONENT_DSH_BUNDLE_DESTINATION", str(bundle))
+
+    def fake_run(command, **kwargs):
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(dsh_kernel.subprocess, "run", fake_run)
+    result = dsh_kernel.execute_method(
+        "retrieval",
+        {"run_id": "run-a", "task_id": "task-a"},
+        registry=registry,
+    )
+    assert result["ok"] is True
+    assert result["summary"]["bundle"] == str(bundle)
+    assert result["artifacts"]["bundle"] == str(bundle)
+    assert result["artifacts"]["manifest"] == str(result_path)
+
+
 def test_publish_library_prerequisite_follows_publish_mode(tmp_path, monkeypatch):
     _, registry = _registry(tmp_path)
     task_root = tmp_path / "run" / "tasks" / "task-a"
@@ -775,3 +801,29 @@ def test_materialize_selection_is_json_safe(tmp_path, monkeypatch):
     assert result["summary"]["component_count"] == 2
     assert result["artifacts"]["bundle"] == str(destination)
     json.dumps(result)
+
+
+def test_summary_paths_use_the_agent_workspace_namespace(tmp_path, monkeypatch):
+    workspace = tmp_path / "attempt"
+    destination = workspace / "component_bundle"
+    destination.mkdir(parents=True)
+    monkeypatch.setenv("COMPONENT_DSH_HOST_WORKSPACE", str(workspace))
+    monkeypatch.setenv("COMPONENT_DSH_AGENT_WORKSPACE", "/workspace")
+    result = dsh_kernel._envelope(
+        method="run_stage",
+        status="succeeded",
+        summary={
+            "bundle": str(destination),
+            "steps": {"retrieval": {"bundle": str(destination)}},
+        },
+        artifacts={
+            "bundle": str(destination),
+            "manifest": str(tmp_path / "result.json"),
+        },
+    )
+    assert result["summary"]["bundle"] == "/workspace/component_bundle"
+    assert result["summary"]["steps"]["retrieval"]["bundle"] == "/workspace/component_bundle"
+    assert result["artifacts"]["bundle"] == "/workspace/component_bundle"
+    # A path outside the workspace keeps its spelling: the stage plane's own
+    # bookkeeping files have no agent-visible form.
+    assert result["artifacts"]["manifest"] == str(tmp_path / "result.json")

@@ -1,0 +1,14 @@
+scenario,task_id,level,fit,counted,source_kind,title,repo,commit,license
+windows_to_kylin,v2_thread,L2,B,True,library_family_port,Migrate the Foundation thread subsystem to Kylin V10 SP3,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,v2_file,L2,B,True,library_family_port,Migrate the Foundation file subsystem to Kylin V10 SP3,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,v2_path,L2,B,True,library_family_port,Migrate the Foundation path subsystem to Kylin V10 SP3,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,v2_shared_library,L2,B,True,library_family_port,Migrate the Foundation dynamic loading subsystem to Kylin V10 SP3,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,v2_rwlock_semaphore,L2,B,True,library_family_port,Migrate the Foundation rwlock and semaphore primitives to Kylin V10 SP3,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,v2_foundation_full,L3,B,True,library_family_port,Migrate the Foundation platform layer to Kylin V10 SP3,https://github.com/pocoproject/poco.git,d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b,BSL-1.0
+windows_to_kylin,v2_libgit2_file,L2,B,True,upstream_platform_port,Migrate the libgit2 utility file layer to Kylin V10 SP3,https://github.com/libgit2/libgit2.git,36f7e21ad757a3dacc58cf7944329da6bc1d6e96,GPL-2.0-with-linking-exception
+windows_to_kylin,v2_libgit2_process,L2,B,True,upstream_platform_port,Migrate the libgit2 process and thread layer to Kylin V10 SP3,https://github.com/libgit2/libgit2.git,36f7e21ad757a3dacc58cf7944329da6bc1d6e96,GPL-2.0-with-linking-exception
+windows_to_kylin,v2_libgit2_util_full,L3,B,True,upstream_platform_port,Migrate the complete libgit2 utility layer to Kylin V10 SP3,https://github.com/libgit2/libgit2.git,36f7e21ad757a3dacc58cf7944329da6bc1d6e96,GPL-2.0-with-linking-exception
+windows_to_kylin,v2_nginx_files,L2,B,True,upstream_platform_port,Migrate the nginx file layer to Kylin V10 SP3,https://github.com/nginx/nginx.git,1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5,BSD-2-Clause
+windows_to_kylin,v2_nginx_full,L3,B,True,upstream_platform_port,Migrate the complete nginx OS layer to Kylin V10 SP3,https://github.com/nginx/nginx.git,1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5,BSD-2-Clause
+windows_to_kylin,v2_curl_tls,L2,B,True,upstream_platform_port,Migrate the curl TLS backend to Kylin V10 SP3,https://github.com/curl/curl.git,7161cb17c01dcff1dc5bf89a18437d9d729f1ecd,curl
+windows_to_kylin,v2_curl_build,L3,B,True,build_system_port,Migrate the curl build system to CMake on Kylin V10 SP3,https://github.com/curl/curl.git,7161cb17c01dcff1dc5bf89a18437d9d729f1ecd,curl

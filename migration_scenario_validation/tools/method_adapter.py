@@ -9,15 +9,17 @@ separate directory without touching the task package.
 
 What this makes runnable for the method arm:
 
-* the preparation workflow -- ``component_run_stage`` with ``stage=source_scan``
-  scans the task workspace and writes focus packets, then
-  extract/curate/prepare_reviews/review/publish run the same reviewed-component
-  pipeline as the batch method (``max_review_repair_rounds`` = 1) and build a
-  fresh library at ``<task-root>/outputs/full_library``;
-* ``stage=catalog`` / ``stage=validate_selection`` -- once that library has been
-  published;
+* the preparation workflow -- ``component_run_stage`` with ``stage=prepare``
+  scans the task workspace and writes focus packets, ``stage=build`` extracts
+  and freezes components, ``stage=audit`` reviews them, and ``stage=publish``
+  publishes a fresh library at ``<task-root>/outputs/full_library`` using the
+  same reviewed-component pipeline as the batch method
+  (``max_review_repair_rounds`` = 1);
 * ``stage=retrieval`` -- it reads ``problem_statement`` and ``interface`` from
-  the adapted ``task.json``;
+  the adapted ``task.json``, validates the selection, and materializes the
+  selected bundle at ``COMPONENT_DSH_BUNDLE_DESTINATION``;
+* ``stage=catalog`` remains a kernel-side read-only helper and is not exposed
+  to the method agent;
 * every other kernel stage resolves its run/task instead of failing with
   ``run is not registered``.
 
@@ -28,7 +30,7 @@ result stay attributable to the same task.
 CLI::
 
     python3 tools/method_adapter.py \
-      --task-root windows_to_kylin/tasks/l1_poco_thread \
+      --task-root v1/windows_to_kylin/tasks/l1_poco_thread \
       --output-root /tmp/method-adapter-demo --run-id demo \
       --model deepseek-v4.1-flash-1017 --api-base https://example/v1 \
       --runtime-image migration/kylin:sp3-p2
@@ -308,7 +310,7 @@ def build_workspace(
             "bundle_destination": str(bundle_destination),
         }
 
-    # Retries and stage calls such as run_stage(stage=curate) only receive
+    # Retries and stage calls such as run_stage(stage=build) only receive
     # run_id.  An attempt maps exactly one task, so make that task the run
     # default.
     if len(entries) == 1:

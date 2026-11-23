@@ -112,7 +112,7 @@ scenarios:
         - "b_l2_sum_reduce / b_l2_argmax / b_l2_gather / b_l2_cross_entropy_loss / b_l3_standard_matmul / b_l3_gqa / b_l3_sdpa / b_l3_matmul_gelu_softmax / b_l3_kv_cached_attention project-authored controls: PASS (musa_batch4 9/10)"
         - "b_l3_conv2d project-authored control: PASS 42.6s after pinning muDNN to fp32 (musa_batch5 1/1); the batch4 run failed because the reference nn.Conv2d uses muDNN TF32 by default"
         - "b_l2_cosine_similarity_loss / b_l3_conv2d_batch_norm_scaling project-authored controls: PASS (musa_batch6 2/2, 79.1s / 105.9s, worst_rel=0); these two replace b_l2_rms_norm and b_l3_group_norm in the slate"
-        - "b_l2_rms_norm / b_l3_group_norm: removed from the slate on 2026-11-16 and archived under archive/cuda_to_musa_blocked_oom/. The evaluator's torch.allclose could not compare their 8.59 GB tensors on a 47.90 GB card (42 GiB allocated while requesting 8 GiB; an in-place aliasing submission also OOMs at 44 GiB). They are not counted as passes and are in no denominator. Evidence kept at reports/gold_sanity/musa_allclose_oom/"
+        - "b_l2_rms_norm / b_l3_group_norm: removed from the slate on 2026-11-16 and archived under v1/archive/cuda_to_musa_blocked_oom/. The evaluator's torch.allclose could not compare their 8.59 GB tensors on a 47.90 GB card (42 GiB allocated while requesting 8 GiB; an in-place aliasing submission also OOMs at 44 GiB). They are not counted as passes and are in no denominator. Evidence kept at reports/gold_sanity/musa_allclose_oom/"
         - "replacement run musa_batch6: SUMMARY pass=2 fail=0 skip=0 error=0. Evidence: reports/gold_sanity/musa_batch6/"
         - "final combined 18-task run musa_all18 (one command, 2026-11-16 21:09-21:30): SUMMARY pass=18 fail=0 skip=0 error=0, GOLD_SANITY_RC=0; every task reports tests=pass, api_removal=pass and MUSA_SUBMISSION=PASS. Evidence: reports/gold_sanity/musa_all18/"
         - "final combined run musa_gold_final: pass=3 fail=0 skip=0 error=0"
@@ -129,7 +129,7 @@ scenarios:
 
   archived_cuda_to_ascend:
     status: archived-hardware-unavailable
-    path: archive/cuda_to_ascend
+    path: v1/archive/cuda_to_ascend
     notes:
       - "The CUDA -> Ascend C/CANN scenario is kept only as a historical artifact."
       - "It was statically validated (20 packages, 3 upstream gold, 17 judge-only) but never executed: no Ascend NPU and no CANN toolkit were available."
@@ -150,7 +150,7 @@ verification:
       - "MUSA gold_sanity on the rented S4000: b_l1_leaky_relu PASS (166.8s), b_l1_mse_loss PASS (185.8s), b_l2_layer_norm project-authored control PASS (90.9s); all three passed mcc build, 5 numerical trials, anti-cheat, API gate and kernel-presence gate. Evidence: reports/gold_sanity/musa_{smoke,gold2,authored}/"
       - "MUSA gold_sanity final combined run on the final task packages (python3 fix): SUMMARY pass=3 fail=0 skip=0 error=0, GOLD_SANITY_RC=0; leaky_relu 98.2s, mse_loss 121.2s, layer_norm 25.0s (timings lower than the first runs because the torch_extensions build cache was warm). Evidence: reports/gold_sanity/musa_gold_final/"
       - "MUSA positive controls, remaining batches: musa_batch1 3/3 (relu, sigmoid, swish), musa_batch2 2/7 (softmax, cumsum), musa_batch3 0/7, musa_batch4 9/10 (sum_reduce, argmax, gather, cross_entropy_loss, standard_matmul, gqa, sdpa, matmul_gelu_softmax, kv_cached_attention), musa_batch5 1/1 (conv2d after pinning muDNN to fp32), musa_batch6 2/2 (cosine_similarity_loss, conv2d_batch_norm_scaling). All 20 tasks of the current slate have a verified control. Evidence: reports/gold_sanity/musa_batch{1,2,3,4,5,6}/"
-      - "MUSA archived (not passes, not in the slate): b_l2_rms_norm and b_l3_group_norm OOM inside the evaluator's torch.allclose at their 8.59 GB shape; packages, probes and a reduced-shape supplementary check (max abs diff 3.6e-7-6.0e-7, not the evaluator contract) are in archive/cuda_to_musa_blocked_oom/ and reports/gold_sanity/musa_allclose_oom/"
+      - "MUSA archived (not passes, not in the slate): b_l2_rms_norm and b_l3_group_norm OOM inside the evaluator's torch.allclose at their 8.59 GB shape; packages, probes and a reduced-shape supplementary check (max abs diff 3.6e-7-6.0e-7, not the evaluator contract) are in v1/archive/cuda_to_musa_blocked_oom/ and reports/gold_sanity/musa_allclose_oom/"
       - "MUSA final combined run (musa_all18) executed the one-command 18-task command end to end: SUMMARY pass=18 fail=0 skip=0 error=0, GOLD_SANITY_RC=0, 20.7 minutes, every task tests=pass / api_removal=pass / MUSA_SUBMISSION=PASS. Evidence: reports/gold_sanity/musa_all18/"
       - "MUSA upstream layer_norm sample recorded as nonconforming: compiled=True, correct=False (85.8s). Evidence: reports/gold_sanity/musa_gold2/b_l2_layer_norm.json"
       - "API gate positive/negative checks, including expect_fail negative control"

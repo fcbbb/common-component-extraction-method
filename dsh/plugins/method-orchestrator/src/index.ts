@@ -6,9 +6,12 @@ export const name = "component-method-orchestrator";
 // mount `@deepseek-ai/dsh-tool-jobs`.
 export const inject = ["tools", "jobs"];
 
-/** Every atomic block the single entry accepts.  Retired step names
+/** The six atomic blocks the single entry accepts.  Retired step names
  * (`extract`, `curate`, `review` …) still resolve inside the kernel, but the
- * model should select blocks; each block checks its own prerequisites. */
+ * model should select blocks; each block checks its own prerequisites.
+ * `validate_selection` / `materialize_selection` now run inside `retrieval`,
+ * and `report` / `catalog` stay callable through the kernel for batch and
+ * operator clients; none of these are offered to the method agent. */
 export const STAGES = [
   "prepare",
   "build",
@@ -17,10 +20,6 @@ export const STAGES = [
   "retrieval",
   "task",
   "deliver",
-  "report",
-  "catalog",
-  "validate_selection",
-  "materialize_selection",
 ];
 
 export function apply(ctx: any): void {
@@ -29,11 +28,10 @@ export function apply(ctx: any): void {
       name: "component_run_stage",
       description:
         "Run one atomic component-method block. This is the only stage entry: pass stage "
-        + "= prepare | build | audit | publish | retrieval | task | report | catalog | "
-        + "validate_selection | materialize_selection. Blocks merge former steps: "
-        + "prepare=scan/packets, build=extract+curate+freeze, audit=review+finalize, "
-        + "publish=library, retrieval=select, task=execute. The compatibility group "
-        + "deliver expands to retrieval+task. The kernel checks dependencies before it "
+        + "= prepare | build | audit | publish | retrieval | task. Blocks merge former "
+        + "steps: prepare=scan/packets, build=extract+curate+freeze, audit=review+finalize, "
+        + "publish=library, retrieval=select+validate+materialize-bundle, task=execute. "
+        + "The compatibility group deliver expands to retrieval+task. The kernel checks dependencies before it "
         + "runs anything: a missing input returns STAGE_INPUT_MISSING and a stage the "
         + "workspace forbids (task/report in migration) returns STAGE_UNSUPPORTED. "
         + "Long blocks (build, audit, retrieval, task) start as a background job and "

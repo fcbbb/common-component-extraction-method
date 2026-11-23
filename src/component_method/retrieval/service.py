@@ -24,9 +24,15 @@ from component_method.agent_runtime.stage_plane import (
     HOST_STAGE_RUNTIME,
     host_stage_profile,
     stage_runtime,
+    stage_runtime_reason,
 )
 
-from .submission import concreteness_minimums_text, validate_selection
+from .submission import (
+    concreteness_minimums_text,
+    is_methodology_manifest,
+    methodology_minimums_text,
+    validate_selection,
+)
 
 
 PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
@@ -71,10 +77,43 @@ def _text(value: Any, *, limit: int = 500) -> str:
     return normalized if len(normalized) <= limit else normalized[: limit - 1].rstrip() + "…"
 
 
+def library_kind(manifest: dict[str, Any]) -> str:
+    """Return the library contract kind: ``code-component`` or ``methodology``."""
+    return "methodology" if is_methodology_manifest(manifest) else "code-component"
+
+
+def _methodology_catalog(library: Path, manifest: dict[str, Any]) -> dict[str, Any]:
+    records = []
+    for component in manifest.get("components", []):
+        if not isinstance(component, dict):
+            continue
+        metadata_relative = component.get("metadata")
+        metadata: dict[str, Any] = {}
+        if isinstance(metadata_relative, str):
+            metadata = json.loads((library / metadata_relative).read_text(encoding="utf-8"))
+        records.append({
+            "bundle_id": metadata.get("bundle_id") or component.get("bundle_id"),
+            "title": _text(metadata.get("title") or component.get("title"), limit=180),
+            "capability": _text(metadata.get("capability") or component.get("capability"), limit=120),
+            "when_to_use": _text(metadata.get("when_to_use")),
+            "boundary": _text(metadata.get("boundary")),
+            "readme": component.get("readme") or component.get("library"),
+            "metadata": metadata_relative,
+        })
+    return {
+        "schema_version": "methodology-1",
+        "library_id": manifest.get("library_id"),
+        "component_count": len(records),
+        "components": records,
+    }
+
+
 def build_component_catalog(library: Path) -> dict[str, Any]:
     """Build a compact, complete first-pass catalog from a published library."""
     library = library.resolve()
     manifest = json.loads((library / "manifest.json").read_text(encoding="utf-8"))
+    if is_methodology_manifest(manifest):
+        return _methodology_catalog(library, manifest)
     records = []
     for component in manifest.get("components", []):
         audit_relative = component.get("audit_file")
@@ -136,53 +175,81 @@ def _validated_mask_paths(paths: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(normalized)
 
 
+def _repository_name(repository: str) -> str:
+    name = repository.strip().rstrip("/").rsplit("/", 1)[-1]
+    if name.endswith(".git"):
+        name = name[:-4]
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
+        raise ValueError(f"invalid component library repository: {repository!r}")
+    return name
+
+
 def _repository_mask_paths(
-    manifest: dict[str, Any], configured_paths: tuple[str, ...]
+    manifest: dict[str, Any],
+    configured_paths: tuple[str, ...],
 ) -> tuple[str, ...]:
     repository = manifest.get("repository")
+    if is_methodology_manifest(manifest):
+        if not isinstance(repository, str) or not repository.strip():
+            return _validated_mask_paths(configured_paths)
+        try:
+            name = _repository_name(repository)
+        except ValueError:
+            return _validated_mask_paths(configured_paths)
+        return _validated_mask_paths(
+            tuple(dict.fromkeys((*configured_paths, f"/{name}")))
+        )
     if not isinstance(repository, str) or not repository.strip():
         raise ValueError("component library manifest must declare repository")
-    repository_name = repository.strip().rstrip("/").rsplit("/", 1)[-1]
-    if repository_name.endswith(".git"):
-        repository_name = repository_name[:-4]
-    if not re.fullmatch(r"[A-Za-z0-9._-]+", repository_name):
-        raise ValueError(f"invalid component library repository: {repository!r}")
     return _validated_mask_paths(
-        tuple(dict.fromkeys((*configured_paths, f"/{repository_name}")))
+        tuple(dict.fromkeys((*configured_paths, f"/{_repository_name(repository)}")))
     )
 
 
-def render_retrieval_task(request: RetrievalRequest) -> str:
+def render_retrieval_task(request: RetrievalRequest, *, kind: str = "code-component") -> str:
     """Render task metadata without inlining the component catalog."""
-    template = (PROMPT_DIR / "retrieve_instance.txt").read_text(encoding="utf-8")
-    return (
+    filename = (
+        "retrieve_methodology_instance.txt"
+        if kind == "methodology"
+        else "retrieve_instance.txt"
+    )
+    template = (PROMPT_DIR / filename).read_text(encoding="utf-8")
+    rendered = (
         template.replace("{{task_id}}", request.task_id)
         .replace("{{problem_statement}}", request.problem_statement)
         .replace("{{interface}}", request.interface)
         .replace("{{concreteness_minimums}}", concreteness_minimums_text())
     )
+    if kind == "methodology":
+        rendered = rendered.rstrip() + "\n\n" + methodology_minimums_text() + "\n"
+    return rendered
 
 
-def _retrieval_system_prompt(task_id: str) -> str:
-    return (PROMPT_DIR / "retrieve_system.txt").read_text(encoding="utf-8").replace(
+def _retrieval_system_prompt(task_id: str, *, kind: str = "code-component") -> str:
+    filename = (
+        "retrieve_methodology_system.txt"
+        if kind == "methodology"
+        else "retrieve_system.txt"
+    )
+    return (PROMPT_DIR / filename).read_text(encoding="utf-8").replace(
         '"$TASK_ID"', shlex.quote(task_id)
     )
 
 
-def _retrieval_checker_command(task_id: str) -> tuple[str, ...]:
-    return (
-        "python3",
-        "/retrieval-tools/check_selection.py",
-        "--library",
-        "/component-library",
-        "--coverage",
-        "/component-output/coverage.json",
+def _retrieval_checker_command(
+    task_id: str, *, kind: str = "code-component"
+) -> tuple[str, ...]:
+    command = ["python3", "/retrieval-tools/check_selection.py", "--library", "/component-library"]
+    if kind != "methodology":
+        command.extend(["--coverage", "/component-output/coverage.json"])
+    command.extend([
         "--selection",
         "/component-output/selection.json",
         "--task-id",
         task_id,
         "--submit",
-    )
+    ])
+    return tuple(command)
 
 
 def _model_route(model_config: dict[str, Any]) -> tuple[str, str, str]:
@@ -211,6 +278,7 @@ def _run_dsh_retrieval(
     catalog_path: Path,
     mask_paths: tuple[str, ...],
     backend_name: str,
+    kind: str,
 ) -> dict[str, Any]:
     if stage_runtime() == HOST_STAGE_RUNTIME:
         return _run_host_retrieval(
@@ -224,6 +292,7 @@ def _run_dsh_retrieval(
             catalog_path=catalog_path,
             mask_paths=mask_paths,
             backend_name=backend_name,
+            kind=kind,
         )
     import docker
 
@@ -310,7 +379,7 @@ def _run_dsh_retrieval(
                 run_id=safe_task,
                 role="retrieval",
                 model=model,
-                system_prompt=_retrieval_system_prompt(request.task_id),
+                system_prompt=_retrieval_system_prompt(request.task_id, kind=kind),
                 task_prompt=task,
                 output_dir=output,
                 container_name=container_name,
@@ -320,7 +389,7 @@ def _run_dsh_retrieval(
                 step_limit=request.step_limit,
                 submission_mode="files",
                 submission_role="retrieval",
-                submission_checker_command=_retrieval_checker_command(request.task_id),
+                submission_checker_command=_retrieval_checker_command(request.task_id, kind=kind),
                 submission_directory=submission_dir,
             )
         )
@@ -364,6 +433,8 @@ def _run_dsh_retrieval(
                 ),
                 "selection_validated": validated is not None,
                 "agent_backend": backend_name,
+                "stage_runtime": stage_runtime(),
+                "stage_runtime_reason": stage_runtime_reason(),
                 "runtime_image": request.image,
                 "container_image_id": image_id,
                 "session_id": backend_result.session_id if backend_result else None,
@@ -414,6 +485,7 @@ def _run_host_retrieval(
     catalog_path: Path,
     mask_paths: tuple[str, ...],
     backend_name: str,
+    kind: str,
 ) -> dict[str, Any]:
     """Retrieval on the host plane: no container, no Docker API.
 
@@ -452,7 +524,7 @@ def _run_host_retrieval(
                 role="retrieval",
                 model=model,
                 system_prompt=_translate_host_paths(
-                    _retrieval_system_prompt(request.task_id), paths
+                    _retrieval_system_prompt(request.task_id, kind=kind), paths
                 ),
                 task_prompt=_translate_host_paths(task, paths),
                 output_dir=output,
@@ -504,7 +576,8 @@ def _run_host_retrieval(
                 ),
                 "selection_validated": validated is not None,
                 "agent_backend": backend_name,
-                "stage_runtime": "host",
+                "stage_runtime": stage_runtime(),
+                "stage_runtime_reason": stage_runtime_reason(),
                 "stage_profile": profile,
                 "runtime_image": None,
                 "declared_runtime_image": request.image or None,
@@ -533,6 +606,7 @@ def run_retrieval_agent(
     manifest = json.loads((library / "manifest.json").read_text(encoding="utf-8"))
     if not isinstance(manifest.get("components"), list) or not manifest["components"]:
         raise ValueError("component library is empty")
+    kind = library_kind(manifest)
     if output.exists():
         if not request.overwrite:
             raise FileExistsError(f"retrieval output already exists: {output}")
@@ -542,7 +616,7 @@ def run_retrieval_agent(
     selection_path = submission_dir / "selection.json"
     submission_dir.mkdir(parents=True)
     submission_dir.chmod(0o777)
-    task = render_retrieval_task(request)
+    task = render_retrieval_task(request, kind=kind)
     (output / "agent_task.txt").write_text(task, encoding="utf-8")
     catalog = build_component_catalog(library)
     catalog_path = output / "component_catalog.json"
@@ -557,21 +631,41 @@ def run_retrieval_agent(
             "component_library_sha256": hashlib.sha256(
                 json.dumps(_file_hashes(library), sort_keys=True).encode("utf-8")
             ).hexdigest(),
+            "component_kind": kind,
             "component_count": len(manifest["components"]),
             "component_catalog_sha256": hashlib.sha256(catalog_path.read_bytes()).hexdigest(),
             "retrieve_system_sha256": hashlib.sha256(
-                (PROMPT_DIR / "retrieve_system.txt").read_bytes()
+                (
+                    PROMPT_DIR
+                    / (
+                        "retrieve_methodology_system.txt"
+                        if kind == "methodology"
+                        else "retrieve_system.txt"
+                    )
+                ).read_bytes()
             ).hexdigest(),
             "retrieve_instance_sha256": hashlib.sha256(
-                (PROMPT_DIR / "retrieve_instance.txt").read_bytes()
+                (
+                    PROMPT_DIR
+                    / (
+                        "retrieve_methodology_instance.txt"
+                        if kind == "methodology"
+                        else "retrieve_instance.txt"
+                    )
+                ).read_bytes()
             ).hexdigest(),
             "runtime_image": request.image,
             "stage_runtime": stage_runtime(),
+            "stage_runtime_reason": stage_runtime_reason(),
             "agent_backend": backend_name,
             "step_limit": request.step_limit,
             "cost_limit": 0,
             "total_runtime_limit": request.total_timeout_seconds,
-            "normal_exit": "validated coverage.json and selection.json plus completion marker",
+            "normal_exit": (
+                "validated selection.json plus completion marker"
+                if kind == "methodology"
+                else "validated coverage.json and selection.json plus completion marker"
+            ),
             "task_repository_mounted": False,
             "repository_mask_paths": list(mask_paths),
         },
@@ -588,4 +682,5 @@ def run_retrieval_agent(
         catalog_path=catalog_path,
         mask_paths=mask_paths,
         backend_name=backend_name,
+        kind=kind,
     )
