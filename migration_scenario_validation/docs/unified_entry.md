@@ -7,7 +7,7 @@
 | `./run-default.sh` | A：直接迁移 | `component-method` | 1 |
 | `./run-method.sh` | B：组件方法 | `component-method-migration`（单主 agent，仅方法工具） | 1 |
 
-两个入口都调用同一个 runner（`tools/baseline_trial.py`）、同一个判分器
+两个入口都调用同一个 runner（`tools/migration_trial.py`）、同一个判分器
 （`shared/harness/runner.py`）、同一个模型路由和同一份任务镜像。B 与 A 的差异只有：
 
 1. B 的主 agent 额外加载组件方法工具，系统提示里有一段**固定工作流**；
@@ -70,7 +70,7 @@ python3 tools/bench.py compare --default-label default_v1 --method-label method_
 | [env/version_matrix.yaml](../env/version_matrix.yaml) | 工具链/运行时版本记录 | 提交 |
 
 `bench.py` 支持 `${VAR}` 和 `${VAR:-default}`。模型凭据不由 `bench.yaml`
-接管：`baseline_trial.py` 的优先级是 CLI flag > 仓库根 `.env` > 继承环境，
+接管：`migration_trial.py` 的优先级是 CLI flag > 仓库根 `.env` > 继承环境，
 避免 shell 里过期的路由覆盖项目自己的 `.env`。
 
 预算口径：
@@ -144,8 +144,9 @@ B 的主 agent **默认不设步数上限**：组件抽取开销大，用 A 的 
 只加载 `controlled_bash`、**唯一的方法入口** `component_run_stage`，以及 DSH 内置的
 作业工具（`job_output` / `job_list` / `job_kill`，由 `tool-jobs` 提供）。逐阶段插件和
 任务执行/报表插件不加载，模型只能从 `component_run_stage` 的 `stage` 进入。提示词
-写明本次要执行哪些块；kernel 仍允许调用工作区不支持的阶段，但会返回
-`STAGE_UNSUPPORTED`，让失败以结果单的形式出现，而不是靠工具表隐藏。
+写明本次要执行哪些块；工作流内的 `task` 在迁移工作区仍可调用，但 kernel 返回
+`STAGE_UNSUPPORTED`，让失败以结果单的形式出现。`report`/`catalog` 只服务批处理与
+内部检查，不放进方法 agent 的工具枚举。
 
 主 agent 按顺序调用同一个工具，用 `stage` 选择块：
 
@@ -154,9 +155,7 @@ run_stage(stage=prepare)
   → run_stage(stage=build)               # 后台作业，返回 job_id + status: running
   → run_stage(stage=audit)               # 后台作业
   → run_stage(stage=publish)             # 只发布审核通过的组件
-  → run_stage(stage=retrieval)           # 后台作业
-  → run_stage(stage=validate_selection)
-  → run_stage(stage=materialize_selection)
+  → run_stage(stage=retrieval)           # 后台作业；校验选择并物化 component_bundle
   → 读取 component_bundle 并完成迁移
 ```
 
@@ -164,13 +163,46 @@ run_stage(stage=prepare)
 `status: "running"` 和 `job_id`，主 agent 用
 `job_output {"job_id": ..., "wait": true, "timeout_ms": 600000}` 等到终态（作业结束时
 内置运行时也会发**完成通知**，空闲的主 agent 会被唤醒，两种方式拿到的是同一张结果
-单）。短块（`prepare`、`publish`、`validate_selection`、`materialize_selection`）
-同步执行，直接返回同一张结果单。原来自制的
+单）。短块（`prepare`、`publish`）同步执行，直接返回同一张结果单。原来自制的
 `component_job_status` / `component_job_cancel` 已删除，等待、通知、唤醒都由 DSH
 内置作业运行时提供。
 
 迁移仍然是任务提示要求的那一套：改源码、构建、提交完成标记。bundle 只作为参考
 材料；agent 仍然对完整迁移负责，且不得修改 bundle 内的文件。
+
+### 同一入口的三种 B 模式
+
+B 臂的差别只在提示词和组件库来源，入口与工具不变：
+
+| 模式 | 提示词 | 组件库 |
+|---|---|---|
+| 端到端 | `config/prompts/method_workflow_system.txt`（默认） | `prepare`→`publish` 现场抽取 |
+| 仅抽取 | 自定义 `--method-prompt`，只调用抽取/发布阶段 | 现场抽取 |
+| 检索答题 | `config/prompts/method_retrieval_only_system.txt` | `--bundle` 预置 |
+
+检索答题模式把预置库放到该方法任务自己的
+`outputs/full_library`（即 `COMPONENT_DSH_COMPONENT_LIBRARY`），`retrieval`
+块从只读挂载点读取它，校验选择后把选中的组件写到 `/workspace/component_bundle`
+供主 agent 使用。`--bundle` 不直接写 `component_bundle`，因为该路径由 `retrieval`
+块创建。
+
+```text
+python tools/bench.py run --arm method \
+  --method-prompt config/prompts/method_retrieval_only_system.txt \
+  --bundle v3/windows_to_kylin/library
+```
+
+嵌套阶段默认使用 `auto` 平面：能导入 Python `docker` 包且 daemon 可达时用容器
+（组件库只读挂载、`network=none`），否则回退到 host 平面，阶段 agent 用 stock
+`bash` 在宿主机运行。实际平面和原因记录在
+`retrieval_v1/run_manifest.json` 的 `stage_runtime` / `stage_runtime_reason` 和
+`metadata.json` 中；`bench.py doctor` 会预先打印本次将使用的平面。需要强制某一种
+平面时传 `--method-stage-runtime docker|host`。
+
+组件库的契约由 `manifest.json` 的 `kind` 决定：`methodology` 走 Markdown 组件契约
+（`components/<id>/README.md` + `component.json`，选择结果只要求 bundle ID、理由、
+用法和 README 精确引用），其他值走原有的代码组件契约。两套校验都通过同一个
+`check_selection.py`。
 
 kernel 会为这些阶段做额外保护：
 
@@ -182,9 +214,10 @@ kernel 会为这些阶段做额外保护：
   不与同步阶段并发写同一个任务根。不同迁移任务各有自己的任务根，因此仍可
   并行。
 - **迁移工作区限制阶段**：当 `config.json` 的 `source_scan_mode` 为 `migration`
-  时，kernel 拒绝 `task`/`report`（`error_code=STAGE_UNSUPPORTED`）。迁移任务由主
-  agent 在同一会话完成；`retrieval` 仍可运行，用于物化组件 bundle。抽取、审核与
-  检索块在迁移工作区照常运行。
+  时，kernel 拒绝 `task`/`report`（`error_code=STAGE_UNSUPPORTED`）。其中 `task`
+  仍在方法入口的枚举里，调用会拿到失败结果单；`report`/`catalog` 不暴露给方法
+  agent。迁移任务由主 agent 在同一会话完成；`retrieval` 仍可运行，用于物化组件
+  bundle。抽取、审核与检索块在迁移工作区照常运行。
 - **工作区冻结**：`prepare` 记录本次工作区所有可抽取文件的
   `workspace_sha256`/`workspace_files`；`build` 启动前会重新计算并比对，
   工作区被主 agent 改动时直接失败（`workspace changed after source_scan`），
@@ -238,9 +271,11 @@ B 的组件工作流调用量与 bundle 规模；不能把组件开销挤进 A �
     做不到，`metadata.json` 会记录这一限制；
   - 阶段不能跨尝试恢复（没有容器可复用），中断后按工作流重跑。
 - **本地 Docker 场景：阶段进程在宿主机运行，容器只是沙箱**：`run_stage` 由
-  宿主机 Python 启动，抽取/检索再通过 `DOCKER_HOST` 在 `runtime_image` 里执行。
-  因此宿主机需要 `component_method` 可导入、Docker 可访问；镜像需要目标工具链。
-  MUSA 远端没有 Docker，改用上面的 host 平面。
+  宿主机 Python 启动，抽取/检索再通过 Docker API 在 `runtime_image` 里执行。
+  宿主机需要 `component_method` 可导入；`auto` 平面会探测 Python `docker` 包和
+  daemon，任一不可用就回退 host 平面并在运行记录中写明原因，因此没有安装
+  `docker` 包的机器也能直接跑。镜像需要目标工具链；强制容器平面时用
+  `--method-stage-runtime docker`。MUSA 远端没有 Docker，使用上面的 host 平面。
 - **方法工作流要求主 agent 只读源码、把方法产物写到 `component_bundle/`**；
   方法侧配置和库都在 `<attempt>/method/`，不在工作区内。
 - **`component_bundle/` 不参与判分**：判分器只构建/测试任务目标文件，bundle 中
@@ -280,13 +315,13 @@ B 的组件工作流调用量与 bundle 规模；不能把组件开销挤进 A �
 | `bundle=missing` / `status=error` | 主 agent 没有产出可用 bundle | 看 `agent/` 日志与 `attempt.json.method_tool_calls`；先确认 `method_adapter` 成功、镜像内有工具链 |
 | `error_code=STAGE_INPUT_MISSING` | 跳过了前置阶段 | 按固定工作流重跑；kernel 不会读 stdout 猜测进度 |
 | `error_code=STAGE_BUSY` | 同步阶段与正在运行的作业/另一个同步阶段冲突 | 先用 `job_output(wait=true)` 等到该作业终态或等完成通知，再继续；不同任务可并行 |
-| `error_code=STAGE_UNSUPPORTED` | 在迁移工作区调用了任务执行/报表阶段 | 按固定工作流跑到 `materialize_selection` 为止，迁移由主 agent 自己在会话里完成 |
+| `error_code=STAGE_UNSUPPORTED` | 在迁移工作区调用了任务执行阶段（`task`） | 按固定工作流跑到 `retrieval` 为止，迁移由主 agent 自己在会话里完成 |
 | `error_code=STAGE_FAILED` / `JOB_MISSING` | 作业失败，或 `job_id` 不属于当前会话 | 看完成通知 / `job_output` 返回的 `summary` 和 `error`；`job_list` 可以列出本会话的作业。不要重试已失败的作业，按工作流重新启动阶段 |
 | `workspace changed after source_scan` | 抽取启动前工作区与冻结哈希不一致 | 撤销对工作区的改动后重跑；抽取期间源码必须保持不变 |
 | `method_stage_image ... is not present` | 本地 Docker 场景的准备容器在宿主机跑，目标镜像不在本地 | 设 `METHOD_STAGE_IMAGE`（本地有 bash + python3 的镜像）或 `--method-stage-image`；MUSA `ssh` 的 host 平面不需要镜像 |
 | `workspace push failed`（MUSA） | 仅 `--musa-transport local` 的 shim 自检会镜像 rsync；`ssh` 传输不镜像 | 检查 ssh/rsync、远端目录权限与 `agent_user` 的免密 sudo；push 失败时命令不会执行 |
 | `ERROR no model credential` | 没有凭据 | 填仓库根 `.env` 或 `bench.env`，或 `--fake-model` |
-| `language backend is not installed: cpp` | 用系统 `python3` 启动，解释器缺 `libclang`/`tree-sitter`，cpp 后端不注册 | 用仓库 `.venv/bin/python` 运行 `tools/baseline_trial.py`（先按 README 建 venv） |
+| `language backend is not installed: cpp` | 用系统 `python3` 启动，解释器缺 `libclang`/`tree-sitter`，cpp 后端不注册 | 用仓库 `.venv/bin/python` 运行 `tools/migration_trial.py`（先按 README 建 venv） |
 | API 返回 `team_model_access_denied`，报错里的模型名带部署后缀（如 `-P029`） | `MODEL_NAME` 用了非规范别名，网关把它路由到本 key 未授权的部署，长跑必挂 | `MODEL_NAME` 填 `/v1/models` 列出的规范 id（`DeepSeek-V4.1-Flash-1017`）；换模型后 A/B 两臂一起重跑 |
 | `agent=LimitsExceeded` | A 臂步数预算不足 | 调整 `budgets.step_limit` 并重跑；不要把截断当通过 |
 | `build=fail`（空工作区） | 正常负控结果 | 判分链路已工作，不是入口故障 |

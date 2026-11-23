@@ -23,6 +23,7 @@
 | Node.js | **24.9.0**（固定版本） | `node -v` |
 | DSH | `@deepseek-ai/dsh` 0.2.2-rc.1（由 `../dsh/package-lock.json` 固定） | `npm ci` 后 `doctor` |
 | Docker | 可用的 daemon，建议 >= 24 | `docker info` |
+| Python docker SDK | >= 5.0.3（随 `pip install -e ..` 安装） | `python3 -c "import docker"`；缺失时方法阶段自动回退 host 平面 |
 | git | 任意较新版本 | `git --version` |
 | ssh / rsync | 仅 MUSA 远端需要 | `ssh -V`、`rsync --version` |
 

@@ -233,7 +233,7 @@ C 类不能多，否则"迁移"退化成"重写"，但必须有 —— 否则 ag
 
 ### 7.2 任务 12 `l2_tdfir_bank` 详情
 
-任务包在 `ipp_vsipl_tasks/l2_tdfir_bank/`，三条门全部验证：
+任务包在 `v1/ipp_vsipl_tasks/l2_tdfir_bank/`，三条门全部验证：
 
 | 门 | 命令 | 结果 |
 |---|---|---|

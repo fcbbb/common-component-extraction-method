@@ -1,9 +1,9 @@
 # RUNBOOK：迁移评测的 P0 / P1 / P2 执行清单
 
-**版本**：2026-11-16  
-**范围**：`ipp_vsipl_tasks/`（20 题）、`windows_to_kylin/`（20 题）与
-`cuda_to_musa/`（20 题），共 60 个任务包。原 `cuda_to_ascend/` 已归档到
-`archive/cuda_to_ascend/`，不计入统计。
+**版本**：2026-11-16（更新 2026-11-23）
+**范围**：`v1/ipp_vsipl_tasks/`（20 题）、`v1/windows_to_kylin/tasks/`（13 题）、
+`v3/windows_to_kylin/tasks/`（19 题）与 `v1/cuda_to_musa/tasks/`（20 题），共 72 个任务包。
+原 `cuda_to_ascend/` 已归档到 `v1/archive/cuda_to_ascend/`，不计入统计。
 
 ---
 
@@ -13,10 +13,12 @@
 
 | 项目 | 状态 |
 |---|---|
-| 60 个任务包的静态结构检查 | **通过**（`verify_task.py`，60/60） |
-| 60 个任务包的 pin 检查 | **通过**（`check_pins.py --offline`，ok=60，judge_only=18） |
+| 72 个任务包的静态结构检查 | **通过**（`verify_task.py`，72/72；20 IPP + 13 V1 Kylin + 20 MUSA + 19 V3） |
+| 任务包 pin 检查（离线） | **通过**（`check_pins.py --offline`，ok=59、fail=0、judge_only=18） |
 | IPP 侧 gold 正控（宿主机 GCC 13.3 + jvsip） | **20/20 通过**（`reports/gold_sanity_ipp20/`；2026-11-16 补齐任务 16） |
 | 麒麟侧 gold 正控 | **19/19 通过**（Kylin 镜像内实测：L1 5/5、L2 10/10、L3 4/4）；P1 负控 2 题实测 `build=fail` |
+| V2 任务族 gold 正控（历史） | **6/6 通过**（构建、隐藏测试、回归、双向 API 门禁；`reports/gold_sanity/v2/`）；任务包已并入 V3，仅保留证据与冻结库 |
+| V3 配对 `v3_poco_fs_stack` | **直接迁移 0/1；组件方法 1/1；gold 1/1**（`reports/bench/v3_poco_fs_stack_validation_report.md`） |
 | MUSA 侧正控 | **20/20 已验证**（2 份上游 gold + 18 份项目自写）；原 `b_l2_rms_norm`、`b_l3_group_norm` 因判卷器 `torch.allclose` OOM 已归档，2026-11-16 由 `b_l2_cosine_similarity_loss`、`b_l3_conv2d_batch_norm_scaling` 补位并实测通过 |
 | 任意一次真实编译 / GPU 执行 | Kylin 19 题真实编译 + 隐藏测试已跑完；MUSA 20 题已在租用 MTT S4000 上跑通（18 题合并重跑 + 2 题替换后重跑） |
 | 题目级负向题 `negative_win32_eventlog` | **通过**（Kylin 容器内双向：正确说明判 pass；假移植被 `expect_fail` API 门判 fail） |
@@ -42,16 +44,17 @@
 在仓库根目录 `migration_scenario_validation/` 执行：
 
 ```bash
-# 1.1 结构检查：60/60
+# 1.1 结构检查：V1 + V3 当前包（v2 任务包已并入 v3，目录仅保留设计文档）
 python3 tools/verify_task.py \
-  --parent ipp_vsipl_tasks \
-  --parent windows_to_kylin/tasks \
-  --parent cuda_to_musa/tasks
-# 期望：VERIFY=PASS tasks=60
+  --parent v1/ipp_vsipl_tasks \
+  --parent v1/windows_to_kylin/tasks \
+  --parent v1/cuda_to_musa/tasks \
+  --parent v3/windows_to_kylin/tasks
+# 期望：VERIFY=PASS tasks=72
 
 # 1.2 pin 检查：联网（IPP 为 vendored，只做本地一致性检查）
 python3 tools/check_pins.py
-# 期望：SUMMARY ok=60 warn=0 fail=0 unknown=0 skip=0 ... judge_only=18
+# 期望：SUMMARY ok=59 warn=0 fail=0 unknown=0 skip=0 ... judge_only=18
 #       RESULT=PASS
 
 # 1.3 pin 检查：离线（只有缓存时）
@@ -59,15 +62,21 @@ python3 tools/check_pins.py --offline
 # 期望：已缓存的任务 ok；未缓存的任务 unknown，不应有 fail
 
 # 1.4 确认没有 gold 泄漏到 agent 可见目录
-find windows_to_kylin/tasks -path '*/work/*' \
+find v1/windows_to_kylin/tasks v3/windows_to_kylin/tasks -path '*/work/*' \
   \( -name 'Thread_POSIX.cpp' -o -name 'process_posix.c' -o -name 'fs_posix.c' \) -print
 # 期望：无输出
+
+# 1.5 V2 冻结库语料没有被漂移（V2 任务包已并入 V3，此步只校验保留的冻结库）
+python3 tools/freeze_library.py verify \
+  --spec v2/windows_to_kylin/library/freeze.yaml --offline
+# 期望：OK poco-foundation@d6bd48a94c5f files=635 digest=sha256:eff13f0c...
 ```
 
 检查点：
 
-- [ ] `verify_task.py` 60/60
+- [ ] `verify_task.py` 72/72
 - [ ] `check_pins.py` `RESULT=PASS`，`fail=0`
+- [ ] `freeze_library.py verify --offline` 为 `OK`
 - [ ] `gold_sanity.py --dry-run` 能列出任务
 - [ ] `work/` 中没有 gold 文件
 
@@ -212,19 +221,19 @@ L1 是 5 道 POCO 平台题，编译时间短，能最早暴露工具链、依�
 ```bash
 # L1：5 道，先跑
 python3 tools/gold_sanity.py \
-  --parent windows_to_kylin/tasks --level L1 \
+  --parent v1/windows_to_kylin/tasks --level L1 \
   --label kylin_L1 \
   --report-dir reports/gold_sanity/kylin_L1
 
 # L1 全过再跑 L2：10 道
 python3 tools/gold_sanity.py \
-  --parent windows_to_kylin/tasks --level L2 \
+  --parent v1/windows_to_kylin/tasks --level L2 \
   --label kylin_L2 \
   --report-dir reports/gold_sanity/kylin_L2
 
 # L2 全过再跑 L3 正向题：4 道
 python3 tools/gold_sanity.py \
-  --parent windows_to_kylin/tasks --level L3 \
+  --parent v1/windows_to_kylin/tasks --level L3 \
   --exclude negative_win32_eventlog \
   --label kylin_L3 \
   --report-dir reports/gold_sanity/kylin_L3
@@ -375,7 +384,7 @@ PY
 
 ```bash
 python3 tools/gold_sanity.py \
-  --parent cuda_to_musa/tasks \
+  --parent v1/cuda_to_musa/tasks \
   --only b_l1_leaky_relu \
   --only b_l1_mse_loss \
   --only b_l2_layer_norm \
@@ -417,12 +426,12 @@ kernel 结构门都通过。
 **全量 18 题（2026-11-16，同一台 S4000）**：在最终题包上按批执行
 `gold_sanity.py`，报告目录 `reports/gold_sanity/musa_batch1`…`musa_batch5`
 （`musa_gold_final` 为最初 3 题）。逐题结果、每批修掉的题目包缺陷见
-[cuda_to_musa/positive_controls.md](cuda_to_musa/positive_controls.md) §3 与 §5。
+[v1/cuda_to_musa/positive_controls.md](v1/cuda_to_musa/positive_controls.md) §3 与 §5。
 
 一条命令重跑全部 18 题：
 
 ```bash
-python3 tools/gold_sanity.py --parent cuda_to_musa/tasks \
+python3 tools/gold_sanity.py --parent v1/cuda_to_musa/tasks \
   --only b_l1_leaky_relu --only b_l1_mse_loss --only b_l2_layer_norm \
   --only b_l1_relu --only b_l1_sigmoid --only b_l1_swish --only b_l1_softmax \
   --only b_l2_cumsum --only b_l2_sum_reduce --only b_l2_argmax \
@@ -444,7 +453,7 @@ NT 分块行索引、muDNN TF32），已修复并重跑；不是环境问题。
 2.1e9 元素 fp32 张量（8.59 GB）使判卷器的 `torch.allclose` 在 47.90 GB
 卡上 OOM（42 GiB allocated 时仍要 8 GiB；原地别名提交也要 44 GiB）。
 两题连同探针、日志和归档说明移到
-[archive/cuda_to_musa_blocked_oom/](archive/cuda_to_musa_blocked_oom/README.md)，
+[v1/archive/cuda_to_musa_blocked_oom/](v1/archive/cuda_to_musa_blocked_oom/README.md)，
 **不计入通过数**。补位的 `b_l2_cosine_similarity_loss`、
 `b_l3_conv2d_batch_norm_scaling` 已在该 S4000 上实测通过：
 `musa_batch6` `SUMMARY pass=2 fail=0 skip=0 error=0`，证据在
@@ -453,17 +462,17 @@ NT 分块行索引、muDNN TF32），已修复并重跑；不是环境问题。
 ### 4.2 确认 gold 没有泄漏
 
 ```bash
-bash cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
-find cuda_to_musa/tasks/b_l1_leaky_relu/work -name 'musa_new_model_*'
+bash v1/cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
+find v1/cuda_to_musa/tasks/b_l1_leaky_relu/work -name 'musa_new_model_*'
 # 期望：无输出
-find cuda_to_musa/tasks/b_l1_leaky_relu/gold -name 'musa_new_model_*'
+find v1/cuda_to_musa/tasks/b_l1_leaky_relu/gold -name 'musa_new_model_*'
 # 期望：只有 musa_new_model_leaky_relu.py
 ```
 
 20 个题包的 `prepare.sh` 都通过 `remove_globs: prompts/musa_new_model_*.py`
 删除**全部 6 份**上游 MUSA 样例（含本题之外的 5 份）。MUSA 与 CUDA 源级兼容，
 留下其他算子的样例等于把 `load_inline(musa_sources=...)` 的写法直接送给
-agent。详见 [cuda_to_musa/design.md](cuda_to_musa/design.md) §5。
+agent。详见 [v1/cuda_to_musa/design.md](v1/cuda_to_musa/design.md) §5。
 
 ### 4.3 项目自写正控：存放与命名约定
 
@@ -491,7 +500,7 @@ MUSA 侧没有“自带 fixture 流水线”，evaluator 只有
 两处都没有才会按 judge-only 跳过。写完后重新跑：
 
 ```bash
-python3 tools/gold_sanity.py --parent cuda_to_musa/tasks --only <task> --label musa_gold
+python3 tools/gold_sanity.py --parent v1/cuda_to_musa/tasks --only <task> --label musa_gold
 ```
 
 每道题的验收条件（全部满足才算“正控已验证”）：
@@ -502,14 +511,14 @@ python3 tools/gold_sanity.py --parent cuda_to_musa/tasks --only <task> --label m
 - [ ] CUDA API 门通过
 - [ ] MUSA kernel 结构门通过
 - [ ] 报告里记录镜像 digest、驱动版本、SDK 版本、日期、提交 hash
-- [ ] 在 [cuda_to_musa/positive_controls.md](cuda_to_musa/positive_controls.md)
+- [ ] 在 [v1/cuda_to_musa/positive_controls.md](v1/cuda_to_musa/positive_controls.md)
       的表格里从 `judge-only` 改成“正控已验证”
 
 ### 4.4 受阻题怎么标记
 
 `b_l2_rms_norm`、`b_l3_group_norm` 受阻于判卷器在 48 GB 卡上无法完成
 `torch.allclose`，与正控和实现无关。2026-11-16 起这两题已从 slate 中移出，
-归档在 `archive/cuda_to_musa_blocked_oom/`，由两道同难度、内存可控的题补位；
+归档在 `v1/archive/cuda_to_musa_blocked_oom/`，由两道同难度、内存可控的题补位；
 它们不再出现在任何统计里。若将来恢复，报告里必须写：
 
 ```text
@@ -532,9 +541,9 @@ BLOCKED (evaluator allclose OOM on 48 GB)
 ### 5.0 IPP：未迁移状态必须编译失败
 
 ```bash
-bash ipp_vsipl_tasks/l1_vec_db_mag/prepare.sh   # 恢复成 Intel IPP 源状态
+bash v1/ipp_vsipl_tasks/l1_vec_db_mag/prepare.sh   # 恢复成 Intel IPP 源状态
 python3 shared/harness/runner.py \
-  --task-root ipp_vsipl_tasks/l1_vec_db_mag --build-dir /tmp/neg_ipp_dbmag
+  --task-root v1/ipp_vsipl_tasks/l1_vec_db_mag --build-dir /tmp/neg_ipp_dbmag
 ```
 
 验收（2026-11-15 在宿主机 GCC 13.3 实测）：
@@ -550,11 +559,11 @@ python3 shared/harness/runner.py \
 
 ```bash
 # 1. 恢复成 agent 初始状态：gold 已从 work/ 删除
-bash windows_to_kylin/tasks/l1_poco_thread/prepare.sh
+bash v1/windows_to_kylin/tasks/l1_poco_thread/prepare.sh
 
 # 2. 不提交任何实现，直接判分
 python3 shared/harness/runner.py \
-  --task-root windows_to_kylin/tasks/l1_poco_thread \
+  --task-root v1/windows_to_kylin/tasks/l1_poco_thread \
   --build-dir /tmp/neg_l1_poco_thread
 ```
 
@@ -578,20 +587,20 @@ python3 shared/harness/runner.py \
 
 ```bash
 python3 shared/harness/runner.py \
-  --task-root windows_to_kylin/tasks/l1_poco_thread --build-dir /tmp/neg_poco   # rc=1, build=fail
+  --task-root v1/windows_to_kylin/tasks/l1_poco_thread --build-dir /tmp/neg_poco   # rc=1, build=fail
 python3 shared/harness/runner.py \
-  --task-root windows_to_kylin/tasks/l2_libuv_thread --build-dir /tmp/neg_libuv # rc=1, build=fail
+  --task-root v3/windows_to_kylin/tasks/l2_libuv_thread --build-dir /tmp/neg_libuv # rc=1, build=fail
 ```
 
 ### 5.2 MUSA：空提交必须编译失败
 
 ```bash
-bash cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
-mkdir -p cuda_to_musa/tasks/b_l1_leaky_relu/work/submission
+bash v1/cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
+mkdir -p v1/cuda_to_musa/tasks/b_l1_leaky_relu/work/submission
 # 不放 submission/leaky_relu_submission.py
 
 python3 shared/harness/runner.py \
-  --task-root cuda_to_musa/tasks/b_l1_leaky_relu \
+  --task-root v1/cuda_to_musa/tasks/b_l1_leaky_relu \
   --build-dir /tmp/neg_b_l1_leaky_relu
 ```
 
@@ -720,8 +729,10 @@ python3 shared/harness/api_removal.py --source-dir /tmp/leak.py \
 `repository/` 里的 DeepSeek Harness（DSH）生产后端：
 
 1. `prepare.sh` 物化 `work/`（gold 留在 `gold/`，不进 agent 工作区）；
-2. 把 `work/` 复制到 `reports/agent_trial/<label>/<task>/run<N>/workspace`，
-   `chown` 到 10001，以 `--network none` 启动目标镜像容器；
+2. 题面由 `shared/harness/agent_prompt.py` 渲染，只含标题、spec、目标环境、
+   工作区、构建命令和提交方式；`work/` 经 `agent_view.copy_agent_view()` 过滤后
+   复制到 `reports/agent_trial/<label>/<task>/run<N>/workspace`，`chown` 到 10001，
+   以 `--network none` 启动目标镜像容器；
 3. `DshHeadlessBackend`（`@deepseek-ai/dsh` 0.2.2-rc.1 + 固定的
    `controlled-bash` 插件）在该容器内跑 agent，唯一工具是 `controlled_bash`，
    完成协议是输出 `COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT`；
@@ -742,12 +753,12 @@ gcc-toolset-13 13.3.1，判分环境与 gold 正控一致。镜像 ID：
 ```bash
 # 真实模型（凭据来自环境变量或仓库根 .env）
 python3 tools/agent_trial.py \
-  --parent windows_to_kylin/tasks \
+  --parent v1/windows_to_kylin/tasks --parent v3/windows_to_kylin/tasks \
   --only l1_poco_thread --only l2_libuv_thread \
   --runs 3 --label p2_kylin
 
 # 不花钱的全链路自测：本地 fixture 模型，只验证接线，不产生可用的能力信号
-python3 tools/agent_trial.py --parent windows_to_kylin/tasks \
+python3 tools/agent_trial.py --parent v1/windows_to_kylin/tasks \
   --only l1_poco_thread --runs 1 --fake-model --label p2_selftest
 ```
 
@@ -789,7 +800,7 @@ python3 tools/agent_trial.py --parent windows_to_kylin/tasks \
 
 ---
 
-## 8. `ipp_vsipl_tasks/`（已统一格式）
+## 8. `v1/ipp_vsipl_tasks/`（已统一格式）
 
 20 道 IPP→VSIPL 题已迁到统一任务包格式：
 
@@ -806,15 +817,15 @@ python3 tools/agent_trial.py --parent windows_to_kylin/tasks \
 ### 8.1 检查与正控
 
 ```bash
-python3 tools/verify_task.py --parent ipp_vsipl_tasks
+python3 tools/verify_task.py --parent v1/ipp_vsipl_tasks
 # 期望：VERIFY=PASS tasks=20
 # （合成源 repo 不是 URL，会有 11 条 warning，不是错误）
 
-python3 tools/check_pins.py --parent ipp_vsipl_tasks --offline
+python3 tools/check_pins.py --parent v1/ipp_vsipl_tasks --offline
 # 期望：ok=20 warn=0 fail=0 materialized=20 gold_present=20
 
 VSIPL_ROOT=/home/fcbbbb/work/ipp_screening_20261114/src/jvsip \
-  python3 tools/gold_sanity.py --parent ipp_vsipl_tasks \
+  python3 tools/gold_sanity.py --parent v1/ipp_vsipl_tasks \
   --report-dir reports/gold_sanity_ipp20 --label ipp_all20
 # 期望：SUMMARY pass=20 fail=0
 ```
@@ -844,7 +855,7 @@ VSIPL_ROOT=/home/fcbbbb/work/ipp_screening_20261114/src/jvsip \
 | `l2_opencv_highgui` | `modules/highgui/src/window_w32.h` | 删除（该 commit 只有 `.cpp`） |
 | `l3_curl_build` | `projects/Windows/VC15/lib/libcurl.sln` | `projects/Windows/VC14.30/lib/libcurl.sln` |
 
-同步修改了 `task.yaml`、`provenance.json` 和 `windows_to_kylin/slate.yaml`，避免重新生成时又写回坏路径。
+同步修改了 `task.yaml`、`provenance.json` 和 `v1/windows_to_kylin/slate.yaml`，避免重新生成时又写回坏路径。
 
 另外，`l1_poco_thread/work/Foundation/src/Thread_POSIX.cpp` 曾被上一次 gold 运行污染（gold 泄漏进 agent 可见目录），已通过重新执行 `prepare.sh` 清除。以后每次跑完 gold sanity，给 agent 用之前都要重跑 `prepare.sh`。
 
@@ -854,18 +865,18 @@ VSIPL_ROOT=/home/fcbbbb/work/ipp_screening_20261114/src/jvsip \
 
 ```bash
 # 静态检查
-python3 tools/verify_task.py --parent windows_to_kylin/tasks --parent cuda_to_musa/tasks
+python3 tools/verify_task.py --parent v1/windows_to_kylin/tasks --parent v1/cuda_to_musa/tasks
 python3 tools/check_pins.py
 python3 tools/check_pins.py --offline --json
 
 # 正控（麒麟，容器内）
-python3 tools/gold_sanity.py --parent windows_to_kylin/tasks --level L1 --label kylin_L1
-python3 tools/gold_sanity.py --parent windows_to_kylin/tasks --level L2 --label kylin_L2
-python3 tools/gold_sanity.py --parent windows_to_kylin/tasks --level L3 \
+python3 tools/gold_sanity.py --parent v1/windows_to_kylin/tasks --level L1 --label kylin_L1
+python3 tools/gold_sanity.py --parent v1/windows_to_kylin/tasks --level L2 --label kylin_L2
+python3 tools/gold_sanity.py --parent v1/windows_to_kylin/tasks --level L3 \
   --exclude negative_win32_eventlog --label kylin_L3
 
 # 正控（MUSA 主机上，18 题；完整列表见 §4.1）
-python3 tools/gold_sanity.py --parent cuda_to_musa/tasks \
+python3 tools/gold_sanity.py --parent v1/cuda_to_musa/tasks \
   --only b_l1_leaky_relu --only b_l1_mse_loss --only b_l2_layer_norm \
   --only b_l1_relu --only b_l1_sigmoid --only b_l1_swish --only b_l1_softmax \
   --only b_l2_cumsum --only b_l2_sum_reduce --only b_l2_argmax \
@@ -875,25 +886,25 @@ python3 tools/gold_sanity.py --parent cuda_to_musa/tasks \
   --label musa_all18
 
 # gold 隔离检查（无需 GPU）
-bash cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
-find cuda_to_musa/tasks/b_l1_leaky_relu/work -name 'musa_new_model_*'
+bash v1/cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
+find v1/cuda_to_musa/tasks/b_l1_leaky_relu/work -name 'musa_new_model_*'
 
 # kernel 结构门与 API 门（无需 GPU）
 python3 shared/harness/check_musa_submission.py \
-  cuda_to_musa/tasks/b_l1_leaky_relu/gold/prompts/musa_new_model_leaky_relu.py
+  v1/cuda_to_musa/tasks/b_l1_leaky_relu/gold/prompts/musa_new_model_leaky_relu.py
 python3 shared/harness/api_removal.py \
-  --source-dir cuda_to_musa/tasks/b_l1_leaky_relu/gold/prompts/musa_new_model_leaky_relu.py \
+  --source-dir v1/cuda_to_musa/tasks/b_l1_leaky_relu/gold/prompts/musa_new_model_leaky_relu.py \
   --source-regex 'torch\.cuda|\.cuda\(\)|cuda[A-Z]\w*\s*\(|#include\s*[<"]cuda|#include\s*[<"]cublas|#include\s*[<"]cudnn|#include\s*[<"]cufft|\bnvcc\b|\bcublas[A-Za-z0-9_]*\s*\(|\bcudnn[A-Za-z0-9_]*\s*\(|\bcufft[A-Za-z0-9_]*\s*\(|device\s*=\s*['\''"]cuda|\bCUDA_[A-Z0-9_]+|__CUDACC__'
 
 # 负控（麒麟，空实现）
-bash windows_to_kylin/tasks/l1_poco_thread/prepare.sh
-python3 shared/harness/runner.py --task-root windows_to_kylin/tasks/l1_poco_thread \
+bash v1/windows_to_kylin/tasks/l1_poco_thread/prepare.sh
+python3 shared/harness/runner.py --task-root v1/windows_to_kylin/tasks/l1_poco_thread \
   --build-dir /tmp/neg_l1_poco_thread
 
 # 负控（MUSA，空提交）
-bash cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
-mkdir -p cuda_to_musa/tasks/b_l1_leaky_relu/work/submission
-python3 shared/harness/runner.py --task-root cuda_to_musa/tasks/b_l1_leaky_relu \
+bash v1/cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
+mkdir -p v1/cuda_to_musa/tasks/b_l1_leaky_relu/work/submission
+python3 shared/harness/runner.py --task-root v1/cuda_to_musa/tasks/b_l1_leaky_relu \
   --build-dir /tmp/neg_b_l1_leaky_relu
 ```
 
@@ -904,7 +915,7 @@ python3 shared/harness/runner.py --task-root cuda_to_musa/tasks/b_l1_leaky_relu 
 | `verify_task.py` | 全部通过 | 有失败 | — | — |
 | `check_pins.py` | 全部验证 | 有坏 pin | 有无法验证的 pin | — |
 | `gold_sanity.py` | 已执行的都通过（允许 skip） | 有 gold 失败 | 有环境/准备错误 | 没找到任务 |
-| `baseline_trial.py` | 无失败（允许 skip） | 有尝试失败 | 环境/准备错误 | 没找到任务 |
+| `migration_trial.py` | 无失败（允许 skip） | 有尝试失败 | 环境/准备错误 | 没找到任务 |
 | `runner.py` | 全部 gate 通过 | 有 gate 失败 | 任务包有问题 | — |
 ---
 
@@ -914,19 +925,19 @@ python3 shared/harness/runner.py --task-root cuda_to_musa/tasks/b_l1_leaky_relu 
 
 ```bash
 # 自检（fixture 模型，无凭据；seed-gold 只验证判分器）
-python3 tools/baseline_trial.py --only l2_rubberband_fft --runs 1 \
+python3 tools/migration_trial.py --only l2_rubberband_fft --runs 1 \
   --fake-model --seed-gold --label plumbing_ipp
-python3 tools/baseline_trial.py --only l2_libuv_thread --runs 1 \
+python3 tools/migration_trial.py --only l2_libuv_thread --runs 1 \
   --fake-model --seed-gold --label plumbing_kylin
-python3 tools/baseline_trial.py --only b_l2_layer_norm --runs 1 \
+python3 tools/migration_trial.py --only b_l2_layer_norm --runs 1 \
   --fake-model --seed-gold --musa-transport local --label plumbing_musa
 
 # 负控（不迁移必须 FAIL）
-python3 tools/baseline_trial.py --only l2_rubberband_fft --runs 1 \
+python3 tools/migration_trial.py --only l2_rubberband_fft --runs 1 \
   --fake-model --label negative_ipp
 
 # 正式基线（真实模型；MUSA 需要 env/remote.yaml）
-python3 tools/baseline_trial.py \
+python3 tools/migration_trial.py \
   --only l2_rubberband_fft --only l2_libuv_thread --only b_l2_layer_norm \
   --runs 1 --label baseline_three_v1
 ```
@@ -934,3 +945,50 @@ python3 tools/baseline_trial.py \
 镜像要求：`migration/ipp:cpu`（`docker build -f env/Dockerfile.ipp -t migration/ipp:cpu .`）
 与 `migration/kylin:sp3-p2`。MUSA 连接信息放 `env/remote.yaml`（勿提交），
 可选 `agent_user` 与 `isolate_network: true`。
+
+## 12. V3 组件方法论：建库与配对
+
+V3 把“迁移经验组件”从历史迁移记录中抽取出来，再与当前任务的共性组件合并成迁移方案。
+设计原理见 [docs/task_design_v3.md](docs/task_design_v3.md)，当前状态见
+[docs/current_state.md](docs/current_state.md)。
+
+### 12.1 建库
+
+语料的 `before` 取建库任务的 `work/`，`after` 取 `gold/`（上游项目自身已完成的目标平台实现），
+**不取 agent 运行结果**。
+
+```bash
+# 先物化 5 个建库任务（l2_libuv_fs / l2_libuv_process / l2_libuv_thread /
+# l2_libarchive_read_disk / l2_libarchive_write_disk）
+for t in l2_libuv_fs l2_libuv_process l2_libuv_thread \
+         l2_libarchive_read_disk l2_libarchive_write_disk; do
+  bash "v3/windows_to_kylin/tasks/$t/prepare.sh"
+done
+
+# 语料 → 抽取 → 审核 → 发布 → 回放验证
+python3 tools/build_history_corpus.py --spec v3/windows_to_kylin/history/spec.yaml
+python3 tools/extract_transformation.py --stage all \
+  --spec v3/windows_to_kylin/history/spec.yaml --resume
+python3 tools/extract_transformation.py --stage verify \
+  --spec v3/windows_to_kylin/history/spec.yaml
+```
+
+产物写入 `v3/windows_to_kylin/library_generated/<run>/library/manifest.json`，不会覆盖手写库
+`v3/windows_to_kylin/library/`。18 个 V3 任务在 `task.yaml` 中引用手写库；
+`v3_poco_fs_stack` 引用 `demo_new_flow_v4`。
+
+### 12.2 配对运行
+
+```bash
+python3 tools/bench.py run --arm default --scenario windows_to_kylin_v3 \
+  --only v3_poco_fs_stack --label default_rN
+python3 tools/bench.py run --arm method --scenario windows_to_kylin_v3 \
+  --only v3_poco_fs_stack --label method_rN
+python3 tools/bench.py gold --scenario windows_to_kylin_v3 \
+  --only v3_poco_fs_stack --label gold_rN
+python3 tools/bench.py compare --default-label default_rN --method-label method_rN
+```
+
+`windows_to_kylin_v3` 在 `bench.yaml` 中默认关闭，用 `--scenario` 显式选择。方法臂的检索结果
+写在运行记录的 `selection.json`；`v3_poco_fs_stack` 的方法臂曾检索到
+`posix-file-and-directory-request-backend-behind-a-96ebe29d`。

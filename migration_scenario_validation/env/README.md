@@ -35,9 +35,9 @@ Inside the container, as user `bench`:
 
 ```bash
 export MIGRATION_BENCH_CACHE=/cache/migration-bench
-bash windows_to_kylin/tasks/l1_poco_thread/prepare.sh
+bash v1/windows_to_kylin/tasks/l1_poco_thread/prepare.sh
 python3 shared/harness/runner.py \
-  --task-root windows_to_kylin/tasks/l1_poco_thread \
+  --task-root v1/windows_to_kylin/tasks/l1_poco_thread \
   --build-dir /tmp/build_l1_poco_thread
 ```
 
@@ -85,8 +85,8 @@ which mcc
 Then prepare and run a task:
 
 ```bash
-bash cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
-python3 shared/harness/runner.py --task-root cuda_to_musa/tasks/b_l1_leaky_relu \
+bash v1/cuda_to_musa/tasks/b_l1_leaky_relu/prepare.sh
+python3 shared/harness/runner.py --task-root v1/cuda_to_musa/tasks/b_l1_leaky_relu \
   --build-dir /tmp/build_b_l1_leaky_relu
 ```
 
@@ -101,7 +101,7 @@ When the MUSA host is not the machine running the benchmark:
 cp env/remote.yaml.example env/remote.yaml
 # edit host/user/remote_root
 python3 shared/harness/run_remote.py --config env/remote.yaml \
-  --local-dir cuda_to_musa/tasks/b_l1_leaky_relu \
+  --local-dir v1/cuda_to_musa/tasks/b_l1_leaky_relu \
   --remote-dir b_l1_leaky_relu \
   --command "bash prepare.sh && python3 harness/run_task.py"
 ```
@@ -122,7 +122,7 @@ network access for `prepare.sh`).
   `b_l3_group_norm` were removed from the slate on 2026-11-16 — the
   evaluator's `torch.allclose` ran out of memory on their 8.59 GB tensors on
   this 47.90 GB card — and archived under
-  `archive/cuda_to_musa_blocked_oom/`, with two replacements
+  `v1/archive/cuda_to_musa_blocked_oom/`, with two replacements
   (`b_l2_cosine_similarity_loss`, `b_l3_conv2d_batch_norm_scaling`) verified
   in `reports/gold_sanity/musa_batch6/`. `env/Dockerfile.musa` itself is
   still **unbuilt**; treat its image recipe as untested.

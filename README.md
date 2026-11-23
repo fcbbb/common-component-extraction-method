@@ -121,7 +121,7 @@ python -m component_method.workflow.run_batch \
 | `build` | `extract → curate → prepare_reviews` | `inputs/frozen_components.json` |
 | `audit` | `review → finalize_review` | `runs/<task>/review_v1/summary.json` |
 | `publish` | 组件库发布 | `outputs/full_library/manifest.json` |
-| `retrieval` | 检索并物化选择 | `attempts/<attempt>/result.json` |
+| `retrieval` | 检索、校验选择并物化 bundle | `attempts/<attempt>/result.json`；配置了目标时另写 `component_bundle/` |
 | `task` | 运行任务 | `task_attempts/<attempt>/run_manifest.json` |
 | `report` | 工作区汇总（`run_batch`） | 工作区 `summary.json` |
 

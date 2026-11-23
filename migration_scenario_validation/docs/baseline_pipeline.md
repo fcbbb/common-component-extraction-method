@@ -22,14 +22,14 @@ MUSA 机器上没有 Docker，但可以运行 Node：pinned DSH 安装在租用�
 ## 2. 组成
 
 ```
-tools/baseline_trial.py    三个场景的统一编排器（本轮新增）
+tools/migration_trial.py    三个场景的统一编排器（本轮新增）
 tools/docker_api_shim.py   Docker API 子集 → 本地/SSH shell（本轮新增）
 env/Dockerfile.ipp         IPP CPU 沙箱（本轮新增，已构建）
 env/remote.yaml            MUSA 连接信息（需自行创建，未提交）
 reports/baseline/<label>/  每次运行的 attempt.json、diff、summary.json
 ```
 
-`baseline_trial.py` 复用了 `tools/agent_trial.py` 的 prepare、workspace
+`migration_trial.py` 复用了 `tools/agent_trial.py` 的 prepare、workspace
 复制、chown、DSH backend、fake model、判分命令，避免两套行为漂移。
 
 ## 3. 快速自检（不花钱，不需要 GPU）
@@ -38,27 +38,27 @@ reports/baseline/<label>/  每次运行的 attempt.json、diff、summary.json
 cd common-component-extraction-method/repository/migration_scenario_validation
 
 # 3.1 只检查选择、参数和摘要，不起容器
-python3 tools/baseline_trial.py \
+python3 tools/migration_trial.py \
   --only l2_rubberband_fft --only l2_libuv_thread --only b_l2_layer_norm \
   --runs 1 --fake-model --dry-run --label dryrun_three
 # SUMMARY pass=0 fail=0 error=0 skip=3
 
 # 3.2 判分正控：把 gold 塞进 workspace，证明判分链路能 PASS
-python3 tools/baseline_trial.py --only l2_rubberband_fft \
+python3 tools/migration_trial.py --only l2_rubberband_fft \
   --runs 1 --fake-model --seed-gold --label plumbing_ipp
-python3 tools/baseline_trial.py --only l2_libuv_thread \
+python3 tools/migration_trial.py --only l2_libuv_thread \
   --runs 1 --fake-model --seed-gold --label plumbing_kylin
 # 期望：PASS，build=ok tests=pass api=pass
 
 # 3.3 负控：不迁移，判分必须 FAIL（当前源码编译不过）
-python3 tools/baseline_trial.py --only l2_rubberband_fft \
+python3 tools/migration_trial.py --only l2_rubberband_fft \
   --runs 1 --fake-model --label negative_ipp
-python3 tools/baseline_trial.py --only l2_libuv_thread \
+python3 tools/migration_trial.py --only l2_libuv_thread \
   --runs 1 --fake-model --label negative_kylin
 # 期望：FAIL，build=fail tests=skipped
 
 # 3.4 MUSA 工具路径自检：不连远端、不判分
-python3 tools/baseline_trial.py --only b_l2_layer_norm \
+python3 tools/migration_trial.py --only b_l2_layer_norm \
   --runs 1 --fake-model --seed-gold --musa-transport local --label plumbing_musa
 # 期望：SKIP（agent=Submitted），shim 日志里每个 exec 都是 200/201
 ```
@@ -75,7 +75,7 @@ python3 tools/baseline_trial.py --only b_l2_layer_norm \
 docker image inspect migration/ipp:cpu >/dev/null
 docker image inspect migration/kylin:sp3-p2 >/dev/null
 
-python3 tools/baseline_trial.py \
+python3 tools/migration_trial.py \
   --only l2_rubberband_fft --only l2_libuv_thread \
   --runs 1 --label baseline_local_v1
 ```
@@ -129,7 +129,7 @@ block_network_env: true
 4. 运行：
 
 ```bash
-python3 tools/baseline_trial.py --only b_l2_layer_norm \
+python3 tools/migration_trial.py --only b_l2_layer_norm \
   --runs 1 --label baseline_musa_v1
 ```
 
@@ -145,7 +145,7 @@ python3 tools/baseline_trial.py --only b_l2_layer_norm \
 ### 4.3 三题一起跑
 
 ```bash
-python3 tools/baseline_trial.py \
+python3 tools/migration_trial.py \
   --only l2_rubberband_fft --only l2_libuv_thread --only b_l2_layer_norm \
   --runs 1 --label baseline_three_v1
 ```
@@ -221,19 +221,18 @@ MUSA 链路已连通（`env/remote.yaml` 已配置，密码在 `~/.ssh/` 下的 
 文件）。剩余步骤只是用真实模型跑基线：
 
 ```bash
-python3 tools/baseline_trial.py --only b_l2_layer_norm --runs 1 --label baseline_musa_v1
+python3 tools/migration_trial.py --only b_l2_layer_norm --runs 1 --label baseline_musa_v1
 ```
 
 ## 8. 方法臂（condition B）：单主 agent
 
-同一个 `baseline_trial.py` 用 `--arm method` 驱动 B 臂，或用
+同一个 `migration_trial.py` 用 `--arm method` 驱动 B 臂，或用
 `./run-method.sh`（内部调用 `bench.py run --arm method`）。每次尝试只有一个
 DSH 会话，使用 `component-method-migration`（唯一方法入口
 `component_run_stage` + `controlled_bash` + DSH 内置作业工具；不加载逐阶段和
 任务执行/报表插件，迁移工作区下 kernel 也拒绝任务执行/报表阶段）。主 agent 在当前
 尝试的工作区上依次调用同一个入口的
-`stage=prepare → build → audit → publish → retrieval →
-validate_selection → materialize_selection`，把选中的
+`stage=prepare → build → audit → publish → retrieval`，把选中的
 组件物化到 `/workspace/component_bundle/`，然后**在同一个会话里**按任务提示完成迁移。
 组件审核与 20 题方法一致（`max_review_repair_rounds: 1`，一次返修 + 定向复审），只有
 审核通过的组件会发布进库。`build`/`audit`/`retrieval` 是后台作业，由内置运行时

@@ -42,6 +42,8 @@ build:
   artifact: "{build}/libfoo.a"
 hidden_tests:
   command: "python3 harness/run_hidden.py --golden {golden}"
+regression_tests:       # optional: existing suites that must stay green
+  command: "cd {build}/bin && ./testrunner -ignore {work}/cppignore.lnx FileTest"
 gates:
   build: ...
   api_removal:
@@ -65,6 +67,7 @@ Placeholders: `{root}`, `{work}`, `{build}`, `{golden}`.  Commands run with
 - `layout: slice` — only `source_files`, `reference_files`, `spec_files`,
   `test_files` are copied into `work/<group>/`.  Gold is never copied.
 
+
 ### API-removal gate
 
 `shared/harness/api_removal.py` scans:
@@ -74,7 +77,7 @@ Placeholders: `{root}`, `{work}`, `{build}`, `{golden}`.  Commands run with
    `exclude_globs` (fnmatch on relative path or basename);
 3. a negative control when `expect_fail: true`: the gate passes only when a
    removed-API hit *is* found.  This is used by
-   `windows_to_kylin/tasks/negative_win32_eventlog`, where the correct answer is
+   `v3/windows_to_kylin/tasks/negative_win32_eventlog`, where the correct answer is
    a non-portability report rather than a silent stub.
 
 `source_dirs` exists because real upstream trees legitimately contain
