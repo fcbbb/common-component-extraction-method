@@ -788,11 +788,20 @@ def cmd_compare(args: argparse.Namespace) -> int:
     )
     # B attempts that never reached judging produced no usable bundle or lost
     # the method runtime; they are invalid B results, not failures of the task.
+    # A validated empty selection is different: retrieval abstained because no
+    # library component covers the task, which is a legitimate outcome and is
+    # reported on its own line.
+    def _no_match(row: Dict[str, Any]) -> bool:
+        bundle = row.get("component_bundle") or {}
+        return bool(bundle.get("ok")) and int(bundle.get("component_count") or 0) == 0
+
+    no_match = sum(1 for row in method_rows.values() if _no_match(row))
     invalid_method = sum(
         1
         for row in method_rows.values()
         if str(row.get("status")) == "error"
         and not (row.get("judge") or {}).get("report")
+        and not _no_match(row)
     )
     lines += [
         "",
@@ -800,6 +809,10 @@ def cmd_compare(args: argparse.Namespace) -> int:
         (
             f"BUNDLES attempts={len(method_rows)} "
             f"usable={len(usable_bundles)} components={components}"
+        ),
+        (
+            f"RETRIEVAL_NO_MATCH {no_match} "
+            "(validated empty selection; method arm has nothing to transfer)"
         ),
         (
             f"INVALID_METHOD {invalid_method} "

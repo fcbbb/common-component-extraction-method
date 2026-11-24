@@ -1,0 +1,30 @@
+{
+  "task_id": "synthetic_spawn_event_loop",
+  "scenario": "windows_to_kylin",
+  "repo": "synthetic://windows-to-posix/event-loop-spawn",
+  "commit": "synthetic-1",
+  "tag": "n/a",
+  "subdir": null,
+  "license": "project-authored",
+  "source_files": [
+    "src/win32/spl_process_win32.c"
+  ],
+  "gold_files": [
+    "src/posix/spl_process_posix.c"
+  ],
+  "test_files": [
+    "tests/test_spl.c"
+  ],
+  "remove": [
+    "src/posix/spl_process_posix.c"
+  ],
+  "gold_kind": "implementation",
+  "task_family": "v3",
+  "family": "synthetic_spawn_event_loop",
+  "family_type": "synthetic",
+  "sequence": 25,
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "materialized": true,
+  "generated_by": "hand-written synthetic fixture around the process-spawn-backend component",
+  "generated_at": "2026-11-23T00:00:00Z"
+}

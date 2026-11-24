@@ -1,0 +1,37 @@
+{
+  "task_id": "v2_nginx_thread",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/nginx/nginx.git",
+  "commit": "1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5",
+  "tag": "release-1.26.3",
+  "subdir": null,
+  "license": "BSD-2-Clause",
+  "source_files": [
+    "src/os/win32/ngx_thread.c",
+    "src/os/win32/ngx_thread.h"
+  ],
+  "gold_files": [
+    "src/os/unix/ngx_thread_mutex.c",
+    "src/os/unix/ngx_thread_cond.c",
+    "src/os/unix/ngx_thread_id.c"
+  ],
+  "test_files": [
+    "src/os/unix/ngx_thread.h",
+    "src/core/ngx_thread_pool.c"
+  ],
+  "remove": [
+    "src/os/unix/ngx_thread_mutex.c",
+    "src/os/unix/ngx_thread_cond.c",
+    "src/os/unix/ngx_thread_id.c"
+  ],
+  "gold_kind": "implementation",
+  "task_family": "v3",
+  "family": "nginx_os",
+  "family_type": "pattern",
+  "sequence": 14,
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "components": [
+    "portable-threading-and-synchronisation-backend-for-an-96ad6495"
+  ],
+  "materialized": true
+}

@@ -1,0 +1,33 @@
+{
+  "task_id": "v2_poco_process",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/pocoproject/poco.git",
+  "commit": "d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b",
+  "tag": "poco-1.13.3-release",
+  "subdir": null,
+  "license": "BSL-1.0",
+  "source_files": [
+    "Foundation/src/Process_WIN32U.cpp",
+    "Foundation/include/Poco/Process_WIN32U.h"
+  ],
+  "gold_files": [
+    "Foundation/src/Process_UNIX.cpp"
+  ],
+  "test_files": [
+    "Foundation/testsuite/src/ProcessTest.cpp",
+    "Foundation/testsuite/src/ProcessRunnerTest.cpp",
+    "Foundation/testsuite/src/TestApp.cpp"
+  ],
+  "remove": [
+    "Foundation/src/Process_UNIX.cpp"
+  ],
+  "gold_kind": "implementation",
+  "task_family": "v3",
+  "family": "poco_foundation",
+  "family_type": "pattern",
+  "sequence": 8,
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "materialized": true,
+  "generated_by": "manual component-first case",
+  "generated_at": "2026-11-23T00:00:00Z"
+}

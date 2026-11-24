@@ -1,0 +1,18 @@
+# 20-task held-out suite (v3 slate minus library_source), batch round 1.
+# Already running / already covered by the three-case queue:
+#   v2_nginx_process  v2_nginx_thread  v2_poco_process
+# Not packaged yet: v2_curl_thread v2_curl_file synthetic_multi_call_site
+v2_file
+v2_path
+v3_poco_fs_stack
+v2_nginx_files
+v2_curl_tls
+v2_thread
+v2_rwlock_semaphore
+v2_shared_library
+v2_foundation_full
+v2_nginx_full
+v2_curl_build
+l2_opencv_highgui
+negative_win32_eventlog
+v2_libgit2_util_full

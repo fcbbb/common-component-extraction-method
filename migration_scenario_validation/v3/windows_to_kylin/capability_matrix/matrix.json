@@ -1,0 +1,3136 @@
+{
+  "schema": "component-task-matrix-v1",
+  "component_count": 5,
+  "task_count": 25,
+  "rows": [
+    {
+      "task_id": "l2_libarchive_read_disk",
+      "package": "l2_libarchive_read_disk",
+      "domain": "archives",
+      "family": "libarchive",
+      "has_work": true,
+      "planned": false,
+      "work_files": 669,
+      "candidates": [
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "archive",
+            "directory",
+            "disk",
+            "file",
+            "link",
+            "metadata"
+          ],
+          "operation_score": 8.0,
+          "api_score": 22.268,
+          "api_hits": [
+            {
+              "token": "st_dev",
+              "count": 12,
+              "weight": 5.723
+            },
+            {
+              "token": "st_ino",
+              "count": 13,
+              "weight": 4.738
+            },
+            {
+              "token": "SEEK_DATA",
+              "count": 2,
+              "weight": 4.407
+            },
+            {
+              "token": "SEEK_HOLE",
+              "count": 2,
+              "weight": 4.407
+            },
+            {
+              "token": "ENOENT",
+              "count": 13,
+              "weight": 2.994
+            }
+          ],
+          "prose_score": 0.0573,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "archive",
+            "directory",
+            "disk",
+            "file",
+            "link",
+            "metadata"
+          ],
+          "operation_score": 8.0,
+          "api_score": 19.474,
+          "api_hits": [
+            {
+              "token": "SUID",
+              "count": 5,
+              "weight": 6.792
+            },
+            {
+              "token": "ACLs",
+              "count": 26,
+              "weight": 6.472
+            },
+            {
+              "token": "SGID",
+              "count": 4,
+              "weight": 6.211
+            }
+          ],
+          "prose_score": 0.047,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "directory",
+            "file",
+            "link",
+            "metadata"
+          ],
+          "operation_score": 6.0,
+          "api_score": 9.059,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 13,
+              "weight": 2.994
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 9,
+              "weight": 2.685
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 2,
+              "weight": 1.907
+            },
+            {
+              "token": "EPERM",
+              "count": 2,
+              "weight": 1.474
+            }
+          ],
+          "prose_score": 0.0447,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "l2_libarchive_write_disk",
+      "package": "l2_libarchive_write_disk",
+      "domain": "archives",
+      "family": "libarchive",
+      "has_work": true,
+      "planned": false,
+      "work_files": 669,
+      "candidates": [
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "archive",
+            "directory",
+            "disk",
+            "file",
+            "link",
+            "rename",
+            "symlink"
+          ],
+          "operation_score": 9.0,
+          "api_score": 18.085,
+          "api_hits": [
+            {
+              "token": "ACLs",
+              "count": 25,
+              "weight": 6.412
+            },
+            {
+              "token": "SUID",
+              "count": 4,
+              "weight": 6.211
+            },
+            {
+              "token": "SGID",
+              "count": 3,
+              "weight": 5.462
+            }
+          ],
+          "prose_score": 0.0625,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "archive",
+            "directory",
+            "disk",
+            "file",
+            "link",
+            "symlink"
+          ],
+          "operation_score": 8.0,
+          "api_score": 22.268,
+          "api_hits": [
+            {
+              "token": "st_dev",
+              "count": 12,
+              "weight": 5.723
+            },
+            {
+              "token": "st_ino",
+              "count": 13,
+              "weight": 4.738
+            },
+            {
+              "token": "SEEK_DATA",
+              "count": 2,
+              "weight": 4.407
+            },
+            {
+              "token": "SEEK_HOLE",
+              "count": 2,
+              "weight": 4.407
+            },
+            {
+              "token": "ENOENT",
+              "count": 13,
+              "weight": 2.994
+            }
+          ],
+          "prose_score": 0.0567,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "directory",
+            "file",
+            "link",
+            "rename",
+            "symlink"
+          ],
+          "operation_score": 7.0,
+          "api_score": 8.961,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 13,
+              "weight": 2.994
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 8,
+              "weight": 2.586
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 2,
+              "weight": 1.907
+            },
+            {
+              "token": "EPERM",
+              "count": 2,
+              "weight": 1.474
+            }
+          ],
+          "prose_score": 0.0488,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "l2_libuv_fs",
+      "package": "l2_libuv_fs",
+      "domain": "async-io",
+      "family": "libuv",
+      "has_work": true,
+      "planned": false,
+      "work_files": 356,
+      "candidates": [
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "access",
+            "chmod",
+            "chown",
+            "close",
+            "directory",
+            "file",
+            "fstat",
+            "link",
+            "lstat",
+            "mkdir",
+            "open",
+            "read",
+            "rename",
+            "rmdir",
+            "stat",
+            "symlink",
+            "truncate",
+            "unlink",
+            "write"
+          ],
+          "operation_score": 21.0,
+          "api_score": 14.597,
+          "api_hits": [
+            {
+              "token": "IOV_MAX",
+              "count": 4,
+              "weight": 3.919
+            },
+            {
+              "token": "ENOENT",
+              "count": 9,
+              "weight": 2.685
+            },
+            {
+              "token": "EPERM",
+              "count": 6,
+              "weight": 2.431
+            },
+            {
+              "token": "copy_file_range",
+              "count": 1,
+              "weight": 2.234
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 2,
+              "weight": 1.907
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 2,
+              "weight": 1.422
+            }
+          ],
+          "prose_score": 0.0762,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "access",
+            "close",
+            "directory",
+            "file",
+            "link",
+            "lstat",
+            "open",
+            "read",
+            "readlink",
+            "stat",
+            "symlink",
+            "truncate",
+            "write"
+          ],
+          "operation_score": 15.0,
+          "api_score": 10.438,
+          "api_hits": [
+            {
+              "token": "st_dev",
+              "count": 5,
+              "weight": 4.285
+            },
+            {
+              "token": "st_ino",
+              "count": 5,
+              "weight": 3.468
+            },
+            {
+              "token": "ENOENT",
+              "count": 9,
+              "weight": 2.685
+            }
+          ],
+          "prose_score": 0.0504,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "chmod",
+            "close",
+            "directory",
+            "file",
+            "link",
+            "open",
+            "read",
+            "rename",
+            "stat",
+            "symlink",
+            "truncate",
+            "unlink",
+            "write"
+          ],
+          "operation_score": 15.0,
+          "api_score": 1.52,
+          "api_hits": [
+            {
+              "token": "ACLs",
+              "count": 1,
+              "weight": 1.52
+            }
+          ],
+          "prose_score": 0.0521,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": true,
+          "operation_family": "thread",
+          "operation_terms": [
+            "close",
+            "cmake",
+            "file",
+            "link",
+            "read",
+            "write"
+          ],
+          "operation_score": 6.0,
+          "api_score": 2.923,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 3,
+              "weight": 1.898
+            },
+            {
+              "token": "x86_64",
+              "count": 1,
+              "weight": 1.025
+            }
+          ],
+          "prose_score": 0.053,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "l2_libuv_process",
+      "package": "l2_libuv_process",
+      "domain": "async-io",
+      "family": "libuv",
+      "has_work": true,
+      "planned": false,
+      "work_files": 356,
+      "candidates": [
+        {
+          "bundle_id": "process-spawn-backend-for-an-event-loop-win32-handle-c7216288",
+          "title": "Process spawn backend for an event loop: Win32 handle-based spawning rebuilt on POSIX fork/exec",
+          "capability": "process",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "process",
+          "operation_terms": [
+            "close",
+            "descriptor",
+            "exit",
+            "kill",
+            "path",
+            "pipe",
+            "process",
+            "spawn",
+            "stdio"
+          ],
+          "operation_score": 11.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0629,
+          "source_tasks": [
+            "l2_libuv_process"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "close",
+            "descriptor",
+            "exit",
+            "path",
+            "process",
+            "spawn"
+          ],
+          "operation_score": 6.0,
+          "api_score": 15.606,
+          "api_hits": [
+            {
+              "token": "IOV_MAX",
+              "count": 4,
+              "weight": 3.919
+            },
+            {
+              "token": "copy_file_range",
+              "count": 2,
+              "weight": 3.782
+            },
+            {
+              "token": "ENOENT",
+              "count": 8,
+              "weight": 2.586
+            },
+            {
+              "token": "EPERM",
+              "count": 6,
+              "weight": 2.431
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 3,
+              "weight": 1.762
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 1,
+              "weight": 1.126
+            }
+          ],
+          "prose_score": 0.0445,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "close",
+            "descriptor",
+            "exit",
+            "path",
+            "process"
+          ],
+          "operation_score": 5.0,
+          "api_score": 10.881,
+          "api_hits": [
+            {
+              "token": "st_dev",
+              "count": 6,
+              "weight": 4.585
+            },
+            {
+              "token": "st_ino",
+              "count": 6,
+              "weight": 3.711
+            },
+            {
+              "token": "ENOENT",
+              "count": 8,
+              "weight": 2.586
+            }
+          ],
+          "prose_score": 0.0402,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": true,
+          "operation_family": "thread",
+          "operation_terms": [
+            "close",
+            "cmake",
+            "path",
+            "process"
+          ],
+          "operation_score": 4.0,
+          "api_score": 2.923,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 3,
+              "weight": 1.898
+            },
+            {
+              "token": "x86_64",
+              "count": 1,
+              "weight": 1.025
+            }
+          ],
+          "prose_score": 0.0437,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "close",
+            "descriptor",
+            "path",
+            "process"
+          ],
+          "operation_score": 4.0,
+          "api_score": 1.52,
+          "api_hits": [
+            {
+              "token": "ACLs",
+              "count": 1,
+              "weight": 1.52
+            }
+          ],
+          "prose_score": 0.0381,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "l2_libuv_thread",
+      "package": "l2_libuv_thread",
+      "domain": "runtime",
+      "family": "libuv",
+      "has_work": true,
+      "planned": false,
+      "work_files": 356,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "thread",
+          "operation_terms": [
+            "barrier",
+            "cmake",
+            "condition",
+            "lock",
+            "pool",
+            "semaphore",
+            "thread",
+            "tls"
+          ],
+          "operation_score": 10.0,
+          "api_score": 2.923,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 3,
+              "weight": 1.898
+            },
+            {
+              "token": "x86_64",
+              "count": 1,
+              "weight": 1.025
+            }
+          ],
+          "prose_score": 0.0752,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "lock",
+            "pool",
+            "thread"
+          ],
+          "operation_score": 3.0,
+          "api_score": 16.62,
+          "api_hits": [
+            {
+              "token": "IOV_MAX",
+              "count": 4,
+              "weight": 3.919
+            },
+            {
+              "token": "copy_file_range",
+              "count": 2,
+              "weight": 3.782
+            },
+            {
+              "token": "ENOENT",
+              "count": 9,
+              "weight": 2.685
+            },
+            {
+              "token": "EPERM",
+              "count": 7,
+              "weight": 2.565
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 2,
+              "weight": 1.907
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 3,
+              "weight": 1.762
+            }
+          ],
+          "prose_score": 0.0443,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "condition"
+          ],
+          "operation_score": 1.0,
+          "api_score": 10.98,
+          "api_hits": [
+            {
+              "token": "st_dev",
+              "count": 6,
+              "weight": 4.585
+            },
+            {
+              "token": "st_ino",
+              "count": 6,
+              "weight": 3.711
+            },
+            {
+              "token": "ENOENT",
+              "count": 9,
+              "weight": 2.685
+            }
+          ],
+          "prose_score": 0.0371,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "thread"
+          ],
+          "operation_score": 1.0,
+          "api_score": 1.52,
+          "api_hits": [
+            {
+              "token": "ACLs",
+              "count": 1,
+              "weight": 1.52
+            }
+          ],
+          "prose_score": 0.0408,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "l2_opencv_highgui",
+      "package": "l2_opencv_highgui",
+      "domain": "gui",
+      "family": "opencv_highgui",
+      "has_work": false,
+      "planned": false,
+      "work_files": 0,
+      "candidates": []
+    },
+    {
+      "task_id": "negative_win32_eventlog",
+      "package": "negative_win32_eventlog",
+      "domain": "negative",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2904,
+      "candidates": [
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "file",
+            "stat",
+            "write"
+          ],
+          "operation_score": 3.0,
+          "api_score": 5.141,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            },
+            {
+              "token": "EPERM",
+              "count": 3,
+              "weight": 1.828
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0341,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "cmake",
+            "file",
+            "write"
+          ],
+          "operation_score": 3.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0421,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "file",
+            "stat",
+            "write"
+          ],
+          "operation_score": 3.0,
+          "api_score": 2.474,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            }
+          ],
+          "prose_score": 0.0314,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_curl_build",
+      "package": "v2_curl_build",
+      "domain": "build-system",
+      "family": "curl_build",
+      "has_work": true,
+      "planned": false,
+      "work_files": 884,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake",
+            "compile",
+            "file",
+            "tls"
+          ],
+          "operation_score": 5.0,
+          "api_score": 1.735,
+          "api_hits": [
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0327,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "compile",
+            "file"
+          ],
+          "operation_score": 3.0,
+          "api_score": 1.966,
+          "api_hits": [
+            {
+              "token": "FD_CLOEXEC",
+              "count": 1,
+              "weight": 1.126
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0197,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "compile",
+            "file"
+          ],
+          "operation_score": 3.0,
+          "api_score": 1.52,
+          "api_hits": [
+            {
+              "token": "ACLs",
+              "count": 1,
+              "weight": 1.52
+            }
+          ],
+          "prose_score": 0.0257,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_curl_tls",
+      "package": "v2_curl_tls",
+      "domain": "networking",
+      "family": "curl_tls",
+      "has_work": true,
+      "planned": false,
+      "work_files": 884,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "tls"
+          ],
+          "operation_score": 4.0,
+          "api_score": 1.735,
+          "api_hits": [
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0514,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build"
+          ],
+          "operation_score": 1.0,
+          "api_score": 1.966,
+          "api_hits": [
+            {
+              "token": "FD_CLOEXEC",
+              "count": 1,
+              "weight": 1.126
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0486,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build"
+          ],
+          "operation_score": 1.0,
+          "api_score": 1.52,
+          "api_hits": [
+            {
+              "token": "ACLs",
+              "count": 1,
+              "weight": 1.52
+            }
+          ],
+          "prose_score": 0.0421,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_file",
+      "package": "v2_file",
+      "domain": "filesystem",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2903,
+      "candidates": [
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "file",
+            "filesystem"
+          ],
+          "operation_score": 5.0,
+          "api_score": 4.659,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 6,
+              "weight": 2.344
+            },
+            {
+              "token": "EPERM",
+              "count": 2,
+              "weight": 1.474
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.029,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "file",
+            "filesystem"
+          ],
+          "operation_score": 5.0,
+          "api_score": 2.344,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 6,
+              "weight": 2.344
+            }
+          ],
+          "prose_score": 0.0292,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "file",
+            "filesystem"
+          ],
+          "operation_score": 5.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0305,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake",
+            "file"
+          ],
+          "operation_score": 3.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0333,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_foundation_full",
+      "package": "v2_foundation_full",
+      "domain": "runtime",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2887,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": true,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake"
+          ],
+          "operation_score": 2.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0378,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build"
+          ],
+          "operation_score": 1.0,
+          "api_score": 3.714,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 4,
+              "weight": 2.004
+            },
+            {
+              "token": "EPERM",
+              "count": 1,
+              "weight": 0.871
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0275,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build"
+          ],
+          "operation_score": 1.0,
+          "api_score": 2.004,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 4,
+              "weight": 2.004
+            }
+          ],
+          "prose_score": 0.0277,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_libgit2_util_full",
+      "package": "v2_libgit2_util_full",
+      "domain": "vcs",
+      "family": "libgit2_util",
+      "has_work": true,
+      "planned": false,
+      "work_files": 1115,
+      "candidates": [
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "directory",
+            "path",
+            "process",
+            "thread"
+          ],
+          "operation_score": 5.0,
+          "api_score": 5.053,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 14,
+              "weight": 3.056
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 1,
+              "weight": 1.126
+            },
+            {
+              "token": "EPERM",
+              "count": 1,
+              "weight": 0.871
+            }
+          ],
+          "prose_score": 0.045,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake",
+            "path",
+            "process",
+            "thread"
+          ],
+          "operation_score": 5.0,
+          "api_score": 1.898,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 3,
+              "weight": 1.898
+            }
+          ],
+          "prose_score": 0.0559,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "directory",
+            "path",
+            "process"
+          ],
+          "operation_score": 4.0,
+          "api_score": 12.029,
+          "api_hits": [
+            {
+              "token": "st_dev",
+              "count": 8,
+              "weight": 5.057
+            },
+            {
+              "token": "st_ino",
+              "count": 7,
+              "weight": 3.916
+            },
+            {
+              "token": "ENOENT",
+              "count": 14,
+              "weight": 3.056
+            }
+          ],
+          "prose_score": 0.0407,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_nginx_files",
+      "package": "v2_nginx_files",
+      "domain": "networking",
+      "family": "nginx_os",
+      "has_work": true,
+      "planned": false,
+      "work_files": 391,
+      "candidates": [
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "directory",
+            "file",
+            "link",
+            "metadata",
+            "open",
+            "path",
+            "rename"
+          ],
+          "operation_score": 10.0,
+          "api_score": 10.684,
+          "api_hits": [
+            {
+              "token": "IOV_MAX",
+              "count": 6,
+              "weight": 4.585
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 3,
+              "weight": 2.363
+            },
+            {
+              "token": "EPERM",
+              "count": 2,
+              "weight": 1.474
+            },
+            {
+              "token": "ENOENT",
+              "count": 2,
+              "weight": 1.422
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0489,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "directory",
+            "file",
+            "link",
+            "metadata",
+            "open",
+            "path",
+            "rename"
+          ],
+          "operation_score": 10.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0481,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "directory",
+            "file",
+            "link",
+            "metadata",
+            "open",
+            "path"
+          ],
+          "operation_score": 9.0,
+          "api_score": 2.751,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 2,
+              "weight": 1.422
+            },
+            {
+              "token": "st_ino",
+              "count": 1,
+              "weight": 1.329
+            }
+          ],
+          "prose_score": 0.0447,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "file",
+            "link",
+            "path"
+          ],
+          "operation_score": 4.0,
+          "api_score": 1.531,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 2,
+              "weight": 1.531
+            }
+          ],
+          "prose_score": 0.0469,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_nginx_full",
+      "package": "v2_nginx_full",
+      "domain": "networking",
+      "family": "nginx_os",
+      "has_work": true,
+      "planned": false,
+      "work_files": 327,
+      "candidates": [
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "atomic",
+            "directory",
+            "file",
+            "path",
+            "process",
+            "read",
+            "signal",
+            "worker",
+            "write"
+          ],
+          "operation_score": 9.0,
+          "api_score": 2.746,
+          "api_hits": [
+            {
+              "token": "FD_CLOEXEC",
+              "count": 2,
+              "weight": 1.907
+            },
+            {
+              "token": "ENOENT",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0513,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "atomic",
+            "file",
+            "path",
+            "process",
+            "read",
+            "signal",
+            "worker",
+            "write"
+          ],
+          "operation_score": 8.0,
+          "api_score": 1.531,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 2,
+              "weight": 1.531
+            }
+          ],
+          "prose_score": 0.0543,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "directory",
+            "file",
+            "path",
+            "process",
+            "read",
+            "write"
+          ],
+          "operation_score": 6.0,
+          "api_score": 0.84,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0486,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_nginx_process",
+      "package": "v2_nginx_process",
+      "domain": "process",
+      "family": "nginx_os",
+      "has_work": true,
+      "planned": false,
+      "work_files": 388,
+      "candidates": [
+        {
+          "bundle_id": "process-spawn-backend-for-an-event-loop-win32-handle-c7216288",
+          "title": "Process spawn backend for an event loop: Win32 handle-based spawning rebuilt on POSIX fork/exec",
+          "capability": "process",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "process",
+          "operation_terms": [
+            "build",
+            "process",
+            "signal",
+            "spawn"
+          ],
+          "operation_score": 6.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0415,
+          "source_tasks": [
+            "l2_libuv_process"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "process",
+            "signal",
+            "spawn",
+            "worker"
+          ],
+          "operation_score": 5.0,
+          "api_score": 10.227,
+          "api_hits": [
+            {
+              "token": "IOV_MAX",
+              "count": 6,
+              "weight": 4.585
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 2,
+              "weight": 1.907
+            },
+            {
+              "token": "EPERM",
+              "count": 2,
+              "weight": 1.474
+            },
+            {
+              "token": "ENOENT",
+              "count": 2,
+              "weight": 1.422
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.038,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "process",
+            "signal",
+            "worker"
+          ],
+          "operation_score": 4.0,
+          "api_score": 1.531,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 2,
+              "weight": 1.531
+            }
+          ],
+          "prose_score": 0.0478,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "process"
+          ],
+          "operation_score": 2.0,
+          "api_score": 2.751,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 2,
+              "weight": 1.422
+            },
+            {
+              "token": "st_ino",
+              "count": 1,
+              "weight": 1.329
+            }
+          ],
+          "prose_score": 0.0367,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_nginx_thread",
+      "package": "v2_nginx_thread",
+      "domain": "threading",
+      "family": "nginx_os",
+      "has_work": true,
+      "planned": false,
+      "work_files": 389,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "condition",
+            "lock",
+            "mutex",
+            "pool",
+            "signal",
+            "thread",
+            "wait",
+            "worker"
+          ],
+          "operation_score": 11.0,
+          "api_score": 1.531,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 2,
+              "weight": 1.531
+            }
+          ],
+          "prose_score": 0.0605,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "lock",
+            "pool",
+            "signal",
+            "thread",
+            "worker"
+          ],
+          "operation_score": 6.0,
+          "api_score": 10.684,
+          "api_hits": [
+            {
+              "token": "IOV_MAX",
+              "count": 6,
+              "weight": 4.585
+            },
+            {
+              "token": "FD_CLOEXEC",
+              "count": 3,
+              "weight": 2.363
+            },
+            {
+              "token": "EPERM",
+              "count": 2,
+              "weight": 1.474
+            },
+            {
+              "token": "ENOENT",
+              "count": 2,
+              "weight": 1.422
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0387,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "condition"
+          ],
+          "operation_score": 2.0,
+          "api_score": 2.751,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 2,
+              "weight": 1.422
+            },
+            {
+              "token": "st_ino",
+              "count": 1,
+              "weight": 1.329
+            }
+          ],
+          "prose_score": 0.0315,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_path",
+      "package": "v2_path",
+      "domain": "filesystem",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2903,
+      "candidates": [
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "filesystem",
+            "path"
+          ],
+          "operation_score": 5.0,
+          "api_score": 5.141,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            },
+            {
+              "token": "EPERM",
+              "count": 3,
+              "weight": 1.828
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.029,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "filesystem",
+            "path"
+          ],
+          "operation_score": 5.0,
+          "api_score": 2.474,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            }
+          ],
+          "prose_score": 0.0292,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "filesystem",
+            "path"
+          ],
+          "operation_score": 5.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0305,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake",
+            "path"
+          ],
+          "operation_score": 3.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0333,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_poco_process",
+      "package": "v2_poco_process",
+      "domain": "process",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2904,
+      "candidates": [
+        {
+          "bundle_id": "process-spawn-backend-for-an-event-loop-win32-handle-c7216288",
+          "title": "Process spawn backend for an event loop: Win32 handle-based spawning rebuilt on POSIX fork/exec",
+          "capability": "process",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "process",
+          "operation_terms": [
+            "build",
+            "pipe",
+            "process",
+            "thread"
+          ],
+          "operation_score": 6.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0348,
+          "source_tasks": [
+            "l2_libuv_process"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake",
+            "process",
+            "thread"
+          ],
+          "operation_score": 4.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.041,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "process",
+            "thread"
+          ],
+          "operation_score": 3.0,
+          "api_score": 5.141,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            },
+            {
+              "token": "EPERM",
+              "count": 3,
+              "weight": 1.828
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.033,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "process"
+          ],
+          "operation_score": 2.0,
+          "api_score": 2.474,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            }
+          ],
+          "prose_score": 0.0288,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_rwlock_semaphore",
+      "package": "v2_rwlock_semaphore",
+      "domain": "runtime",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2902,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake",
+            "lock",
+            "semaphore",
+            "thread"
+          ],
+          "operation_score": 7.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0506,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "lock",
+            "thread"
+          ],
+          "operation_score": 3.0,
+          "api_score": 5.141,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            },
+            {
+              "token": "EPERM",
+              "count": 3,
+              "weight": 1.828
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0313,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build"
+          ],
+          "operation_score": 1.0,
+          "api_score": 2.474,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            }
+          ],
+          "prose_score": 0.033,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_shared_library",
+      "package": "v2_shared_library",
+      "domain": "runtime",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2903,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": true,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake"
+          ],
+          "operation_score": 2.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0333,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build"
+          ],
+          "operation_score": 1.0,
+          "api_score": 5.141,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            },
+            {
+              "token": "EPERM",
+              "count": 3,
+              "weight": 1.828
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.026,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build"
+          ],
+          "operation_score": 1.0,
+          "api_score": 2.474,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            }
+          ],
+          "prose_score": 0.0261,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_thread",
+      "package": "v2_thread",
+      "domain": "runtime",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2903,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake",
+            "thread"
+          ],
+          "operation_score": 5.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0411,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "thread"
+          ],
+          "operation_score": 2.0,
+          "api_score": 5.141,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            },
+            {
+              "token": "EPERM",
+              "count": 3,
+              "weight": 1.828
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0317,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "build"
+          ],
+          "operation_score": 1.0,
+          "api_score": 2.474,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 7,
+              "weight": 2.474
+            }
+          ],
+          "prose_score": 0.0274,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v3_poco_fs_stack",
+      "package": "v3_poco_fs_stack",
+      "domain": "filesystem",
+      "family": "poco_foundation",
+      "has_work": true,
+      "planned": false,
+      "work_files": 2900,
+      "candidates": [
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "copy",
+            "directory",
+            "file",
+            "filesystem",
+            "link",
+            "open",
+            "path",
+            "permission",
+            "process",
+            "read",
+            "rename",
+            "seek",
+            "write"
+          ],
+          "operation_score": 16.0,
+          "api_score": 4.659,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 6,
+              "weight": 2.344
+            },
+            {
+              "token": "EPERM",
+              "count": 2,
+              "weight": 1.474
+            },
+            {
+              "token": "EOPNOTSUPP",
+              "count": 1,
+              "weight": 0.84
+            }
+          ],
+          "prose_score": 0.0744,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        },
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "copy",
+            "directory",
+            "file",
+            "filesystem",
+            "link",
+            "open",
+            "path",
+            "permission",
+            "process",
+            "read",
+            "seek",
+            "write"
+          ],
+          "operation_score": 15.0,
+          "api_score": 2.344,
+          "api_hits": [
+            {
+              "token": "ENOENT",
+              "count": 6,
+              "weight": 2.344
+            }
+          ],
+          "prose_score": 0.0823,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": true,
+          "operation_family": "file",
+          "operation_terms": [
+            "build",
+            "directory",
+            "file",
+            "filesystem",
+            "link",
+            "open",
+            "path",
+            "permission",
+            "process",
+            "read",
+            "rename",
+            "seek",
+            "write"
+          ],
+          "operation_score": 15.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0781,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        },
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": false,
+          "tier": "secondary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "build",
+            "cmake",
+            "copy",
+            "file",
+            "link",
+            "path",
+            "process",
+            "read",
+            "write"
+          ],
+          "operation_score": 9.0,
+          "api_score": 4.095,
+          "api_hits": [
+            {
+              "token": "CPUs",
+              "count": 5,
+              "weight": 2.36
+            },
+            {
+              "token": "x86_64",
+              "count": 2,
+              "weight": 1.735
+            }
+          ],
+          "prose_score": 0.0681,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_curl_thread",
+      "package": "v3/windows_to_kylin/tasks/v2_curl_thread",
+      "domain": "",
+      "family": "",
+      "has_work": false,
+      "planned": true,
+      "work_files": 0,
+      "candidates": [
+        {
+          "bundle_id": "portable-threading-and-synchronisation-backend-for-an-96ad6495",
+          "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+          "capability": "threading",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "thread",
+          "operation_terms": [
+            "thread"
+          ],
+          "operation_score": 3.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0033,
+          "source_tasks": [
+            "l2_libuv_thread"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "v2_curl_file",
+      "package": "v3/windows_to_kylin/tasks/v2_curl_file",
+      "domain": "",
+      "family": "",
+      "has_work": false,
+      "planned": true,
+      "work_files": 0,
+      "candidates": [
+        {
+          "bundle_id": "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+          "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "file"
+          ],
+          "operation_score": 3.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0045,
+          "source_tasks": [
+            "l2_libarchive_read_disk"
+          ]
+        },
+        {
+          "bundle_id": "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+          "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+          "capability": "file-system/metadata",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "file"
+          ],
+          "operation_score": 3.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.0043,
+          "source_tasks": [
+            "l2_libarchive_write_disk"
+          ]
+        },
+        {
+          "bundle_id": "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+          "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+          "capability": "file-system/io",
+          "capability_match": true,
+          "tier": "primary",
+          "domain_hint": false,
+          "operation_family": "file",
+          "operation_terms": [
+            "file"
+          ],
+          "operation_score": 3.0,
+          "api_score": 0.0,
+          "api_hits": [],
+          "prose_score": 0.003,
+          "source_tasks": [
+            "l2_libuv_fs"
+          ]
+        }
+      ]
+    },
+    {
+      "task_id": "synthetic_multi_call_site",
+      "package": "v3/windows_to_kylin/tasks/synthetic_multi_call_site",
+      "domain": "",
+      "family": "",
+      "has_work": false,
+      "planned": true,
+      "work_files": 0,
+      "candidates": []
+    }
+  ],
+  "per_component": {
+    "posix-file-system-request-backend-behind-a-fixed-async-42929ace": {
+      "title": "POSIX file-system request backend behind a fixed async file-system API (Win32 -> Linux)",
+      "capability": "file-system/io",
+      "tasks": [
+        {
+          "task_id": "l2_libuv_fs",
+          "capability_match": true,
+          "operation_score": 21.0,
+          "api_score": 14.597
+        },
+        {
+          "task_id": "v2_nginx_files",
+          "capability_match": true,
+          "operation_score": 10.0,
+          "api_score": 10.684
+        },
+        {
+          "task_id": "l2_libarchive_read_disk",
+          "capability_match": true,
+          "operation_score": 6.0,
+          "api_score": 9.059
+        },
+        {
+          "task_id": "l2_libarchive_write_disk",
+          "capability_match": true,
+          "operation_score": 7.0,
+          "api_score": 8.961
+        },
+        {
+          "task_id": "v2_path",
+          "capability_match": true,
+          "operation_score": 5.0,
+          "api_score": 5.141
+        },
+        {
+          "task_id": "v2_file",
+          "capability_match": true,
+          "operation_score": 5.0,
+          "api_score": 4.659
+        },
+        {
+          "task_id": "v3_poco_fs_stack",
+          "capability_match": true,
+          "operation_score": 16.0,
+          "api_score": 4.659
+        },
+        {
+          "task_id": "v2_curl_file",
+          "capability_match": true,
+          "operation_score": 3.0,
+          "api_score": 0.0
+        }
+      ]
+    },
+    "archive-extraction-writer-win32-handle-attribute-model-a927554a": {
+      "title": "Archive extraction writer: Win32 handle/attribute model rebuilt on POSIX descriptor and path syscalls",
+      "capability": "file-system/metadata",
+      "tasks": [
+        {
+          "task_id": "l2_libarchive_read_disk",
+          "capability_match": true,
+          "operation_score": 8.0,
+          "api_score": 19.474
+        },
+        {
+          "task_id": "l2_libarchive_write_disk",
+          "capability_match": true,
+          "operation_score": 9.0,
+          "api_score": 18.085
+        },
+        {
+          "task_id": "l2_libuv_fs",
+          "capability_match": true,
+          "operation_score": 15.0,
+          "api_score": 1.52
+        },
+        {
+          "task_id": "v2_file",
+          "capability_match": true,
+          "operation_score": 5.0,
+          "api_score": 0.0
+        },
+        {
+          "task_id": "v2_nginx_files",
+          "capability_match": true,
+          "operation_score": 10.0,
+          "api_score": 0.0
+        },
+        {
+          "task_id": "v2_path",
+          "capability_match": true,
+          "operation_score": 5.0,
+          "api_score": 0.0
+        },
+        {
+          "task_id": "v3_poco_fs_stack",
+          "capability_match": true,
+          "operation_score": 15.0,
+          "api_score": 0.0
+        },
+        {
+          "task_id": "v2_curl_file",
+          "capability_match": true,
+          "operation_score": 3.0,
+          "api_score": 0.0
+        }
+      ]
+    },
+    "filesystem-disk-reader-backend-descriptor-relative-100f4548": {
+      "title": "Filesystem disk-reader backend: descriptor-relative tree walk, entry metadata and sparse map",
+      "capability": "file-system/metadata",
+      "tasks": [
+        {
+          "task_id": "l2_libarchive_read_disk",
+          "capability_match": true,
+          "operation_score": 8.0,
+          "api_score": 22.268
+        },
+        {
+          "task_id": "l2_libarchive_write_disk",
+          "capability_match": true,
+          "operation_score": 8.0,
+          "api_score": 22.268
+        },
+        {
+          "task_id": "l2_libuv_fs",
+          "capability_match": true,
+          "operation_score": 15.0,
+          "api_score": 10.438
+        },
+        {
+          "task_id": "v2_nginx_files",
+          "capability_match": true,
+          "operation_score": 9.0,
+          "api_score": 2.751
+        },
+        {
+          "task_id": "v2_path",
+          "capability_match": true,
+          "operation_score": 5.0,
+          "api_score": 2.474
+        },
+        {
+          "task_id": "v2_file",
+          "capability_match": true,
+          "operation_score": 5.0,
+          "api_score": 2.344
+        },
+        {
+          "task_id": "v3_poco_fs_stack",
+          "capability_match": true,
+          "operation_score": 15.0,
+          "api_score": 2.344
+        },
+        {
+          "task_id": "v2_curl_file",
+          "capability_match": true,
+          "operation_score": 3.0,
+          "api_score": 0.0
+        }
+      ]
+    },
+    "process-spawn-backend-for-an-event-loop-win32-handle-c7216288": {
+      "title": "Process spawn backend for an event loop: Win32 handle-based spawning rebuilt on POSIX fork/exec",
+      "capability": "process",
+      "tasks": [
+        {
+          "task_id": "l2_libuv_process",
+          "capability_match": true,
+          "operation_score": 11.0,
+          "api_score": 0.0
+        },
+        {
+          "task_id": "v2_nginx_process",
+          "capability_match": true,
+          "operation_score": 6.0,
+          "api_score": 0.0
+        },
+        {
+          "task_id": "v2_poco_process",
+          "capability_match": true,
+          "operation_score": 6.0,
+          "api_score": 0.0
+        }
+      ]
+    },
+    "portable-threading-and-synchronisation-backend-for-an-96ad6495": {
+      "title": "Portable threading and synchronisation backend for an event-loop runtime: Win32 kernel objects to POSIX threads",
+      "capability": "threading",
+      "tasks": [
+        {
+          "task_id": "v2_rwlock_semaphore",
+          "capability_match": true,
+          "operation_score": 7.0,
+          "api_score": 4.095
+        },
+        {
+          "task_id": "v2_thread",
+          "capability_match": true,
+          "operation_score": 5.0,
+          "api_score": 4.095
+        },
+        {
+          "task_id": "l2_libuv_thread",
+          "capability_match": true,
+          "operation_score": 10.0,
+          "api_score": 2.923
+        },
+        {
+          "task_id": "v2_curl_tls",
+          "capability_match": true,
+          "operation_score": 4.0,
+          "api_score": 1.735
+        },
+        {
+          "task_id": "v2_nginx_thread",
+          "capability_match": true,
+          "operation_score": 11.0,
+          "api_score": 1.531
+        },
+        {
+          "task_id": "v2_curl_thread",
+          "capability_match": true,
+          "operation_score": 3.0,
+          "api_score": 0.0
+        }
+      ]
+    }
+  },
+  "coverage": {
+    "tasks_without_candidate": [
+      "l2_opencv_highgui",
+      "negative_win32_eventlog",
+      "v2_curl_build",
+      "v2_foundation_full",
+      "v2_libgit2_util_full",
+      "v2_nginx_full",
+      "v2_shared_library",
+      "synthetic_multi_call_site"
+    ],
+    "components_without_task": [],
+    "components_serving_multiple_tasks": [
+      "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+      "archive-extraction-writer-win32-handle-attribute-model-a927554a",
+      "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+      "process-spawn-backend-for-an-event-loop-win32-handle-c7216288",
+      "portable-threading-and-synchronisation-backend-for-an-96ad6495"
+    ],
+    "tasks_with_multiple_components": [
+      "l2_libarchive_read_disk",
+      "l2_libarchive_write_disk",
+      "l2_libuv_fs",
+      "v2_file",
+      "v2_nginx_files",
+      "v2_path",
+      "v3_poco_fs_stack",
+      "v2_curl_file"
+    ]
+  }
+}

@@ -56,6 +56,9 @@ split:
       - synthetic
     tasks:
       - synthetic_multi_call_site
+      - synthetic_posix_fs_requests
+      - synthetic_spawn_event_loop
+      - synthetic_thread_runtime
   reporting:
     core:
       - v2_file
@@ -80,6 +83,9 @@ split:
       - negative_win32_eventlog
     synthetic:
       - synthetic_multi_call_site
+      - synthetic_posix_fs_requests
+      - synthetic_spawn_event_loop
+      - synthetic_thread_runtime
   excluded:
     repos: []
     tasks:
@@ -349,14 +355,14 @@ tasks:
     source_kind: library_family_port
     role: held_out
     repo: POCO
-    package: null
-    planned_package: v3/windows_to_kylin/tasks/v2_poco_process
+    package: v3/windows_to_kylin/tasks/v2_poco_process
     level: L2
     difficulty: hard
-    status: new
-    components: [T1, T3, T5]
+    status: ready
+    components:
+    - process-spawn-backend-for-an-event-loop-win32-handle-c7216288
     title: 'Migrate the Foundation process subsystem to Kylin V10 SP3'
-    notes: Dedicated process task; closes the T3 gap on a cross-project repository.
+    notes: Dedicated process task; uses the generated process component on a cross-project repository.
     source:
       repo: https://github.com/pocoproject/poco.git
       commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
@@ -421,14 +427,14 @@ tasks:
   - id: v2_nginx_process
     role: held_out
     repo: nginx
-    package: null
-    planned_package: v3/windows_to_kylin/tasks/v2_nginx_process
+    package: v3/windows_to_kylin/tasks/v2_nginx_process
     level: L2
     difficulty: hard
-    status: new
-    components: [T1, T3, T5]
+    status: ready
+    components: [process-spawn-backend-for-an-event-loop-win32-handle-c7216288]
     title: 'Migrate the nginx process layer to Kylin V10 SP3'
-    notes: Dedicated process task (fork/wait/signal), disjoint from the examples.
+    notes: Dedicated process task (fork/wait/signal), disjoint from the examples;
+      uses the generated library process component.
     source:
       repo: https://github.com/nginx/nginx.git
       commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
@@ -438,14 +444,14 @@ tasks:
   - id: v2_nginx_thread
     role: held_out
     repo: nginx
-    package: null
-    planned_package: v3/windows_to_kylin/tasks/v2_nginx_thread
+    package: v3/windows_to_kylin/tasks/v2_nginx_thread
     level: L2
     difficulty: hard
-    status: new
-    components: [T1, T4, T5]
-    title: 'Migrate the nginx thread pool to Kylin V10 SP3'
-    notes: Cross-project thread coverage.
+    status: ready
+    components: [portable-threading-and-synchronisation-backend-for-an-96ad6495]
+    title: 'Migrate the nginx thread primitives to Kylin V10 SP3'
+    notes: Cross-project thread coverage; uses the generated library threading
+      component and a --with-threads build with an aio threads probe.
     source:
       repo: https://github.com/nginx/nginx.git
       commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
@@ -494,12 +500,11 @@ tasks:
   - id: v2_curl_thread
     role: held_out
     repo: curl
-    package: null
-    planned_package: v3/windows_to_kylin/tasks/v2_curl_thread
+    package: v3/windows_to_kylin/tasks/v2_curl_thread
     level: L2
     difficulty: hard
-    status: new
-    components: [T1, T4, T5]
+    status: ready
+    components: [portable-threading-and-synchronisation-backend-for-an-96ad6495]
     title: 'Migrate the curl threaded resolver to Kylin V10 SP3'
     notes: Cross-project thread coverage.
     source:
@@ -511,12 +516,11 @@ tasks:
   - id: v2_curl_file
     role: held_out
     repo: curl
-    package: null
-    planned_package: v3/windows_to_kylin/tasks/v2_curl_file
+    package: v3/windows_to_kylin/tasks/v2_curl_file
     level: L2
     difficulty: hard
-    status: new
-    components: [T1, T2, T5]
+    status: ready
+    components: [posix-file-system-request-backend-behind-a-fixed-async-42929ace, filesystem-disk-reader-backend-descriptor-relative-100f4548]
     title: 'Migrate the curl file protocol layer to Kylin V10 SP3'
     notes: File-layer coverage on curl.
     source:
@@ -548,25 +552,95 @@ tasks:
       license: Apache-2.0
 
   # ---------------------------------------------------------------------------
-  # separate / synthetic (1)
+  # separate / synthetic (4)
   # ---------------------------------------------------------------------------
   - id: synthetic_multi_call_site
     role: separate
     repo: synthetic
-    package: null
-    planned_package: v3/windows_to_kylin/tasks/synthetic_multi_call_site
+    package: v3/windows_to_kylin/tasks/synthetic_multi_call_site
     level: L3
     difficulty: hard
-    status: new
+    status: ready
     counted: false
     source_kind: synthetic
-    components: [T1, T2, T4, T5]
+    components: []
     title: 'Synthetic multi-call-site consistency migration'
     notes: >-
-      Exercises 3-5 call sites sharing one implicit convention.  Reported
-      separately from upstream repositories.
+      Exercises 4 call sites sharing one implicit handle/path/return-value
+      convention.  Reported separately from upstream repositories.
     source:
       repo: synthetic://windows-to-posix/multi-call-site
-      commit: n/a
+      commit: synthetic-1
       tag: n/a
-      license: n/a
+      license: project-authored
+  - id: synthetic_posix_fs_requests
+    role: separate
+    repo: synthetic
+    package: v3/windows_to_kylin/tasks/synthetic_posix_fs_requests
+    level: L3
+    difficulty: hard
+    status: ready
+    counted: false
+    source_kind: synthetic
+    fit: C
+    components:
+      - posix-file-system-request-backend-behind-a-fixed-async-42929ace
+    title: 'Synthetic async file-system request backend'
+    notes: >-
+      Built directly around the extracted async file-request component; the
+      hidden probe derives its checks from the component's mapping rules
+      (vector-length handling, close-on-exec, error contract, async copies).
+    source:
+      repo: synthetic://windows-to-posix/async-fs-requests
+      commit: synthetic-1
+      tag: n/a
+      license: project-authored
+
+  - id: synthetic_spawn_event_loop
+    role: separate
+    repo: synthetic
+    package: v3/windows_to_kylin/tasks/synthetic_spawn_event_loop
+    level: L3
+    difficulty: hard
+    status: ready
+    counted: false
+    source_kind: synthetic
+    fit: C
+    components:
+      - process-spawn-backend-for-an-event-loop-win32-handle-c7216288
+    title: 'Synthetic event-loop process spawn backend'
+    notes: >-
+      Built directly around the extracted process-spawn component; the hidden
+      probe derives its checks from the component's verification and mapping
+      rules (stdio plan, child environment and PATH, signals, sessions,
+      wait-status decoding, failed-spawn bookkeeping).
+    source:
+      repo: synthetic://windows-to-posix/event-loop-spawn
+      commit: synthetic-1
+      tag: n/a
+      license: project-authored
+
+  - id: synthetic_thread_runtime
+    role: separate
+    repo: synthetic
+    package: v3/windows_to_kylin/tasks/synthetic_thread_runtime
+    level: L3
+    difficulty: hard
+    status: ready
+    counted: false
+    source_kind: synthetic
+    fit: C
+    components:
+      - portable-threading-and-synchronisation-backend-for-an-96ad6495
+    title: 'Synthetic portable threading runtime backend'
+    notes: >-
+      Built directly around the extracted threading component; the hidden
+      probe derives its checks from the component's verification and mapping
+      rules (join release, recursive mutex distinction, rwlock exclusion,
+      semaphore codes, monotonic timed wait, static once, stack sizing,
+      affinity mask).
+    source:
+      repo: synthetic://windows-to-posix/thread-runtime
+      commit: synthetic-1
+      tag: n/a
+      license: project-authored

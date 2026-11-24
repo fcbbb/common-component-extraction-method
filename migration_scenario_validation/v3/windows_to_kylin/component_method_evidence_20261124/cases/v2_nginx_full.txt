@@ -1,0 +1,169 @@
+===== default | label=s1_default_v2_nginx_full | status=pass | duration=1188.6s
+failure_summary: (none)
+----- judge log tail (last 5000 chars) -----
+e_glob"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 232,
+        "match": "ngx_read_file"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 235,
+        "match": "ngx_err_t"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 247,
+        "match": "ngx_errno"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 250,
+        "match": "ngx_log_error"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 258,
+        "match": "ngx_log_error"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 269,
+        "match": "ngx_log_error"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 282,
+        "match": "ngx_write_file"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 285,
+        "match": "ngx_err_t"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 297,
+        "match": "ngx_errno"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 300,
+        "match": "ngx_log_error"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 308,
+        "match": "ngx_log_error"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 319,
+        "match": "ngx_log_error"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 332,
+        "match": "ngx_write_chain_to_file"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 333,
+        "match": "ngx_pool_t"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 338,
+        "match": "ngx_buf_t"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 349,
+        "match": "ngx_buf_special"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 354,
+        "match": "ngx_buf_in_memory"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 357,
+        "match": "ngx_write_file"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 376,
+        "match": "ngx_alloc"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 382,
+        "match": "ngx_read_file"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 386,
+        "match": "ngx_free"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 394,
+        "match": "ngx_write_file"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 397,
+        "match": "ngx_free"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 406,
+        "match": "ngx_free"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 417,
+        "match": "ngx_read_fd"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 424,
+        "match": "ngx_write_fd"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 431,
+        "match": "ngx_write_console"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 437,
+        "match": "ngx_int_t"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 438,
+        "match": "ngx_read_ahead"
+      },
+      {
+        "file": "/tmp/migration-judge-v2_nginx_full-_hbmca12/work/src/os/unix/ngx_files.c",
+        "line": 451,
+        "match": "ngx_int_t"
+      }
+    ],
+    "exclude_globs": [],
+    "expect_fail": false,
+    "positive": true,
+    "errors": []
+  },
+  "status": "pass"
+}
+
+
+===== method | label=s1_method_v2_nginx_full | status=fail | duration=1009.0s
+selected_components: posix-file-system-request-backend-behind-a-fixed-async-42929ace;process-spawn-backend-for-an-event-loop-win32-handle-c7216288
+failure_summary: batch runner rc=1，无 attempt.json（运行在生成报告前中止）
+(no attempt.json)

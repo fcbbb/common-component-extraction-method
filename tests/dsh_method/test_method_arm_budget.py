@@ -51,6 +51,39 @@ def test_bundle_state_tolerates_a_broken_manifest(tmp_path):
     assert state["component_count"] is None
 
 
+def test_validated_empty_selection_is_a_legitimate_abstention(tmp_path):
+    bundle = tmp_path / "component_bundle"
+    bundle.mkdir()
+    (bundle / "INDEX.md").write_text(
+        "# Selected component paths\n\n0 methodology components selected.\n",
+        encoding="utf-8",
+    )
+    (bundle / "manifest.json").write_text(
+        json.dumps({"component_count": 0}), encoding="utf-8"
+    )
+    state = migration_trial._bundle_state(bundle)
+    assert state["ok"] is True
+    assert state["component_count"] == 0
+    assert migration_trial._validated_empty_selection(state) is True
+
+
+def test_empty_selection_needs_a_manifest_and_zero_count(tmp_path):
+    bundle = tmp_path / "component_bundle"
+    bundle.mkdir()
+    (bundle / "INDEX.md").write_text("# bundle\n", encoding="utf-8")
+    # Files exist but no manifest: not a validated zero-component selection.
+    assert migration_trial._validated_empty_selection(
+        migration_trial._bundle_state(bundle)
+    ) is False
+
+    (bundle / "manifest.json").write_text(
+        json.dumps({"component_count": 2}), encoding="utf-8"
+    )
+    assert migration_trial._validated_empty_selection(
+        migration_trial._bundle_state(bundle)
+    ) is False
+
+
 def test_image_identity_records_the_immutable_id(monkeypatch):
     calls = []
 

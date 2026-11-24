@@ -1,0 +1,89 @@
+scenario: windows_to_kylin
+task_family: v3
+family: curl_thread
+fit: B
+counted: true
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=OFF -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF -DENABLE_THREADED_RESOLVER=ON -DBUILD_CURL_EXE=ON && cmake --build {build} -j2
+  artifact: '{build}/src/curl'
+gates:
+  build: configure and build curl with the threaded resolver enabled on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|_beginthreadex|CreateThread|WaitForSingleObject|WaitForSingleObjectEx|CloseHandle|EnterCriticalSection|LeaveCriticalSection|InitializeCriticalSection)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|_beginthreadex|CreateThread|WaitForSingleObject|CloseHandle|EnterCriticalSection|LeaveCriticalSection|InitializeCriticalSection
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - lib/curl_threads.c
+  target_api: the rebuilt thread primitives use the target platform's pthreads facilities instead of a hand-written portable fallback
+  behavior: curl resolves a hostname through the resolver thread and completes a real HTTP request to a local server
+  regression: the tool still reports its version and exposes the runtime feature set
+id: v2_curl_thread
+level: L2
+family_type: pattern
+sequence: 21
+domain: networking
+difficulty: hard
+title: Migrate the curl threaded resolver to Kylin V10 SP3
+source:
+  repo: https://github.com/curl/curl.git
+  commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+  tag: curl-8_5_0
+  license: curl
+  windows_files:
+  - lib/curl_threads.c
+  gold_files:
+  - lib/curl_threads.c
+  test_files: []
+spec: |
+  curl is being moved from Windows to Kylin V10 SP3.  The target-platform
+  thread primitives that curl's threaded DNS resolver is built on have not
+  been written yet.
+
+  Implement lib/curl_threads.c behind the contract in lib/curl_threads.h:
+  Curl_thread_create / Curl_thread_destroy / Curl_thread_join, using the
+  mutex and thread types the header selects.  The resolver
+  (lib/asyn-thread.c), the header with both the
+  POSIX and Win32 type mappings, the synchronous and c-ares alternates and
+  the build entry stay visible as the reference.
+
+  This port retires the Windows target: the translation unit must contain
+  only the POSIX implementation.  Do not reintroduce the Windows branch -
+  no windows.h, HANDLE, CreateThread, _beginthreadex, WaitForSingleObject
+  or CloseHandle anywhere in lib/curl_threads.c; the removal gate scans
+  that file for them.
+
+  Scope: the thread primitive translation unit only; do not change the
+  header or the resolver.  The tool must build with
+  ENABLE_THREADED_RESOLVER=ON, report AsynchDNS, and complete a real
+  request whose hostname is resolved on the resolver thread.
+prepare:
+  remove:
+  - lib/curl_threads.c
+harness:
+  scripts:
+  - thread_probe.sh
+hidden_tests:
+  command: bash {root}/harness/thread_probe.sh --port 18086 --curl {build}/src/curl
+task_id: v2_curl_thread

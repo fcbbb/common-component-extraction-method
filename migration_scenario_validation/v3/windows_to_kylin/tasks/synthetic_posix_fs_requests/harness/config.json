@@ -1,0 +1,63 @@
+{
+  "task_id": "synthetic_posix_fs_requests",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "build": {
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release && cmake --build {build} -j2",
+    "artifact": "{build}/afs_selftest"
+  },
+  "public_tests": {
+    "command": "{build}/afs_selftest {work}"
+  },
+  "hidden_tests": {
+    "command": "bash {root}/harness/afs_probe.sh --build {build} --work {work}"
+  },
+  "regression_tests": null,
+  "gates": {
+    "build": "configure and build the static library and the public self-test on Kylin",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|GetFileSize|SetFilePointer|CreateThread|WaitForSingleObject|GetOverlappedResult)",
+      "source_regex": "windows\\.h|winioctl\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|ReadFile|WriteFile|CloseHandle|GetFileSize|SetFilePointer|CreateThread|WaitForSingleObject|GetOverlappedResult|GetLastError",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "src/posix/afs_posix.c"
+      ]
+    },
+    "target_api": "the rebuilt backend uses POSIX descriptor, vector-I/O, metadata and temporary-file calls instead of Windows handles and CRT descriptor wrappers",
+    "behavior": "the request model keeps its result/errno convention, its synchronous and pooled execution split, and its caller-owned versus request-owned buffer rules",
+    "regression": "the public header, the shared request layer, the worker pool and the public self-test are unchanged"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "task_family": "v3",
+  "family": "synthetic_posix_fs_requests",
+  "family_type": "synthetic",
+  "sequence": 24,
+  "counted": false,
+  "source_kind": "synthetic",
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ]
+}

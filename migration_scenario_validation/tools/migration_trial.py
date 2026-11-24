@@ -307,6 +307,20 @@ def _bundle_state(bundle: Path) -> Dict[str, Any]:
     }
 
 
+def _validated_empty_selection(bundle_state: Dict[str, Any]) -> bool:
+    """Return True when retrieval validated a zero-component bundle.
+
+    An empty selection is a legitimate abstention: no library component
+    covers the task's surface.  The workflow still produced a bundle, so the
+    attempt must go on to judging instead of being aborted as a failure.
+    """
+    return bool(
+        bundle_state.get("ok")
+        and bundle_state.get("manifest")
+        and bundle_state.get("component_count") == 0
+    )
+
+
 def _tool_call_counts(tool_calls: List[Dict[str, Any]]) -> Dict[str, int]:
     """Count tool calls by name so method and migration work can be seen apart."""
     counts: Dict[str, int] = {}
@@ -1144,6 +1158,17 @@ def main(argv: Optional[List[str]] = None) -> int:
             tag = f"{task_id}-r{run}"
             attempt_dir = report_dir / task_id / f"run{run}"
             attempt_dir.mkdir(parents=True, exist_ok=True)
+            if arm == "method":
+                # This attempt always starts from a freshly copied workspace.
+                # A method attempt that was killed before writing attempt.json
+                # leaves its stage plane behind, and the retrieval step then
+                # dies with ``FileExistsError: retrieval output already
+                # exists`` (it refuses to reuse an attempt directory), so no
+                # bundle is ever materialized.  Stage state belongs to exactly
+                # one attempt, so drop what an earlier one left.
+                stale_method = attempt_dir / "method"
+                if stale_method.is_dir():
+                    shutil.rmtree(stale_method)
             workspace = workspace_root / tag
 
             record: Dict[str, Any] = {
@@ -1648,14 +1673,20 @@ def main(argv: Optional[List[str]] = None) -> int:
                     )
                     bundle_state = _bundle_state(bundle)
                     record["component_bundle"] = bundle_state
-                    workflow_ok = bool(
-                        bundle_state["ok"]
-                        and (
-                            bundle_state.get("component_count") is None
-                            or int(bundle_state["component_count"]) > 0
+                    # A materialized bundle is the workflow's output.  Zero
+                    # selected components is not a workflow failure: it means
+                    # retrieval abstained because no component applies.  The
+                    # agent still owes the task deliverable (for a negative
+                    # control, PORTING_NOTES.md), so the attempt proceeds to
+                    # judging like any other.
+                    workflow_ok = bool(bundle_state["ok"])
+                    if _validated_empty_selection(bundle_state):
+                        record["outcome"] = "retrieval_no_match"
+                        record["retrieval_note"] = (
+                            "retrieval validated an empty component selection; "
+                            "no component applies to this task"
                         )
-                    )
-                    if not workflow_ok:
+                    elif not workflow_ok:
                         record["agent_error"] = (
                             f"method workflow produced no usable bundle at {bundle} "
                             f"({bundle_state.get('reason') or 'empty'}); "

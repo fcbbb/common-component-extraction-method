@@ -1,0 +1,63 @@
+{
+  "task_id": "synthetic_multi_call_site",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "build": {
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release && cmake --build {build} -j2",
+    "artifact": "{build}/mcdump"
+  },
+  "public_tests": {
+    "command": "cd {build} && ./test_platform"
+  },
+  "hidden_tests": {
+    "command": "bash {root}/harness/mc_probe.sh --build {build}"
+  },
+  "regression_tests": null,
+  "gates": {
+    "build": "configure and build the four tools and the platform checks on Kylin",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFileA|FindFirstFileW)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFile",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "src/posix/mc_platform_posix.c"
+      ]
+    },
+    "target_api": "the rebuilt layer uses POSIX open/read/write/lseek/fstat/close instead of the Windows handle API",
+    "behavior": "all four tools and the platform checks keep the shared handle, separator, return-value and EOF conventions",
+    "regression": "the common utility code and the application call sites are unchanged"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "task_family": "v3",
+  "family": "synthetic_multi_call_site",
+  "family_type": "synthetic",
+  "sequence": 23,
+  "counted": false,
+  "source_kind": "synthetic",
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ]
+}

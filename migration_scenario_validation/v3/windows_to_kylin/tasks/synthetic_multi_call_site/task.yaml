@@ -1,0 +1,85 @@
+scenario: windows_to_kylin
+task_family: v3
+family: synthetic_multi_call_site
+fit: C
+counted: false
+source_kind: synthetic
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release && cmake --build {build} -j2
+  artifact: '{build}/mcdump'
+gates:
+  build: configure and build the four tools and the platform checks on Kylin
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFileA|FindFirstFileW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFile
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/posix/mc_platform_posix.c
+  target_api: the rebuilt layer uses POSIX open/read/write/lseek/fstat/close instead of the Windows handle API
+  behavior: all four tools and the platform checks keep the shared handle, separator, return-value and EOF conventions
+  regression: the common utility code and the application call sites are unchanged
+id: synthetic_multi_call_site
+level: L3
+family_type: synthetic
+sequence: 23
+domain: filesystem
+difficulty: hard
+title: Synthetic multi-call-site consistency migration
+source:
+  repo: synthetic://windows-to-posix/multi-call-site
+  commit: synthetic-1
+  tag: n/a
+  license: project-authored
+  windows_files:
+  - src/win32/mc_platform_win32.c
+  gold_files:
+  - src/posix/mc_platform_posix.c
+  test_files:
+  - tests/test_platform.c
+spec: |
+  A small project of four command-line tools (mcdump, mccount, mccopy,
+  mctail) is being moved from Windows to Kylin V10 SP3.  The tools share
+  one minimal I/O layer whose target-platform implementation has not been
+  written yet.
+
+  The layer's conventions are implicit but used by every call site: an
+  integer handle with -1 as the invalid sentinel, '\' as the path
+  separator, byte counts from read/write (0 at end of file, -1 on error),
+  an absolute offset from seek, a byte size from size, and 0/-1 from
+  close.  The Windows implementation, the header, the common utility code,
+  the four applications and the public platform checks stay visible as
+  the reference.
+
+  Implement src/posix/mc_platform_posix.c so every tool and the platform
+  checks keep those conventions on Kylin.  Do not change the header, the
+  call sites or the Win32 reference.
+prepare:
+  remove:
+  - src/posix/mc_platform_posix.c
+harness:
+  scripts:
+  - mc_probe.sh
+hidden_tests:
+  command: bash {root}/harness/mc_probe.sh --build {build}
+task_id: synthetic_multi_call_site

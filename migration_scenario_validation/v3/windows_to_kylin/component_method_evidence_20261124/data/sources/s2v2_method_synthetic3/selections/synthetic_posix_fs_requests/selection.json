@@ -1,0 +1,7 @@
+{
+  "schema_version": "methodology-paths-1",
+  "task_id": "synthetic_posix_fs_requests",
+  "selected_bundle_ids": [
+    "posix-file-system-request-backend-behind-a-fixed-async-42929ace"
+  ]
+}

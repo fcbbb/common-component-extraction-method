@@ -121,7 +121,8 @@ Write /component-output/selection.json using the required schema. Select zero to
 components. There is no minimum quota. Stop adding components when the remaining candidates do not
 provide substantial incremental value.
 
-Each response must contain exactly one Bash code block containing one shell command. You may use
+Call the `controlled_bash` tool for every command, one shell command per call. Never write a
+command as your final answer: a turn that ends without a tool call ends the session. You may use
 shell pipelines and commands joined with && or ||. Continue inspecting until the selection is
 grounded. There is no step limit.
 

@@ -1,0 +1,318 @@
+{
+  "task": "v2_thread",
+  "scenario": "windows_to_kylin",
+  "arm": "method",
+  "condition": "component_method",
+  "level": "L2",
+  "run": 1,
+  "started_at": "2026-11-23T10:10:44.433063+00:00",
+  "label": "s1_method_v2_thread",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "dsh_profile": "component-method-migration",
+  "method_profile": "component-method-migration",
+  "method_budget": {
+    "step_limit": null,
+    "total_timeout": 14400,
+    "command_timeout": 600,
+    "extraction_workers": 2,
+    "review_workers": 2,
+    "agent_timeout": 3600
+  },
+  "method_prompt_hashes": {
+    "workflow": "fe7a48ac099b3200347d5faa8be1cd3036ba218005fe709852689466ac74e5a2",
+    "extraction_system": "bf6ba01182758f0edc09d81246114dfa796506383ed9aa2b92fdc0441a5a0934",
+    "focus_context_instructions": "3abbcfdc30b61f24536ab611812905fff59c6316962efc82e4f968b05b135ce0",
+    "protocol_contract_instructions": "515adb752a2dbf2b66285fed2395d495b5c67c4e708e7d709805f84e9d27b415",
+    "protocol_contract_schema": "f383ef454eaa3ff30999e4d1f5802c693dab19ca39ef2977521cf75be1f0b28f",
+    "retrieval_system": "e7d234199adef15a532f234270958d76640d17e67b7499ed381dda36ce8b10b8",
+    "retrieval_instance": "84d965e782bbd8a16c1ae06e36307edf037ac9cb3a94256f5e1730b9f546a537",
+    "method_prompt_override": "3615c29e049fc513a5004e01d6806dff9a10edfe240b4d7217718032d26a2ac9"
+  },
+  "component_bundle": {
+    "ok": true,
+    "reason": "",
+    "path": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/workspaces/s1_method_v2_thread/v2_thread-r1/component_bundle",
+    "files": 6,
+    "bytes": 49919,
+    "sha256": "5e583c2bb837a39086faa6eae4b405a87d3dd5e93f656348657ec60d246ba6e1",
+    "manifest": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/workspaces/s1_method_v2_thread/v2_thread-r1/component_bundle/manifest.json",
+    "component_count": 1
+  },
+  "task_image": {
+    "image": "migration/kylin:sp3-p2",
+    "id": "sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4",
+    "repo_digests": [
+      "migration/kylin@sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4"
+    ],
+    "created": "2026-11-15T13:33:47.789430299Z"
+  },
+  "remote_runtime": null,
+  "dsh_runtime": {
+    "backend": "dsh",
+    "dsh_version": "0.2.2-rc.1",
+    "node_version": "24.9.0",
+    "lockfile_sha256": "05ae33c57596f6ab930ba1cfa40fce564e2a98a0e0d54fbd1ad17d552e81cebd",
+    "profile_name": "component-method-migration",
+    "profile_sha256": "bbf6830c53c91094182b227c5fb44c4d4c77d1bd8617c1bd1e51d910b456ef56",
+    "plugin_bundle_sha256": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+    "plugin_bundles": {
+      "agent-runtime": "c8798d6cbb3514b171f24a270180a4e80e150b59e0c8d9eeff73e7160aa802f5",
+      "component-build": "a3fb217fb470689ee71818d75e7532bfc5ac0d2589d9e0b43191aa4df78914d1",
+      "controlled-bash": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+      "library-publish": "6b70f66958fbd2aeb3236c31a51b59ce392b03646889f1a9fe352e352d1c5a78",
+      "method-ops": "2fb8d15c4e384f08b66dfb416692641514e6baa5ce0b0569a913814505ba6e1d",
+      "method-orchestrator": "5a8f0144bf7f46d3c9d53e269dbf36933ed35d9e4b603e424eff637fad076cf2",
+      "method-shared": "63458c95b6d13eb4257af44dd501302fb2bac99339b5084bd137a713f0ff26cd",
+      "protocol-candidates": "2428962cd068512654cb77e686a5ea696f3ad24da5c996ddc96211f2cb264ddf",
+      "reporting": "ffa5736fdf2c899c7071ee9c6a6467ed7d667fd708d408647943d8abd0412378",
+      "retrieval": "173e896f5aa891da8b1f882ff88183a0ee096be4ce506b04e09cc7812ce93a75",
+      "signal-analysis": "dad9ecaf37f4a0572e340e8108b7eaac5a320881c2e28334343c805be683a684",
+      "source-scan": "bdd9ab828974ac19eba737e3ab41c927f0236f05d0a969fbf1e0056f596f4d1d",
+      "task-execution": "5286cecd9f39ef383215ddde13f1c8824593d577e36da2965ea3a9f44e141c96"
+    }
+  },
+  "remote_dsh_profile": null,
+  "transport": "docker",
+  "status": "pass",
+  "agent_status": "Submitted",
+  "agent_error": null,
+  "judge": {
+    "rc": 0,
+    "duration_s": 807.8,
+    "report": {
+      "task": "v2_thread",
+      "scenario": "windows_to_kylin",
+      "level": "L2",
+      "root": "/bench/v3/windows_to_kylin/tasks/v2_thread",
+      "work": "/tmp/migration-judge-v2_thread-9dodqh06/work",
+      "source_work": "/workspace",
+      "base_work": "/bench/v3/windows_to_kylin/tasks/v2_thread/work",
+      "agent_view": "filtered_overlay",
+      "build_dir": "/tmp/judge-build-v2_thread-r1",
+      "golden": "/bench/v3/windows_to_kylin/tasks/v2_thread/harness/golden",
+      "build": "ok",
+      "public_tests": "skipped",
+      "tests": "pass",
+      "regression": "pass",
+      "api_removal": "pass",
+      "target_api": "pass",
+      "log": "Test.cpp.o\n[ 90%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/RandomStreamTest.cpp.o\n[ 90%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/RandomTest.cpp.o\n[ 90%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/RegularExpressionTest.cpp.o\n[ 90%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SHA1EngineTest.cpp.o\n[ 90%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SHA2EngineTest.cpp.o\n[ 91%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SemaphoreTest.cpp.o\n[ 91%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SharedLibraryTest.cpp.o\n[ 91%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SharedLibraryTestSuite.cpp.o\n[ 91%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SharedMemoryTest.cpp.o\n[ 91%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SharedPtrTest.cpp.o\n[ 92%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SimpleFileChannelTest.cpp.o\n[ 92%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/SimpleHashTableTest.cpp.o\n[ 92%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/StopwatchTest.cpp.o\n[ 92%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/StreamConverterTest.cpp.o\n[ 92%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/StreamCopierTest.cpp.o\n[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/StreamTokenizerTest.cpp.o\n[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/StreamsTestSuite.cpp.o\n[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/StringTest.cpp.o\n[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/StringTokenizerTest.cpp.o\n[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskManagerTest.cpp.o\n[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskTest.cpp.o\n[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskTestSuite.cpp.o\n[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TeeStreamTest.cpp.o\n[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TestChannel.cpp.o\n[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextBufferIteratorTest.cpp.o\n[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextConverterTest.cpp.o\n[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextEncodingTest.cpp.o\n[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextIteratorTest.cpp.o\n[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextTestSuite.cpp.o\n[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadLocalTest.cpp.o\n[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadPoolTest.cpp.o\n[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadTest.cpp.o\n[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadingTestSuite.cpp.o\n[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimedNotificationQueueTest.cpp.o\n[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimerTest.cpp.o\n[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimespanTest.cpp.o\n[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimestampTest.cpp.o\n[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimezoneTest.cpp.o\n[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TuplesTest.cpp.o\n[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TypeListTest.cpp.o\n[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URIStreamOpenerTest.cpp.o\n[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URITest.cpp.o\n[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URITestSuite.cpp.o\n[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UTF8StringTest.cpp.o\n[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDGeneratorTest.cpp.o\n[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDTest.cpp.o\n[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDTestSuite.cpp.o\n[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UnicodeConverterTest.cpp.o\n[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UniqueExpireCacheTest.cpp.o\n[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UniqueExpireLRUCacheTest.cpp.o\n[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/VarTest.cpp.o\n[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ZLibTest.cpp.o\n[100%] Linking CXX executable ../../bin/Foundation-testrunner\ngmake[2]: Leaving directory '/tmp/judge-build-v2_thread-r1'\n[100%] Built target Foundation-testrunner\ngmake[1]: Leaving directory '/tmp/judge-build-v2_thread-r1'\n\ntestThread: \ntestNamedThread: \ntestCurrent: \ntestThreads: \ntestJoin: \ntestNotJoin: \ntestNotRun: \ntestNotRunJoin: \ntestTrySleep: \ntestThreadTarget: \ntestThreadFunction: \ntestThreadFunctor: \ntestThreadStackSize: \ntestSleep: \ntestAffinity: \ntestThreadPool: \ntestThreadPoolImmediateShutdown: \ntestLocality: \ntestAccessors: \ntestTimer: \ntestDuplicateStop: \ntestActivity: \ntestActiveThreadPool: \n\nOK (23 tests)\n\n\ntestCreateFile: \ntestFileAttributes1: \ntestFileAttributes2: \ntestFileAttributes3: \ntestCompare: \ntestSwap: \ntestSize: \ntestDirectory: \ntestCopy: \ntestCopyFailIfDestinationFileExists: \ntestMove: \ntestMoveFailIfDestinationFileExists: \ntestCopyDirectory: \ntestCopyDirectoryFailIfExists: \ntestRename: \ntestRenameFailIfExists: \ntestRootDir: \ntestLongPath: \ntestUnixFileExtension: \ntestTemporaryFile: \ntestParseUnix1: \ntestParseUnix2: \ntestParseUnix3: \ntestParseUnix4: \ntestParseUnix5: \ntestParseWindows1: \ntestParseWindows2: \ntestParseWindows3: \ntestParseWindows4: \ntestParseVMS1: \ntestParseVMS2: \ntestParseVMS3: \ntestParseVMS4: \ntestParseGuess: \ntestTryParse: \ntestStatics: \ntestBaseNameExt: \ntestAbsolute: \ntestRobustness: \ntestParent: \ntestForDirectory: \ntestExpand: \ntestListRoots: /\n\ntestFind: \ntestSwap: \ntestResolve: \ntestPushPop: \ntestWindowsSystem: \ntestSelf: /tmp/judge-build-v2_thread-r1/bin/Foundation-testrunner\n\ntestManifest: \ntestSharedLibrary1: \ntestSharedLibrary2: \ntestSharedLibrary3: \ntestClassLoader1: \ntestClassLoader2: TestLibrary initializing\nTestLibrary uninitializing\n\ntestClassLoader3: TestLibrary initializing\nTestLibrary uninitializing\n\n\nOK (56 tests)\n\n",
+      "api_detail": {
+        "status": "pass",
+        "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)",
+        "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance",
+        "artifacts": [
+          {
+            "path": "/tmp/judge-build-v2_thread-r1/lib/libPocoFoundation.a",
+            "exists": true,
+            "symbols": []
+          }
+        ],
+        "symbols": [],
+        "source_hits": [],
+        "exclude_globs": [
+          "**/*_WIN32*",
+          "**/*_win32*",
+          "**/*w32*",
+          "**/*W32*",
+          "**/*_windows.c",
+          "**/*_windows.h",
+          "**/win32/**",
+          "**/Win32/**",
+          "**/win/**",
+          "**/Windows/**",
+          "**/windows/**",
+          "**/projects/Windows/**",
+          "**/winbuild/**"
+        ],
+        "expect_fail": false,
+        "positive": false,
+        "errors": []
+      },
+      "target_detail": {
+        "status": "pass",
+        "symbol_regex": null,
+        "source_regex": "\\b(?:pthread_[A-Za-z0-9_]+|dlopen|dlsym|dlclose|open|read|write|stat|unlink|mkdir|rename|opendir|readdir|fork|execve|epoll_[A-Za-z0-9_]+|sem_[A-Za-z0-9_]+)",
+        "artifacts": [
+          {
+            "path": "/tmp/judge-build-v2_thread-r1/lib/libPocoFoundation.a",
+            "exists": true,
+            "symbols": []
+          }
+        ],
+        "symbols": [],
+        "source_hits": [
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 47,
+            "match": "stat"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 54,
+            "match": "stat"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 152,
+            "match": "pthread_getname_np"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 171,
+            "match": "pthread_setschedparam"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 186,
+            "match": "pthread_setschedparam"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 227,
+            "match": "stat"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 253,
+            "match": "pthread_attr_t"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 254,
+            "match": "pthread_attr_init"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 262,
+            "match": "pthread_attr_setstacksize"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 264,
+            "match": "pthread_attr_destroy"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 278,
+            "match": "pthread_sigmask"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 280,
+            "match": "pthread_create"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 282,
+            "match": "pthread_sigmask"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 284,
+            "match": "pthread_create"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 286,
+            "match": "pthread_attr_destroy"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 306,
+            "match": "pthread_join"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 319,
+            "match": "pthread_join"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 337,
+            "match": "pthread_self"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 344,
+            "match": "stat"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 359,
+            "match": "pthread_t"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 360,
+            "match": "pthread_setaffinity_np"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 372,
+            "match": "pthread_t"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp",
+            "line": 373,
+            "match": "pthread_getaffinity_np"
+          }
+        ],
+        "exclude_globs": [],
+        "expect_fail": false,
+        "positive": true,
+        "errors": []
+      },
+      "status": "pass"
+    },
+    "log_tail": "arseVMS4: \\ntestParseGuess: \\ntestTryParse: \\ntestStatics: \\ntestBaseNameExt: \\ntestAbsolute: \\ntestRobustness: \\ntestParent: \\ntestForDirectory: \\ntestExpand: \\ntestListRoots: /\\n\\ntestFind: \\ntestSwap: \\ntestResolve: \\ntestPushPop: \\ntestWindowsSystem: \\ntestSelf: /tmp/judge-build-v2_thread-r1/bin/Foundation-testrunner\\n\\ntestManifest: \\ntestSharedLibrary1: \\ntestSharedLibrary2: \\ntestSharedLibrary3: \\ntestClassLoader1: \\ntestClassLoader2: TestLibrary initializing\\nTestLibrary uninitializing\\n\\ntestClassLoader3: TestLibrary initializing\\nTestLibrary uninitializing\\n\\n\\nOK (56 tests)\\n\\n\",\n  \"api_detail\": {\n    \"status\": \"pass\",\n    \"symbol_regex\": \"^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)\",\n    \"source_regex\": \"windows\\\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\\\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance\",\n    \"artifacts\": [\n      {\n        \"path\": \"/tmp/judge-build-v2_thread-r1/lib/libPocoFoundation.a\",\n        \"exists\": true,\n        \"symbols\": []\n      }\n    ],\n    \"symbols\": [],\n    \"source_hits\": [],\n    \"exclude_globs\": [\n      \"**/*_WIN32*\",\n      \"**/*_win32*\",\n      \"**/*w32*\",\n      \"**/*W32*\",\n      \"**/*_windows.c\",\n      \"**/*_windows.h\",\n      \"**/win32/**\",\n      \"**/Win32/**\",\n      \"**/win/**\",\n      \"**/Windows/**\",\n      \"**/windows/**\",\n      \"**/projects/Windows/**\",\n      \"**/winbuild/**\"\n    ],\n    \"expect_fail\": false,\n    \"positive\": false,\n    \"errors\": []\n  },\n  \"target_detail\": {\n    \"status\": \"pass\",\n    \"symbol_regex\": null,\n    \"source_regex\": \"\\\\b(?:pthread_[A-Za-z0-9_]+|dlopen|dlsym|dlclose|open|read|write|stat|unlink|mkdir|rename|opendir|readdir|fork|execve|epoll_[A-Za-z0-9_]+|sem_[A-Za-z0-9_]+)\",\n    \"artifacts\": [\n      {\n        \"path\": \"/tmp/judge-build-v2_thread-r1/lib/libPocoFoundation.a\",\n        \"exists\": true,\n        \"symbols\": []\n      }\n    ],\n    \"symbols\": [],\n    \"source_hits\": [\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 47,\n        \"match\": \"stat\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 54,\n        \"match\": \"stat\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 152,\n        \"match\": \"pthread_getname_np\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 171,\n        \"match\": \"pthread_setschedparam\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 186,\n        \"match\": \"pthread_setschedparam\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 227,\n        \"match\": \"stat\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 253,\n        \"match\": \"pthread_attr_t\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 254,\n        \"match\": \"pthread_attr_init\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 262,\n        \"match\": \"pthread_attr_setstacksize\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 264,\n        \"match\": \"pthread_attr_destroy\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 278,\n        \"match\": \"pthread_sigmask\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 280,\n        \"match\": \"pthread_create\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 282,\n        \"match\": \"pthread_sigmask\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 284,\n        \"match\": \"pthread_create\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 286,\n        \"match\": \"pthread_attr_destroy\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 306,\n        \"match\": \"pthread_join\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 319,\n        \"match\": \"pthread_join\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 337,\n        \"match\": \"pthread_self\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 344,\n        \"match\": \"stat\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 359,\n        \"match\": \"pthread_t\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 360,\n        \"match\": \"pthread_setaffinity_np\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 372,\n        \"match\": \"pthread_t\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_thread-9dodqh06/work/Foundation/src/Thread_POSIX.cpp\",\n        \"line\": 373,\n        \"match\": \"pthread_getaffinity_np\"\n      }\n    ],\n    \"exclude_globs\": [],\n    \"expect_fail\": false,\n    \"positive\": true,\n    \"errors\": []\n  },\n  \"status\": \"pass\"\n}\n"
+  },
+  "build": "ok",
+  "tests": "pass",
+  "api_removal": "pass",
+  "target_api": "pass",
+  "detail": "",
+  "method_stage_image": "migration/kylin:sp3-p2",
+  "method_stage_runtime": "auto",
+  "mounted_bundle": {
+    "ok": true,
+    "reason": "",
+    "path": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/s1_method_v2_thread/v2_thread/run1/method/tasks/v2_thread/outputs/full_library",
+    "files": 14,
+    "bytes": 270939,
+    "sha256": "d37af45b54fb73ed4734581939a53f2518d1161f0c4c89ddb99e53486a4468a6",
+    "manifest": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/s1_method_v2_thread/v2_thread/run1/method/tasks/v2_thread/outputs/full_library/manifest.json",
+    "component_count": 5
+  },
+  "mounted_bundle_source": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/v3/windows_to_kylin/library_generated/full_20261123/library",
+  "method_adapter": "active",
+  "method_task_root": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/s1_method_v2_thread/v2_thread/run1/method/tasks/v2_thread",
+  "method_prompt_sha256": "752f6ea3a906a56f9bc43ecefb2f99a2ec1dbd67d469b77b86fa7b4916e8ae90",
+  "method_prompt_override": {
+    "path": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/config/prompts/method_retrieval_only_system.txt",
+    "sha256": "3615c29e049fc513a5004e01d6806dff9a10edfe240b4d7217718032d26a2ac9",
+    "replaces": "workflow"
+  },
+  "agent_tool_calls": 57,
+  "agent_model_calls": 39,
+  "agent_tokens": {
+    "input": 699256,
+    "output": 47315
+  },
+  "agent_session_id": "session-37033a56-abcc-4078-8f59-1d2ea581d2c0",
+  "method_tool_calls": {
+    "component_run_stage": 1,
+    "controlled_bash": 55,
+    "job_output": 1
+  },
+  "method_stage_usage": {
+    "retrieval": {
+      "model_calls": 3,
+      "input_tokens": 9463,
+      "output_tokens": 905,
+      "reported_cost_usd": null
+    }
+  },
+  "duration_s": 1737.0,
+  "finished_at": "2026-11-23T10:39:41.437016+00:00"
+}

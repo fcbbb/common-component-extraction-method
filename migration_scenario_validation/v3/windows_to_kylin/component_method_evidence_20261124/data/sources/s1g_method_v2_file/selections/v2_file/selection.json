@@ -1,0 +1,8 @@
+{
+  "schema_version": "methodology-paths-1",
+  "task_id": "v2_file",
+  "selected_bundle_ids": [
+    "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+    "posix-file-system-request-backend-behind-a-fixed-async-42929ace"
+  ]
+}

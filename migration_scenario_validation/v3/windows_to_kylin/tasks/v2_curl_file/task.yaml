@@ -1,0 +1,85 @@
+scenario: windows_to_kylin
+task_family: v3
+family: curl_file
+fit: B
+counted: true
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=OFF -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF -DBUILD_CURL_EXE=ON && cmake --build {build} -j2
+  artifact: '{build}/src/curl'
+gates:
+  build: configure and build curl with the file protocol handler on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFileA|FindFirstFileW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile(?!Exception)|ReadFile\(|WriteFile\(|CloseHandle|SetFilePointer|GetFileSize|FindFirstFile
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - lib/file.c
+  target_api: the rebuilt FILE handler uses POSIX open/read/lseek/close and POSIX path semantics instead of a hand-written Windows shim
+  behavior: curl reads a local file, honours a byte range and a HEAD request, and decodes percent-encoded paths through the rebuilt handler
+  regression: the tool still reports its version and exits cleanly
+id: v2_curl_file
+level: L2
+family_type: pattern
+sequence: 22
+domain: networking
+difficulty: hard
+title: Migrate the curl file protocol layer to Kylin V10 SP3
+source:
+  repo: https://github.com/curl/curl.git
+  commit: 7161cb17c01dcff1dc5bf89a18437d9d729f1ecd
+  tag: curl-8_5_0
+  license: curl
+  windows_files:
+  - lib/file.c
+  gold_files:
+  - lib/file.c
+  test_files:
+  - tests/data/test44
+  - tests/data/test45
+spec: |
+  curl is being moved from Windows to Kylin V10 SP3.  The target-platform
+  FILE protocol handler has not been written yet.
+
+  Implement lib/file.c behind the existing handler contract: the
+  Curl_handler_file vtable entry, connection setup and teardown, the
+  transfer state machine (open, size, range, HEAD and the final
+  done/disconnect path), URL path decoding and the DOS/Windows drive and
+  separator conventions that the upstream handler special-cases.  The
+  handler struct, the protocol registry, the build entry and the other
+  protocol implementations stay visible as the reference.
+
+  Scope: the FILE handler only; do not change the registry or the build
+  entry.  curl must build with the repository CMake entry, read a local
+  file, honour an explicit byte range and a HEAD request, and decode a
+  percent-encoded path.
+prepare:
+  remove:
+  - lib/file.c
+harness:
+  scripts:
+  - file_probe.sh
+hidden_tests:
+  command: bash {root}/harness/file_probe.sh --curl {build}/src/curl
+task_id: v2_curl_file

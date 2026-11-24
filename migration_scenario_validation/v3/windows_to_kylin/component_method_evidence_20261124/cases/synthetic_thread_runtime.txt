@@ -1,0 +1,217 @@
+===== default | label=s2v2_default_synthetic3 | status=fail | duration=284.6s
+failure_summary: build=ok; tests=fail; api_removal=skipped; target_api=skipped || THR_DEEP=FAIL count=1 | deep: a 100001-byte request produced a 99968-byte stack (line 556) | THR_PROBE=FAIL threading-contract checks
+----- judge log tail (last 5000 chars) -----
+{
+  "task": "synthetic_thread_runtime",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "root": "/bench/v3/windows_to_kylin/tasks/synthetic_thread_runtime",
+  "work": "/tmp/migration-judge-synthetic_thread_runtime-o70y1gvp/work",
+  "source_work": "/workspace",
+  "base_work": "/bench/v3/windows_to_kylin/tasks/synthetic_thread_runtime/work",
+  "agent_view": "filtered_overlay",
+  "build_dir": "/tmp/judge-build-synthetic_thread_runtime-r1",
+  "golden": "/bench/v3/windows_to_kylin/tasks/synthetic_thread_runtime/harness/golden",
+  "build": "ok",
+  "public_tests": "skipped",
+  "tests": "fail",
+  "regression": "skipped",
+  "api_removal": "skipped",
+  "target_api": "skipped",
+  "log": "-- The C compiler identification is GNU 13.3.1
+-- Check for working C compiler: /opt/rh/gcc-toolset-13/root/usr/bin/cc
+-- Check for working C compiler: /opt/rh/gcc-toolset-13/root/usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - found
+-- Found Threads: TRUE  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/judge-build-synthetic_thread_runtime-r1
+gmake[1]: Entering directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+Scanning dependencies of target thr
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+[ 25%] Building C object CMakeFiles/thr.dir/src/posix/thr_posix.c.o
+[ 50%] Linking C static library libthr.a
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+[ 50%] Built target thr
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+Scanning dependencies of target thr_selftest
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+[ 75%] Building C object CMakeFiles/thr_selftest.dir/tests/test_thr.c.o
+[100%] Linking C executable thr_selftest
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+[100%] Built target thr_selftest
+gmake[1]: Leaving directory '/tmp/judge-build-synthetic_thread_runtime-r1'
+THR_DEEP=FAIL count=1
+deep: a 100001-byte request produced a 99968-byte stack (line 556)
+THR_PROBE=FAIL threading-contract checks
+",
+  "status": "fail"
+}
+
+
+===== method | label=s2v2_method_synthetic3 | status=pass | duration=323.2s
+selected_components: portable-threading-and-synchronisation-backend-for-an-96ad6495
+failure_summary: (none)
+----- judge log tail (last 5000 chars) -----
+judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 329,
+        "match": "pthread_rwlock_tryrdlock"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 346,
+        "match": "pthread_rwlock_trywrlock"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 363,
+        "match": "pthread_rwlock_unlock"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 374,
+        "match": "pthread_rwlock_destroy"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 390,
+        "match": "sem_init"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 405,
+        "match": "sem_post"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 422,
+        "match": "sem_wait"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 439,
+        "match": "sem_trywait"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 458,
+        "match": "sem_destroy"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 467,
+        "match": "pthread_condattr_t"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 476,
+        "match": "pthread_condattr_init"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 480,
+        "match": "pthread_condattr_setclock"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 484,
+        "match": "pthread_cond_init"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 486,
+        "match": "pthread_cond_init"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 490,
+        "match": "pthread_condattr_destroy"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 507,
+        "match": "pthread_cond_wait"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 542,
+        "match": "pthread_cond_timedwait"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 559,
+        "match": "pthread_cond_signal"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 570,
+        "match": "pthread_cond_broadcast"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 581,
+        "match": "pthread_cond_destroy"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 591,
+        "match": "pthread_key_t"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 597,
+        "match": "pthread_key_create"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 607,
+        "match": "pthread_getspecific"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 612,
+        "match": "pthread_setspecific"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 618,
+        "match": "pthread_key_delete"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 629,
+        "match": "pthread_once"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 637,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_thread_runtime-cl0thyl_/work/src/posix/thr_posix.c",
+        "line": 647,
+        "match": "stat"
+      }
+    ],
+    "exclude_globs": [],
+    "expect_fail": false,
+    "positive": true,
+    "errors": []
+  },
+  "status": "pass"
+}
+

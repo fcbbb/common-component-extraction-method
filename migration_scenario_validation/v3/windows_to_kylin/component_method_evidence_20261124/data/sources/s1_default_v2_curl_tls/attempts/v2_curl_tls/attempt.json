@@ -1,0 +1,935 @@
+{
+  "task": "v2_curl_tls",
+  "scenario": "windows_to_kylin",
+  "arm": "default",
+  "condition": "baseline_direct",
+  "level": "L2",
+  "run": 1,
+  "started_at": "2026-11-23T09:33:06.599610+00:00",
+  "label": "s1_default_v2_curl_tls",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "dsh_profile": "component-method",
+  "method_profile": null,
+  "method_budget": null,
+  "method_prompt_hashes": null,
+  "component_bundle": null,
+  "task_image": {
+    "image": "migration/kylin:sp3-p2",
+    "id": "sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4",
+    "repo_digests": [
+      "migration/kylin@sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4"
+    ],
+    "created": "2026-11-15T13:33:47.789430299Z"
+  },
+  "remote_runtime": null,
+  "dsh_runtime": {
+    "backend": "dsh",
+    "dsh_version": "0.2.2-rc.1",
+    "node_version": "24.9.0",
+    "lockfile_sha256": "05ae33c57596f6ab930ba1cfa40fce564e2a98a0e0d54fbd1ad17d552e81cebd",
+    "profile_name": "component-method",
+    "profile_sha256": "e19886b0d0821c8cf7e6139041c77bb3f9e666f2ecb1c36ff86faec9c8fd4ca7",
+    "plugin_bundle_sha256": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+    "plugin_bundles": {
+      "agent-runtime": "c8798d6cbb3514b171f24a270180a4e80e150b59e0c8d9eeff73e7160aa802f5",
+      "component-build": "a3fb217fb470689ee71818d75e7532bfc5ac0d2589d9e0b43191aa4df78914d1",
+      "controlled-bash": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+      "library-publish": "6b70f66958fbd2aeb3236c31a51b59ce392b03646889f1a9fe352e352d1c5a78",
+      "method-ops": "2fb8d15c4e384f08b66dfb416692641514e6baa5ce0b0569a913814505ba6e1d",
+      "method-orchestrator": "5a8f0144bf7f46d3c9d53e269dbf36933ed35d9e4b603e424eff637fad076cf2",
+      "method-shared": "63458c95b6d13eb4257af44dd501302fb2bac99339b5084bd137a713f0ff26cd",
+      "protocol-candidates": "2428962cd068512654cb77e686a5ea696f3ad24da5c996ddc96211f2cb264ddf",
+      "reporting": "ffa5736fdf2c899c7071ee9c6a6467ed7d667fd708d408647943d8abd0412378",
+      "retrieval": "173e896f5aa891da8b1f882ff88183a0ee096be4ce506b04e09cc7812ce93a75",
+      "signal-analysis": "dad9ecaf37f4a0572e340e8108b7eaac5a320881c2e28334343c805be683a684",
+      "source-scan": "bdd9ab828974ac19eba737e3ab41c927f0236f05d0a969fbf1e0056f596f4d1d",
+      "task-execution": "5286cecd9f39ef383215ddde13f1c8824593d577e36da2965ea3a9f44e141c96"
+    }
+  },
+  "remote_dsh_profile": null,
+  "transport": "docker",
+  "status": "pass",
+  "agent_status": "Submitted",
+  "agent_error": null,
+  "judge": {
+    "rc": 0,
+    "duration_s": 124.3,
+    "report": {
+      "task": "v2_curl_tls",
+      "scenario": "windows_to_kylin",
+      "level": "L2",
+      "root": "/bench/v3/windows_to_kylin/tasks/v2_curl_tls",
+      "work": "/tmp/migration-judge-v2_curl_tls-_tc94law/work",
+      "source_work": "/workspace",
+      "base_work": "/bench/v3/windows_to_kylin/tasks/v2_curl_tls/work",
+      "agent_view": "filtered_overlay",
+      "build_dir": "/tmp/judge-build-v2_curl_tls-r1",
+      "golden": "/bench/v3/windows_to_kylin/tasks/v2_curl_tls/harness/golden",
+      "build": "ok",
+      "public_tests": "skipped",
+      "tests": "pass",
+      "regression": "skipped",
+      "api_removal": "pass",
+      "target_api": "pass",
+      "log": "les/libcurl_static.dir/vauth/digest_sspi.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/gsasl.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/krb5_gssapi.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/krb5_sspi.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/ntlm.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/ntlm_sspi.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/oauth2.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/spnego_gssapi.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/spnego_sspi.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vauth/vauth.c.o\n[ 66%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/bearssl.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/gtls.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/hostcheck.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/keylog.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/mbedtls.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/mbedtls_threadlock.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/openssl.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/rustls.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/schannel.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/schannel_verify.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/sectransp.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/vtls.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/wolfssl.c.o\n[ 73%] Building C object lib/CMakeFiles/libcurl_static.dir/vtls/x509asn1.c.o\n[ 80%] Building C object lib/CMakeFiles/libcurl_static.dir/vquic/curl_msh3.c.o\n[ 80%] Building C object lib/CMakeFiles/libcurl_static.dir/vquic/curl_ngtcp2.c.o\n[ 80%] Building C object lib/CMakeFiles/libcurl_static.dir/vquic/curl_quiche.c.o\n[ 80%] Building C object lib/CMakeFiles/libcurl_static.dir/vquic/vquic.c.o\n[ 80%] Building C object lib/CMakeFiles/libcurl_static.dir/vssh/libssh.c.o\n[ 80%] Building C object lib/CMakeFiles/libcurl_static.dir/vssh/libssh2.c.o\n[ 80%] Building C object lib/CMakeFiles/libcurl_static.dir/vssh/wolfssh.c.o\n[ 80%] Linking C static library libcurl.a\ngmake[2]: Leaving directory '/tmp/judge-build-v2_curl_tls-r1'\n[ 80%] Built target libcurl_static\ngmake[2]: Entering directory '/tmp/judge-build-v2_curl_tls-r1'\n[ 80%] Generating tool_hugehelp.c\nScanning dependencies of target curl\ngmake[2]: Leaving directory '/tmp/judge-build-v2_curl_tls-r1'\ngmake[2]: Entering directory '/tmp/judge-build-v2_curl_tls-r1'\n[ 80%] Building C object src/CMakeFiles/curl.dir/slist_wc.c.o\n[ 80%] Building C object src/CMakeFiles/curl.dir/tool_binmode.c.o\n[ 80%] Building C object src/CMakeFiles/curl.dir/tool_bname.c.o\n[ 80%] Building C object src/CMakeFiles/curl.dir/tool_cb_dbg.c.o\n[ 80%] Building C object src/CMakeFiles/curl.dir/tool_cb_hdr.c.o\n[ 80%] Building C object src/CMakeFiles/curl.dir/tool_cb_prg.c.o\n[ 80%] Building C object src/CMakeFiles/curl.dir/tool_cb_rea.c.o\n[ 80%] Building C object src/CMakeFiles/curl.dir/tool_cb_see.c.o\n[ 80%] Building C object src/CMakeFiles/curl.dir/tool_cb_wrt.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_cfgable.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_dirhie.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_doswin.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_easysrc.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_filetime.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_findfile.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_formparse.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_getparam.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_getpass.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_help.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_helpers.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_hugehelp.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_ipfs.c.o\n[ 86%] Building C object src/CMakeFiles/curl.dir/tool_libinfo.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_listhelp.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_main.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_msgs.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_operate.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_operhlp.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_paramhlp.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_parsecfg.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_progress.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_setopt.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_sleep.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_stderr.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_strdup.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_urlglob.c.o\n[ 93%] Building C object src/CMakeFiles/curl.dir/tool_util.c.o\n[100%] Building C object src/CMakeFiles/curl.dir/tool_vms.c.o\n[100%] Building C object src/CMakeFiles/curl.dir/tool_writeout.c.o\n[100%] Building C object src/CMakeFiles/curl.dir/tool_writeout_json.c.o\n[100%] Building C object src/CMakeFiles/curl.dir/tool_xattr.c.o\n[100%] Building C object src/CMakeFiles/curl.dir/var.c.o\n[100%] Building C object src/CMakeFiles/curl.dir/__/lib/base64.c.o\n[100%] Building C object src/CMakeFiles/curl.dir/__/lib/dynbuf.c.o\n[100%] Linking C executable curl\ngmake[2]: Leaving directory '/tmp/judge-build-v2_curl_tls-r1'\n[100%] Built target curl\ngmake[1]: Leaving directory '/tmp/judge-build-v2_curl_tls-r1'\ngmake[2]: Warning: File 'src/CMakeFiles/curl.dir/depend.make' has modification time 2 s in the future\ngmake[2]: warning:  Clock skew detected.  Your build may be incomplete.\nTLS_PROBE=PASS port=18443 client=/tmp/judge-build-v2_curl_tls-r1/src/curl -sk --max-time 10 https://127.0.0.1:18443/\n",
+      "api_detail": {
+        "status": "pass",
+        "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)",
+        "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance",
+        "artifacts": [
+          {
+            "path": "/tmp/judge-build-v2_curl_tls-r1/src/curl",
+            "exists": true,
+            "symbols": []
+          }
+        ],
+        "symbols": [],
+        "source_hits": [],
+        "exclude_globs": [
+          "**/*_WIN32*",
+          "**/*_win32*",
+          "**/*w32*",
+          "**/*W32*",
+          "**/*_windows.c",
+          "**/*_windows.h",
+          "**/win32/**",
+          "**/Win32/**",
+          "**/win/**",
+          "**/Windows/**",
+          "**/windows/**",
+          "**/projects/Windows/**",
+          "**/winbuild/**"
+        ],
+        "expect_fail": false,
+        "positive": false,
+        "errors": []
+      },
+      "target_detail": {
+        "status": "pass",
+        "symbol_regex": null,
+        "source_regex": "\\b(?:SSL_|OPENSSL_|EVP_)[A-Za-z0-9_]+",
+        "artifacts": [
+          {
+            "path": "/tmp/judge-build-v2_curl_tls-r1/src/curl",
+            "exists": true,
+            "symbols": []
+          }
+        ],
+        "symbols": [],
+        "source_hits": [
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 45,
+            "match": "OPENSSL_NO_OCSP"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 48,
+            "match": "OPENSSL_NO_ENGINE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 72,
+            "match": "SSL_CTX"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 87,
+            "match": "OPENSSL_NO_ENGINE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 212,
+            "match": "OPENSSL_VERSION_NUMBER"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 213,
+            "match": "SSL_load_error_strings"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 214,
+            "match": "SSL_library_init"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 217,
+            "match": "OPENSSL_init_ssl"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 218,
+            "match": "OPENSSL_INIT_LOAD_CRYPTO_STRINGS"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 231,
+            "match": "OPENSSL_NO_ENGINE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 238,
+            "match": "OPENSSL_VERSION_NUMBER"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 239,
+            "match": "EVP_cleanup"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 247,
+            "match": "OPENSSL_VERSION"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 270,
+            "match": "SSL_get_shutdown"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 288,
+            "match": "SSL_shutdown"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 290,
+            "match": "SSL_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 305,
+            "match": "SSL_pending"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 354,
+            "match": "SSL_get_ex_data_X509_STORE_CTX_idx"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 355,
+            "match": "SSL_get_app_data"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 375,
+            "match": "SSL_CTX"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 377,
+            "match": "SSL_CTX_get_cert_store"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 415,
+            "match": "SSL_CTX"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 422,
+            "match": "SSL_CTX_get_cert_store"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 423,
+            "match": "SSL_CTX_get0_param"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 430,
+            "match": "SSL_CTX_set_default_verify_paths"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 459,
+            "match": "SSL_CTX_load_verify_locations"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 481,
+            "match": "SSL_CTX_set_default_verify_paths"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 511,
+            "match": "SSL_CTX"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 578,
+            "match": "OPENSSL_VERSION_NUMBER"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 579,
+            "match": "SSL_CTX_set_min_proto_version"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 583,
+            "match": "SSL_CTX_set_max_proto_version"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 589,
+            "match": "SSL_OP_NO_SSLv2"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 591,
+            "match": "SSL_OP_NO_TLSv1"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 593,
+            "match": "SSL_OP_NO_TLSv1_1"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 595,
+            "match": "SSL_OP_NO_TLSv1_2"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 597,
+            "match": "SSL_OP_NO_TLSv1_1"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 599,
+            "match": "SSL_OP_NO_TLSv1_2"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 600,
+            "match": "SSL_CTX_set_options"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 608,
+            "match": "SSL_CTX"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 619,
+            "match": "SSL_CTX_set_cipher_list"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 628,
+            "match": "OPENSSL_VERSION_NUMBER"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 629,
+            "match": "SSL_CTX_set_ciphersuites"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 640,
+            "match": "SSL_CTX_set1_curves_list"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 646,
+            "match": "SSL_CTX_set_options"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 648,
+            "match": "SSL_CTX_clear_options"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 650,
+            "match": "SSL_CTX_set_mode"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 651,
+            "match": "SSL_MODE_ENABLE_PARTIAL_WRITE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 652,
+            "match": "SSL_CTX_set_session_cache_mode"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 653,
+            "match": "SSL_SESS_CACHE_CLIENT"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 654,
+            "match": "SSL_SESS_CACHE_NO_INTERNAL_STORE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 655,
+            "match": "SSL_SESS_CACHE_NO_INTERNAL_LOOKUP"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 657,
+            "match": "SSL_CTX_set_verify"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 658,
+            "match": "SSL_VERIFY_PEER"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 661,
+            "match": "SSL_CTX_set_keylog_callback"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 673,
+            "match": "SSL_FILETYPE_PEM"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 675,
+            "match": "SSL_FILETYPE_PEM"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 677,
+            "match": "SSL_FILETYPE_ASN1"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 681,
+            "match": "SSL_CTX"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 685,
+            "match": "EVP_PKEY"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 704,
+            "match": "SSL_CTX_use_certificate"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 705,
+            "match": "SSL_CTX_use_PrivateKey"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 714,
+            "match": "SSL_CTX_add_extra_chain_cert"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 721,
+            "match": "EVP_PKEY_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 727,
+            "match": "SSL_CTX"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 736,
+            "match": "SSL_CTX_set_default_passwd_cb"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 737,
+            "match": "SSL_CTX_set_default_passwd_cb_userdata"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 767,
+            "match": "SSL_FILETYPE_PEM"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 771,
+            "match": "SSL_CTX_use_certificate"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 779,
+            "match": "SSL_CTX_add_extra_chain_cert"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 790,
+            "match": "SSL_CTX_use_certificate"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 805,
+            "match": "SSL_FILETYPE_PEM"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 806,
+            "match": "SSL_CTX_use_certificate_chain_file"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 812,
+            "match": "SSL_CTX_use_certificate_file"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 831,
+            "match": "EVP_PKEY"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 835,
+            "match": "SSL_FILETYPE_PEM"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 842,
+            "match": "SSL_CTX_use_PrivateKey"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 843,
+            "match": "EVP_PKEY_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 847,
+            "match": "EVP_PKEY_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 851,
+            "match": "SSL_CTX_use_PrivateKey_file"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 857,
+            "match": "SSL_CTX_check_private_key"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 950,
+            "match": "OPENSSL_NO_OCSP"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 955,
+            "match": "SSL_get_tlsext_status_ocsp_resp"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 987,
+            "match": "SSL_get_peer_cert_chain"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 988,
+            "match": "SSL_CTX_get_cert_store"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 996,
+            "match": "SSL_get1_peer_certificate"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1059,
+            "match": "EVP_PKEY"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1064,
+            "match": "SSL_get1_peer_certificate"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1078,
+            "match": "EVP_PKEY_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1085,
+            "match": "OPENSSL_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1086,
+            "match": "EVP_PKEY_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1113,
+            "match": "EVP_PKEY"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1175,
+            "match": "EVP_PKEY_id"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1179,
+            "match": "EVP_PKEY_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1182,
+            "match": "OPENSSL_NO_RSA"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1183,
+            "match": "EVP_PKEY_base_id"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1184,
+            "match": "EVP_PKEY_get0_RSA"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1192,
+            "match": "OPENSSL_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1194,
+            "match": "EVP_PKEY_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1201,
+            "match": "EVP_PKEY_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1227,
+            "match": "SSL_get_peer_cert_chain"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1229,
+            "match": "SSL_get1_peer_certificate"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1269,
+            "match": "SSL_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1273,
+            "match": "SSL_CTX_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1277,
+            "match": "SSL_CTX_new"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1301,
+            "match": "SSL_CTX"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1313,
+            "match": "SSL_new"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1321,
+            "match": "SSL_set_app_data"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1322,
+            "match": "SSL_set_connect_state"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1325,
+            "match": "SSL_set_tlsext_host_name"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1338,
+            "match": "SSL_set_alpn_protos"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1347,
+            "match": "SSL_set_tlsext_status_type"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1355,
+            "match": "SSL_set_session"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1372,
+            "match": "SSL_set_bio"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1397,
+            "match": "SSL_connect"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1399,
+            "match": "SSL_get_error"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1401,
+            "match": "SSL_ERROR_WANT_READ"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1405,
+            "match": "SSL_ERROR_WANT_WRITE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1414,
+            "match": "SSL_ERROR_SYSCALL"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1415,
+            "match": "SSL_get_verify_result"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1430,
+            "match": "SSL_connect"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1431,
+            "match": "SSL_connect"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1437,
+            "match": "SSL_get_verify_result"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1449,
+            "match": "SSL_get1_peer_certificate"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1462,
+            "match": "OPENSSL_NO_OCSP"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1479,
+            "match": "SSL_get0_alpn_selected"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1483,
+            "match": "SSL_session_reused"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1486,
+            "match": "SSL_get_version"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1487,
+            "match": "SSL_get_cipher_name"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1500,
+            "match": "SSL_SESSION"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1505,
+            "match": "SSL_get1_session"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1508,
+            "match": "OPENSSL_VERSION_NUMBER"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1509,
+            "match": "SSL_SESSION_is_resumable"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1510,
+            "match": "SSL_SESSION_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1523,
+            "match": "SSL_SESSION_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1529,
+            "match": "SSL_SESSION_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1550,
+            "match": "SSL_SESSION"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1567,
+            "match": "SSL_SESSION_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1576,
+            "match": "SSL_SESSION_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1699,
+            "match": "SSL_read"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1700,
+            "match": "SSL_shutdown"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1701,
+            "match": "SSL_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1705,
+            "match": "SSL_CTX_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1723,
+            "match": "SSL_write"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1725,
+            "match": "SSL_get_error"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1727,
+            "match": "SSL_ERROR_WANT_READ"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1728,
+            "match": "SSL_ERROR_WANT_WRITE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1744,
+            "match": "SSL_write"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1769,
+            "match": "SSL_read"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1771,
+            "match": "SSL_get_error"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1773,
+            "match": "SSL_ERROR_ZERO_RETURN"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1777,
+            "match": "SSL_ERROR_NONE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1778,
+            "match": "SSL_ERROR_WANT_READ"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1779,
+            "match": "SSL_ERROR_WANT_WRITE"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1783,
+            "match": "SSL_ERROR_SYSCALL"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1802,
+            "match": "SSL_read"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1816,
+            "match": "SSL_SESSION_free"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1824,
+            "match": "EVP_Digest"
+          },
+          {
+            "file": "/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c",
+            "line": 1839,
+            "match": "OPENSSL_NO_ENGINE"
+          }
+        ],
+        "exclude_globs": [],
+        "expect_fail": false,
+        "positive": true,
+        "errors": []
+      },
+      "status": "pass"
+    },
+    "log_tail": ": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1437,\n        \"match\": \"SSL_get_verify_result\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1449,\n        \"match\": \"SSL_get1_peer_certificate\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1462,\n        \"match\": \"OPENSSL_NO_OCSP\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1479,\n        \"match\": \"SSL_get0_alpn_selected\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1483,\n        \"match\": \"SSL_session_reused\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1486,\n        \"match\": \"SSL_get_version\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1487,\n        \"match\": \"SSL_get_cipher_name\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1500,\n        \"match\": \"SSL_SESSION\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1505,\n        \"match\": \"SSL_get1_session\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1508,\n        \"match\": \"OPENSSL_VERSION_NUMBER\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1509,\n        \"match\": \"SSL_SESSION_is_resumable\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1510,\n        \"match\": \"SSL_SESSION_free\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1523,\n        \"match\": \"SSL_SESSION_free\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1529,\n        \"match\": \"SSL_SESSION_free\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1550,\n        \"match\": \"SSL_SESSION\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1567,\n        \"match\": \"SSL_SESSION_free\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1576,\n        \"match\": \"SSL_SESSION_free\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1699,\n        \"match\": \"SSL_read\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1700,\n        \"match\": \"SSL_shutdown\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1701,\n        \"match\": \"SSL_free\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1705,\n        \"match\": \"SSL_CTX_free\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1723,\n        \"match\": \"SSL_write\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1725,\n        \"match\": \"SSL_get_error\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1727,\n        \"match\": \"SSL_ERROR_WANT_READ\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1728,\n        \"match\": \"SSL_ERROR_WANT_WRITE\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1744,\n        \"match\": \"SSL_write\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1769,\n        \"match\": \"SSL_read\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1771,\n        \"match\": \"SSL_get_error\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1773,\n        \"match\": \"SSL_ERROR_ZERO_RETURN\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1777,\n        \"match\": \"SSL_ERROR_NONE\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1778,\n        \"match\": \"SSL_ERROR_WANT_READ\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1779,\n        \"match\": \"SSL_ERROR_WANT_WRITE\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1783,\n        \"match\": \"SSL_ERROR_SYSCALL\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1802,\n        \"match\": \"SSL_read\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1816,\n        \"match\": \"SSL_SESSION_free\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1824,\n        \"match\": \"EVP_Digest\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-v2_curl_tls-_tc94law/work/lib/vtls/openssl.c\",\n        \"line\": 1839,\n        \"match\": \"OPENSSL_NO_ENGINE\"\n      }\n    ],\n    \"exclude_globs\": [],\n    \"expect_fail\": false,\n    \"positive\": true,\n    \"errors\": []\n  },\n  \"status\": \"pass\"\n}\n"
+  },
+  "build": "ok",
+  "tests": "pass",
+  "api_removal": "pass",
+  "target_api": "pass",
+  "detail": "",
+  "method_adapter": null,
+  "agent_tool_calls": 107,
+  "agent_model_calls": 107,
+  "agent_tokens": {
+    "input": 1964264,
+    "output": 85760
+  },
+  "agent_session_id": "session-c9727663-8d4c-4d02-aa2a-d09849e3a2ca",
+  "duration_s": 2308.0,
+  "finished_at": "2026-11-23T10:11:34.647990+00:00"
+}

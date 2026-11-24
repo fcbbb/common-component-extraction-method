@@ -1,0 +1,61 @@
+{
+  "task_id": "v2_nginx_thread",
+  "scenario": "windows_to_kylin",
+  "level": "L2",
+  "build": {
+    "command": "./auto/configure --prefix={build}/nginx --with-threads --without-http_rewrite_module --without-http_gzip_module && make -j",
+    "artifact": "{work}/objs/nginx"
+  },
+  "public_tests": null,
+  "hidden_tests": {
+    "command": "cc -I {work}/src/core -I {work}/src/event -I {work}/src/event/modules -I {work}/src/os/unix -I {work}/objs {root}/harness/ngx_thread_sensitivity.c $(find {work}/objs -name '*.o' | sort) -ldl -lpthread -lcrypt -Wl,-E -no-pie -o {work}/objs/ngx_thread_sensitivity && timeout 120 {work}/objs/ngx_thread_sensitivity && bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port 28084 && bash {root}/harness/nginx_thread_probe.sh --binary {work}/objs/nginx --port 28085"
+  },
+  "regression_tests": null,
+  "gates": {
+    "build": "configure and build nginx with --with-threads on the target platform",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateThread|WaitForSingleObject|EnterCriticalSection|LeaveCriticalSection|InitializeCriticalSection|DeleteCriticalSection|SleepConditionVariableCS|SleepConditionVariableSRW|WakeConditionVariable|WakeAllConditionVariable|CreateEventA|CreateEventW|CloseHandle|GetCurrentThreadId)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateThread|WaitForSingleObject|EnterCriticalSection|LeaveCriticalSection|InitializeCriticalSection|DeleteCriticalSection|SleepConditionVariable|WakeConditionVariable|WakeAllConditionVariable|CreateEvent|CloseHandle|GetCurrentThreadId",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "src/os/unix/ngx_thread_mutex.c",
+        "src/os/unix/ngx_thread_cond.c",
+        "src/os/unix/ngx_thread_id.c"
+      ]
+    },
+    "target_api": "the rebuilt primitives use the target platform's thread, mutex and condition-variable facilities instead of a hand-written portable fallback",
+    "behavior": "a --with-threads build starts a worker with a live thread pool, serves static content through `aio threads`, and the mutex/condition/tid contract holds under concurrent use",
+    "regression": "the server still builds without threads and serves static content"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "task_family": "v3",
+  "family": "nginx_os",
+  "family_type": "pattern",
+  "sequence": 14,
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ]
+}

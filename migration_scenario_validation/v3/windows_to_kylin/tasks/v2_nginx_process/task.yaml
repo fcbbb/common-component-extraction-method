@@ -1,0 +1,111 @@
+scenario: windows_to_kylin
+task_family: v3
+family: nginx_os
+fit: B
+counted: true
+source_kind: upstream_platform_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: ./auto/configure --prefix={build}/nginx --without-http_rewrite_module --without-http_gzip_module
+    && make -j
+  artifact: '{work}/objs/nginx'
+gates:
+  build: configure and build nginx on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateProcessA|CreateProcessW|CreatePipe|TerminateProcess|WaitForSingleObject|GetExitCodeProcess|ShellExecuteA|ShellExecuteW|DuplicateHandle|SetHandleInformation|RegOpenKeyEx|RegCreateKeyEx|CreateEventA|CreateEventW)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateProcess|CreatePipe|TerminateProcess|WaitForSingleObject|GetExitCodeProcess|DuplicateHandle|SetHandleInformation|RegOpenKey|CreateEvent
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/os/unix/ngx_process.c
+    - src/os/unix/ngx_process_cycle.c
+    - src/os/unix/ngx_channel.c
+    - src/os/unix/ngx_daemon.c
+  target_api: the rebuilt process layer is expressed with the target platform's process, signal
+    and wait primitives instead of a hand-written portable fallback
+  behavior: nginx starts one master and the configured workers, reloads by replacing
+    workers while keeping the master, and shuts down gracefully on SIGQUIT without
+    leaving children or a stale pid file
+  regression: the server still builds and serves static content
+id: v2_nginx_process
+level: L2
+family_type: pattern
+sequence: 13
+domain: process
+difficulty: hard
+title: Migrate the nginx process layer to Kylin V10 SP3
+source:
+  repo: https://github.com/nginx/nginx.git
+  commit: 1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5
+  tag: release-1.26.3
+  license: BSD-2-Clause
+  windows_files:
+  - src/os/win32/ngx_process.c
+  - src/os/win32/ngx_process.h
+  - src/os/win32/ngx_process_cycle.c
+  - src/os/win32/ngx_process_cycle.h
+  gold_files:
+  - src/os/unix/ngx_process.c
+  - src/os/unix/ngx_process_cycle.c
+  - src/os/unix/ngx_channel.c
+  - src/os/unix/ngx_daemon.c
+  test_files:
+  - src/os/unix/ngx_process.h
+  - src/os/unix/ngx_process_cycle.h
+  - src/os/unix/ngx_channel.h
+  extra_repos:
+  - name: nginx-tests
+    repo: https://github.com/nginx/nginx-tests.git
+    commit: c0b7894063022fb86d5b5ad732c08507ea03aa78
+    dest: nginx-tests
+spec: |
+  nginx is being moved from Windows to Kylin V10 SP3.  The target-platform
+  process model has not been written yet.
+
+  Rebuild the master/worker process layer: starting and bringing up worker
+  processes, the socket pair used for master/worker channels, command
+  delivery and acknowledgement, signal handling and the process-cycle
+  state machine (spawn, reload, graceful shutdown, reopening logs), and
+  daemonisation.  The module headers, the server core, the Win32
+  implementation and the configure entry stay visible as the reference.
+
+  Scope: the process layer only; do not change module interfaces or build
+  configuration.  Acceptance: nginx builds with its own configure entry,
+  starts one master with the configured number of workers, reloads by
+  replacing workers while the master survives, shuts down gracefully on
+  SIGQUIT, and passes the selected upstream process tests.
+prepare:
+  remove:
+  - src/os/unix/ngx_process.c
+  - src/os/unix/ngx_process_cycle.c
+  - src/os/unix/ngx_channel.c
+  - src/os/unix/ngx_daemon.c
+harness:
+  scripts:
+  - nginx_smoke.sh
+  - nginx_process_probe.sh
+hidden_tests:
+  command: bash {root}/harness/nginx_smoke.sh --binary {work}/objs/nginx --port
+    28082 && bash {root}/harness/nginx_process_probe.sh --binary {work}/objs/nginx
+    --port 28083 && cd {work}/nginx-tests && TEST_NGINX_BINARY={work}/objs/nginx
+    prove -I lib worker_channel.t worker_shutdown_timeout.t
+task_id: v2_nginx_process

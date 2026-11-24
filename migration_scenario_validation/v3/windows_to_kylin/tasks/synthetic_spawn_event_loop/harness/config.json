@@ -1,0 +1,63 @@
+{
+  "task_id": "synthetic_spawn_event_loop",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "build": {
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release && cmake --build {build} -j2",
+    "artifact": "{build}/spl_selftest"
+  },
+  "public_tests": {
+    "command": "{build}/spl_selftest"
+  },
+  "hidden_tests": {
+    "command": "bash {root}/harness/spl_probe.sh --build {build} --work {work}"
+  },
+  "regression_tests": null,
+  "gates": {
+    "build": "configure and build the static library, the probe helper and the public self-test on Kylin",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateProcessA|CreateProcessW|CreatePipe|CreateFileA|CreateFileW|CloseHandle|WaitForSingleObject|GetExitCodeProcess|SetHandleInformation|TerminateProcess)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateProcess|CreatePipe|CreateFile|CloseHandle|WaitForSingleObject|GetExitCodeProcess|SetHandleInformation|TerminateProcess|GetLastError|HANDLE",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "src/posix/spl_process_posix.c"
+      ]
+    },
+    "target_api": "the rebuilt backend uses fork/exec, descriptor duplication and wait-style child status collection instead of Win32 process and pipe handles",
+    "behavior": "the public options struct, the stdio slot meanings, the error-return convention, the exit-callback signature and the loop's non-blocking run contract stay identical",
+    "regression": "the public header, the shared loop, the probe helper and the public self-test are unchanged"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "task_family": "v3",
+  "family": "synthetic_spawn_event_loop",
+  "family_type": "synthetic",
+  "sequence": 25,
+  "counted": false,
+  "source_kind": "synthetic",
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ]
+}

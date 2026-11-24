@@ -1,0 +1,59 @@
+{
+  "task_id": "v2_curl_file",
+  "scenario": "windows_to_kylin",
+  "level": "L2",
+  "build": {
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCURL_USE_OPENSSL=OFF -DUSE_NGHTTP2=OFF -DCURL_USE_LIBPSL=OFF -DBUILD_CURL_EXE=ON && cmake --build {build} -j2",
+    "artifact": "{build}/src/curl"
+  },
+  "public_tests": null,
+  "hidden_tests": {
+    "command": "bash {root}/harness/file_probe.sh --curl {build}/src/curl"
+  },
+  "regression_tests": null,
+  "gates": {
+    "build": "configure and build curl with the file protocol handler on the target platform",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFileA|FindFirstFileW)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile(?!Exception)|ReadFile\\(|WriteFile\\(|CloseHandle|SetFilePointer|GetFileSize|FindFirstFile",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "lib/file.c"
+      ]
+    },
+    "target_api": "the rebuilt FILE handler uses POSIX open/read/lseek/close and POSIX path semantics instead of a hand-written Windows shim",
+    "behavior": "curl reads a local file, honours a byte range and a HEAD request, and decodes percent-encoded paths through the rebuilt handler",
+    "regression": "the tool still reports its version and exits cleanly"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "task_family": "v3",
+  "family": "curl_file",
+  "family_type": "pattern",
+  "sequence": 22,
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ]
+}

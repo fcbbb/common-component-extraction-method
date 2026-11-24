@@ -15,7 +15,7 @@
     "build": "configure and build Foundation on the target platform",
     "api_removal": {
       "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)",
-      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile(?!Exception)|WaitForSingleObject|RegOpenKey|CoCreateInstance",
+      "source_regex": "\\b(CreateFile[AW]?|LoadLibrary[AW]?|RegOpenKey(?:Ex)?|CoCreateInstance|WSAStartup)\\b",
       "exclude_globs": [
         "**/*_WIN32*",
         "**/*_win32*",

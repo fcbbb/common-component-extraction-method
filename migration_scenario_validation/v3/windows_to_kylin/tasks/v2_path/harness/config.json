@@ -8,10 +8,10 @@
   },
   "public_tests": null,
   "hidden_tests": {
-    "command": "cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx PathTest GlobTest DirectoryIteratorsTest DirectoryWatcherTest"
+    "command": "cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx PathTest GlobTest DirectoryIteratorsTest DirectoryWatcherTest"
   },
   "regression_tests": {
-    "command": "cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest ThreadTest SharedLibraryTest"
+    "command": "cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest ThreadTest SharedLibraryTest"
   },
   "gates": {
     "build": "configure and build Foundation on the target platform",

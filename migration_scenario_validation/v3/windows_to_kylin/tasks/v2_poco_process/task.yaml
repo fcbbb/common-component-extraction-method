@@ -1,0 +1,96 @@
+scenario: windows_to_kylin
+task_family: v3
+family: poco_foundation
+fit: B
+counted: true
+source_kind: library_family_port
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTS=ON
+    -DENABLE_FOUNDATION=ON -DENABLE_NET=OFF -DENABLE_CRYPTO=OFF -DENABLE_NETSSL=OFF -DENABLE_JWT=OFF -DENABLE_DATA=OFF
+    -DENABLE_MONGODB=OFF -DENABLE_REDIS=OFF -DENABLE_PROMETHEUS=OFF -DENABLE_ZIP=OFF -DENABLE_UTIL=OFF
+    -DENABLE_XML=OFF -DENABLE_JSON=OFF -DENABLE_ENCODINGS=OFF -DENABLE_PAGECOMPILER=OFF -DENABLE_PAGECOMPILER_FILE2PAGE=OFF
+    -DENABLE_ACTIVERECORD=OFF -DENABLE_ACTIVERECORD_COMPILER=OFF -DENABLE_CPPPARSER=OFF -DENABLE_POCODOC=OFF
+    -DENABLE_APACHECONNECTOR=OFF -DENABLE_PDF=OFF -DENABLE_SEVENZIP=OFF -DENABLE_DATA_SQLITE=OFF -DENABLE_DATA_MYSQL=OFF
+    -DENABLE_DATA_ODBC=OFF -DENABLE_DATA_POSTGRESQL=OFF && cmake --build {build} -j2
+  artifact: '{build}/lib/libPocoFoundation.a'
+gates:
+  build: configure and build Foundation on the target platform
+  api_removal:
+    symbol_regex: ^(__imp_|CreateProcessA|CreateProcessW|CreatePipe|TerminateProcess|WaitForSingleObject|GetExitCodeProcess|ShellExecuteA|ShellExecuteW|DuplicateHandle|SetHandleInformation)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateProcess|CreatePipe|TerminateProcess|WaitForSingleObject|GetExitCodeProcess|DuplicateHandle|SetHandleInformation
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - Foundation/src/Process_UNIX.cpp
+  target_api: the rebuilt layer calls the target platform API rather than a hand-written portable fallback
+  behavior: process launch, argument and environment passing, working-directory selection, piped
+    stdin/stdout, process id and handle semantics, wait, exit codes and termination all match the
+    documented Poco::Process contract
+  regression: filesystem, path, thread and shared-library suites stay green
+id: v2_poco_process
+level: L2
+family_type: pattern
+sequence: 8
+domain: process
+difficulty: hard
+title: Migrate the Foundation process subsystem to Kylin V10 SP3
+source:
+  repo: https://github.com/pocoproject/poco.git
+  commit: d6bd48a94c5f03e3c69cac1b024fdad5120e3a7b
+  tag: poco-1.13.3-release
+  license: BSL-1.0
+  windows_files:
+  - Foundation/src/Process_WIN32U.cpp
+  - Foundation/include/Poco/Process_WIN32U.h
+  gold_files:
+  - Foundation/src/Process_UNIX.cpp
+  test_files:
+  - Foundation/testsuite/src/ProcessTest.cpp
+  - Foundation/testsuite/src/ProcessRunnerTest.cpp
+  - Foundation/testsuite/src/TestApp.cpp
+spec: |
+  POCO Foundation is being moved from Windows to Kylin V10 SP3.  The
+  target-platform process subsystem has not been written yet.
+
+  Port it, using the public headers, the existing callers and the Windows
+  implementation as the reference.  Foundation must build with the
+  repository CMake entry, and Poco::Process, Poco::ProcessHandle,
+  Poco::ProcessRunner and the pipe/stdin/stdout helpers they use must keep
+  their documented external behavior.
+
+  Scope: the process subsystem only; do not change public headers or
+  signatures.  Deliverable: libPocoFoundation.a, built by the repository
+  CMake entry with Foundation enabled.
+
+  Target environment: Kylin V10 SP3, x86_64, GCC 13.3, CMake 3.16.5, libm
+  and the standard system threading library.
+prepare:
+  remove:
+  - Foundation/src/Process_UNIX.cpp
+hidden_tests:
+  command: cd {build}/bin && LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH" PATH="$PWD:$PATH" ./Foundation-testrunner -ignore {work}/cppignore.lnx
+    ProcessTest ProcessRunnerTest
+regression_tests:
+  command: cd {build}/bin && LD_LIBRARY_PATH="$PWD:$LD_LIBRARY_PATH" PATH="$PWD:$PATH" ./Foundation-testrunner -ignore {work}/cppignore.lnx
+    FileTest PathTest ThreadTest SharedLibraryTest
+task_id: v2_poco_process

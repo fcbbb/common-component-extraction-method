@@ -87,8 +87,9 @@ def _path_note(spec: str, workspace: str) -> str:
     if "work/" not in spec:
         return ""
     return (
-        f"Paths written as `work/...` in the task text are relative to `{workspace}`; "
-        "do not create a nested `work/` directory."
+        f"Paths written as `work/...` in the task text are relative to `{workspace}`. "
+        "Do not create a nested `work/` directory. "
+        f"For example, `work/foo` means `{workspace}/foo`, not `{workspace}/work/foo`."
     )
 
 

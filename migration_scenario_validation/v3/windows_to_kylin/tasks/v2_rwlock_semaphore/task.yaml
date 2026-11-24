@@ -93,8 +93,8 @@ prepare:
   - Foundation/src/RWLock_POSIX.cpp
   - Foundation/src/Semaphore_POSIX.cpp
 hidden_tests:
-  command: cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx RWLockTest SemaphoreTest
+  command: cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx RWLockTest SemaphoreTest
     ThreadPoolTest TimerTest
 regression_tests:
-  command: cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest PathTest SharedLibraryTest
+  command: cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest PathTest SharedLibraryTest
 task_id: v2_rwlock_semaphore

@@ -1,0 +1,75 @@
+{
+  "label": "s1_method_v2_foundation_full",
+  "arm": "method",
+  "condition": "component_method",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "context_window": 262144,
+  "max_output_tokens": 32768,
+  "dsh_profile": "component-method-migration",
+  "method_profile": "component-method-migration",
+  "method_budget": {
+    "step_limit": null,
+    "total_timeout": 14400,
+    "command_timeout": 600,
+    "extraction_workers": 2,
+    "review_workers": 2,
+    "agent_timeout": 3600
+  },
+  "method_prompt_hashes": {
+    "workflow": "fe7a48ac099b3200347d5faa8be1cd3036ba218005fe709852689466ac74e5a2",
+    "extraction_system": "bf6ba01182758f0edc09d81246114dfa796506383ed9aa2b92fdc0441a5a0934",
+    "focus_context_instructions": "3abbcfdc30b61f24536ab611812905fff59c6316962efc82e4f968b05b135ce0",
+    "protocol_contract_instructions": "515adb752a2dbf2b66285fed2395d495b5c67c4e708e7d709805f84e9d27b415",
+    "protocol_contract_schema": "f383ef454eaa3ff30999e4d1f5802c693dab19ca39ef2977521cf75be1f0b28f",
+    "retrieval_system": "c1d762fec739f5d316954c348d60222402dc40fa5a403292ad0c5cf3e48638a8",
+    "retrieval_instance": "84d965e782bbd8a16c1ae06e36307edf037ac9cb3a94256f5e1730b9f546a537",
+    "method_prompt_override": "3615c29e049fc513a5004e01d6806dff9a10edfe240b4d7217718032d26a2ac9"
+  },
+  "task_images": {
+    "windows_to_kylin": {
+      "image": "migration/kylin:sp3-p2",
+      "id": "sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4",
+      "repo_digests": [
+        "migration/kylin@sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4"
+      ],
+      "created": "2026-11-15T13:33:47.789430299Z"
+    }
+  },
+  "remote_runtimes": {},
+  "dsh_runtime": {
+    "backend": "dsh",
+    "dsh_version": "0.2.2-rc.1",
+    "node_version": "24.9.0",
+    "lockfile_sha256": "05ae33c57596f6ab930ba1cfa40fce564e2a98a0e0d54fbd1ad17d552e81cebd",
+    "profile_name": "component-method-migration",
+    "profile_sha256": "bbf6830c53c91094182b227c5fb44c4d4c77d1bd8617c1bd1e51d910b456ef56",
+    "plugin_bundle_sha256": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+    "plugin_bundles": {
+      "agent-runtime": "c8798d6cbb3514b171f24a270180a4e80e150b59e0c8d9eeff73e7160aa802f5",
+      "component-build": "a3fb217fb470689ee71818d75e7532bfc5ac0d2589d9e0b43191aa4df78914d1",
+      "controlled-bash": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+      "library-publish": "6b70f66958fbd2aeb3236c31a51b59ce392b03646889f1a9fe352e352d1c5a78",
+      "method-ops": "2fb8d15c4e384f08b66dfb416692641514e6baa5ce0b0569a913814505ba6e1d",
+      "method-orchestrator": "5a8f0144bf7f46d3c9d53e269dbf36933ed35d9e4b603e424eff637fad076cf2",
+      "method-shared": "63458c95b6d13eb4257af44dd501302fb2bac99339b5084bd137a713f0ff26cd",
+      "protocol-candidates": "2428962cd068512654cb77e686a5ea696f3ad24da5c996ddc96211f2cb264ddf",
+      "reporting": "ffa5736fdf2c899c7071ee9c6a6467ed7d667fd708d408647943d8abd0412378",
+      "retrieval": "173e896f5aa891da8b1f882ff88183a0ee096be4ce506b04e09cc7812ce93a75",
+      "signal-analysis": "dad9ecaf37f4a0572e340e8108b7eaac5a320881c2e28334343c805be683a684",
+      "source-scan": "bdd9ab828974ac19eba737e3ab41c927f0236f05d0a969fbf1e0056f596f4d1d",
+      "task-execution": "5286cecd9f39ef383215ddde13f1c8824593d577e36da2965ea3a9f44e141c96"
+    }
+  },
+  "tasks": [
+    "v3/windows_to_kylin/tasks/v2_foundation_full"
+  ],
+  "runs_per_task": 1,
+  "musa_transport": "auto",
+  "counts": {
+    "pass": 0,
+    "fail": 1,
+    "error": 0,
+    "skip": 0
+  },
+  "finished_at": "2026-11-23T12:25:55.958792+00:00"
+}

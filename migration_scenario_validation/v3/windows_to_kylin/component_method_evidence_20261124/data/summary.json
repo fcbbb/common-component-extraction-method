@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-11-24T01:01:41.423689+00:00",
+  "task_count": 20,
+  "categories": {
+    "method_win": 4,
+    "default_win": 1,
+    "both_fail": 8,
+    "both_pass": 7
+  },
+  "default_pass": 8,
+  "method_pass": 11,
+  "method_wins": [
+    "synthetic_posix_fs_requests",
+    "synthetic_spawn_event_loop",
+    "synthetic_thread_runtime",
+    "l2_opencv_highgui"
+  ],
+  "default_wins": [
+    "v2_nginx_full"
+  ],
+  "strict_method_pass_default_not_pass": 4,
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "default_profile": "component-method (baseline_direct)",
+  "method_profile": "component-method-migration",
+  "method_prompt": "config/prompts/method_retrieval_only_system.txt",
+  "bundle": "v3/windows_to_kylin/library_generated/full_20261123/library",
+  "stage_image": "migration/kylin:sp3-p2",
+  "notes": [
+    "第 20 个任务 negative_win32_eventlog 是负向对照：method 的检索结论正确，但流程按 ERROR 中止，不计 PASS。",
+    "v2_nginx_full 的 method 结果只有 batch rc=1，没有 attempt.json。",
+    "l2_opencv_highgui 的 default 失败含环境因素（网络下载、numpy、超时）。",
+    "已排除三个明显错误的 method ERROR：v2_path、v2_shared_library、v2_curl_build。"
+  ]
+}

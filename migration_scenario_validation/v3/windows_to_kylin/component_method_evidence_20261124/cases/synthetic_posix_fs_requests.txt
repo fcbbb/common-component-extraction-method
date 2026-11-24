@@ -1,0 +1,217 @@
+===== default | label=s2v2_default_synthetic3 | status=fail | duration=373.9s
+failure_summary: build=ok; tests=fail; api_removal=skipped; target_api=skipped || {'kind': 'completed'} || deep: vector write transferred -22 of 6000 bytes (line 145) | deep: vector write size is 0 (line 153) | deep: vector file read-back failed (line 157) | deep: vector write content differs at 0 (line 161) | deep: long read vector transferred -22 bytes, expected 1024 (line 200) | deep: long read vector slot 0 not filled (line 204) | deep: temporary template without the suffix (line 382) | deep: interrupted write reported 65536 of 2097152 bytes (line 569) | deep: interrupted-write reader received 65536 bytes (line 575) | AFS_DEEP=FAIL count=9 | AFS_PROBE=FAIL request-contract checks
+----- judge log tail (last 5000 chars) -----
+{
+  "task": "synthetic_posix_fs_requests",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "root": "/bench/v3/windows_to_kylin/tasks/synthetic_posix_fs_requests",
+  "work": "/tmp/migration-judge-synthetic_posix_fs_requests-uxvup36k/work",
+  "source_work": "/workspace",
+  "base_work": "/bench/v3/windows_to_kylin/tasks/synthetic_posix_fs_requests/work",
+  "agent_view": "filtered_overlay",
+  "build_dir": "/tmp/judge-build-synthetic_posix_fs_requests-r1",
+  "golden": "/bench/v3/windows_to_kylin/tasks/synthetic_posix_fs_requests/harness/golden",
+  "build": "ok",
+  "public_tests": "skipped",
+  "tests": "fail",
+  "regression": "skipped",
+  "api_removal": "skipped",
+  "target_api": "skipped",
+  "log": "-- The C compiler identification is GNU 13.3.1
+-- Check for working C compiler: /opt/rh/gcc-toolset-13/root/usr/bin/cc
+-- Check for working C compiler: /opt/rh/gcc-toolset-13/root/usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - found
+-- Found Threads: TRUE  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/judge-build-synthetic_posix_fs_requests-r1
+gmake[1]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+Scanning dependencies of target afs
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+[ 16%] Building C object CMakeFiles/afs.dir/src/common/afs_dispatch.c.o
+[ 33%] Building C object CMakeFiles/afs.dir/src/common/afs_pool.c.o
+[ 50%] Building C object CMakeFiles/afs.dir/src/posix/afs_posix.c.o
+[ 66%] Linking C static library libafs.a
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+[ 66%] Built target afs
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+Scanning dependencies of target afs_selftest
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+[ 83%] Building C object CMakeFiles/afs_selftest.dir/tests/test_afs.c.o
+[100%] Linking C executable afs_selftest
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+[100%] Built target afs_selftest
+gmake[1]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+deep: vector write transferred -22 of 6000 bytes (line 145)
+deep: vector write size is 0 (line 153)
+deep: vector file read-back failed (line 157)
+deep: vector write content differs at 0 (line 161)
+deep: long read vector transferred -22 bytes, expected 1024 (line 200)
+deep: long read vector slot 0 not filled (line 204)
+deep: temporary template without the suffix (line 382)
+deep: interrupted write reported 65536 of 2097152 bytes (line 569)
+deep: interrupted-write reader received 65536 bytes (line 575)
+AFS_DEEP=FAIL count=9
+AFS_PROBE=FAIL request-contract checks
+",
+  "status": "fail"
+}
+
+
+===== method | label=s2v2_method_synthetic3 | status=pass | duration=531.3s
+selected_components: posix-file-system-request-backend-behind-a-fixed-async-42929ace
+failure_summary: (none)
+----- judge log tail (last 5000 chars) -----
+o - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - found
+-- Found Threads: TRUE  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/judge-build-synthetic_posix_fs_requests-r1
+gmake[1]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+Scanning dependencies of target afs
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+[ 33%] Building C object CMakeFiles/afs.dir/src/common/afs_dispatch.c.o
+[ 33%] Building C object CMakeFiles/afs.dir/src/common/afs_pool.c.o
+[ 50%] Building C object CMakeFiles/afs.dir/src/posix/afs_posix.c.o
+[ 66%] Linking C static library libafs.a
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+[ 66%] Built target afs
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+Scanning dependencies of target afs_selftest
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+[ 83%] Building C object CMakeFiles/afs_selftest.dir/tests/test_afs.c.o
+[100%] Linking C executable afs_selftest
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+[100%] Built target afs_selftest
+gmake[1]: Leaving directory '/tmp/judge-build-synthetic_posix_fs_requests-r1'
+AFS_DEEP=PASS
+OPENFD=27
+AFS_PROBE=PASS
+",
+  "api_detail": {
+    "status": "pass",
+    "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|GetFileSize|SetFilePointer|CreateThread|WaitForSingleObject|GetOverlappedResult)",
+    "source_regex": "windows\\.h|winioctl\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|ReadFile|WriteFile|CloseHandle|GetFileSize|SetFilePointer|CreateThread|WaitForSingleObject|GetOverlappedResult|GetLastError",
+    "artifacts": [
+      {
+        "path": "/tmp/judge-build-synthetic_posix_fs_requests-r1/afs_selftest",
+        "exists": true,
+        "symbols": []
+      }
+    ],
+    "symbols": [],
+    "source_hits": [],
+    "exclude_globs": [
+      "**/*_WIN32*",
+      "**/*_win32*",
+      "**/*w32*",
+      "**/*W32*",
+      "**/*_windows.c",
+      "**/*_windows.h",
+      "**/win32/**",
+      "**/Win32/**",
+      "**/win/**",
+      "**/Windows/**",
+      "**/windows/**",
+      "**/projects/Windows/**",
+      "**/winbuild/**"
+    ],
+    "expect_fail": false,
+    "positive": false,
+    "errors": []
+  },
+  "target_detail": {
+    "status": "pass",
+    "symbol_regex": null,
+    "source_regex": "\\b(?:pthread_[A-Za-z0-9_]+|dlopen|dlsym|dlclose|open|read|write|stat|unlink|mkdir|rename|opendir|readdir|fork|execve|epoll_[A-Za-z0-9_]+|sem_[A-Za-z0-9_]+)",
+    "artifacts": [
+      {
+        "path": "/tmp/judge-build-synthetic_posix_fs_requests-r1/afs_selftest",
+        "exists": true,
+        "symbols": []
+      }
+    ],
+    "symbols": [],
+    "source_hits": [
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 18,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 32,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 46,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 82,
+        "match": "open"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 145,
+        "match": "read"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 215,
+        "match": "write"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 262,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 268,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_posix_fs_requests-77_a49is/work/src/posix/afs_posix.c",
+        "line": 285,
+        "match": "read"
+      }
+    ],
+    "exclude_globs": [],
+    "expect_fail": false,
+    "positive": true,
+    "errors": []
+  },
+  "status": "pass"
+}
+

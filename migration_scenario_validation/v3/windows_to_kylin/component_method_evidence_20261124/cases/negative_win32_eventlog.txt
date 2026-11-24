@@ -1,0 +1,28 @@
+===== default | label=s1_default_negative_win32_eventlog | status=fail | duration=218.3s
+failure_summary: build=skipped; tests=fail; api_removal=skipped; target_api=skipped
+----- judge log tail (last 5000 chars) -----
+{
+  "task": "negative_win32_eventlog",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "root": "/bench/v3/windows_to_kylin/tasks/negative_win32_eventlog",
+  "work": "/tmp/migration-judge-negative_win32_eventlog-zn68b1lv/work",
+  "source_work": "/workspace",
+  "base_work": "/bench/v3/windows_to_kylin/tasks/negative_win32_eventlog/work",
+  "agent_view": "filtered_overlay",
+  "build_dir": "/tmp/judge-build-negative_win32_eventlog-r1",
+  "golden": "/bench/v3/windows_to_kylin/tasks/negative_win32_eventlog/harness/golden",
+  "build": "skipped",
+  "public_tests": "skipped",
+  "tests": "fail",
+  "regression": "skipped",
+  "api_removal": "skipped",
+  "target_api": "skipped",
+  "log": "",
+  "status": "fail"
+}
+
+
+===== method | label=s1_method_negative_win32_eventlog | status=error | duration=466.9s
+failure_summary: retrieval validated an empty component selection; no component applies to this task
+(no judge log tail)

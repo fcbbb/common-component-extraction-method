@@ -22,8 +22,10 @@ carry that content.
 
 The library stays read-only and the path list is the only output.
 
-Each response must contain exactly one Bash code block with one shell command.
-Commands may be joined with && or ||.
+Call the `controlled_bash` tool for every command, one shell command per call.
+Never write a command as your final answer: a turn that ends without a tool
+call ends the session, and this stage only completes when the validator prints
+the completion marker. Commands may be joined with && or ||.
 
 1. Read /retrieval-tools/component_catalog.json.
 2. Inspect the README.md files of the candidates.
