@@ -31,5 +31,6 @@
   "generated_at": "2026-11-16T13:59:21Z",
   "task_family": "v3",
   "role": "library_source",
+  "counted": false,
   "library_manifest": "v3/cuda_to_musa/library/manifest.json"
 }

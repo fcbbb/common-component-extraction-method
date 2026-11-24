@@ -1,0 +1,191 @@
+scenario: cuda_to_musa
+defaults:
+  scenario: cuda_to_musa
+  task_family: v2
+  fit: B
+  counted: true
+  source_kind: upstream-kernel-benchmark
+  gold_kind: benchmark-judge
+  library_manifest: v2/cuda_to_musa/library/manifest.json
+  tolerances: {}
+tasks:
+- id: v2_b_l1_leaky_relu
+  package: v2/cuda_to_musa/tasks/v2_b_l1_leaky_relu
+  role: held_out
+  level: L1
+  domain: activation
+  difficulty: easy
+  counted: true
+  title: 'V2: MultiKernelBench leaky_relu: CUDA model -> MUSA kernel'
+  status: ready
+- id: v2_b_l1_mse_loss
+  package: v2/cuda_to_musa/tasks/v2_b_l1_mse_loss
+  role: held_out
+  level: L1
+  domain: loss
+  difficulty: easy
+  counted: true
+  title: 'V2: MultiKernelBench mse_loss: CUDA model -> MUSA kernel'
+  status: ready
+- id: v2_b_l1_relu
+  package: v2/cuda_to_musa/tasks/v2_b_l1_relu
+  role: held_out
+  level: L1
+  domain: activation
+  difficulty: easy
+  counted: true
+  title: 'V2: ReLU: CUDA elementwise semantics -> MUSA kernel'
+  status: ready
+- id: v2_b_l1_sigmoid
+  package: v2/cuda_to_musa/tasks/v2_b_l1_sigmoid
+  role: held_out
+  level: L1
+  domain: activation
+  difficulty: easy
+  counted: true
+  title: 'V2: Sigmoid: CUDA elementwise semantics -> MUSA kernel'
+  status: ready
+- id: v2_b_l1_softmax
+  package: v2/cuda_to_musa/tasks/v2_b_l1_softmax
+  role: held_out
+  level: L1
+  domain: activation
+  difficulty: easy
+  counted: true
+  title: 'V2: Softmax: CUDA row softmax -> MUSA kernel'
+  status: ready
+- id: v2_b_l1_swish
+  package: v2/cuda_to_musa/tasks/v2_b_l1_swish
+  role: held_out
+  level: L1
+  domain: activation
+  difficulty: easy
+  counted: true
+  title: 'V2: Swish: CUDA elementwise semantics -> MUSA kernel'
+  status: ready
+- id: v2_b_l2_argmax
+  package: v2/cuda_to_musa/tasks/v2_b_l2_argmax
+  role: held_out
+  level: L2
+  domain: index
+  difficulty: medium
+  counted: true
+  title: 'V2: ArgMax over a dimension: CUDA arg-reduction -> MUSA kernel'
+  status: ready
+- id: v2_b_l2_cosine_similarity_loss
+  package: v2/cuda_to_musa/tasks/v2_b_l2_cosine_similarity_loss
+  role: held_out
+  level: L2
+  domain: loss
+  difficulty: medium
+  counted: true
+  title: 'V2: Cosine similarity loss: CUDA norms + dot + mean -> MUSA kernel'
+  status: ready
+- id: v2_b_l2_cross_entropy_loss
+  package: v2/cuda_to_musa/tasks/v2_b_l2_cross_entropy_loss
+  role: held_out
+  level: L2
+  domain: loss
+  difficulty: medium
+  counted: true
+  title: 'V2: CrossEntropyLoss: CUDA fused loss -> MUSA kernel'
+  status: ready
+- id: v2_b_l2_cumsum
+  package: v2/cuda_to_musa/tasks/v2_b_l2_cumsum
+  role: held_out
+  level: L2
+  domain: math
+  difficulty: medium
+  counted: true
+  title: 'V2: Cumsum: CUDA scan -> MUSA kernel'
+  status: ready
+- id: v2_b_l2_gather
+  package: v2/cuda_to_musa/tasks/v2_b_l2_gather
+  role: held_out
+  level: L2
+  domain: index
+  difficulty: medium
+  counted: true
+  title: 'V2: Gather: CUDA index kernel -> MUSA kernel'
+  status: ready
+- id: v2_b_l2_layer_norm
+  package: v2/cuda_to_musa/tasks/v2_b_l2_layer_norm
+  role: held_out
+  level: L2
+  domain: normalization
+  difficulty: medium
+  counted: true
+  title: 'V2: MultiKernelBench layer_norm: CUDA model -> MUSA kernel'
+  status: ready
+- id: v2_b_l2_sum_reduce
+  package: v2/cuda_to_musa/tasks/v2_b_l2_sum_reduce
+  role: held_out
+  level: L2
+  domain: reduce
+  difficulty: medium
+  counted: true
+  title: 'V2: Sum reduction over a dimension: CUDA reduce -> MUSA kernel'
+  status: ready
+- id: v2_b_l3_conv2d
+  package: v2/cuda_to_musa/tasks/v2_b_l3_conv2d
+  role: held_out
+  level: L3
+  domain: convolution
+  difficulty: hard
+  counted: true
+  title: 'V2: Conv2D: cuDNN-style convolution -> MUSA kernel'
+  status: ready
+- id: v2_b_l3_conv2d_batch_norm_scaling
+  package: v2/cuda_to_musa/tasks/v2_b_l3_conv2d_batch_norm_scaling
+  role: held_out
+  level: L3
+  domain: fuse
+  difficulty: hard
+  counted: true
+  title: 'V2: Conv2d + BatchNorm2d (batch stats) + scale: fused CUDA model -> MUSA kernels'
+  status: ready
+- id: v2_b_l3_gqa
+  package: v2/cuda_to_musa/tasks/v2_b_l3_gqa
+  role: held_out
+  level: L3
+  domain: attention
+  difficulty: hard
+  counted: true
+  title: 'V2: GQA: grouped-query attention -> MUSA kernel'
+  status: ready
+- id: v2_b_l3_kv_cached_attention
+  package: v2/cuda_to_musa/tasks/v2_b_l3_kv_cached_attention
+  role: held_out
+  level: L3
+  domain: attention
+  difficulty: hard
+  counted: true
+  title: 'V2: KV-cached attention inference -> MUSA kernel'
+  status: ready
+- id: v2_b_l3_matmul_gelu_softmax
+  package: v2/cuda_to_musa/tasks/v2_b_l3_matmul_gelu_softmax
+  role: held_out
+  level: L3
+  domain: fuse
+  difficulty: hard
+  counted: true
+  title: 'V2: Fused matmul + GELU + softmax -> MUSA kernel'
+  status: ready
+- id: v2_b_l3_sdpa
+  package: v2/cuda_to_musa/tasks/v2_b_l3_sdpa
+  role: held_out
+  level: L3
+  domain: attention
+  difficulty: hard
+  counted: true
+  title: 'V2: Scaled dot-product attention -> MUSA kernel'
+  status: ready
+- id: v2_b_l3_standard_matmul
+  package: v2/cuda_to_musa/tasks/v2_b_l3_standard_matmul
+  role: held_out
+  level: L3
+  domain: matmul
+  difficulty: hard
+  counted: true
+  title: 'V2: Standard matmul: CUDA GEMM -> MUSA kernel'
+  status: ready

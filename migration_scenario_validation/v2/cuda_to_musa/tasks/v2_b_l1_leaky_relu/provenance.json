@@ -1,0 +1,39 @@
+{
+  "task_id": "v2_b_l1_leaky_relu",
+  "scenario": "cuda_to_musa",
+  "repo": "https://github.com/wzzll123/MultiKernelBench.git",
+  "commit": "460a972c9be7ce18035984321d38b910e27df95f",
+  "tag": null,
+  "license": "MIT",
+  "source_kind": "upstream-kernel-benchmark",
+  "source_files": [
+    "prompts/cuda_model_leaky_relu.py",
+    "reference/activation/leaky_relu.py"
+  ],
+  "gold_files": [
+    "submission/leaky_relu_submission.py"
+  ],
+  "reference_files": [],
+  "spec_files": [],
+  "test_files": [
+    "utils/correctness.py",
+    "utils/cheating_detection.py"
+  ],
+  "copied": {
+    "source_files": [],
+    "gold_files": [
+      "prompts/musa_new_model_leaky_relu.py"
+    ],
+    "reference_files": [],
+    "spec_files": [],
+    "test_files": []
+  },
+  "gold_kind": "benchmark-judge",
+  "materialized": true,
+  "generated_by": "tools/extract_migrate_task.py",
+  "generated_at": "2026-11-16T11:49:30Z",
+  "task_family": "v2",
+  "role": "held_out",
+  "counted": true,
+  "library_manifest": "v2/cuda_to_musa/library/manifest.json"
+}

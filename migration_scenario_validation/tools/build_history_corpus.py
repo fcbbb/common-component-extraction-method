@@ -58,9 +58,12 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT.parent
 if str(PROJECT / "src") not in sys.path:
     sys.path.insert(0, str(PROJECT / "src"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 # Imported after the path adjustment above.
 from component_method.source_scan.prepare_migration_inputs import build_inputs  # noqa: E402
+from shared.harness import agent_view  # noqa: E402
 
 
 SPEC_SCHEMA = "migration-history-spec-v1"
@@ -666,21 +669,27 @@ def _materialize_example(
         raise RuntimeError(f"{task_id} has no source_files or gold_files in provenance")
 
     core_relative = set(before_files) | set(after_files)
-    headers = (
-        _select_headers(
-            work_root,
-            seeds=[*before_files, *after_files, *test_files],
-            include_roots=[str(item) for item in example.get("include_roots") or ["."]],
+    with tempfile.TemporaryDirectory(prefix=f"history-context-{task_id}-") as temporary:
+        # Context is selected from the same filtered tree the migration agent
+        # would see.  The raw work/ also contains evaluator backends and
+        # alternative-target prompt families; those are not migration context.
+        context_work = Path(temporary) / "work"
+        agent_view.copy_agent_view(work_root, context_work, task)
+        headers = (
+            _select_headers(
+                context_work,
+                seeds=[*before_files, *after_files, *test_files],
+                include_roots=[str(item) for item in example.get("include_roots") or ["."]],
+            )
+            if spec["header_scan"]
+            else []
         )
-        if spec["header_scan"]
-        else []
-    )
-    callers = _select_callers(
-        work_root,
-        example,
-        core_relative,
-        suffixes=spec["caller_suffixes"],
-    )
+        callers = _select_callers(
+            context_work,
+            example,
+            core_relative,
+            suffixes=spec["caller_suffixes"],
+        )
     context_relative: set[str] = set()
     for item in headers:
         if item["path"] not in core_relative:

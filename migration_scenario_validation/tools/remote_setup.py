@@ -63,6 +63,14 @@ REPO_EXCLUDES = [
     "**/gold",
     "**/gold_authored",
     "**/upstream_nonconforming",
+    # V3 history corpora contain `after` target implementations, and the
+    # published library contains retrieval targets.  Neither belongs in the
+    # remote repository an agent can inspect; the method arm stages the
+    # selected bundle explicitly.
+    "**/history",
+    "**/library",
+    "**/library_generated",
+    "**/runs",
     "**/bench.env",
     "**/remote.yaml",
     "**/.env",

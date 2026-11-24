@@ -91,8 +91,18 @@ scenarios:
     # build args and a real MTT S4000.  `bench env` reports it as manual.
     build: []
 
-  # CUDA -> MUSA V3 self-built library sources and held-out tasks.  The
-  # execution plane is the remote S4000, same as the V1 MUSA scenario.
+  # CUDA -> MUSA V2 task family.  It keeps the V1 operator set but uses the
+  # clean V2 task packages and agent-view leak filtering.
+  cuda_to_musa_v2:
+    enabled: false
+    parent: v2/cuda_to_musa/tasks
+    image: ${MUSA_IMAGE:-migration/musa:s4000}
+    transport: ${MUSA_TRANSPORT:-auto}
+    remote_config: ${MUSA_REMOTE_CONFIG:-env/remote.yaml}
+    library_dir: v2/cuda_to_musa/library
+    build: []
+
+  # CUDA -> MUSA V3 library sources / future held-out tasks.
   cuda_to_musa_v3:
     enabled: false
     parent: v3/cuda_to_musa/tasks

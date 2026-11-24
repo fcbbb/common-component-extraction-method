@@ -1,64 +1,51 @@
-# CUDA -> MUSA V3 library-source slate.
-#
-# The first stage is deliberately limited to library_source packages.  They
-# are the corpus from which the frozen component library will be extracted;
-# they are not part of the held-out evaluation set.
-
 scenario: cuda_to_musa
+task_family: v3
 split_unit: operator
 split:
   library_source:
     tasks:
-      - s1_conv2d_batch_norm
-      - s2_matmul_gelu_softmax
-      - s3_kv_cached_attention
+    - s1_conv2d_batch_norm
+    - s2_matmul_gelu_softmax
+    - s3_kv_cached_attention
   held_out:
-    tasks: []
-  excluded:
-    tasks: []
-
-rules:
-  - A library_source package must have a materialized work/ snapshot and an evaluator-only gold/submission target.
-  - Library sources are excluded from every held-out pass-rate statistic.
-  - held-out tasks must not share operator/contract with these library sources.
-
+    tasks:
+    - h1_grouped_query_attention
 defaults:
   scenario: cuda_to_musa
   task_family: v3
   fit: B
   counted: false
   library_manifest: v3/cuda_to_musa/library/manifest.json
-
 tasks:
-  - id: s1_conv2d_batch_norm
-    role: library_source
-    package: v3/cuda_to_musa/tasks/s1_conv2d_batch_norm
-    level: L3
-    domain: convolution
-    difficulty: hard
-    status: ready
-    counted: false
-    title: 'Fused conv2d + batch norm + scaling: library source'
-    notes: Covers convolution tiling, per-channel statistics, affine scaling, and output layout.
-
-  - id: s2_matmul_gelu_softmax
-    role: library_source
-    package: v3/cuda_to_musa/tasks/s2_matmul_gelu_softmax
-    level: L3
-    domain: fused-matmul
-    difficulty: hard
-    status: ready
-    counted: false
-    title: 'Fused matmul + GELU + softmax: library source'
-    notes: Covers GEMM tiling, fused activation, reduction, numerical stability, and output layout.
-
-  - id: s3_kv_cached_attention
-    role: library_source
-    package: v3/cuda_to_musa/tasks/s3_kv_cached_attention
-    level: L3
-    domain: attention
-    difficulty: hard
-    status: ready
-    counted: false
-    title: 'KV-cached attention: library source'
-    notes: Covers QKV projection, cache layout, attention score scaling, masking, and softmax.
+- id: s1_conv2d_batch_norm
+  package: v3/cuda_to_musa/tasks/s1_conv2d_batch_norm
+  role: library_source
+  level: L3
+  domain: convolution
+  difficulty: hard
+  counted: false
+  status: ready
+- id: s2_matmul_gelu_softmax
+  package: v3/cuda_to_musa/tasks/s2_matmul_gelu_softmax
+  role: library_source
+  level: L3
+  domain: fused-matmul
+  difficulty: hard
+  counted: false
+  status: ready
+- id: s3_kv_cached_attention
+  package: v3/cuda_to_musa/tasks/s3_kv_cached_attention
+  role: library_source
+  level: L3
+  domain: attention
+  difficulty: hard
+  counted: false
+  status: ready
+- id: h1_grouped_query_attention
+  package: v3/cuda_to_musa/tasks/h1_grouped_query_attention
+  role: held_out
+  level: L3
+  domain: attention
+  difficulty: hard
+  counted: true
+  status: ready

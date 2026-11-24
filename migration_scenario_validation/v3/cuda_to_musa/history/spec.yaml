@@ -1,52 +1,31 @@
-# CUDA -> MUSA V3 component-extraction corpus.
-#
-# Only library_source packages are listed.  Held-out tasks must never enter
-# this corpus: extraction reads the completed source -> gold migration.
 schema: migration-history-spec-v1
 scenario: cuda_to_musa
 library_id: cuda-to-musa-v3-self-built
 language: python
-library_source_repos:
-  - MultiKernelBench
+library_source_repos: [MultiKernelBench]
 held_out_repos: []
 dataset_root: ../tasks
 output_root: .
-
 examples:
   - task_id: s1_conv2d_batch_norm
     capability: convolution/conv2d-batchnorm-scaling
-    api_symbols:
-      - conv2d
-      - batch_norm
-      - BatchNorm2d
-      - scaling
-      - get_init_inputs
+    api_symbols: [conv2d, batch_norm, BatchNorm2d, scaling, get_init_inputs]
     include_roots: [.]
     caller_roots: [reference, prompts]
     caller_exclude_dirs: [test, tests]
     caller_exclude_globs: []
     caller_limit: 8
-
   - task_id: s2_matmul_gelu_softmax
     capability: fused/matmul-gelu-softmax
-    api_symbols:
-      - matmul
-      - gelu
-      - softmax
-      - get_init_inputs
+    api_symbols: [matmul, gelu, softmax, get_init_inputs]
     include_roots: [.]
     caller_roots: [reference, prompts]
     caller_exclude_dirs: [test, tests]
     caller_exclude_globs: []
     caller_limit: 8
-
   - task_id: s3_kv_cached_attention
     capability: attention/kv-cache
-    api_symbols:
-      - kv_cache
-      - attention
-      - softmax
-      - get_init_inputs
+    api_symbols: [kv_cache, attention, softmax, get_init_inputs]
     include_roots: [.]
     caller_roots: [reference, prompts]
     caller_exclude_dirs: [test, tests]

@@ -32,7 +32,7 @@ level: L3
 domain: fused-matmul
 difficulty: hard
 op_name: matmul_gelu_softmax
-title: 'Fused matmul + GELU + softmax: library source'
+title: 'Library source: fused matmul + GELU + softmax'
 source:
   repo: https://github.com/wzzll123/MultiKernelBench.git
   commit: 460a972c9be7ce18035984321d38b910e27df95f
@@ -53,7 +53,8 @@ spec: '`reference/fuse/matmul_gelu_softmax.py` is the upstream operator
   matmul -> GELU -> softmax epilogue.
 
 
-  Write the submission file named by the task under `work/submission/`; it must define `ModelNew`.
+  Write the submission file named by the task under `submission/` at the workspace root; it must define
+  `ModelNew`.
 
   '
 hidden_tests:

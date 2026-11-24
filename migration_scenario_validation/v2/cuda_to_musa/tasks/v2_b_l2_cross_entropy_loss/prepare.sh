@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+OP="cross_entropy_loss"
+CACHE="${MIGRATION_BENCH_CACHE:-$HOME/.cache/migration-bench}"
+REPO_DIR="$CACHE/repos/MultiKernelBench-460a972c9be7"
+REPO_URL=https://github.com/wzzll123/MultiKernelBench.git
+COMMIT=460a972c9be7ce18035984321d38b910e27df95f
+
+mkdir -p "$CACHE/repos"
+if [ ! -d "$REPO_DIR/.git" ]; then
+  git clone --filter=blob:none --no-checkout "$REPO_URL" "$REPO_DIR"
+fi
+if ! git -C "$REPO_DIR" cat-file -e "$COMMIT^{commit}" 2>/dev/null; then
+  git -C "$REPO_DIR" fetch --depth 1 origin "$COMMIT" || true
+fi
+git -C "$REPO_DIR" checkout --detach "$COMMIT" >/dev/null 2>&1
+rm -rf "$ROOT/work"
+mkdir -p "$ROOT/work"
+git -C "$REPO_DIR" archive "$COMMIT" | tar -x -C "$ROOT/work"
+
+# Evaluator-only target: authored controls first, then any upstream MUSA
+# sample.  Normalize both to gold/submission/<op>_submission.py.
+rm -rf "$ROOT/gold"
+mkdir -p "$ROOT/gold/submission"
+if [ -d "$ROOT/gold_authored" ]; then
+  find "$ROOT/gold_authored" -maxdepth 1 -type f -name '*.py' -exec cp -a {} "$ROOT/gold/submission/" \;
+fi
+for f in "$ROOT/work"/prompts/musa_new_model_*.py; do
+  [ -e "$f" ] || continue
+  base="$(basename "$f" .py)"
+  op="${base#musa_new_model_}"
+  cp -a "$f" "$ROOT/gold/submission/${op}_submission.py"
+done
+rm -f "$ROOT/work"/prompts/musa_new_model_*.py
+# Keep only this task's target submission; upstream ships samples for other ops.
+find "$ROOT/gold/submission" -type f ! -name "${OP}_submission.py" -delete
+printf "%s\n" "$COMMIT" > "$ROOT/work/.source_commit"
+echo "prepared $ROOT/work from $REPO_URL@$COMMIT"

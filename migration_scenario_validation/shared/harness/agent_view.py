@@ -31,8 +31,19 @@ KYLIN_DOC_FILES = {
     ".travis.yml", ".gitattributes",
 }
 KYLIN_BUILD_FILES = {"CMakeLists.txt", "Makefile.am", "Makefile.in", "configure.ac", "aclocal.m4", "configure", "meson.build", "Makefile"}
-MUSA_IGNORED_DIRS = {"test", "tests", "utils"}
-MUSA_IGNORED_FILES = {"eval_single_runner.py"}
+MUSA_IGNORED_DIRS = {
+    "test", "tests", "utils",
+    # MultiKernelBench keeps the target backends and alternative-language
+    # prompt/project material beside the source references.  These are
+    # evaluator/target material, not source data.
+    "backends", "prompt_generators", "ascend_op_projects", "scripts",
+}
+MUSA_IGNORED_FILES = {
+    "eval_single_runner.py", "evaluation.py", "dataset.py", "config.py",
+    "generate_and_write.py", "generate_baseline_statistics.py",
+    "README.md", "multi_kernel_bench.pdf",
+}
+MUSA_SOURCE_PROMPT_PREFIXES = ("cuda_model_", "cuda_new_model_")
 GENERAL_IGNORED_FILES = {"TASK.md"}
 # A file name marks a test when "test"/"tests" is a whole word (``test-list.h``,
 # ``runLibTests.sh``), a CamelCase suffix before the extension (``FileTest.cpp``,
@@ -381,6 +392,20 @@ def is_hidden_path(task: Dict[str, Any], rel: str) -> bool:
         if parts[0] in MUSA_IGNORED_DIRS:
             return True
         if rel in MUSA_IGNORED_FILES:
+            return True
+        if parts[0] == "prompts":
+            # Keep only source-side CUDA examples.  The MUSA/Ascend/triton
+            # prompt families are target or alternative-target material and
+            # must not reach the agent view.
+            return not (
+                len(parts) == 2
+                and parts[1].startswith(MUSA_SOURCE_PROMPT_PREFIXES)
+            )
+        # The upstream reference tree also vendors NPU reference models;
+        # they use a different target runtime and are not the task contract.
+        if parts[0] == "reference" and any(
+            part.startswith("npukernelbench_") for part in parts[1:]
+        ):
             return True
         return any(part in {"tests"} for part in parts[:-1])
     return False

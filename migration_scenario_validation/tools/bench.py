@@ -48,6 +48,7 @@ SCENARIOS = (
     "windows_to_kylin",
     "windows_to_kylin_v3",
     "cuda_to_musa",
+    "cuda_to_musa_v2",
     "cuda_to_musa_v3",
 )
 TASK_PARENTS = {
@@ -56,6 +57,7 @@ TASK_PARENTS = {
     "windows_to_kylin": "v1/windows_to_kylin/tasks",
     "windows_to_kylin_v3": "v3/windows_to_kylin/tasks",
     "cuda_to_musa": "v1/cuda_to_musa/tasks",
+    "cuda_to_musa_v2": "v2/cuda_to_musa/tasks",
     "cuda_to_musa_v3": "v3/cuda_to_musa/tasks",
 }
 
@@ -351,7 +353,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     for name in _enabled_scenarios(cfg, args.scenario):
         sc = _scenario_cfg(cfg, name)
         image = str(sc.get("image") or "")
-        if name in ("cuda_to_musa", "cuda_to_musa_v3"):
+        if name in ("cuda_to_musa", "cuda_to_musa_v2", "cuda_to_musa_v3"):
             # CUDA -> MUSA executes on the remote S4000 host.  The local
             # Docker image is not used by migration_trial for this scenario;
             # it is only an optional record/reproducibility artifact.  Do not

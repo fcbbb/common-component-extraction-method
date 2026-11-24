@@ -989,6 +989,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "v1/ipp_vsipl_tasks",
                 "v1/windows_to_kylin/tasks",
                 "v1/cuda_to_musa/tasks",
+                "v2/cuda_to_musa/tasks",
                 "v3/cuda_to_musa/tasks",
                 "v3/windows_to_kylin/tasks",
             ]
@@ -1808,11 +1809,32 @@ def main(argv: Optional[List[str]] = None) -> int:
                     remote_repo = f"{remote_cfg['remote_root']}/repo"
                     remote_bench = f"{remote_repo}/{BENCH_DIR}"
                     rel = root.resolve().relative_to(ROOT).as_posix()
+                    # The remote repo deliberately excludes work/ (and gold/)
+                    # so an agent cannot inspect the pristine evaluator tree.
+                    # The judge still needs that tree as its overlay base, so
+                    # stage it into the attempt directory, outside the repo.
+                    remote_base_work = f"{remote_base}/base_work"
+                    if (root / "work").is_dir():
+                        rc, out = _rsync(remote_cfg, root / "work", remote_base_work)
+                        if rc != 0:
+                            judge = {
+                                "rc": 1,
+                                "duration_s": 0,
+                                "report": None,
+                                "log_tail": out[-2000:],
+                            }
+                            record["judge"] = judge
+                            record["status"] = "error"
+                            record["detail"] = "remote base-work sync failed"
+                            results.append(record)
+                            continue
+                    else:
+                        remote_base_work = f"{remote_bench}/{rel}/work"
                     command = (
                         f"cd {shlex.quote(remote_bench)} && python3 shared/harness/runner.py "
                         f"--task-root {shlex.quote(remote_bench + '/' + rel)} "
                         f"--work-dir {shlex.quote(remote_ws)} "
-                        f"--base-work-dir {shlex.quote(remote_bench + '/' + rel + '/work')} "
+                        f"--base-work-dir {shlex.quote(remote_base_work)} "
                         f"--build-dir {shlex.quote('/tmp/judge-build-' + tag)} "
                         f"--timeout {args.judge_timeout}"
                     )

@@ -45,6 +45,44 @@ def test_musa_agent_view_omits_evaluator_and_utils(tmp_path):
     assert not (target / "eval_single_runner.py").exists()
 
 
+def test_musa_agent_view_hides_target_backends_and_prompt_families(tmp_path):
+    source = tmp_path / "full"
+    for directory in ("backends", "prompt_generators", "ascend_op_projects",
+                      "scripts", "utils", "reference/npukernelbench_level1",
+                      "prompts"):
+        (source / directory).mkdir(parents=True)
+    (source / "backends" / "musa_backend.py").write_text("target backend\n", encoding="utf-8")
+    (source / "prompt_generators" / "ascendc_add_shot.py").write_text("target prompt\n", encoding="utf-8")
+    (source / "ascend_op_projects" / "op.cpp").write_text("target project\n", encoding="utf-8")
+    (source / "scripts" / "generate.py").write_text("target script\n", encoding="utf-8")
+    (source / "utils" / "correctness.py").write_text("judge\n", encoding="utf-8")
+    (source / "reference" / "npukernelbench_level1" / "kernel.py").write_text("npu target\n", encoding="utf-8")
+    (source / "reference" / "contract.py").write_text("source contract\n", encoding="utf-8")
+    (source / "prompts" / "cuda_model_add.py").write_text("source cuda\n", encoding="utf-8")
+    (source / "prompts" / "ascendc_new_model_add.py").write_text("target prompt\n", encoding="utf-8")
+    (source / "eval_single_runner.py").write_text("judge\n", encoding="utf-8")
+    (source / "README.md").write_text("evaluator docs\n", encoding="utf-8")
+    target = tmp_path / "agent"
+    task = {"scenario": "cuda_to_musa"}
+
+    agent_view.copy_agent_view(source, target, task)
+
+    assert (target / "reference" / "contract.py").exists()
+    assert (target / "prompts" / "cuda_model_add.py").exists()
+    for rel in (
+        "backends/musa_backend.py",
+        "prompt_generators/ascendc_add_shot.py",
+        "ascend_op_projects/op.cpp",
+        "scripts/generate.py",
+        "utils/correctness.py",
+        "reference/npukernelbench_level1/kernel.py",
+        "prompts/ascendc_new_model_add.py",
+        "eval_single_runner.py",
+        "README.md",
+    ):
+        assert not (target / rel).exists(), rel
+
+
 def test_runner_overlays_agent_source_onto_full_judge_tree(tmp_path):
     task_root = tmp_path / "task"
     full = task_root / "work"
