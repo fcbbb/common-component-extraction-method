@@ -40,6 +40,10 @@
 
 ### 2.3 Held-out 主测试（POCO，8 道）
 
+组件列中的 `G-*` 指流水线生成的组件库
+`library_generated/full_20261123/library/`（`T*` 仍指手写库）。映射明细见
+`capability_matrix/matrix.md`。
+
 | 任务 | 级别 | 角色 | 组件 | 状态 | 说明 |
 |---|---|---|---|---|---|
 | `v2_file` | L2 | test | T1/T2/T5 | ready | 文件层 |
@@ -48,7 +52,7 @@
 | `v2_rwlock_semaphore` | L2 | test | T1/T4/T5 | ready | 锁与信号量 |
 | `v2_shared_library` | L2 | boundary | T1/T5 | ready | dlopen，组件库不覆盖 |
 | `v2_foundation_full` | L3 | test | T1–T5 | ready | 整层重建，含 Process |
-| `v2_poco_process` | L2 | test | T1/T3/T5 | new | 专用 process 题 |
+| `v2_poco_process` | L2 | test | G-process | ready | 使用生成库 process 组件；gold 正控待验证 |
 | `negative_win32_eventlog` | L3 | negative | — | ready | 负对照，v3 gate 已对齐 |
 
 ### 2.4 Held-out 主测试（nginx，4 道）
@@ -57,8 +61,8 @@
 |---|---|---|---|---|---|
 | `v2_nginx_files` | L2 | test | T1/T2/T5 | ready | 由建库来源转为测试题 |
 | `v2_nginx_full` | L3 | test | T1–T5 | ready | 整层重建，含 process/thread |
-| `v2_nginx_process` | L2 | test | T1/T3/T5 | new | 专用 process 题 |
-| `v2_nginx_thread` | L2 | test | T1/T4/T5 | new | 线程池 |
+| `v2_nginx_process` | L2 | test | G-process | ready | 专用 process 题；gold 正控 PASS |
+| `v2_nginx_thread` | L2 | test | G-thread | ready | 线程原语题；gold 正控 PASS |
 
 ### 2.5 Held-out 主测试（curl，4 道）
 
@@ -111,7 +115,8 @@ T3 是原来的单点，现在由 `v2_foundation_full`、`v2_nginx_full`、`v2_p
 ## 5. 待办
 
 - [ ] 用 libarchive 证据复核 T1/T2/T5 的 pitfalls 与 verification，确认没有 nginx 专有表述（当前组件正文已无仓库专有词）。
-- [ ] 打包 6 道新题：`v2_poco_process`、`v2_nginx_process`、`v2_nginx_thread`、`v2_curl_thread`、`v2_curl_file`、`synthetic_multi_call_site`。
+- [x] 打包 3 道新题：`v2_poco_process`、`v2_nginx_process`、`v2_nginx_thread`。
+- [ ] `v2_curl_thread` / `v2_curl_file` 暂缓：curl 的 threaded resolver 与 file:// 处理没有独立的 Windows→Unix 平台实现文件；`synthetic_multi_call_site` 无 primary 组件。
 - [x] 将全部任务包收敛到 `v3/windows_to_kylin/tasks/`，`negative_win32_eventlog`、`l2_opencv_highgui` 已补齐 `target_api`、`regression`。
 - [ ] 在 POCO、nginx、curl 各选一道做 retrieval-only 验证，确认组件选择与边界判断正确。
 - [ ] 第一轮跑 10 道现成 held-out 题（8 core + 2 boundary）；新题打包后再扩到完整清单。

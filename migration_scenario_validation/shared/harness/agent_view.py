@@ -361,8 +361,10 @@ def is_hidden_path(task: Dict[str, Any], rel: str) -> bool:
             return True
         if "test" in parts[-1].lower() or "benchmark" in parts[-1].lower():
             # ``cmake/`` holds build support (e.g. ``test_compiler.cpp`` used
-            # by try_compile), never task test material.
-            if parts[0] != "cmake" and (
+            # by try_compile), never task test material.  Match the directory
+            # case-insensitively: curl keeps it as ``CMake/`` and its
+            # ``CurlTests.c`` is a try_compile probe the build needs.
+            if parts[0].lower() != "cmake" and (
                 KYLIN_TEST_NAME_RE.search(parts[-1])
                 or "benchmark" in parts[-1].lower()
             ):

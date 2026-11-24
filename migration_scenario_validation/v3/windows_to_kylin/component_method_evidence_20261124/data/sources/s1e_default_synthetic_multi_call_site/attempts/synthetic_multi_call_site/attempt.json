@@ -1,0 +1,205 @@
+{
+  "task": "synthetic_multi_call_site",
+  "scenario": "windows_to_kylin",
+  "arm": "default",
+  "condition": "baseline_direct",
+  "level": "L3",
+  "run": 1,
+  "started_at": "2026-11-23T08:47:35.386026+00:00",
+  "label": "s1e_default_synthetic_multi_call_site",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "dsh_profile": "component-method",
+  "method_profile": null,
+  "method_budget": null,
+  "method_prompt_hashes": null,
+  "component_bundle": null,
+  "task_image": {
+    "image": "migration/kylin:sp3-p2",
+    "id": "sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4",
+    "repo_digests": [
+      "migration/kylin@sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4"
+    ],
+    "created": "2026-11-15T13:33:47.789430299Z"
+  },
+  "remote_runtime": null,
+  "dsh_runtime": {
+    "backend": "dsh",
+    "dsh_version": "0.2.2-rc.1",
+    "node_version": "24.9.0",
+    "lockfile_sha256": "05ae33c57596f6ab930ba1cfa40fce564e2a98a0e0d54fbd1ad17d552e81cebd",
+    "profile_name": "component-method",
+    "profile_sha256": "e19886b0d0821c8cf7e6139041c77bb3f9e666f2ecb1c36ff86faec9c8fd4ca7",
+    "plugin_bundle_sha256": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+    "plugin_bundles": {
+      "agent-runtime": "c8798d6cbb3514b171f24a270180a4e80e150b59e0c8d9eeff73e7160aa802f5",
+      "component-build": "a3fb217fb470689ee71818d75e7532bfc5ac0d2589d9e0b43191aa4df78914d1",
+      "controlled-bash": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+      "library-publish": "6b70f66958fbd2aeb3236c31a51b59ce392b03646889f1a9fe352e352d1c5a78",
+      "method-ops": "2fb8d15c4e384f08b66dfb416692641514e6baa5ce0b0569a913814505ba6e1d",
+      "method-orchestrator": "5a8f0144bf7f46d3c9d53e269dbf36933ed35d9e4b603e424eff637fad076cf2",
+      "method-shared": "63458c95b6d13eb4257af44dd501302fb2bac99339b5084bd137a713f0ff26cd",
+      "protocol-candidates": "2428962cd068512654cb77e686a5ea696f3ad24da5c996ddc96211f2cb264ddf",
+      "reporting": "ffa5736fdf2c899c7071ee9c6a6467ed7d667fd708d408647943d8abd0412378",
+      "retrieval": "173e896f5aa891da8b1f882ff88183a0ee096be4ce506b04e09cc7812ce93a75",
+      "signal-analysis": "dad9ecaf37f4a0572e340e8108b7eaac5a320881c2e28334343c805be683a684",
+      "source-scan": "bdd9ab828974ac19eba737e3ab41c927f0236f05d0a969fbf1e0056f596f4d1d",
+      "task-execution": "5286cecd9f39ef383215ddde13f1c8824593d577e36da2965ea3a9f44e141c96"
+    }
+  },
+  "remote_dsh_profile": null,
+  "transport": "docker",
+  "status": "pass",
+  "agent_status": "Submitted",
+  "agent_error": null,
+  "judge": {
+    "rc": 0,
+    "duration_s": 13.9,
+    "report": {
+      "task": "synthetic_multi_call_site",
+      "scenario": "windows_to_kylin",
+      "level": "L3",
+      "root": "/bench/v3/windows_to_kylin/tasks/synthetic_multi_call_site",
+      "work": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work",
+      "source_work": "/workspace",
+      "base_work": "/bench/v3/windows_to_kylin/tasks/synthetic_multi_call_site/work",
+      "agent_view": "filtered_overlay",
+      "build_dir": "/tmp/judge-build-synthetic_multi_call_site-r1",
+      "golden": "/bench/v3/windows_to_kylin/tasks/synthetic_multi_call_site/harness/golden",
+      "build": "ok",
+      "public_tests": "skipped",
+      "tests": "pass",
+      "regression": "skipped",
+      "api_removal": "pass",
+      "target_api": "pass",
+      "log": "-- The C compiler identification is GNU 13.3.1\n-- Check for working C compiler: /opt/rh/gcc-toolset-13/root/usr/bin/cc\n-- Check for working C compiler: /opt/rh/gcc-toolset-13/root/usr/bin/cc -- works\n-- Detecting C compiler ABI info\n-- Detecting C compiler ABI info - done\n-- Detecting C compile features\n-- Detecting C compile features - done\n-- Configuring done\n-- Generating done\n-- Build files have been written to: /tmp/judge-build-synthetic_multi_call_site-r1\ngmake[1]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\nScanning dependencies of target mc_platform\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[  7%] Building C object CMakeFiles/mc_platform.dir/src/common/mc_util.c.o\n[ 15%] Building C object CMakeFiles/mc_platform.dir/src/posix/mc_platform_posix.c.o\n[ 23%] Linking C static library libmc_platform.a\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 23%] Built target mc_platform\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\nScanning dependencies of target mccount\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\nScanning dependencies of target mcdump\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 30%] Building C object CMakeFiles/mccount.dir/apps/mccount.c.o\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 38%] Building C object CMakeFiles/mcdump.dir/apps/mcdump.c.o\n[ 46%] Linking C executable mccount\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 53%] Linking C executable mcdump\n[ 53%] Built target mccount\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\nScanning dependencies of target mccopy\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 61%] Building C object CMakeFiles/mccopy.dir/apps/mccopy.c.o\n[ 61%] Built target mcdump\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\nScanning dependencies of target mctail\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 69%] Linking C executable mccopy\n[ 76%] Building C object CMakeFiles/mctail.dir/apps/mctail.c.o\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 76%] Built target mccopy\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 84%] Linking C executable mctail\nScanning dependencies of target test_platform\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[ 92%] Built target mctail\n[ 92%] Building C object CMakeFiles/test_platform.dir/tests/test_platform.c.o\n[100%] Linking C executable test_platform\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\n[100%] Built target test_platform\ngmake[1]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\nMC_PROBE=PASS size=17\n",
+      "api_detail": {
+        "status": "pass",
+        "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFileA|FindFirstFileW)",
+        "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFile",
+        "artifacts": [
+          {
+            "path": "/tmp/judge-build-synthetic_multi_call_site-r1/mcdump",
+            "exists": true,
+            "symbols": []
+          }
+        ],
+        "symbols": [],
+        "source_hits": [],
+        "exclude_globs": [
+          "**/*_WIN32*",
+          "**/*_win32*",
+          "**/*w32*",
+          "**/*W32*",
+          "**/*_windows.c",
+          "**/*_windows.h",
+          "**/win32/**",
+          "**/Win32/**",
+          "**/win/**",
+          "**/Windows/**",
+          "**/windows/**",
+          "**/projects/Windows/**",
+          "**/winbuild/**"
+        ],
+        "expect_fail": false,
+        "positive": false,
+        "errors": []
+      },
+      "target_detail": {
+        "status": "pass",
+        "symbol_regex": null,
+        "source_regex": "\\b(?:pthread_[A-Za-z0-9_]+|dlopen|dlsym|dlclose|open|read|write|stat|unlink|mkdir|rename|opendir|readdir|fork|execve|epoll_[A-Za-z0-9_]+|sem_[A-Za-z0-9_]+)",
+        "artifacts": [
+          {
+            "path": "/tmp/judge-build-synthetic_multi_call_site-r1/mcdump",
+            "exists": true,
+            "symbols": []
+          }
+        ],
+        "symbols": [],
+        "source_hits": [
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 6,
+            "match": "read"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 17,
+            "match": "stat"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 21,
+            "match": "stat"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 44,
+            "match": "write"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 55,
+            "match": "write"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 58,
+            "match": "open"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 68,
+            "match": "open"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 70,
+            "match": "open"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 74,
+            "match": "stat"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 95,
+            "match": "read"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 117,
+            "match": "write"
+          },
+          {
+            "file": "/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c",
+            "line": 165,
+            "match": "stat"
+          }
+        ],
+        "exclude_globs": [],
+        "expect_fail": false,
+        "positive": true,
+        "errors": []
+      },
+      "status": "pass"
+    },
+    "log_tail": "ectory '/tmp/judge-build-synthetic_multi_call_site-r1'\\nScanning dependencies of target mccount\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\nScanning dependencies of target mcdump\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[ 30%] Building C object CMakeFiles/mccount.dir/apps/mccount.c.o\\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[ 38%] Building C object CMakeFiles/mcdump.dir/apps/mcdump.c.o\\n[ 46%] Linking C executable mccount\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[ 53%] Linking C executable mcdump\\n[ 53%] Built target mccount\\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\nScanning dependencies of target mccopy\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[ 61%] Building C object CMakeFiles/mccopy.dir/apps/mccopy.c.o\\n[ 61%] Built target mcdump\\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\nScanning dependencies of target mctail\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[ 69%] Linking C executable mccopy\\n[ 76%] Building C object CMakeFiles/mctail.dir/apps/mctail.c.o\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[ 76%] Built target mccopy\\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[ 84%] Linking C executable mctail\\nScanning dependencies of target test_platform\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\ngmake[2]: Entering directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[ 92%] Built target mctail\\n[ 92%] Building C object CMakeFiles/test_platform.dir/tests/test_platform.c.o\\n[100%] Linking C executable test_platform\\ngmake[2]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\n[100%] Built target test_platform\\ngmake[1]: Leaving directory '/tmp/judge-build-synthetic_multi_call_site-r1'\\nMC_PROBE=PASS size=17\\n\",\n  \"api_detail\": {\n    \"status\": \"pass\",\n    \"symbol_regex\": \"^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFileA|FindFirstFileW)\",\n    \"source_regex\": \"windows\\\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\\\b|CreateFile|ReadFile|WriteFile|CloseHandle|SetFilePointer|GetFileSize|FindFirstFile\",\n    \"artifacts\": [\n      {\n        \"path\": \"/tmp/judge-build-synthetic_multi_call_site-r1/mcdump\",\n        \"exists\": true,\n        \"symbols\": []\n      }\n    ],\n    \"symbols\": [],\n    \"source_hits\": [],\n    \"exclude_globs\": [\n      \"**/*_WIN32*\",\n      \"**/*_win32*\",\n      \"**/*w32*\",\n      \"**/*W32*\",\n      \"**/*_windows.c\",\n      \"**/*_windows.h\",\n      \"**/win32/**\",\n      \"**/Win32/**\",\n      \"**/win/**\",\n      \"**/Windows/**\",\n      \"**/windows/**\",\n      \"**/projects/Windows/**\",\n      \"**/winbuild/**\"\n    ],\n    \"expect_fail\": false,\n    \"positive\": false,\n    \"errors\": []\n  },\n  \"target_detail\": {\n    \"status\": \"pass\",\n    \"symbol_regex\": null,\n    \"source_regex\": \"\\\\b(?:pthread_[A-Za-z0-9_]+|dlopen|dlsym|dlclose|open|read|write|stat|unlink|mkdir|rename|opendir|readdir|fork|execve|epoll_[A-Za-z0-9_]+|sem_[A-Za-z0-9_]+)\",\n    \"artifacts\": [\n      {\n        \"path\": \"/tmp/judge-build-synthetic_multi_call_site-r1/mcdump\",\n        \"exists\": true,\n        \"symbols\": []\n      }\n    ],\n    \"symbols\": [],\n    \"source_hits\": [\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 6,\n        \"match\": \"read\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 17,\n        \"match\": \"stat\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 21,\n        \"match\": \"stat\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 44,\n        \"match\": \"write\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 55,\n        \"match\": \"write\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 58,\n        \"match\": \"open\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 68,\n        \"match\": \"open\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 70,\n        \"match\": \"open\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 74,\n        \"match\": \"stat\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 95,\n        \"match\": \"read\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 117,\n        \"match\": \"write\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-synthetic_multi_call_site-34u30dpe/work/src/posix/mc_platform_posix.c\",\n        \"line\": 165,\n        \"match\": \"stat\"\n      }\n    ],\n    \"exclude_globs\": [],\n    \"expect_fail\": false,\n    \"positive\": true,\n    \"errors\": []\n  },\n  \"status\": \"pass\"\n}\n"
+  },
+  "build": "ok",
+  "tests": "pass",
+  "api_removal": "pass",
+  "target_api": "pass",
+  "detail": "",
+  "method_adapter": null,
+  "agent_tool_calls": 15,
+  "agent_model_calls": 15,
+  "agent_tokens": {
+    "input": 48573,
+    "output": 15432
+  },
+  "agent_session_id": "session-2d2ff24a-15a3-4bc0-b96d-9cdfbaf664f1",
+  "duration_s": 440.4,
+  "finished_at": "2026-11-23T08:54:55.803171+00:00"
+}

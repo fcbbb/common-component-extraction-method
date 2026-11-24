@@ -1,0 +1,97 @@
+scenario: windows_to_kylin
+task_family: v3
+family: synthetic_posix_fs_requests
+fit: C
+counted: false
+source_kind: synthetic
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release && cmake --build {build} -j2
+  artifact: '{build}/afs_selftest'
+gates:
+  build: configure and build the static library and the public self-test on Kylin
+  api_removal:
+    symbol_regex: ^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|CloseHandle|GetFileSize|SetFilePointer|CreateThread|WaitForSingleObject|GetOverlappedResult)
+    source_regex: windows\.h|winioctl\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|CreateFile|ReadFile|WriteFile|CloseHandle|GetFileSize|SetFilePointer|CreateThread|WaitForSingleObject|GetOverlappedResult|GetLastError
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/posix/afs_posix.c
+  target_api: the rebuilt backend uses POSIX descriptor, vector-I/O, metadata and temporary-file calls instead of Windows handles and CRT descriptor wrappers
+  behavior: the request model keeps its result/errno convention, its synchronous and pooled execution split, and its caller-owned versus request-owned buffer rules
+  regression: the public header, the shared request layer, the worker pool and the public self-test are unchanged
+id: synthetic_posix_fs_requests
+level: L3
+family_type: synthetic
+sequence: 24
+domain: filesystem
+difficulty: hard
+title: Synthetic asynchronous file-system request backend
+source:
+  repo: synthetic://windows-to-posix/async-fs-requests
+  commit: synthetic-1
+  tag: n/a
+  license: project-authored
+  windows_files:
+  - src/win32/afs_win32.c
+  gold_files:
+  - src/posix/afs_posix.c
+  test_files:
+  - tests/test_afs.c
+spec: |
+  A small asynchronous file-system library is being moved from Windows to
+  Kylin V10 SP3.  The public request model, the shared request layer, the
+  worker pool and the public self-test are fixed.  Only the platform backend
+  src/posix/afs_posix.c is missing; the Windows backend stays visible as the
+  reference.
+
+  The header documents the request model and the ownership rules: a
+  submission without a callback runs inline and returns the operation's
+  result; a submission with a callback is queued on the worker pool, returns
+  0, and the callback runs on a worker thread after the operation.  Every
+  operation reports a non-negative result (byte count, descriptor, or 0) on
+  success and -(errno) with the err field holding the positive errno on
+  failure.  The asynchronous path owns everything it needs after the
+  submission returns, so the caller may mutate its path and iovec storage
+  immediately.
+
+  The backend must provide the operations the call sites rely on — open,
+  close, vector and positional reads and writes, metadata and link
+  inspection, and temporary-file creation — with the observable semantics
+  the library's error and ownership contract requires, rebuilt on the target
+  platform's native conventions.  Where the Windows reference relies on
+  Win32 or CRT behaviour that POSIX does not share, follow the target's
+  native semantics rather than transliterating the Windows calls.  A request
+  with neither access bit, or with both, opens for read/write, matching the
+  Windows reference's flag mapping.
+
+  Implement src/posix/afs_posix.c.  Do not change the headers, the shared
+  layer, the worker pool, the public self-test, or the Windows reference.
+prepare:
+  remove:
+  - src/posix/afs_posix.c
+harness:
+  scripts:
+  - afs_probe.sh
+hidden_tests:
+  command: bash {root}/harness/afs_probe.sh --build {build} --work {work}
+task_id: synthetic_posix_fs_requests

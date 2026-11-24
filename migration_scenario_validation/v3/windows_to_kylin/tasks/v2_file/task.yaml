@@ -85,9 +85,9 @@ prepare:
   remove:
   - Foundation/src/File_UNIX.cpp
 hidden_tests:
-  command: cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest FileStreamTest
+  command: cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest FileStreamTest
     DirectoryIteratorsTest GlobTest
 regression_tests:
-  command: cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx ThreadTest PathTest
+  command: cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx ThreadTest PathTest
     SharedLibraryTest
 task_id: v2_file

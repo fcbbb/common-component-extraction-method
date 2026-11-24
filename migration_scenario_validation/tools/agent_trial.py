@@ -213,7 +213,14 @@ def _prepare(task_root: Path, timeout: int, no_prepare: bool) -> Tuple[bool, str
     work = task_root / "work"
     if no_prepare and work.is_dir() and any(work.iterdir()):
         return True, "reused existing work/ (--no-prepare)"
-    rc, out = _run(["bash", str(prepare)], cwd=task_root, timeout=timeout)
+    # prepare.sh checks out / archives from a cache repository shared by every
+    # task of the same upstream project.  Two prepares in flight at once race
+    # there, so every caller serializes on one host-wide lock.
+    lock = Path.home() / ".cache" / "migration-bench" / "prepare.lock"
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    rc, out = _run(
+        ["flock", str(lock), "bash", str(prepare)], cwd=task_root, timeout=timeout
+    )
     return rc == 0, out[-4000:]
 
 

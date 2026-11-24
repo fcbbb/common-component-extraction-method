@@ -89,8 +89,8 @@ prepare:
   remove:
   - Foundation/src/Thread_POSIX.cpp
 hidden_tests:
-  command: cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx ThreadTest ThreadPoolTest
+  command: cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx ThreadTest ThreadPoolTest
     ThreadLocalTest TimerTest ActivityTest ActiveThreadPoolTest
 regression_tests:
-  command: cd {build}/bin && ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest PathTest SharedLibraryTest
+  command: cd {build}/bin && LD_LIBRARY_PATH={build}/bin PATH={build}/bin:$PATH ./Foundation-testrunner -ignore {work}/cppignore.lnx FileTest PathTest SharedLibraryTest
 task_id: v2_thread

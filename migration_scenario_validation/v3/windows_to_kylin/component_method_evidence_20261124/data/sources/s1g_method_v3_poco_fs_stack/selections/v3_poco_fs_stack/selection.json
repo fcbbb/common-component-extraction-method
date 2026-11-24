@@ -1,0 +1,8 @@
+{
+  "schema_version": "methodology-paths-1",
+  "task_id": "v3_poco_fs_stack",
+  "selected_bundle_ids": [
+    "filesystem-disk-reader-backend-descriptor-relative-100f4548",
+    "archive-extraction-writer-win32-handle-attribute-model-a927554a"
+  ]
+}

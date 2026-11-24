@@ -1,0 +1,7 @@
+{
+  "schema_version": "methodology-paths-1",
+  "task_id": "v2_curl_file",
+  "selected_bundle_ids": [
+    "posix-file-system-request-backend-behind-a-fixed-async-42929ace"
+  ]
+}

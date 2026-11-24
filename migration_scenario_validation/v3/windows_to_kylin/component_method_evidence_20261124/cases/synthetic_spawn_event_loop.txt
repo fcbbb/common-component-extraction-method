@@ -1,0 +1,220 @@
+===== default | label=s2v3_default_spawn | status=fail | duration=517.7s
+failure_summary: build=ok; tests=fail; api_removal=skipped; target_api=skipped || deep: invalid inherited descriptor error: -9 (errno 2) (line 451) | SPL_DEEP=FAIL count=1 | SPL_PROBE=FAIL process-contract checks
+----- judge log tail (last 5000 chars) -----
+{
+  "task": "synthetic_spawn_event_loop",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "root": "/bench/v3/windows_to_kylin/tasks/synthetic_spawn_event_loop",
+  "work": "/tmp/migration-judge-synthetic_spawn_event_loop-ncld9fyz/work",
+  "source_work": "/workspace",
+  "base_work": "/bench/v3/windows_to_kylin/tasks/synthetic_spawn_event_loop/work",
+  "agent_view": "filtered_overlay",
+  "build_dir": "/tmp/judge-build-synthetic_spawn_event_loop-r1",
+  "golden": "/bench/v3/windows_to_kylin/tasks/synthetic_spawn_event_loop/harness/golden",
+  "build": "ok",
+  "public_tests": "skipped",
+  "tests": "fail",
+  "regression": "skipped",
+  "api_removal": "skipped",
+  "target_api": "skipped",
+  "log": "-- The C compiler identification is GNU 13.3.1
+-- Check for working C compiler: /opt/rh/gcc-toolset-13/root/usr/bin/cc
+-- Check for working C compiler: /opt/rh/gcc-toolset-13/root/usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/judge-build-synthetic_spawn_event_loop-r1
+gmake[1]: Entering directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+Scanning dependencies of target splprobe
+Scanning dependencies of target spl
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+[ 14%] Building C object CMakeFiles/splprobe.dir/helpers/splprobe.c.o
+[ 28%] Building C object CMakeFiles/spl.dir/src/common/spl_loop.c.o
+[ 42%] Building C object CMakeFiles/spl.dir/src/posix/spl_process_posix.c.o
+[ 57%] Linking C executable splprobe
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+[ 57%] Built target splprobe
+[ 71%] Linking C static library libspl.a
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+[ 71%] Built target spl
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+Scanning dependencies of target spl_selftest
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+gmake[2]: Entering directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+[ 85%] Building C object CMakeFiles/spl_selftest.dir/tests/test_spl.c.o
+[100%] Linking C executable spl_selftest
+gmake[2]: Leaving directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+[100%] Built target spl_selftest
+gmake[1]: Leaving directory '/tmp/judge-build-synthetic_spawn_event_loop-r1'
+deep: invalid inherited descriptor error: -9 (errno 2) (line 451)
+SPL_DEEP=FAIL count=1
+SPL_PROBE=FAIL process-contract checks
+",
+  "status": "fail"
+}
+
+
+===== method | label=s2v3_method_spawn | status=pass | duration=565.0s
+selected_components: process-spawn-backend-for-an-event-loop-win32-handle-c7216288
+failure_summary: (none)
+----- judge log tail (last 5000 chars) -----
+       "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 59,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 79,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 93,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 109,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 127,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 136,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 139,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 152,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 158,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 164,
+        "match": "write"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 177,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 207,
+        "match": "open"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 252,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 261,
+        "match": "execve"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 296,
+        "match": "execve"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 312,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 318,
+        "match": "read"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 337,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 339,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 344,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 449,
+        "match": "fork"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 504,
+        "match": "read"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 525,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 533,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 544,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 545,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 547,
+        "match": "stat"
+      },
+      {
+        "file": "/tmp/migration-judge-synthetic_spawn_event_loop-qyc_7q8h/work/src/posix/spl_process_posix.c",
+        "line": 549,
+        "match": "stat"
+      }
+    ],
+    "exclude_globs": [],
+    "expect_fail": false,
+    "positive": true,
+    "errors": []
+  },
+  "status": "pass"
+}
+

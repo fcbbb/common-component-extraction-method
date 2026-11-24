@@ -183,6 +183,7 @@ def test_kylin_prompt_maps_work_prefix_to_workspace():
     task_root = (
         Path(__file__).resolve().parents[2]
         / "migration_scenario_validation"
+        / "v3"
         / "windows_to_kylin"
         / "tasks"
         / "negative_win32_eventlog"

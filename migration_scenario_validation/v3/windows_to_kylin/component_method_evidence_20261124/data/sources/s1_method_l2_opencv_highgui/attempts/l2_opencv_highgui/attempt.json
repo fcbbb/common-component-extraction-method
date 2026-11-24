@@ -1,0 +1,624 @@
+{
+  "task": "l2_opencv_highgui",
+  "scenario": "windows_to_kylin",
+  "arm": "method",
+  "condition": "component_method",
+  "level": "L2",
+  "run": 1,
+  "started_at": "2026-11-23T13:52:29.843070+00:00",
+  "label": "s1_method_l2_opencv_highgui",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "dsh_profile": "component-method-migration",
+  "method_profile": "component-method-migration",
+  "method_budget": {
+    "step_limit": null,
+    "total_timeout": 14400,
+    "command_timeout": 600,
+    "extraction_workers": 2,
+    "review_workers": 2,
+    "agent_timeout": 3600
+  },
+  "method_prompt_hashes": {
+    "workflow": "fe7a48ac099b3200347d5faa8be1cd3036ba218005fe709852689466ac74e5a2",
+    "extraction_system": "bf6ba01182758f0edc09d81246114dfa796506383ed9aa2b92fdc0441a5a0934",
+    "focus_context_instructions": "3abbcfdc30b61f24536ab611812905fff59c6316962efc82e4f968b05b135ce0",
+    "protocol_contract_instructions": "515adb752a2dbf2b66285fed2395d495b5c67c4e708e7d709805f84e9d27b415",
+    "protocol_contract_schema": "f383ef454eaa3ff30999e4d1f5802c693dab19ca39ef2977521cf75be1f0b28f",
+    "retrieval_system": "c1d762fec739f5d316954c348d60222402dc40fa5a403292ad0c5cf3e48638a8",
+    "retrieval_instance": "84d965e782bbd8a16c1ae06e36307edf037ac9cb3a94256f5e1730b9f546a537",
+    "method_prompt_override": "3615c29e049fc513a5004e01d6806dff9a10edfe240b4d7217718032d26a2ac9"
+  },
+  "component_bundle": {
+    "ok": true,
+    "reason": "",
+    "path": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/workspaces/s1_method_l2_opencv_highgui/l2_opencv_highgui-r1/component_bundle",
+    "files": 8,
+    "bytes": 103997,
+    "sha256": "468f1d8cb15f5defd9a7fa5a6ed11cdfe1adf516fc587a88e385b77d34c05f7d",
+    "manifest": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/workspaces/s1_method_l2_opencv_highgui/l2_opencv_highgui-r1/component_bundle/manifest.json",
+    "component_count": 2
+  },
+  "task_image": {
+    "image": "migration/kylin:sp3-p2",
+    "id": "sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4",
+    "repo_digests": [
+      "migration/kylin@sha256:e27fd0c017da837fbc0e10f396edcef11a6af29eb5f61ebc9eb994d038f4b0e4"
+    ],
+    "created": "2026-11-15T13:33:47.789430299Z"
+  },
+  "remote_runtime": null,
+  "dsh_runtime": {
+    "backend": "dsh",
+    "dsh_version": "0.2.2-rc.1",
+    "node_version": "24.9.0",
+    "lockfile_sha256": "05ae33c57596f6ab930ba1cfa40fce564e2a98a0e0d54fbd1ad17d552e81cebd",
+    "profile_name": "component-method-migration",
+    "profile_sha256": "bbf6830c53c91094182b227c5fb44c4d4c77d1bd8617c1bd1e51d910b456ef56",
+    "plugin_bundle_sha256": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+    "plugin_bundles": {
+      "agent-runtime": "c8798d6cbb3514b171f24a270180a4e80e150b59e0c8d9eeff73e7160aa802f5",
+      "component-build": "a3fb217fb470689ee71818d75e7532bfc5ac0d2589d9e0b43191aa4df78914d1",
+      "controlled-bash": "ea6d92fc5a89c3da4808f735e4c03de96038ec9e65cc9d6f20b8a7d96f3859c5",
+      "library-publish": "6b70f66958fbd2aeb3236c31a51b59ce392b03646889f1a9fe352e352d1c5a78",
+      "method-ops": "2fb8d15c4e384f08b66dfb416692641514e6baa5ce0b0569a913814505ba6e1d",
+      "method-orchestrator": "5a8f0144bf7f46d3c9d53e269dbf36933ed35d9e4b603e424eff637fad076cf2",
+      "method-shared": "63458c95b6d13eb4257af44dd501302fb2bac99339b5084bd137a713f0ff26cd",
+      "protocol-candidates": "2428962cd068512654cb77e686a5ea696f3ad24da5c996ddc96211f2cb264ddf",
+      "reporting": "ffa5736fdf2c899c7071ee9c6a6467ed7d667fd708d408647943d8abd0412378",
+      "retrieval": "173e896f5aa891da8b1f882ff88183a0ee096be4ce506b04e09cc7812ce93a75",
+      "signal-analysis": "dad9ecaf37f4a0572e340e8108b7eaac5a320881c2e28334343c805be683a684",
+      "source-scan": "bdd9ab828974ac19eba737e3ab41c927f0236f05d0a969fbf1e0056f596f4d1d",
+      "task-execution": "5286cecd9f39ef383215ddde13f1c8824593d577e36da2965ea3a9f44e141c96"
+    }
+  },
+  "remote_dsh_profile": null,
+  "transport": "docker",
+  "status": "pass",
+  "agent_status": "Submitted",
+  "agent_error": null,
+  "judge": {
+    "rc": 0,
+    "duration_s": 1463.3,
+    "report": {
+      "task": "l2_opencv_highgui",
+      "scenario": "windows_to_kylin",
+      "level": "L2",
+      "root": "/bench/v3/windows_to_kylin/tasks/l2_opencv_highgui",
+      "work": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work",
+      "source_work": "/workspace",
+      "base_work": "/bench/v3/windows_to_kylin/tasks/l2_opencv_highgui/work",
+      "agent_view": "filtered_overlay",
+      "build_dir": "/tmp/judge-build-l2_opencv_highgui-r1",
+      "golden": "/bench/v3/windows_to_kylin/tasks/l2_opencv_highgui/harness/golden",
+      "build": "ok",
+      "public_tests": "skipped",
+      "tests": "pass",
+      "regression": "skipped",
+      "api_removal": "pass",
+      "target_api": "pass",
+      "log": "dir/test/test_rotatedrect.cpp.o\n[ 95%] Building CXX object modules/imgcodecs/CMakeFiles/opencv_test_imgcodecs.dir/test/test_main.cpp.o\n[ 95%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_umat.cpp.o\n[ 95%] Building CXX object modules/imgcodecs/CMakeFiles/opencv_test_imgcodecs.dir/test/test_png.cpp.o\n[ 95%] Building CXX object modules/imgcodecs/CMakeFiles/opencv_test_imgcodecs.dir/test/test_read_write.cpp.o\n[ 95%] Building CXX object modules/imgcodecs/CMakeFiles/opencv_test_imgcodecs.dir/test/test_tiff.cpp.o\n[ 95%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_utils.cpp.o\n[ 95%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.sse2.cpp.o\n[ 95%] Building CXX object modules/imgcodecs/CMakeFiles/opencv_test_imgcodecs.dir/test/test_webp.cpp.o\n[ 95%] Linking CXX executable ../../bin/opencv_test_imgcodecs\ngmake[2]: Leaving directory '/tmp/judge-build-l2_opencv_highgui-r1'\n[ 95%] Built target opencv_test_imgcodecs\ngmake[2]: Entering directory '/tmp/judge-build-l2_opencv_highgui-r1'\nScanning dependencies of target opencv_test_videoio\ngmake[2]: Leaving directory '/tmp/judge-build-l2_opencv_highgui-r1'\ngmake[2]: Entering directory '/tmp/judge-build-l2_opencv_highgui-r1'\n[ 95%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_audio.cpp.o\n[ 96%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_camera.cpp.o\n[ 96%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_container_avi.cpp.o\n[ 96%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_dynamic.cpp.o\n[ 96%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_ffmpeg.cpp.o\n[ 96%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.sse3.cpp.o\n[ 96%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_gstreamer.cpp.o\n[ 96%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_images.cpp.o\n[ 96%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_main.cpp.o\n[ 96%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_mfx.cpp.o\n[ 97%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_microphone.cpp.o\n[ 98%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.ssse3.cpp.o\n[ 98%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_orientation.cpp.o\n[ 98%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_plugins.cpp.o\n[ 98%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_v4l2.cpp.o\n[ 98%] Building CXX object modules/videoio/CMakeFiles/opencv_test_videoio.dir/test/test_video_io.cpp.o\n[ 98%] Linking CXX executable ../../bin/opencv_test_videoio\ngmake[2]: Leaving directory '/tmp/judge-build-l2_opencv_highgui-r1'\n[ 98%] Built target opencv_test_videoio\ngmake[2]: Entering directory '/tmp/judge-build-l2_opencv_highgui-r1'\nScanning dependencies of target opencv_test_highgui\ngmake[2]: Leaving directory '/tmp/judge-build-l2_opencv_highgui-r1'\ngmake[2]: Entering directory '/tmp/judge-build-l2_opencv_highgui-r1'\n[ 98%] Building CXX object modules/highgui/CMakeFiles/opencv_test_highgui.dir/test/test_gui.cpp.o\n[ 98%] Building CXX object modules/highgui/CMakeFiles/opencv_test_highgui.dir/test/test_main.cpp.o\n[ 98%] Linking CXX executable ../../bin/opencv_test_highgui\ngmake[2]: Leaving directory '/tmp/judge-build-l2_opencv_highgui-r1'\n[ 98%] Built target opencv_test_highgui\n[ 98%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.sse4_1.cpp.o\n[ 98%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.sse4_2.cpp.o\n[ 98%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.fp16.cpp.o\n[ 98%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.avx.cpp.o\n[ 98%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.avx2.cpp.o\n[ 98%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin256.avx2.cpp.o\n[ 98%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin128.avx512_skx.cpp.o\n[100%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin256.avx512_skx.cpp.o\n[100%] Building CXX object modules/core/CMakeFiles/opencv_test_core.dir/test/test_intrin512.avx512_skx.cpp.o\n[100%] Linking CXX executable ../../bin/opencv_test_core\ngmake[2]: Leaving directory '/tmp/judge-build-l2_opencv_highgui-r1'\n[100%] Built target opencv_test_core\ngmake[1]: Leaving directory '/tmp/judge-build-l2_opencv_highgui-r1'\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError: No module named 'numpy'\nCMake Warning at cmake/OpenCVDownload.cmake:248 (message):\n  IPPICV: Download failed: 6;\"Couldn't resolve host name\"\n\n  For details please refer to the download log file:\n\n  /tmp/judge-build-l2_opencv_highgui-r1/CMakeDownloadLog.txt\n\nCall Stack (most recent call first):\n  3rdparty/ippicv/ippicv.cmake:38 (ocv_download)\n  cmake/OpenCVFindIPP.cmake:259 (download_ippicv)\n  cmake/OpenCVFindLibsPerf.cmake:12 (include)\n  CMakeLists.txt:830 (include)\n\n\nCMake Warning at cmake/OpenCVDownload.cmake:248 (message):\n  ADE: Download failed: 6;\"Couldn't resolve host name\"\n\n  For details please refer to the download log file:\n\n  /tmp/judge-build-l2_opencv_highgui-r1/CMakeDownloadLog.txt\n\nCall Stack (most recent call first):\n  modules/gapi/cmake/DownloadADE.cmake:5 (ocv_download)\n  modules/gapi/cmake/init.cmake:20 (include)\n  cmake/OpenCVModule.cmake:298 (include)\n  cmake/OpenCVModule.cmake:361 (_add_modules_1)\n  cmake/OpenCVModule.cmake:408 (ocv_glob_modules)\n  CMakeLists.txt:1076 (ocv_register_modules)\n\n\nCTEST_FULL_OUTPUT\nOpenCV version: 4.10.0\nOpenCV VCS version: unknown\nBuild type: Release\nCompiler: /opt/rh/gcc-toolset-13/root/usr/bin/c++  (ver 13.3.1)\nParallel framework: pthreads (nthreads=4)\nCPU features: SSE SSE2 SSE3 *SSE4.1 *SSE4.2 *FP16 *AVX *AVX2 *AVX512-SKX?\nOpenCL is disabled\nTEST: Skip tests with tags: 'mem_6gb', 'verylong'\nNote: Google Test filter = Highgui_GUI.*\n[==========] Running 5 tests from 1 test case.\n[----------] Global test environment set-up.\n[----------] 5 tests from Highgui_GUI\n[ RUN      ] Highgui_GUI.regression\n[       OK ] Highgui_GUI.regression (7578 ms)\n[ RUN      ] Highgui_GUI.trackbar_unsafe\n[ WARN:0@7.583] global window.cpp:703 createTrackbar UI/Trackbar(trackbar@trackbar_test_window): Using 'value' pointer is unsafe and deprecated. Use NULL as value pointer. To fetch trackbar value setup callback.\n[       OK ] Highgui_GUI.trackbar_unsafe (5 ms)\n[ RUN      ] Highgui_GUI.trackbar\n[       OK ] Highgui_GUI.trackbar (2 ms)\n[ RUN      ] Highgui_GUI.small_width_image\n[       OK ] Highgui_GUI.small_width_image (13 ms)\n[ RUN      ] Highgui_GUI.currentUIFramework\nUI framework: \"GTK\"\n[       OK ] Highgui_GUI.currentUIFramework (0 ms)\n[----------] 5 tests from Highgui_GUI (7599 ms total)\n\n[----------] Global test environment tear-down\n[==========] 5 tests from 1 test case ran. (7599 ms total)\n[  PASSED  ] 5 tests.\n",
+      "api_detail": {
+        "status": "pass",
+        "symbol_regex": "^(__imp_|CreateFileA|CreateFileW|ReadFile|WriteFile|WaitForSingleObject|WSAStartup|RegOpenKeyEx|RegCreateKeyEx|CoCreateInstance|LoadLibraryA|LoadLibraryW)",
+        "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|CreateFile|WaitForSingleObject|RegOpenKey|CoCreateInstance",
+        "artifacts": [
+          {
+            "path": "/tmp/judge-build-l2_opencv_highgui-r1/lib/libopencv_highgui.a",
+            "exists": true,
+            "symbols": []
+          }
+        ],
+        "symbols": [],
+        "source_hits": [],
+        "exclude_globs": [
+          "**/*_WIN32*",
+          "**/*_win32*",
+          "**/*w32*",
+          "**/*W32*",
+          "**/*_windows.c",
+          "**/*_windows.h",
+          "**/win32/**",
+          "**/Win32/**",
+          "**/win/**",
+          "**/Windows/**",
+          "**/windows/**",
+          "**/projects/Windows/**",
+          "**/winbuild/**"
+        ],
+        "expect_fail": false,
+        "positive": false,
+        "errors": []
+      },
+      "target_detail": {
+        "status": "pass",
+        "symbol_regex": null,
+        "source_regex": "\\b(?:gtk_|gdk_)[A-Za-z0-9_]+",
+        "artifacts": [
+          {
+            "path": "/tmp/judge-build-l2_opencv_highgui-r1/lib/libopencv_highgui.a",
+            "exists": true,
+            "symbols": []
+          }
+        ],
+        "symbols": [],
+        "source_hits": [
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 79,
+            "match": "gtk_init_check"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 277,
+            "match": "gdk_pixbuf_new"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 282,
+            "match": "gdk_pixbuf_get_pixels"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 284,
+            "match": "gdk_pixbuf_get_rowstride"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 300,
+            "match": "gtk_widget_get_allocation"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 310,
+            "match": "gdk_pixbuf_get_width"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 311,
+            "match": "gdk_pixbuf_get_height"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 346,
+            "match": "gdk_cairo_set_source_pixbuf"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 368,
+            "match": "gtk_widget_get_visible"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 371,
+            "match": "gtk_widget_get_preferred_size"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 383,
+            "match": "gtk_widget_set_size_request"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 389,
+            "match": "gtk_window_set_resizable"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 390,
+            "match": "gtk_window_set_default_size"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 393,
+            "match": "gtk_window_resize"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 396,
+            "match": "gtk_window_set_resizable"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 400,
+            "match": "gtk_widget_set_size_request"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 421,
+            "match": "gtk_widget_queue_draw"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 446,
+            "match": "gtk_widget_destroy"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 546,
+            "match": "gdk_keyval_to_unicode"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 560,
+            "match": "gtk_widget_add_events"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 567,
+            "match": "gtk_widget_add_events"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 602,
+            "match": "gtk_window_new"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 607,
+            "match": "gtk_window_set_title"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 608,
+            "match": "gtk_window_set_default_size"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 610,
+            "match": "gtk_box_new"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 611,
+            "match": "gtk_container_add"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 613,
+            "match": "gtk_drawing_area_new"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 614,
+            "match": "gtk_widget_set_size_request"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 615,
+            "match": "gtk_widget_set_hexpand"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 616,
+            "match": "gtk_widget_set_vexpand"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 617,
+            "match": "gtk_box_pack_start"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 619,
+            "match": "gtk_box_new"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 620,
+            "match": "gtk_box_pack_start"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 623,
+            "match": "gtk_window_set_resizable"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 625,
+            "match": "gtk_window_set_resizable"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 632,
+            "match": "gtk_widget_show_all"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 633,
+            "match": "gtk_widget_grab_focus"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 636,
+            "match": "gtk_events_pending"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 637,
+            "match": "gtk_main_iteration_do"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 658,
+            "match": "gtk_widget_destroy"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 661,
+            "match": "gtk_events_pending"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 662,
+            "match": "gtk_main_iteration_do"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 671,
+            "match": "gtk_events_pending"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 672,
+            "match": "gtk_main_iteration_do"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 683,
+            "match": "gtk_widget_get_allocation"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 694,
+            "match": "gtk_widget_get_realized"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 696,
+            "match": "gtk_widget_get_toplevel"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 698,
+            "match": "gtk_widget_get_realized"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 699,
+            "match": "gtk_widget_translate_coordinates"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 703,
+            "match": "gtk_window_get_position"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 723,
+            "match": "gtk_window_fullscreen"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 729,
+            "match": "gtk_window_unfullscreen"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 740,
+            "match": "gtk_window_set_keep_above"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 758,
+            "match": "gtk_widget_set_size_request"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 761,
+            "match": "gtk_window_resize"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 768,
+            "match": "gtk_window_move"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 910,
+            "match": "gdk_event_get_scroll_deltas"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 964,
+            "match": "gtk_range_set_range"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 967,
+            "match": "gtk_range_set_increments"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 968,
+            "match": "gtk_range_set_value"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 989,
+            "match": "gtk_range_get_value"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 990,
+            "match": "gtk_range_set_value"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1007,
+            "match": "gtk_range_get_value"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1018,
+            "match": "gtk_label_set_text"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1041,
+            "match": "gtk_box_new"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1042,
+            "match": "gtk_label_new"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1043,
+            "match": "gtk_widget_set_halign"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1044,
+            "match": "gtk_box_pack_start"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1046,
+            "match": "gtk_scale_new_with_range"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1050,
+            "match": "gtk_scale_set_digits"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1051,
+            "match": "gtk_scale_set_value_pos"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1052,
+            "match": "gtk_widget_set_hexpand"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1053,
+            "match": "gtk_range_set_value"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1054,
+            "match": "gtk_box_pack_start"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1059,
+            "match": "gtk_box_pack_start"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1063,
+            "match": "gtk_widget_show_all"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1084,
+            "match": "gtk_range_set_value"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1123,
+            "match": "gtk_events_pending"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1124,
+            "match": "gtk_main_iteration_do"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1147,
+            "match": "gtk_events_pending"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1148,
+            "match": "gtk_main_iteration_do"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1518,
+            "match": "gtk_window_set_title"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1595,
+            "match": "gtk_widget_get_visible"
+          },
+          {
+            "file": "/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp",
+            "line": 1661,
+            "match": "gtk_window_set_title"
+          }
+        ],
+        "exclude_globs": [],
+        "expect_fail": false,
+        "positive": true,
+        "errors": []
+      },
+      "status": "pass"
+    },
+    "log_tail": "ighgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 740,\n        \"match\": \"gtk_window_set_keep_above\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 758,\n        \"match\": \"gtk_widget_set_size_request\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 761,\n        \"match\": \"gtk_window_resize\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 768,\n        \"match\": \"gtk_window_move\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 910,\n        \"match\": \"gdk_event_get_scroll_deltas\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 964,\n        \"match\": \"gtk_range_set_range\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 967,\n        \"match\": \"gtk_range_set_increments\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 968,\n        \"match\": \"gtk_range_set_value\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 989,\n        \"match\": \"gtk_range_get_value\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 990,\n        \"match\": \"gtk_range_set_value\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1007,\n        \"match\": \"gtk_range_get_value\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1018,\n        \"match\": \"gtk_label_set_text\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1041,\n        \"match\": \"gtk_box_new\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1042,\n        \"match\": \"gtk_label_new\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1043,\n        \"match\": \"gtk_widget_set_halign\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1044,\n        \"match\": \"gtk_box_pack_start\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1046,\n        \"match\": \"gtk_scale_new_with_range\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1050,\n        \"match\": \"gtk_scale_set_digits\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1051,\n        \"match\": \"gtk_scale_set_value_pos\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1052,\n        \"match\": \"gtk_widget_set_hexpand\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1053,\n        \"match\": \"gtk_range_set_value\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1054,\n        \"match\": \"gtk_box_pack_start\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1059,\n        \"match\": \"gtk_box_pack_start\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1063,\n        \"match\": \"gtk_widget_show_all\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1084,\n        \"match\": \"gtk_range_set_value\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1123,\n        \"match\": \"gtk_events_pending\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1124,\n        \"match\": \"gtk_main_iteration_do\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1147,\n        \"match\": \"gtk_events_pending\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1148,\n        \"match\": \"gtk_main_iteration_do\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1518,\n        \"match\": \"gtk_window_set_title\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1595,\n        \"match\": \"gtk_widget_get_visible\"\n      },\n      {\n        \"file\": \"/tmp/migration-judge-l2_opencv_highgui-oz22cmeq/work/modules/highgui/src/window_gtk.cpp\",\n        \"line\": 1661,\n        \"match\": \"gtk_window_set_title\"\n      }\n    ],\n    \"exclude_globs\": [],\n    \"expect_fail\": false,\n    \"positive\": true,\n    \"errors\": []\n  },\n  \"status\": \"pass\"\n}\n"
+  },
+  "build": "ok",
+  "tests": "pass",
+  "api_removal": "pass",
+  "target_api": "pass",
+  "detail": "",
+  "method_stage_image": "migration/kylin:sp3-p2",
+  "method_stage_runtime": "auto",
+  "mounted_bundle": {
+    "ok": true,
+    "reason": "",
+    "path": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/s1_method_l2_opencv_highgui/l2_opencv_highgui/run1/method/tasks/l2_opencv_highgui/outputs/full_library",
+    "files": 14,
+    "bytes": 270939,
+    "sha256": "d37af45b54fb73ed4734581939a53f2518d1161f0c4c89ddb99e53486a4468a6",
+    "manifest": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/s1_method_l2_opencv_highgui/l2_opencv_highgui/run1/method/tasks/l2_opencv_highgui/outputs/full_library/manifest.json",
+    "component_count": 5
+  },
+  "mounted_bundle_source": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/v3/windows_to_kylin/library_generated/full_20261123/library",
+  "method_adapter": "active",
+  "method_task_root": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/reports/bench/s1_method_l2_opencv_highgui/l2_opencv_highgui/run1/method/tasks/l2_opencv_highgui",
+  "method_prompt_sha256": "f32bc4a8f46bdf5b5bdb558250ac094d41ba3e71c30f5d8588f238411390877f",
+  "method_prompt_override": {
+    "path": "/home/fcbbbb/projects/demo_common_exreaction/common-component-extraction-method/repository/migration_scenario_validation/config/prompts/method_retrieval_only_system.txt",
+    "sha256": "3615c29e049fc513a5004e01d6806dff9a10edfe240b4d7217718032d26a2ac9",
+    "replaces": "workflow"
+  },
+  "agent_tool_calls": 232,
+  "agent_model_calls": 202,
+  "agent_tokens": {
+    "input": 4092178,
+    "output": 170265
+  },
+  "agent_session_id": "session-e5659a09-9ed8-48f8-bc4e-3994c0d33cbc",
+  "method_tool_calls": {
+    "controlled_bash": 228,
+    "component_run_stage": 1,
+    "job_output": 1,
+    "bash": 2
+  },
+  "method_stage_usage": {
+    "retrieval": {
+      "model_calls": 7,
+      "input_tokens": 114620,
+      "output_tokens": 3310,
+      "reported_cost_usd": null
+    }
+  },
+  "duration_s": 6129.8,
+  "finished_at": "2026-11-23T15:34:39.634471+00:00"
+}

@@ -1,0 +1,42 @@
+{
+  "task_id": "v2_nginx_process",
+  "scenario": "windows_to_kylin",
+  "repo": "https://github.com/nginx/nginx.git",
+  "commit": "1be0fb0c9f9bc3489c7b40576efd6afe6b2eccd5",
+  "tag": "release-1.26.3",
+  "subdir": null,
+  "license": "BSD-2-Clause",
+  "source_files": [
+    "src/os/win32/ngx_process.c",
+    "src/os/win32/ngx_process.h",
+    "src/os/win32/ngx_process_cycle.c",
+    "src/os/win32/ngx_process_cycle.h"
+  ],
+  "gold_files": [
+    "src/os/unix/ngx_process.c",
+    "src/os/unix/ngx_process_cycle.c",
+    "src/os/unix/ngx_channel.c",
+    "src/os/unix/ngx_daemon.c"
+  ],
+  "test_files": [
+    "src/os/unix/ngx_process.h",
+    "src/os/unix/ngx_process_cycle.h",
+    "src/os/unix/ngx_channel.h"
+  ],
+  "remove": [
+    "src/os/unix/ngx_process.c",
+    "src/os/unix/ngx_process_cycle.c",
+    "src/os/unix/ngx_channel.c",
+    "src/os/unix/ngx_daemon.c"
+  ],
+  "gold_kind": "implementation",
+  "task_family": "v3",
+  "family": "nginx_os",
+  "family_type": "pattern",
+  "sequence": 13,
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "components": [
+    "process-spawn-backend-for-an-event-loop-win32-handle-c7216288"
+  ],
+  "materialized": true
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": "methodology-paths-1",
+  "task_id": "v2_nginx_full",
+  "selected_bundle_ids": [
+    "posix-file-system-request-backend-behind-a-fixed-async-42929ace",
+    "process-spawn-backend-for-an-event-loop-win32-handle-c7216288"
+  ]
+}

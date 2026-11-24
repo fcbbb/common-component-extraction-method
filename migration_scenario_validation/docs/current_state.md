@@ -28,10 +28,9 @@
 
 V3 任务集：
 
-- `v3/windows_to_kylin/tasks/` 有 20 个目录，其中 19 个含 `task.yaml`；`synthetic_multi_call_site` 只有骨架。
-- `slate.yaml` 共 25 项，尚未打包的 6 项：`v2_poco_process`、`v2_nginx_process`、
-  `v2_nginx_thread`、`v2_curl_thread`、`v2_curl_file`、`synthetic_multi_call_site`。
-- 静态校验合计 **72 题**：20 IPP + 13 V1 Kylin + 20 MUSA + 19 V3。
+- `v3/windows_to_kylin/tasks/` 有 23 个目录，其中 22 个含 `task.yaml`；`synthetic_multi_call_site` 只有骨架。
+- `slate.yaml` 共 25 项，尚未打包的 3 项：`v2_curl_thread`、`v2_curl_file`、`synthetic_multi_call_site`。
+- 静态校验合计 **75 题**：20 IPP + 13 V1 Kylin + 20 MUSA + 22 V3。
 
 组件库有两套：
 
@@ -39,6 +38,7 @@ V3 任务集：
 |---|---|---:|---|
 | 手写 transformation 库 | `v3/windows_to_kylin/library/` | 5（T1–T5） | 18 个 V3 任务（`task.yaml` 默认引用） |
 | 流水线生成库 | `v3/windows_to_kylin/library_generated/demo_new_flow_v4/` | 1 | 仅 `v3_poco_fs_stack` |
+| 流水线生成库（全量） | `v3/windows_to_kylin/library_generated/full_20261123/` | 5 | `v2_poco_process`、`v2_nginx_process`、`v2_nginx_thread` |
 
 ## 3. 已完成的验证与证据
 
@@ -148,7 +148,7 @@ python3 tools/bench.py run --arm method --scenario windows_to_kylin_v3 \
 
 ## 6. 未完成项
 
-1. 补齐 slate 中 6 个任务包；`synthetic_multi_call_site` 目前只有目录骨架。
+1. 补齐 slate 中剩余 3 个任务包：`v2_curl_thread`、`v2_curl_file`；`synthetic_multi_call_site` 目前只有目录骨架。
 2. IPP → VSIPL 与 CUDA → MUSA 的 A/B 真实模型配对尚未开始。
 3. 消融实验（仅共性组件、仅经验组件、两类同时）尚未执行。
 4. `v3_poco_fs_stack` 每条件仅 1 次运行，且只由一条判别规则区分两组；结论不能外推为方法整体能力。

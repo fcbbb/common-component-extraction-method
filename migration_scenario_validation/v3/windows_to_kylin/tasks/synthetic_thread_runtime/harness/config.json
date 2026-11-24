@@ -1,0 +1,63 @@
+{
+  "task_id": "synthetic_thread_runtime",
+  "scenario": "windows_to_kylin",
+  "level": "L3",
+  "build": {
+    "command": "cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release && cmake --build {build} -j2",
+    "artifact": "{build}/thr_selftest"
+  },
+  "public_tests": {
+    "command": "{build}/thr_selftest"
+  },
+  "hidden_tests": {
+    "command": "bash {root}/harness/thr_probe.sh --build {build} --work {work}"
+  },
+  "regression_tests": null,
+  "gates": {
+    "build": "configure and build the static library and the public self-test on Kylin",
+    "api_removal": {
+      "symbol_regex": "^(__imp_|CreateThread|CreateSemaphore|EnterCriticalSection|TryEnterCriticalSection|LeaveCriticalSection|InitializeSRWLock|AcquireSRWLock|ReleaseSRWLock|FlsAlloc|FlsGetValue|FlsSetValue|FlsFree|InitOnceExecuteOnce|SleepConditionVariable|SetThreadAffinityMask|WaitForSingleObject|CloseHandle|GetCurrentThreadId|GetCurrentProcessorNumber|GetLastError)",
+      "source_regex": "windows\\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\\b|HANDLE|CRITICAL_SECTION|SRWLOCK|CONDITION_VARIABLE|CreateThread|CreateSemaphore|EnterCriticalSection|TryEnterCriticalSection|InitializeSRWLock|AcquireSRWLock|ReleaseSRWLock|FlsAlloc|FlsGetValue|FlsSetValue|FlsFree|InitOnceExecuteOnce|SleepConditionVariable|SetThreadAffinityMask|WaitForSingleObject|CloseHandle|GetCurrentThreadId|GetCurrentProcessorNumber|GetLastError",
+      "exclude_globs": [
+        "**/*_WIN32*",
+        "**/*_win32*",
+        "**/*w32*",
+        "**/*W32*",
+        "**/*_windows.c",
+        "**/*_windows.h",
+        "**/win32/**",
+        "**/Win32/**",
+        "**/win/**",
+        "**/Windows/**",
+        "**/windows/**",
+        "**/projects/Windows/**",
+        "**/winbuild/**"
+      ],
+      "source_dirs": [
+        "src/posix/thr_posix.c"
+      ]
+    },
+    "target_api": "the rebuilt backend uses native threads, mutexes, reader/writer locks, semaphores, condition variables, thread-local keys and affinity masks instead of Win32 handles and critical sections",
+    "behavior": "the public header, the public THR_* codes and the caller-allocated object sizes stay identical; no public initialiser is added",
+    "regression": "the public header, the public self-test and the Windows reference are unchanged"
+  },
+  "target": {
+    "os": "kylin-v10-sp3",
+    "arch": "x86_64",
+    "toolchain": "gcc-13.3",
+    "cmake": "3.16.5"
+  },
+  "task_family": "v3",
+  "family": "synthetic_thread_runtime",
+  "family_type": "synthetic",
+  "sequence": 26,
+  "counted": false,
+  "source_kind": "synthetic",
+  "library_manifest": "v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json",
+  "placeholders": [
+    "{root}",
+    "{work}",
+    "{build}",
+    "{golden}"
+  ]
+}

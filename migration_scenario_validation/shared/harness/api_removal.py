@@ -65,6 +65,84 @@ SOURCE_SUFFIXES = {
 }
 
 
+C_LIKE_SUFFIXES = {
+    ".c",
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".h",
+    ".hh",
+    ".hpp",
+    ".hxx",
+    ".m",
+    ".mm",
+}
+
+
+def strip_c_comments(text: str) -> str:
+    """Blank out C/C++ comments while preserving line numbering.
+
+    The source scan is a *code* gate: a comment that explains which Win32
+    call a POSIX function replaces ("matching GetFileSize behaviour") is
+    documentation, not a use of the removed API.  Flagging it makes a
+    correct port fail for a sentence, so comment bodies are replaced with
+    spaces (newlines are kept so reported line numbers still match the
+    file).  String and character literals are left intact.
+    """
+    out: List[str] = []
+    i, n = 0, len(text)
+    state = "code"
+    while i < n:
+        ch = text[i]
+        nxt = text[i + 1] if i + 1 < n else ""
+        if state == "code":
+            if ch == "/" and nxt == "/":
+                state = "line"
+                out.append("  ")
+                i += 2
+                continue
+            if ch == "/" and nxt == "*":
+                state = "block"
+                out.append("  ")
+                i += 2
+                continue
+            if ch == '"':
+                state = "string"
+            elif ch == "'":
+                state = "char"
+            out.append(ch)
+            i += 1
+            continue
+        if state == "line":
+            out.append("\n" if ch == "\n" else " ")
+            if ch == "\n":
+                state = "code"
+            i += 1
+            continue
+        if state == "block":
+            if ch == "*" and nxt == "/":
+                state = "code"
+                out.append("  ")
+                i += 2
+                continue
+            out.append("\n" if ch == "\n" else " ")
+            i += 1
+            continue
+        # Inside a string or character literal: copy verbatim, honouring
+        # backslash escapes, and return to code at the closing quote.
+        out.append(ch)
+        if ch == "\\" and i + 1 < n:
+            out.append(text[i + 1])
+            i += 2
+            continue
+        if state == "string" and ch == '"':
+            state = "code"
+        elif state == "char" and ch == "'":
+            state = "code"
+        i += 1
+    return "".join(out)
+
+
 def _nm(path: Path) -> List[str]:
     """Return symbols from a binary/archive.  Empty on missing tool."""
     symbols: List[str] = []
@@ -189,6 +267,8 @@ def scan(
             except OSError as exc:
                 result["errors"].append(f"{path}: {exc}")
                 return
+            if path.suffix.lower() in C_LIKE_SUFFIXES:
+                text = strip_c_comments(text)
             for lineno, line in enumerate(text.splitlines(), 1):
                 m = src_re.search(line)
                 if m:
@@ -202,11 +282,32 @@ def scan(
                     if len(result["source_hits"]) >= max_hits:
                         return
 
+        def resolve_source_path(raw: str) -> Optional[Path]:
+            root = Path(raw).resolve()
+            if root.exists():
+                return root
+            # Task configs spell paths as they appear in the reference tree
+            # (``CMake``).  An agent-authored build system may place the same
+            # modules in ``cmake/``; the target filesystem is case sensitive,
+            # so resolve the declared path case-insensitively before treating
+            # it as absent.
+            try:
+                siblings = list(root.parent.iterdir())
+            except OSError:
+                return None
+            for entry in siblings:
+                if entry.name.lower() == root.name.lower():
+                    return entry
+            return None
+
+        found_sources = 0
+        missing_sources: List[str] = []
         for raw_dir in source_dirs:
-            root = Path(raw_dir).resolve()
-            if not root.exists():
-                result["errors"].append(f"missing source dir: {raw_dir}")
+            root = resolve_source_path(raw_dir)
+            if root is None:
+                missing_sources.append(raw_dir)
                 continue
+            found_sources += 1
             if root.is_file():
                 if root.suffix.lower() not in SOURCE_SUFFIXES:
                     result["errors"].append(f"not a scanned source file: {raw_dir}")
@@ -223,6 +324,17 @@ def scan(
                     break
             if len(result["source_hits"]) >= max_hits:
                 break
+        if missing_sources:
+            result["missing_source_dirs"] = missing_sources
+            # A declared path that the agent did not create is not by itself
+            # a gate failure: the build system may legitimately keep the same
+            # content in fewer files.  The gate can only fail when there is
+            # nothing left to scan.
+            if found_sources == 0:
+                result["errors"].append(
+                    "none of the declared source paths exist: "
+                    + ", ".join(missing_sources)
+                )
 
     hits = bool(result["symbols"] or result["source_hits"])
     if positive:

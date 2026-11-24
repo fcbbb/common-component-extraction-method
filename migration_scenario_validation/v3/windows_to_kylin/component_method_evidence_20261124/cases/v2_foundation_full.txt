@@ -1,0 +1,110 @@
+===== default | label=s1_default_v2_foundation_full | status=fail | duration=2153.3s
+failure_summary: build=ok; tests=fail; api_removal=skipped; target_api=skipped || DSH reached the configured step limit of 150 || testThreadTarget: FAILURE | testThreadFunctor: FAILURE | testSleep: terminate called after throwing an instance of 'Poco::NullPointerException'
+----- judge log tail (last 5000 chars) -----
+trunner.dir/src/TimerTest.cpp.o
+[ 92%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimespanTest.cpp.o
+[ 92%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimestampTest.cpp.o
+[ 92%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimezoneTest.cpp.o
+[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TuplesTest.cpp.o
+[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TypeListTest.cpp.o
+[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URIStreamOpenerTest.cpp.o
+[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URITest.cpp.o
+[ 93%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URITestSuite.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UTF8StringTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDGeneratorTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDTestSuite.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UnicodeConverterTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UniqueExpireCacheTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UniqueExpireLRUCacheTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/VarTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ZLibTest.cpp.o
+gmake[2]: Entering directory '/tmp/judge-build-v2_foundation_full-r1'
+Scanning dependencies of target XML-testrunner
+gmake[2]: Leaving directory '/tmp/judge-build-v2_foundation_full-r1'
+gmake[2]: Entering directory '/tmp/judge-build-v2_foundation_full-r1'
+[ 95%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/AttributesImplTest.cpp.o
+[ 95%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/ChildNodesTest.cpp.o
+[ 95%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/DOMTestSuite.cpp.o
+[ 95%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/DocumentTest.cpp.o
+[ 96%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/DocumentTypeTest.cpp.o
+[ 96%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/Driver.cpp.o
+[ 96%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/ElementTest.cpp.o
+[ 96%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/EventTest.cpp.o
+[ 97%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/NamePoolTest.cpp.o
+[ 97%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/NameTest.cpp.o
+[ 97%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/NamespaceSupportTest.cpp.o
+[ 97%] Linking CXX executable ../../bin/Foundation-testrunner
+[ 97%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/NodeAppenderTest.cpp.o
+gmake[2]: Leaving directory '/tmp/judge-build-v2_foundation_full-r1'
+[ 97%] Built target Foundation-testrunner
+[ 97%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/NodeIteratorTest.cpp.o
+[ 98%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/NodeTest.cpp.o
+[ 98%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/ParserWriterTest.cpp.o
+[ 98%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/SAXParserTest.cpp.o
+[ 98%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/SAXTestSuite.cpp.o
+[ 98%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/TextTest.cpp.o
+[ 99%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/TreeWalkerTest.cpp.o
+[ 99%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/XMLStreamParserTest.cpp.o
+[ 99%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/XMLTestSuite.cpp.o
+[ 99%] Building CXX object XML/testsuite/CMakeFiles/XML-testrunner.dir/src/XMLWriterTest.cpp.o
+[100%] Linking CXX executable ../../bin/XML-testrunner
+gmake[2]: Leaving directory '/tmp/judge-build-v2_foundation_full-r1'
+[100%] Built target XML-testrunner
+gmake[1]: Leaving directory '/tmp/judge-build-v2_foundation_full-r1'
+
+testThread: 
+testNamedThread: 
+testCurrent: 
+testThreads: 
+testJoin: 
+testNotJoin: 
+testNotRun: 
+testNotRunJoin: 
+testTrySleep: 
+testThreadTarget: FAILURE
+testThreadFunction: 
+testThreadFunctor: FAILURE
+testThreadStackSize: 
+testSleep: terminate called after throwing an instance of 'Poco::NullPointerException'
+  what():  Null pointer
+",
+  "status": "fail"
+}
+
+
+===== method | label=s1_method_v2_foundation_full | status=fail | duration=4214.1s
+selected_components: portable-threading-and-synchronisation-backend-for-an-96ad6495;process-spawn-backend-for-an-event-loop-win32-handle-c7216288
+failure_summary: build=ok; tests=fail; api_removal=skipped; target_api=skipped || !!!FAILURES!!! | Runs: 127   Failures: 6   Errors: 2 | There were 2 errors: | There were 6 failures: | \"fail: file does not exist - must throw exception\"
+----- judge log tail (last 5000 chars) -----
+r/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir/testdir\"
+    in \"<unknown>\", line -1
+ 2: CppUnit::TestCaller<ProcessTest>.testLaunchInvalidCommand
+    \"Poco::NotFoundException:
+Not found: Cannot launch process: InvalidCmd\"
+    in \"<unknown>\", line -1
+
+There were 6 failures: 
+ 1: CppUnit::TestCaller<FileTest>.testFileAttributes1
+    \"fail: file does not exist - must throw exception\"
+    in \"/tmp/migration-judge-v2_foundation_full-0rb293ik/work/Foundation/testsuite/src/FileTest.cpp\", line 49
+ 2: CppUnit::TestCaller<PathTest>.testStatics
+    \"p.isDirectory() && p.isAbsolute()\"
+    in \"/tmp/migration-judge-v2_foundation_full-0rb293ik/work/Foundation/testsuite/src/PathTest.cpp\", line 1375
+ 3: CppUnit::TestCaller<DirectoryIteratorsTest>.testDirectoryIterator
+    \"expected: 7 but was: 0\"
+    in \"<unknown>\", line -1
+ 4: CppUnit::TestCaller<DirectoryIteratorsTest>.testSortedDirectoryIterator
+    \"expected: 7 but was: 0\"
+    in \"<unknown>\", line -1
+ 5: CppUnit::TestCaller<DirectoryIteratorsTest>.testSimpleRecursiveDirectoryIterator
+    \"expected: 20 but was: 1\"
+    in \"<unknown>\", line -1
+ 6: CppUnit::TestCaller<DirectoryIteratorsTest>.testSiblingsFirstRecursiveDirectoryIterator
+    \"expected: 20 but was: 1\"
+    in \"<unknown>\", line -1
+
+",
+  "status": "fail"
+}
+

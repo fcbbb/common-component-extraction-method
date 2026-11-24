@@ -1,0 +1,91 @@
+scenario: windows_to_kylin
+task_family: v3
+family: synthetic_thread_runtime
+fit: C
+counted: false
+source_kind: synthetic
+gold_kind: implementation
+library_manifest: v3/windows_to_kylin/library_generated/full_20261123/library/manifest.json
+tolerances: {}
+target:
+  os: kylin-v10-sp3
+  arch: x86_64
+  toolchain: gcc-13.3
+  cmake: 3.16.5
+build:
+  command: cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release && cmake --build {build} -j2
+  artifact: '{build}/thr_selftest'
+gates:
+  build: configure and build the static library and the public self-test on Kylin
+  api_removal:
+    symbol_regex: ^(__imp_|CreateThread|CreateSemaphore|EnterCriticalSection|TryEnterCriticalSection|LeaveCriticalSection|InitializeSRWLock|AcquireSRWLock|ReleaseSRWLock|FlsAlloc|FlsGetValue|FlsSetValue|FlsFree|InitOnceExecuteOnce|SleepConditionVariable|SetThreadAffinityMask|WaitForSingleObject|CloseHandle|GetCurrentThreadId|GetCurrentProcessorNumber|GetLastError)
+    source_regex: windows\.h|__declspec|_MSC_VER|#pragma comment|TCHAR\b|HANDLE|CRITICAL_SECTION|SRWLOCK|CONDITION_VARIABLE|CreateThread|CreateSemaphore|EnterCriticalSection|TryEnterCriticalSection|InitializeSRWLock|AcquireSRWLock|ReleaseSRWLock|FlsAlloc|FlsGetValue|FlsSetValue|FlsFree|InitOnceExecuteOnce|SleepConditionVariable|SetThreadAffinityMask|WaitForSingleObject|CloseHandle|GetCurrentThreadId|GetCurrentProcessorNumber|GetLastError
+    exclude_globs:
+    - '**/*_WIN32*'
+    - '**/*_win32*'
+    - '**/*w32*'
+    - '**/*W32*'
+    - '**/*_windows.c'
+    - '**/*_windows.h'
+    - '**/win32/**'
+    - '**/Win32/**'
+    - '**/win/**'
+    - '**/Windows/**'
+    - '**/windows/**'
+    - '**/projects/Windows/**'
+    - '**/winbuild/**'
+    source_dirs:
+    - src/posix/thr_posix.c
+  target_api: the rebuilt backend uses native threads, mutexes, reader/writer locks, semaphores, condition variables, thread-local keys and affinity masks instead of Win32 handles and critical sections
+  behavior: the public header, the public THR_* codes and the caller-allocated object sizes stay identical; no public initialiser is added
+  regression: the public header, the public self-test and the Windows reference are unchanged
+id: synthetic_thread_runtime
+level: L3
+family_type: synthetic
+sequence: 26
+domain: threading
+difficulty: hard
+title: Synthetic portable threading runtime backend
+source:
+  repo: synthetic://windows-to-posix/thread-runtime
+  commit: synthetic-1
+  tag: n/a
+  license: project-authored
+  windows_files:
+  - src/win32/thr_win32.c
+  gold_files:
+  - src/posix/thr_posix.c
+  test_files:
+  - tests/test_thr.c
+spec: |
+  A runtime being moved from Windows to Kylin V10 SP3 exposes its threading
+  surface through thr.h: thread creation, join, identity and equality; plain
+  and recursive mutexes; read/write locks; counting semaphores; condition
+  variables with an optional timed wait; thread-local storage with a
+  destructor; one-time initialisation; and a process affinity mask.  Every
+  object is caller-allocated storage of the size declared in the header, and
+  every call reports one of the public THR_* codes.  The Windows reference
+  src/win32/thr_win32.c documents the source semantics; the POSIX backend
+  src/posix/thr_posix.c is missing.
+
+  The header is the contract.  The backend must implement it on the target
+  with the platform's native threading primitives, preserving the source's
+  observable thread, synchronisation, storage and affinity semantics.  Join
+  clears the identity in the caller's variable, and a cleared identity cannot
+  be joined again.  Where the Windows reference relies on Win32 conventions
+  that POSIX does not share, follow the target's native conventions rather
+  than transliterating the Win32 calls.
+
+  Null output pointers and null guards are invalid wherever the public
+  signature takes a pointer.  The port must not change thr.h, the public
+  self-test or the Windows reference, and must not add an initialiser that
+  callers would have to invoke before using THR_ONCE_INIT.
+prepare:
+  remove:
+  - src/posix/thr_posix.c
+harness:
+  scripts:
+  - thr_probe.sh
+hidden_tests:
+  command: bash {root}/harness/thr_probe.sh --build {build} --work {work}
+task_id: synthetic_thread_runtime

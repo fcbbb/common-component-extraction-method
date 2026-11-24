@@ -1,0 +1,196 @@
+===== default | label=s1_default_v2_file | status=fail | duration=3445.2s
+failure_summary: build=ok; tests=fail; api_removal=skipped; target_api=skipped || testFileAttributes1: FAILURE | !!!FAILURES!!! | Runs: 43   Failures: 1   Errors: 0 | There was 1 failure: | \"fail: file does not exist - must throw exception\"
+----- judge log tail (last 5000 chars) -----
+%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskManagerTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskTestSuite.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TeeStreamTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TestChannel.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextBufferIteratorTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextConverterTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextEncodingTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextIteratorTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextTestSuite.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadLocalTest.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadPoolTest.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadTest.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadingTestSuite.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimedNotificationQueueTest.cpp.o
+[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimerTest.cpp.o
+[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimespanTest.cpp.o
+[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimestampTest.cpp.o
+[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimezoneTest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TuplesTest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TypeListTest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URIStreamOpenerTest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URITest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URITestSuite.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UTF8StringTest.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDGeneratorTest.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDTest.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDTestSuite.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UnicodeConverterTest.cpp.o
+[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UniqueExpireCacheTest.cpp.o
+[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UniqueExpireLRUCacheTest.cpp.o
+[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/VarTest.cpp.o
+[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ZLibTest.cpp.o
+[100%] Linking CXX executable ../../bin/Foundation-testrunner
+gmake[2]: Leaving directory '/tmp/judge-build-v2_file-r1'
+[100%] Built target Foundation-testrunner
+gmake[1]: Leaving directory '/tmp/judge-build-v2_file-r1'
+
+testCreateFile: 
+testFileAttributes1: FAILURE
+testFileAttributes2: 
+testFileAttributes3: 
+testCompare: 
+testSwap: 
+testSize: 
+testDirectory: 
+testCopy: 
+testCopyFailIfDestinationFileExists: 
+testMove: 
+testMoveFailIfDestinationFileExists: 
+testCopyDirectory: 
+testCopyDirectoryFailIfExists: 
+testRename: 
+testRenameFailIfExists: 
+testRootDir: 
+testLongPath: 
+testUnixFileExtension: 
+testTemporaryFile: 
+testRead: 
+testWrite: 
+testReadWrite: 
+testOpen: 
+testOpenModeIn: 
+testOpenModeOut: 
+testOpenModeTrunc: 
+testOpenModeAte: 
+testOpenModeApp: 
+testSeek: 
+testMultiOpen: 
+testDirectoryIterator: 
+testSortedDirectoryIterator: 
+testSimpleRecursiveDirectoryIterator: 
+testSiblingsFirstRecursiveDirectoryIterator: 
+testMatchChars: 
+testMatchQM: 
+testMatchAsterisk: 
+testMatchRange: 
+testMisc: 
+testCaseless: 
+testGlob: 
+testMatchEmptyPattern: 
+
+!!!FAILURES!!!
+Runs: 43   Failures: 1   Errors: 0
+
+There was 1 failure: 
+ 1: CppUnit::TestCaller<FileTest>.testFileAttributes1
+    \"fail: file does not exist - must throw exception\"
+    in \"/tmp/migration-judge-v2_file-k461socu/work/Foundation/testsuite/src/FileTest.cpp\", line 49
+
+",
+  "status": "fail"
+}
+
+
+===== method | label=s1g_method_v2_file | status=fail | duration=1804.1s
+selected_components: filesystem-disk-reader-backend-descriptor-relative-100f4548;posix-file-system-request-backend-behind-a-fixed-async-42929ace
+failure_summary: build=ok; tests=fail; api_removal=skipped; target_api=skipped || testFileAttributes1: FAILURE | !!!FAILURES!!! | Runs: 43   Failures: 1   Errors: 0 | There was 1 failure: | \"fail: file does not exist - must throw exception\"
+----- judge log tail (last 5000 chars) -----
+%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskManagerTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TaskTestSuite.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TeeStreamTest.cpp.o
+[ 94%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TestChannel.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextBufferIteratorTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextConverterTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextEncodingTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextIteratorTest.cpp.o
+[ 95%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TextTestSuite.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadLocalTest.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadPoolTest.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadTest.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ThreadingTestSuite.cpp.o
+[ 96%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimedNotificationQueueTest.cpp.o
+[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimerTest.cpp.o
+[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimespanTest.cpp.o
+[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimestampTest.cpp.o
+[ 97%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TimezoneTest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TuplesTest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/TypeListTest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URIStreamOpenerTest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URITest.cpp.o
+[ 98%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/URITestSuite.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UTF8StringTest.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDGeneratorTest.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDTest.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UUIDTestSuite.cpp.o
+[ 99%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UnicodeConverterTest.cpp.o
+[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UniqueExpireCacheTest.cpp.o
+[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/UniqueExpireLRUCacheTest.cpp.o
+[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/VarTest.cpp.o
+[100%] Building CXX object Foundation/testsuite/CMakeFiles/Foundation-testrunner.dir/src/ZLibTest.cpp.o
+[100%] Linking CXX executable ../../bin/Foundation-testrunner
+gmake[2]: Leaving directory '/tmp/judge-build-v2_file-r1'
+[100%] Built target Foundation-testrunner
+gmake[1]: Leaving directory '/tmp/judge-build-v2_file-r1'
+
+testCreateFile: 
+testFileAttributes1: FAILURE
+testFileAttributes2: 
+testFileAttributes3: 
+testCompare: 
+testSwap: 
+testSize: 
+testDirectory: 
+testCopy: 
+testCopyFailIfDestinationFileExists: 
+testMove: 
+testMoveFailIfDestinationFileExists: 
+testCopyDirectory: 
+testCopyDirectoryFailIfExists: 
+testRename: 
+testRenameFailIfExists: 
+testRootDir: 
+testLongPath: 
+testUnixFileExtension: 
+testTemporaryFile: 
+testRead: 
+testWrite: 
+testReadWrite: 
+testOpen: 
+testOpenModeIn: 
+testOpenModeOut: 
+testOpenModeTrunc: 
+testOpenModeAte: 
+testOpenModeApp: 
+testSeek: 
+testMultiOpen: 
+testDirectoryIterator: 
+testSortedDirectoryIterator: 
+testSimpleRecursiveDirectoryIterator: 
+testSiblingsFirstRecursiveDirectoryIterator: 
+testMatchChars: 
+testMatchQM: 
+testMatchAsterisk: 
+testMatchRange: 
+testMisc: 
+testCaseless: 
+testGlob: 
+testMatchEmptyPattern: 
+
+!!!FAILURES!!!
+Runs: 43   Failures: 1   Errors: 0
+
+There was 1 failure: 
+ 1: CppUnit::TestCaller<FileTest>.testFileAttributes1
+    \"fail: file does not exist - must throw exception\"
+    in \"/tmp/migration-judge-v2_file-u2ck9vat/work/Foundation/testsuite/src/FileTest.cpp\", line 49
+
+",
+  "status": "fail"
+}
+

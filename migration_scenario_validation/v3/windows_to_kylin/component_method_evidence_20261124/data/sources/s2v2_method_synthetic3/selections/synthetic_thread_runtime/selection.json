@@ -1,0 +1,7 @@
+{
+  "schema_version": "methodology-paths-1",
+  "task_id": "synthetic_thread_runtime",
+  "selected_bundle_ids": [
+    "portable-threading-and-synchronisation-backend-for-an-96ad6495"
+  ]
+}

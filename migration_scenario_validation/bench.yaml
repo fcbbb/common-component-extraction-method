@@ -60,9 +60,10 @@ scenarios:
   # v3/windows_to_kylin/tasks/ and the hand-written transformation library
   # lives under v3/windows_to_kylin/library/.  A task may override the library
   # with `library_manifest` in task.yaml (v3_poco_fs_stack points at
-  # library_generated/demo_new_flow_v4).  The slate assigns roles (library
+  # library_generated/demo_new_flow_v4; the component-first tasks point at
+  # library_generated/full_20261123).  The slate assigns roles (library
   # source, pilot, held-out, boundary, negative, synthetic), so select the
-  # evaluation subset with --only.  Disabled by default; 19 of the 25 slate
+  # evaluation subset with --only.  Disabled by default; 22 of the 25 slate
   # packages are runnable.
   windows_to_kylin_v3:
     enabled: false

@@ -1,0 +1,7 @@
+{
+  "schema_version": "methodology-paths-1",
+  "task_id": "v2_poco_process",
+  "selected_bundle_ids": [
+    "process-spawn-backend-for-an-event-loop-win32-handle-c7216288"
+  ]
+}
