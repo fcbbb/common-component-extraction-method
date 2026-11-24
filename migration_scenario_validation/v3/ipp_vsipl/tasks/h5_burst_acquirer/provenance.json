@@ -1,0 +1,27 @@
+{
+  "task_id": "h5_burst_acquirer",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://burst-acq-v1",
+  "commit": "synthetic-burst-acq-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "role": "held_out",
+  "snapshot": "v3/ipp_vsipl/tasks/h5_burst_acquirer",
+  "source_files": [
+    "src/state_ipp.c",
+    "src/pipeline_ipp.c",
+    "src/burst_acq_internal.h",
+    "include/burst_acq.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "plan_vsipl.c",
+    "state_vsipl.c",
+    "pipeline_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}

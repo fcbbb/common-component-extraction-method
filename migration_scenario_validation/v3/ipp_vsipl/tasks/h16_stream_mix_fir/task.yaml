@@ -1,0 +1,40 @@
+scenario: ipp_to_vsipl
+task_family: v3
+task_id: h16_stream_mix_fir
+role: held_out
+counted: true
+source_kind: synthetic
+gold_kind: implementation
+level: L3
+domain: communications
+difficulty: hard
+title: Streaming NCO mixer with decimation and block report
+library_manifest: v3/ipp_vsipl/library/manifest.json
+source:
+  repo: synthetic://stream-mix-fir-v1
+  commit: synthetic-stream-mix-fir-v1
+  license: synthetic
+  vendored: true
+  files: [src/stream_mix_fir_ipp.c, include/stream_mix_fir.h, CMakeLists.txt]
+  gold_files: [stream_mix_fir_vsipl.c]
+  test_files: [test/public_test.c, harness/hidden_test.c]
+target: {api: VSIPL, library: jvsip, toolchain: gcc-13}
+spec: |
+  Migrate stream_mix_fir_ipp.c to VSIPL. Preserve continuous NCO phase,
+  decimation, produced count, peak and energy. Reference gold/.
+prepare: {mode: vendored, remove: []}
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j2'
+  artifact: '{build}/libstream_mix_fir.a'
+public_tests: {command: '{build}/public_test', visible_to_agent: true}
+hidden_tests:
+  command: 'cc -std=c99 -O2 -I{work}/include -I{root}/include -I"${VSIPL_ROOT}/include" {root}/harness/hidden_test.c {build}/libstream_mix_fir.a "${VSIPL_ROOT}/lib/libvsip.a" -lm -o {build}/hidden_test && {build}/hidden_test'
+  visible_to_agent: false
+  cases: [NCO phase carry, decimated outputs, peak/energy, null arguments]
+tolerances: {float32: {rtol: 3.0e-4, atol: 0.0, mode: peak-relative}}
+gates:
+  build: 'no IPP include path'
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libstream_mix_fir.a'
+  target_api: {symbol_regex: '^vsip_', source_dirs: ['src'], source_regex: '\\bvsip_[A-Za-z0-9_]+\\b', min_hits: 1}
+  behavior: 'hidden_test exits 0'
+  numeric: 'hidden_test exits 0'

@@ -1,0 +1,109 @@
+scenario: ipp_to_vsipl
+task_family: v3
+task_id: h3_stream_lag
+role: held_out
+counted: true
+source_kind: synthetic
+gold_kind: implementation
+level: L2
+domain: sonar
+difficulty: hard
+title: Streaming complex lag profile
+library_manifest: v3/ipp_vsipl/library/manifest.json
+
+source:
+  repo: synthetic://stream-lag-v1
+  commit: synthetic-stream-lag-v1
+  license: synthetic
+  vendored: true
+  files:
+    - src/plan_ipp.c
+    - src/reference_ipp.c
+    - src/correlate_ipp.c
+    - src/report_ipp.c
+    - src/stream_lag_internal.h
+    - include/stream_lag.h
+    - CMakeLists.txt
+  gold_files:
+    - plan_vsipl.c
+    - reference_vsipl.c
+    - correlate_vsipl.c
+    - report_vsipl.c
+  test_files:
+    - test/public_test.c
+    - harness/hidden_test.c
+
+target:
+  api: VSIPL
+  library: jvsip
+  toolchain: gcc-13
+
+spec: |
+  src/*.c implements a streaming complex lag profile on top of IPP.
+  Migrate it to VSIPL while keeping include/stream_lag.h and the observable
+  behaviour unchanged:
+
+  - the stream is cut into consecutive, non-overlapping frames of exactly
+    nref samples; each complete frame produces y[k] =
+    sum_j x[j] * conj(ref[j-k]) for k = -(nref-1)..(nref-1);
+  - out[i] is y[i-(nref-1)], so the most negative lag is output index 0;
+  - out-of-range reference samples are zero;
+  - a partial frame is retained across sc_process calls, and splitting the
+    same stream into different call sizes must not change the concatenated
+    output;
+  - sc_process appends nin samples, emits one 2*nref-1 profile per complete
+    frame, writes exactly *nout profiles, and returns -1 without consuming
+    input when out_cap is too small;
+  - sc_set_reference copies the reference and is rejected while a partial
+    frame is pending;
+  - nfft is caller chosen, a power of two, and at least 2*nref-1;
+  - the forward transform is unscaled and the inverse applies exactly one
+    1/nfft factor;
+  - the optional report aggregates all profiles emitted by the call: peak is
+    a magnitude, energy is the sum of squared magnitudes, and peak_index is
+    the first concatenated output index attaining the peak;
+  - no ipps*/ippi* symbol may remain in the built artifact.
+
+  The reference after state is gold/.
+
+prepare:
+  mode: vendored
+  remove: []
+
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j2'
+  artifact: '{build}/libstream_lag.a'
+
+public_tests:
+  command: '{build}/public_test'
+  visible_to_agent: true
+  note: 'real reference impulse at index 3: out[i] = in[i-4] on the valid lags'
+
+hidden_tests:
+  command: 'cc -std=c99 -O2 -I{work}/include -I{root}/include {root}/harness/hidden_test.c {build}/libstream_lag.a "${VSIPL_ROOT}/lib/libvsip.a" -lm -o {build}/hidden_test && {build}/hidden_test'
+  visible_to_agent: false
+  cases:
+    - complex asymmetric reference and frames against O(N^2) reference
+    - one call and irregular multi-call splits produce identical concatenated output
+    - partial-frame carry across calls
+    - out_cap too small rejects the call without consuming input
+    - reference replacement while a partial frame is pending is rejected
+    - empty call and zero-length stream
+    - invalid configuration and null arguments
+
+tolerances:
+  float32:
+    rtol: 2.0e-4
+    atol: 0.0
+    mode: peak-relative
+
+gates:
+  build: 'must configure and build with no IPP include path'
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libstream_lag.a'
+  target_api:
+    symbol_regex: '^vsip_'
+    source_dirs: ['src']
+    source_regex: '\\bvsip_[A-Za-z0-9_]+\\b'
+    min_hits: 1
+  behavior: 'hidden_test exits 0'
+  numeric: 'hidden_test exits 0'

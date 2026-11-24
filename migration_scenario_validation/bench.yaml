@@ -49,6 +49,16 @@ scenarios:
     vsipl_root: ${VSIPL_ROOT:-}
     build:
       - ["docker", "build", "-f", "env/Dockerfile.ipp", "-t", "migration/ipp:cpu", "."]
+  # IPP V3 self-built library sources + held-out smoke task.  Disabled by
+  # default; select explicitly with --scenario ipp_to_vsipl_v3.
+  ipp_to_vsipl_v3:
+    enabled: false
+    parent: v3/ipp_vsipl/tasks
+    image: ${IPP_IMAGE:-migration/ipp:cpu}
+    vsipl_root: ${VSIPL_ROOT:-}
+    library_dir: v3/ipp_vsipl/library
+    build: []
+
   windows_to_kylin:
     enabled: true
     parent: v1/windows_to_kylin/tasks

@@ -1,0 +1,23 @@
+{
+  "task_id": "h1_power_spectrum",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://power-spectrum-v1",
+  "commit": "synthetic-power-spectrum-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "role": "held_out",
+  "snapshot": "v3/ipp_vsipl/tasks/h1_power_spectrum",
+  "source_files": [
+    "src/spectrum_ipp.c",
+    "include/power_spectrum.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "spectrum_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}

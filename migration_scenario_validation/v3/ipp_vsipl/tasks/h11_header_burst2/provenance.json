@@ -1,0 +1,25 @@
+{
+  "task_id": "h11_header_burst2",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://header-burst2-v1",
+  "commit": "synthetic-header-burst2-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "role": "held_out",
+  "snapshot": "v3/ipp_vsipl/tasks/h11_header_burst2",
+  "source_files": [
+    "include/burst_acq.h",
+    "src/burst_acq_internal.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "plan_vsipl.c",
+    "state_vsipl.c",
+    "pipeline_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}

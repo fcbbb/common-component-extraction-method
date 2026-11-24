@@ -1,0 +1,26 @@
+{
+  "task_id": "h10_header_corr2",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://header-corr2-v1",
+  "commit": "synthetic-header-corr2-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "role": "held_out",
+  "snapshot": "v3/ipp_vsipl/tasks/h10_header_corr2",
+  "source_files": [
+    "include/sonar_lag.h",
+    "src/sonar_lag_internal.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "plan_vsipl.c",
+    "reference_vsipl.c",
+    "correlate_vsipl.c",
+    "report_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}

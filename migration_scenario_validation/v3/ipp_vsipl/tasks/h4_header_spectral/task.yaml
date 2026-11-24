@@ -1,0 +1,75 @@
+scenario: ipp_to_vsipl
+task_family: v3
+task_id: h4_header_spectral
+role: held_out
+counted: true
+source_kind: synthetic
+gold_kind: implementation
+level: L1
+domain: spectral
+difficulty: easy
+title: Header-only real spectral probe
+library_manifest: v3/ipp_vsipl/library/manifest.json
+
+source:
+  repo: synthetic://header-spectral-v1
+  commit: synthetic-header-spectral-v1
+  license: synthetic
+  vendored: true
+  files:
+    - include/power_spectrum.h
+    - CMakeLists.txt
+  gold_files:
+    - spectrum_vsipl.c
+  test_files:
+    - test/public_test.c
+    - harness/hidden_test.c
+
+target:
+  api: VSIPL
+  library: jvsip
+  toolchain: gcc-13
+
+spec: |
+  The implementation code is absent from this snapshot.  Implement the ABI
+  in include/power_spectrum.h from the public test and the component library.
+  The build must use VSIPL primitives.  The reference after state is gold/.
+
+prepare:
+  mode: vendored
+  remove: []
+
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j2'
+  artifact: '{build}/libpower_spectrum.a'
+
+public_tests:
+  command: '{build}/public_test'
+  visible_to_agent: true
+  note: 'impulse: every power bin is 1, peak_bin=0, total_power=nfft/2+1'
+
+hidden_tests:
+  command: 'cc -std=c99 -O2 -I{work}/include -I"${VSIPL_ROOT}/include" {root}/harness/hidden_test.c {build}/libpower_spectrum.a "${VSIPL_ROOT}/lib/libvsip.a" -lm -o {build}/hidden_test && {build}/hidden_test'
+  visible_to_agent: false
+  cases:
+    - nfft = 8, 16, 32, 64, non-flat deterministic real frame
+    - power bins vs direct DFT
+    - peak, peak_bin, total_power
+    - invalid nfft = 12, 4
+
+tolerances:
+  float32:
+    rtol: 2.0e-4
+    atol: 0.0
+    mode: peak-relative
+
+gates:
+  build: 'must configure and build with no IPP include path'
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libpower_spectrum.a'
+  target_api:
+    symbol_regex: '^vsip_'
+    source_dirs: ['src']
+    source_regex: '\\bvsip_[A-Za-z0-9_]+\\b'
+    min_hits: 1
+  behavior: 'hidden_test exits 0'
+  numeric: 'hidden_test exits 0'

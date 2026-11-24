@@ -44,12 +44,14 @@ DEFAULT_CONFIG = ROOT / "bench.yaml"
 
 SCENARIOS = (
     "ipp_to_vsipl",
+    "ipp_to_vsipl_v3",
     "windows_to_kylin",
     "windows_to_kylin_v3",
     "cuda_to_musa",
 )
 TASK_PARENTS = {
     "ipp_to_vsipl": "v1/ipp_vsipl_tasks",
+    "ipp_to_vsipl_v3": "v3/ipp_vsipl/tasks",
     "windows_to_kylin": "v1/windows_to_kylin/tasks",
     "windows_to_kylin_v3": "v3/windows_to_kylin/tasks",
     "cuda_to_musa": "v1/cuda_to_musa/tasks",

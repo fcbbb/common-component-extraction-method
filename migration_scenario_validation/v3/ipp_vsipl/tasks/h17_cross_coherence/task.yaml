@@ -1,0 +1,40 @@
+scenario: ipp_to_vsipl
+task_family: v3
+task_id: h17_cross_coherence
+role: held_out
+counted: true
+source_kind: synthetic
+gold_kind: implementation
+level: L2
+domain: spectral
+difficulty: medium
+title: Cross-spectrum phase and coherence
+library_manifest: v3/ipp_vsipl/library/manifest.json
+source:
+  repo: synthetic://cross-coherence-v1
+  commit: synthetic-cross-coherence-v1
+  license: synthetic
+  vendored: true
+  files: [src/cross_coherence_ipp.c, include/cross_coherence.h, CMakeLists.txt]
+  gold_files: [cross_coherence_vsipl.c]
+  test_files: [test/public_test.c, harness/hidden_test.c]
+target: {api: VSIPL, library: jvsip, toolchain: gcc-13}
+spec: |
+  Migrate cross_coherence_ipp.c to VSIPL. Preserve one-sided cross-spectrum
+  magnitude, phase, first peak bin and scalar coherence. Reference gold/.
+prepare: {mode: vendored, remove: []}
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j2'
+  artifact: '{build}/libcross_coherence.a'
+public_tests: {command: '{build}/public_test', visible_to_agent: true}
+hidden_tests:
+  command: 'cc -std=c99 -O2 -I{work}/include -I{root}/include -I"${VSIPL_ROOT}/include" {root}/harness/hidden_test.c {build}/libcross_coherence.a "${VSIPL_ROOT}/lib/libvsip.a" -lm -o {build}/hidden_test && {build}/hidden_test'
+  visible_to_agent: false
+  cases: [cross-spectrum magnitude/phase, peak bin, coherence, null arguments]
+tolerances: {float32: {rtol: 3.0e-3, atol: 0.0, mode: peak-relative}}
+gates:
+  build: 'no IPP include path'
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libcross_coherence.a'
+  target_api: {symbol_regex: '^vsip_', source_dirs: ['src'], source_regex: '\\bvsip_[A-Za-z0-9_]+\\b', min_hits: 1}
+  behavior: 'hidden_test exits 0'
+  numeric: 'hidden_test exits 0'

@@ -1,0 +1,30 @@
+{
+  "task_id": "h2_sonar_lag",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://sonar-lag-v1",
+  "commit": "synthetic-sonar-lag-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "role": "held_out",
+  "snapshot": "v3/ipp_vsipl/tasks/h2_sonar_lag",
+  "source_files": [
+    "src/plan_ipp.c",
+    "src/reference_ipp.c",
+    "src/correlate_ipp.c",
+    "src/report_ipp.c",
+    "src/sonar_lag_internal.h",
+    "include/sonar_lag.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "plan_vsipl.c",
+    "reference_vsipl.c",
+    "correlate_vsipl.c",
+    "report_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}

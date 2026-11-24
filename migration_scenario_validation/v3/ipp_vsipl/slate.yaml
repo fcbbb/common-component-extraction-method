@@ -14,4 +14,84 @@ library_sources:
     domain: communications
     title: Streaming wideband channelizer
 
-held_out: []
+held_out:
+  - task_id: h1_power_spectrum
+    role: held_out
+    domain: spectral
+    title: One-frame real power spectrum
+  - task_id: h2_sonar_lag
+    role: held_out
+    domain: sonar
+    title: Passive-sonar complex lag profile
+  - task_id: h3_stream_lag
+    role: held_out
+    domain: sonar
+    title: Streaming complex lag profile
+  - task_id: h4_header_spectral
+    role: held_out
+    domain: spectral
+    title: Header-only real spectral probe
+  - task_id: h5_burst_acquirer
+    role: held_out
+    domain: communications
+    title: Streaming burst acquirer with NCO, decimating FIR and lag profiles
+  - task_id: h6_header_stream
+    role: held_out
+    domain: sonar
+    title: Header-only streaming correlation ABI
+  - task_id: h7_header_only
+    role: held_out
+    domain: communications
+    title: Header-only streaming burst acquirer
+  - task_id: h8_header_corr
+    role: held_out
+    domain: sonar
+    title: Header-only correlation ABI
+  - task_id: h9_header_spectral_gate
+    role: held_out
+    domain: spectral
+    title: Header-only spectral gate
+  - task_id: h10_header_corr2
+    role: held_out
+    domain: sonar
+    title: Header-only correlation ABI (replicate)
+  - task_id: h11_header_burst2
+    role: held_out
+    domain: communications
+    title: Header-only burst acquirer (replicate)
+  - task_id: h12_windowed_peak
+    role: held_out
+    domain: spectral
+    title: Header-only Hann-windowed spectral peak
+  - task_id: h13_spectral_centroid
+    role: held_out
+    domain: spectral
+    title: Windowed spectral centroid
+  - task_id: h14_norm_corr
+    role: held_out
+    domain: radar
+    title: Normalized real lag correlation
+  - task_id: h15_corr2d
+    role: held_out
+    domain: radar
+    title: Two-dimensional complex range-profile correlation
+  - task_id: h16_stream_mix_fir
+    role: held_out
+    domain: communications
+    title: Streaming NCO mixer with decimation and block report
+  - task_id: h17_cross_coherence
+    role: held_out
+    domain: spectral
+    title: Cross-spectrum phase and coherence
+  - task_id: h18_iq_metrics
+    role: held_out
+    domain: communications
+    title: IQ gain, phase imbalance and block energy
+  - task_id: h19_overlap_gate
+    role: held_out
+    domain: spectral
+    title: Windowed spectral gate with per-bin flags
+  - task_id: h20_mc_fir
+    role: held_out
+    domain: communications
+    title: Multi-channel FIR with shared taps

@@ -1,0 +1,15 @@
+{
+  "task_id": "h12_windowed_peak",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://windowed-peak-v1",
+  "commit": "synthetic-windowed-peak-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "role": "held_out",
+  "snapshot": "v3/ipp_vsipl/tasks/h12_windowed_peak",
+  "source_files": ["include/window_spectrum.h", "CMakeLists.txt"],
+  "gold_files": ["spectrum_vsipl.c"],
+  "test_files": ["test/public_test.c"],
+  "materialized": true
+}

@@ -1,0 +1,62 @@
+scenario: ipp_to_vsipl
+task_family: v3
+task_id: h13_spectral_centroid
+role: held_out
+counted: true
+source_kind: synthetic
+gold_kind: implementation
+level: L2
+domain: spectral
+difficulty: medium
+title: Windowed spectral centroid
+library_manifest: v3/ipp_vsipl/library/manifest.json
+source:
+  repo: synthetic://spectral-centroid-v1
+  commit: synthetic-spectral-centroid-v1
+  license: synthetic
+  vendored: true
+  files:
+    - src/centroid_ipp.c
+    - include/spectral_centroid.h
+    - CMakeLists.txt
+  gold_files:
+    - centroid_vsipl.c
+  test_files:
+    - test/public_test.c
+    - harness/hidden_test.c
+target:
+  api: VSIPL
+  library: jvsip
+  toolchain: gcc-13
+spec: |
+  Migrate centroid_ipp.c to VSIPL while preserving include/spectral_centroid.h
+  and the observable Hann-windowed centroid, peak, peak bin, and total
+  magnitude behavior. The reference after state is gold/.
+prepare:
+  mode: vendored
+  remove: []
+build:
+  command: 'cmake -S . -B {build} -DCMAKE_BUILD_TYPE=Release -DVSIPL_ROOT="${VSIPL_ROOT:-}" && cmake --build {build} -j2'
+  artifact: '{build}/libspectral_centroid.a'
+public_tests:
+  command: '{build}/public_test'
+  visible_to_agent: true
+hidden_tests:
+  command: 'cc -std=c99 -O2 -I{work}/include -I{root}/include -I"${VSIPL_ROOT}/include" {root}/harness/hidden_test.c {build}/libspectral_centroid.a "${VSIPL_ROOT}/lib/libvsip.a" -lm -o {build}/hidden_test && {build}/hidden_test'
+  visible_to_agent: false
+  cases:
+    - Hann-windowed DFT reference for nfft 8/16/32/64
+    - centroid, peak, first peak bin, total magnitude
+    - invalid nfft and null input/output
+tolerances:
+  float32: {rtol: 3.0e-3, atol: 0.0, mode: peak-relative}
+gates:
+  build: 'must configure and build with no IPP include path'
+  api_removal: 'bash {root}/harness/check_api_removal.sh {build}/libspectral_centroid.a'
+  target_api:
+    symbol_regex: '^vsip_'
+    source_dirs: ['src']
+    source_regex: '\\bvsip_[A-Za-z0-9_]+\\b'
+    min_hits: 1
+  behavior: 'hidden_test exits 0'
+  numeric: 'hidden_test exits 0'

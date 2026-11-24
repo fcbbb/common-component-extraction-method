@@ -1,0 +1,22 @@
+{
+  "task_id": "h4_header_spectral",
+  "scenario": "ipp_to_vsipl",
+  "repo": "synthetic://header-spectral-v1",
+  "commit": "synthetic-header-spectral-v1",
+  "license": "synthetic",
+  "vendored": true,
+  "source_kind": "synthetic",
+  "role": "held_out",
+  "snapshot": "v3/ipp_vsipl/tasks/h4_header_spectral",
+  "source_files": [
+    "include/power_spectrum.h",
+    "CMakeLists.txt"
+  ],
+  "gold_files": [
+    "spectrum_vsipl.c"
+  ],
+  "test_files": [
+    "test/public_test.c"
+  ],
+  "materialized": true
+}
