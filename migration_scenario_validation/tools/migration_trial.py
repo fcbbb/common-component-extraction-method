@@ -278,6 +278,53 @@ def _stage_prebuilt_library(source: Path, library: Path) -> Dict[str, Any]:
     return _bundle_state(library)
 
 
+def _stage_prebuilt_library_remote(
+    cfg: Dict[str, Any], source: Path, library: str
+) -> Dict[str, Any]:
+    """Copy a prebuilt library to the remote method task and verify it.
+
+    The remote method adapter registry contains absolute paths on the MUSA
+    host.  Retrieval reads that remote ``library`` path, so the local bundle
+    has to be rsynced there before the DSH session starts.
+    """
+    q = shlex.quote
+    _ssh_run(cfg, f"mkdir -p {q(library)}", timeout=300)
+    rc, out = _rsync(cfg, source, library)
+    if rc != 0:
+        raise RuntimeError(out[-1200:].strip() or f"rsync exited {rc}")
+    code = (
+        "import json,pathlib,sys; p=pathlib.Path(sys.argv[1]); "
+        "m=json.loads((p/'manifest.json').read_text()); "
+        "print(json.dumps({'component_count':m.get('component_count'), "
+        "'files':len([x for x in p.rglob('*') if x.is_file()]), "
+        "'index':(p/'INDEX.md').is_file()}))"
+    )
+    check = (
+        f"test -f {q(library + '/manifest.json')} && "
+        f"test -f {q(library + '/INDEX.md')} && "
+        f"python3 -c {q(code)} {q(library)}"
+    )
+    rc, out = _ssh_run(cfg, check, timeout=300)
+    if rc != 0:
+        raise RuntimeError(out[-1200:].strip() or "remote bundle verification failed")
+    try:
+        remote = json.loads(out.strip().splitlines()[-1])
+    except (ValueError, IndexError) as exc:
+        raise RuntimeError(f"cannot parse remote bundle state: {exc}") from exc
+    count = remote.get("component_count")
+    if not isinstance(count, int) or count < 1 or not remote.get("index"):
+        raise RuntimeError(f"remote bundle is incomplete: {remote}")
+    state = _bundle_state(source)
+    state.update(
+        {
+            "remote_path": library,
+            "remote_component_count": count,
+            "remote_files": remote.get("files"),
+        }
+    )
+    return state
+
+
 def _bundle_state(bundle: Path) -> Dict[str, Any]:
     if not bundle.is_dir():
         return {"ok": False, "reason": "missing", "path": str(bundle), "files": 0, "bytes": 0}
@@ -942,6 +989,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "v1/ipp_vsipl_tasks",
                 "v1/windows_to_kylin/tasks",
                 "v1/cuda_to_musa/tasks",
+                "v3/cuda_to_musa/tasks",
                 "v3/windows_to_kylin/tasks",
             ]
         else:
@@ -1439,23 +1487,26 @@ def main(argv: Optional[List[str]] = None) -> int:
                             print(f"ERROR {tag}: method adapter failed: {exc}",
                                   file=sys.stderr)
                 if method_view is not None and bundle_source is not None:
-                    if remote_host:
-                        method_view = None
-                        method_adapter_note = (
-                            "--bundle is unavailable on the remote stage runtime"
-                        )
-                    else:
-                        try:
-                            entry = method_view["tasks"][task_id]
+                    try:
+                        entry = method_view["tasks"][task_id]
+                        if remote_host:
+                            if remote_cfg is None:
+                                raise RuntimeError("remote config disappeared")
+                            record["mounted_bundle"] = _stage_prebuilt_library_remote(
+                                remote_cfg, bundle_source, str(entry["library"])
+                            )
+                            record["mounted_bundle_remote"] = str(entry["library"])
+                            method_adapter_note = "active (remote, staged bundle)"
+                        else:
                             record["mounted_bundle"] = _stage_prebuilt_library(
                                 bundle_source, Path(entry["library"])
                             )
-                            record["mounted_bundle_source"] = str(bundle_source)
-                        except OSError as exc:
-                            method_view = None
-                            method_adapter_note = (
-                                f"prebuilt library staging failed: {exc}"
-                            )
+                        record["mounted_bundle_source"] = str(bundle_source)
+                    except (OSError, RuntimeError) as exc:
+                        method_view = None
+                        method_adapter_note = (
+                            f"prebuilt library staging failed: {exc}"
+                        )
                 if method_view is not None:
                     registration = (
                         "\n\nRegistered identity for this session: "

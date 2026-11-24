@@ -48,6 +48,7 @@ SCENARIOS = (
     "windows_to_kylin",
     "windows_to_kylin_v3",
     "cuda_to_musa",
+    "cuda_to_musa_v3",
 )
 TASK_PARENTS = {
     "ipp_to_vsipl": "v1/ipp_vsipl_tasks",
@@ -55,6 +56,7 @@ TASK_PARENTS = {
     "windows_to_kylin": "v1/windows_to_kylin/tasks",
     "windows_to_kylin_v3": "v3/windows_to_kylin/tasks",
     "cuda_to_musa": "v1/cuda_to_musa/tasks",
+    "cuda_to_musa_v3": "v3/cuda_to_musa/tasks",
 }
 
 PINNED_NODE = "24.9.0"
@@ -349,6 +351,27 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     for name in _enabled_scenarios(cfg, args.scenario):
         sc = _scenario_cfg(cfg, name)
         image = str(sc.get("image") or "")
+        if name in ("cuda_to_musa", "cuda_to_musa_v3"):
+            # CUDA -> MUSA executes on the remote S4000 host.  The local
+            # Docker image is not used by migration_trial for this scenario;
+            # it is only an optional record/reproducibility artifact.  Do not
+            # fail the doctor check just because the local image is absent.
+            transport = str(sc.get("transport") or "auto")
+            remote = Path(str(sc.get("remote_config") or "env/remote.yaml"))
+            if not remote.is_absolute():
+                remote = ROOT / remote
+            if transport == "local":
+                report.warn("musa transport", "local: agent path only, no S4000 judge")
+                report.ok("image cuda_to_musa", "not required for local transport")
+            elif remote.is_file():
+                report.ok("musa remote config", str(remote))
+                if image and _image_exists(image):
+                    report.ok("image cuda_to_musa", f"{image} (optional)")
+                else:
+                    report.ok("image cuda_to_musa", "not required for ssh transport")
+            else:
+                report.fail("musa remote config", f"missing {remote}; copy env/remote.yaml.example")
+            continue
         if image and _image_exists(image):
             report.ok(f"image {name}", image)
         else:
@@ -367,17 +390,6 @@ def cmd_doctor(args: argparse.Namespace) -> int:
                     report.ok("vsipl root", str(vsipl))
                 else:
                     report.fail("vsipl root", f"{vsipl} is not a directory")
-        if name == "cuda_to_musa":
-            transport = str(sc.get("transport") or "auto")
-            remote = Path(str(sc.get("remote_config") or "env/remote.yaml"))
-            if not remote.is_absolute():
-                remote = ROOT / remote
-            if transport == "local":
-                report.warn("musa transport", "local: agent path only, no S4000 judge")
-            elif remote.is_file():
-                report.ok("musa remote config", str(remote))
-            else:
-                report.fail("musa remote config", f"missing {remote}; copy env/remote.yaml.example")
 
     arm = args.arm
     if arm in (None, "method"):
@@ -475,7 +487,7 @@ def _run_origin(args: argparse.Namespace, cfg: Dict[str, Any]) -> int:
         scenarios = _enabled_scenarios(cfg, [])
     if args.smoke:
         # origin does not support the MUSA remote execution plane.
-        scenarios = [name for name in scenarios if name != "cuda_to_musa"]
+        scenarios = [name for name in scenarios if not name.startswith("cuda_to_musa")]
         args.only = ["l2_rubberband_fft", "l2_libuv_thread"]
         if args.runs is None:
             args.runs = 1

@@ -41,3 +41,11 @@ v3/ipp_vsipl/history/lock.json
 v3/ipp_vsipl/history/README.md
 v3/ipp_vsipl/history/runs/
 v3/ipp_vsipl/library_generated/
+
+
+v3/cuda_to_musa/history/examples/
+v3/cuda_to_musa/history/index.json
+v3/cuda_to_musa/history/lock.json
+v3/cuda_to_musa/history/README.md
+v3/cuda_to_musa/history/runs/
+v3/cuda_to_musa/library_generated/

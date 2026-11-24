@@ -23,9 +23,11 @@ What this makes runnable for the method arm:
 * every other kernel stage resolves its run/task instead of failing with
   ``run is not registered``.
 
-A prebuilt library is not linked: the component method arm always builds its
-components from the current attempt's workspace, so the extraction cost and the
-result stay attributable to the same task.
+The default component method arm builds its components from the current
+attempt's workspace.  For a retrieval-only evaluation, the evaluator may pass
+``--bundle``; migration_trial stages that prebuilt library into
+``outputs/full_library`` after this adapter is created, so retrieval reads the
+same library path without re-extracting components.
 
 CLI::
 
@@ -227,9 +229,10 @@ def build_workspace(
                 ignore=shutil.ignore_patterns("component_bundle", ".git"),
             )
         stage_repository = snapshot if snapshot.is_dir() else workspace
-        # Migration preparation builds a fresh library from this attempt's
-        # workspace.  A prebuilt library is recorded for diagnostics but is not
-        # linked as the mutable ``outputs/full_library`` the prep agent writes.
+        # Migration preparation normally builds a fresh library from this
+        # attempt's workspace.  When the evaluator supplies ``--bundle``,
+        # migration_trial stages that prebuilt library into this path after
+        # the adapter is created; retrieval then reads the staged bundle.
         method_library = method_root / "outputs" / "full_library"
         method_library.mkdir(parents=True, exist_ok=True)
         selection_path = (

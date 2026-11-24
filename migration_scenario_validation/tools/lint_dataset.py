@@ -25,6 +25,7 @@ def _parents() -> List[Path]:
         ROOT / "v1" / "ipp_vsipl_tasks",
         ROOT / "v3" / "ipp_vsipl" / "tasks",
         ROOT / "v1" / "cuda_to_musa" / "tasks",
+        ROOT / "v3" / "cuda_to_musa" / "tasks",
         ROOT / "v3" / "windows_to_kylin" / "tasks",
     ]
 
