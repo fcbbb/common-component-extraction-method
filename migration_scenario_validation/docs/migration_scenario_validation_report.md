@@ -2,7 +2,7 @@
 
 ## 摘要
 
-代码迁移通常需要把一套平台接口的实现替换为目标平台的对应实现，主要成本集中在同一约定于多个调用点重复出现，以及目标运行时接口与源接口之间的多对一映射。智能体在修改代码前，先从当前工作区整理共性组件，再引入其他项目的迁移经验组件，二者合并为当前任务的迁移方案；整理与迁移可以在同一会话完成，也可以拆分为独立阶段，最终交付工作区。报告按三个场景说明方法、验证数据与判分方式。目前 Windows → 麒麟 与 IPP → VSIPL 均已完成 20 题配对集的验证；CUDA → MUSA 尚未完成。
+代码迁移通常需要把一套平台接口的实现替换为目标平台的对应实现，主要成本集中在同一约定于多个调用点重复出现，以及目标运行时接口与源接口之间的多对一映射。智能体在修改代码前，先从当前工作区整理共性组件，再引入其他项目的迁移经验组件，二者合并为当前任务的迁移方案；整理与迁移可以在同一会话完成，也可以拆分为独立阶段，最终交付工作区。报告按三个场景说明方法、验证数据与判分方式。三个场景均已完成 20 题配对集验证：Windows → 麒麟、IPP → VSIPL 与 CUDA → MUSA。
 
 ## 1 智能体设计
 
@@ -34,7 +34,7 @@
 
 ## 2 验证数据
 
-三个场景的题目均来自固定版本的上游代码或固定合成快照。本报告使用 Windows → 麒麟 与 IPP → VSIPL 各 20 个已配对题目；数据规模、切分方式与判分办法见附录 A。配对结果按题目逐题记录：Windows 题按构建、行为、旧接口与目标接口四项判定；IPP V3 题按构建、行为/数值、旧接口清除与目标接口四项判定。
+三个场景的题目均来自固定版本的上游代码或固定合成快照。本报告使用 Windows → 麒麟、IPP → VSIPL 与 CUDA → MUSA 各 20 个已配对题目；数据规模、切分方式与判分办法见附录 A。配对结果按题目逐题记录：Windows 题按构建、行为、旧接口与目标接口四项判定；IPP V3 题按构建、行为/数值、旧接口清除与目标接口四项判定；CUDA V3 题按构建、hidden 数值、CUDA 标记清除与 MUSA kernel 结构四项判定。
 
 ## 3 实验
 
@@ -47,14 +47,13 @@
 对照条件采用直接迁移。两组使用同一模型（DeepSeek-V4.1-Flash-1017）、题面、任务镜像与构建、判分命令；唯一区别是组件方法组先检索已发布组件库并物化到工作区、附加方法提示，再进入迁移，直接迁移组不提供组件库、不执行检索、不附加提示。本轮组件方法组从检索开始，不重新抽取组件；检索与迁移调用分开记录。
 
 ### 3.3 指标
-### 3.3 指标
 
 主指标为构建、数值、旧接口清除、隐藏测试四项全部通过的通过率；分项通过率单独报告。成本以单题模型调用量、运行时间与工具调用次数衡量，逐题记录在证据数据中。配对比较报告同题两组差值。辅助指标包括检索命中率、检索精度、调用点覆盖率、跨位置一致性差异与回归率。
 主指标为构建、数值、旧接口清除、隐藏测试四项全部通过的通过率；分项通过率单独报告。成本以单题模型调用量、运行时间与工具调用次数衡量，逐题记录在证据数据中。配对比较报告同题两组差值。辅助指标包括检索命中率、检索精度、调用点覆盖率、跨位置一致性差异与回归率。
 
 ### 3.4 主结果
 
-表 1 给出 Windows → 麒麟 的配对结果，表 2 给出 IPP → VSIPL V3 的配对结果。每个场景每道题每个条件各 1 次完整运行。
+表 1 给出 Windows → 麒麟 的配对结果，表 2 给出 IPP → VSIPL V3 的配对结果，表 3 给出 CUDA → MUSA V3 的配对结果。每个场景每道题每个条件各 1 次完整运行。
 
 **表 1　Windows → 麒麟 配对结果**
 
@@ -76,6 +75,14 @@ IPP → VSIPL V3 的直接迁移通过 13/20（65%），组件方法通过 18/20
 
 注：IPP 的“四项全部通过”指构建、隐藏行为/数值测试、IPP 旧接口清除与 VSIPL 目标接口检查均通过。V3 的 20 个任务为固定合成组件任务，建库任务 s1–s3 与 held-out 任务 h1–h20 严格隔离；method 臂仅检索冻结组件库，不重新抽取组件。
 
+**表 3　CUDA → MUSA V3 配对结果**
+
+| 场景 | 条件 | 运行数 | 四项全部通过 | 通过率 |
+|---|---|---:|---:|---:|
+| CUDA → MUSA V3（20 题配对集） | 直接迁移 / 组件方法 | 20 / 20 | 11/20 / 14/20 | 55% / 70% |
+
+CUDA V3 的 direct 通过 11/20（55%），method 通过 14/20（70%）。20 题中 3 题为 direct fail / method pass（h13、h19、h20），6 题为 both fail（h12、h14、h15、h16、h17、h18），11 题为 both pass（h1–h11）；不存在 direct pass / method fail。三个敏感任务均由 s1 组件 README 的 running-state 契约区分：direct 更新 `running_mean`、`running_var`、`num_batches_tracked`，method 按组件约定不改这些状态。
+
 文件系统请求题与 IPP header-only 典型任务的分析见附录 B。
 
 ## 4 结论
@@ -84,7 +91,9 @@ Windows → 麒麟 的配对结果支持组件知识辅助迁移的有效性。�
 
 IPP → VSIPL V3 的配对结果同样支持组件检索对抽象迁移任务的正向作用。直接迁移通过 13/20（65%），组件方法通过 18/20（90%），提高 25 个百分点；5 个 direct fail / method pass 全部集中在缺少 `src/*.c` 的 header-only 任务，2 个双失败任务 h6、h9 则说明组件知识并未覆盖全部边界。组件方法的增益来自对 FFT 缩放、lag 顺序、NCO/FIR 状态和块边界的检索，而不是重新抽取组件。由于 source-present 任务多为 both pass，结果不能解释为组件方法在所有 IPP 任务上普遍优于直接迁移。
 
-综合两个已完成场景，先检索并应用已发布的迁移组件，在抽象接口、状态化流水线和深层语义规则较多的任务上比直接迁移更可靠；在源码完整、语义显式的任务上，直接迁移本身已足够。该结论受单次运行、合成任务和有限样本限制，仍需在更多真实仓库上验证。
+CUDA → MUSA V3 的记录结果同样显示组件边界的双面性。h13、h19、h20 的 hidden evaluator 检查输出和 BatchNorm running state；direct 的输出数值正确但更新了 `running_mean`、`running_var` 和 `num_batches_tracked`，method 通过检索 s1 组件 README 得知 fused forward 不更新这些状态，因而通过。h12、h14、h15–h18 则说明组件不是充分条件：grouped/dilated/3-D 卷积、transposed convolution、paged attention 和 3-D unpool 超出组件覆盖，h14 的 method 也更新了 state，最终均为 both fail。
+
+综合三个已完成场景，先检索并应用已发布的迁移组件，在抽象接口、状态化流水线和深层语义规则较多的任务上比直接迁移更可靠；在源码完整、语义显式的任务上，直接迁移本身已足够。该结论受单次运行、合成任务和有限样本限制，仍需在更多真实仓库上验证。
 
 &nbsp;
 
@@ -98,9 +107,9 @@ IPP → VSIPL V3 的配对结果同样支持组件检索对抽象迁移任务的
 |---|---|---|---|---|---|
 | Windows → 麒麟 | Windows 平台 C++ 迁移至麒麟 V10 SP3（GCC/CMake） | libuv、libarchive 建库，libgit2 试跑，POCO、nginx、curl、OpenCV 测试；仓库级切分 | 28 包：合成 4（组件题 3）、负控 1、仓库/模块 23；本轮配对 20 题 | 麒麟 x86_64；隐藏与上游测试，旧接口清除 | 已完成 |
 | IPP → VSIPL | Intel IPP C/C++ 迁移至 VSIPL 1.3（jvsip） | 20 个 held-out 合成组件任务；固定快照；建库任务 s1–s3 与 h1–h20 严格隔离 | 20 题：L1 2、L2 10、L3 8；source-present 12、header-only 8 | x86_64/jvsip；构建、行为/数值、IPP 符号清零、VSIPL 目标接口 | 已完成 |
-| CUDA → MUSA | CUDA 与 PyTorch 算子迁移至 MUSA C（MTT S4000） | MultiKernelBench 固定快照，每题一个测试算子 | 20 题：函数级 6、模块级 7、仓库级 7；上游样例 2、自写正控 18 | MTT S4000 真机；上游评测器，CUDA 接口清除，内核结构检查 | 未完成 |
+| CUDA → MUSA | CUDA 与 PyTorch 算子迁移至 MUSA C（MTT S4000） | MultiKernelBench 固定快照 + 自写 hidden reference；3 个 library source 与 20 个 held-out 隔离 | 20 题：L2 1、L3 19；reference-visible 9、reference-hidden 11；D-F/M-P 3、both fail 6、both pass 11 | MTT S4000 真机；构建、hidden 数值、CUDA 标记清除、MUSA kernel 结构检查 | 已完成 |
 
-三个场景均固定源码或合成快照版本，并记录许可证与来源。IPP V3 的 20 个任务覆盖 spectral、sonar、radar 与 communications 四个算法域；其中 header-only 任务不提供 `src/*.c`，要求智能体从 ABI、公开 smoke test 与冻结组件库重建实现。
+三个场景均固定源码或合成快照版本，并记录许可证与来源。IPP V3 的 20 个任务覆盖 spectral、sonar、radar 与 communications 四个算法域；其中 header-only 任务不提供 `src/*.c`，要求智能体从 ABI、公开 smoke test 与冻结组件库重建实现。CUDA V3 的 20 个任务由固定 MultiKernelBench 算子、自写 hidden reference 和 s1/s2/s3 组件来源构成。
 
 ## 附录 B 案例分析
 
@@ -150,3 +159,24 @@ FAIL split=2 lag=0 got=(1.28366,-0.510847) want=(1.54031,-0.609879)
 因此，组件方法的优势不在“把答案复制进来”，而在把源平台迁移中反复出现、但从 ABI 和公开测试看不出来的边界条件提前提供给智能体。智能体仍然要写 VSIPL 实现、通过目标 API 门禁和 IPP 符号清除检查；组件减少的是对 lag 对齐、状态生命周期和抽取时机的错误猜测。同一题面、同一 judge 下，method 的构建、隐藏测试、旧接口清除和目标接口检查全部通过，说明差异来自组件规则的检索与应用，而不是判分门放宽。
 
 这个例子同时划定了结论边界：h7 说明组件方法在 header-only、状态化任务上有效；h6 和 h9 的 both fail 则说明组件卡片没有覆盖全部 capacity、reference replacement 和门限语义，组件方法不是充分条件。
+
+### B.3 CUDA → MUSA：running-state 契约（h13、h19、h20）
+
+CUDA V3 的三个 direct fail / method pass 任务都围绕同一个组件 README 契约，而不是任务专用提示：
+
+```text
+training-mode fused forward 不更新
+running_mean / running_var / num_batches_tracked；
+这些状态由 caller 管理。
+```
+
+h13 使用原始 running-state 几何；h19、h20 使用不同 seed、卷积几何和输入形状，避免把同一题复制三次。hidden evaluator 先比较输出，再检查 three state buffers 是否保持不变。direct 的输出可以与 reference 一致，但 forward 仍然更新 running statistics，因此 judge 报：
+
+```text
+RuntimeError: fused forward mutated BatchNorm running statistics / batch counter
+```
+
+method 通过正常 bundle 读取 s1 组件的 README；组件明确记录了 fused kernels 不负责这些 updates。method 仍然要写 MUSA kernel、通过 CUDA 标记清除和 kernel 结构检查，组件没有替它生成实现。h20 的 method 在 v3/v4 曾因采样路径再次更新 state 而失败，v5 通过；这既说明契约是有效的判别点，也说明单次运行存在模型采样方差。
+
+h14 是同一 running-state 几何的第二个变体，但 method 也更新了 state，最终 both fail；h12、h15–h18 则超出组件覆盖，同样 both fail。这个案例同时说明：组件 README 只能解释它明确写出的契约，不能把组件方法外推为所有 CUDA 迁移任务的通用优势。
+
