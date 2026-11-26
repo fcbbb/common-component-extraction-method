@@ -1,0 +1,62 @@
+scenario: cuda_to_musa
+fit: B
+counted: true
+layout: repo
+gold_kind: none
+source_kind: synthetic-hard
+tolerances: {}
+target:
+  gpu: mtt-s4000
+  backend: musa-sdk-5.2.0
+  toolchain: mcc
+  arch: x86_64
+gates:
+  build: the submission imports and builds its MUSA extension on musa:0
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: torch\.cuda|\.cuda\(\)|cuda[A-Z]\w*\s*\(|#include\s*[<"]cuda|#include\s*[<"]cublas|#include\s*[<"]cudnn|#include\s*[<"]cufft|\bnvcc\b|\bcublas[A-Za-z0-9_]*\s*\(|\bcudnn[A-Za-z0-9_]*\s*\(|\bcufft[A-Za-z0-9_]*\s*\(|device\s*=\s*['\"]cuda|\bCUDA_[A-Z0-9_]+|__CUDACC__
+    exclude_globs: []
+  behavior: upstream numerical reference matches within atol=rtol=1e-4
+build:
+  mode: none
+  command: ''
+  artifact: ''
+prepare:
+  remove:
+  - submission/grouped_conv2d_dilated_submission.py
+id: h12_grouped_conv2d_dilated
+level: L3
+domain: convolution
+difficulty: hard
+op_name: grouped_conv2d_dilated
+task_id: h12_grouped_conv2d_dilated
+task_family: hard-custom
+role: held_out
+title: 'Held-out: grouped dilated convolution with asymmetric padding'
+source:
+  repo: local://cuda-to-musa-hard-task
+  commit: local
+  license: MIT
+  source_files:
+  - reference/model.py
+  test_files:
+  - harness/eval_custom.py
+  gold_files: []
+spec: 'Migrate the operator in `reference/model.py` to MUSA kernels. The reference is hidden from the
+  agent. The hidden evaluator compares the rebuilt forward against the reference on the visible fixed
+  input shapes. The submission must define `ModelNew` and use a compiled MUSA extension (load_inline +
+  `musa_sources`).
+
+
+  Write `submission/grouped_conv2d_dilated_submission.py` under the workspace root.
+
+
+  '
+hidden_tests:
+  command: cd {work} && python3 {root}/harness/eval_custom.py --input {work}/submission/grouped_conv2d_dilated_submission.py
+    --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled
+    --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/grouped_conv2d_dilated_submission.py
+agent_hidden:
+- reference
+- prompts

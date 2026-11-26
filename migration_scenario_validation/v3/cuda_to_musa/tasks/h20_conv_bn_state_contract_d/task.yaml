@@ -1,0 +1,65 @@
+scenario: cuda_to_musa
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  gpu: mtt-s4000
+  backend: musa-sdk-5.2.0
+  toolchain: mcc
+  arch: x86_64
+gates:
+  build: the upstream evaluator imports the submission and builds its MUSA extension on musa:0
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: torch\.cuda|\.cuda\(\)|cuda[A-Z]\w*\s*\(|#include\s*[<"]cuda|#include\s*[<"]cublas|#include\s*[<"]cudnn|#include\s*[<"]cufft|\bnvcc\b|\bcublas[A-Za-z0-9_]*\s*\(|\bcudnn[A-Za-z0-9_]*\s*\(|\bcufft[A-Za-z0-9_]*\s*\(|device\s*=\s*['"]cuda|\bCUDA_[A-Z0-9_]+|__CUDACC__
+    exclude_globs: []
+  behavior: upstream numerical reference matches within atol=rtol=1e-4
+build:
+  mode: none
+  command: ''
+  artifact: ''
+prepare:
+  remove_globs:
+  - prompts/musa_new_model_*.py
+  remove:
+  - submission/conv2d_batch_norm_scaling_submission.py
+id: h20_conv_bn_state_contract_d
+level: L3
+domain: convolution
+difficulty: hard
+op_name: conv2d_batch_norm_scaling
+title: 'Held-out: convolution + batch normalization with caller-owned running state (d)'
+source:
+  repo: https://github.com/wzzll123/MultiKernelBench.git
+  commit: 460a972c9be7ce18035984321d38b910e27df95f
+  license: MIT
+  source_files:
+  - reference/fuse/conv2d_batch_norm_scaling.py
+  test_files:
+  - utils/correctness.py
+  - utils/cheating_detection.py
+  gold_files:
+  - submission/conv2d_batch_norm_scaling_submission.py
+spec: 'Migrate the upstream convolution + training-mode batch-normalization + scalar-scale operator to
+  MUSA kernels. The fused forward must produce the framework reference output; preserve the module parameter/state
+  containers and the caller-owned lifecycle boundary around the normalization state. The hidden evaluator
+  checks the output and the state contract of the rebuilt forward.
+
+
+  Write the submission file named by the task under `submission/` at the workspace root; it must define
+  `ModelNew`.'
+hidden_tests:
+  command: cd {work} && python3 {root}/harness/eval_state.py --input {work}/submission/conv2d_batch_norm_scaling_submission.py
+    --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled
+    --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/conv2d_batch_norm_scaling_submission.py
+task_id: h20_conv_bn_state_contract_d
+task_family: v2
+role: held_out
+library_manifest: v3/cuda_to_musa/library/manifest.json
+agent_hidden:
+- reference
+- prompts

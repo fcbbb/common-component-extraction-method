@@ -247,6 +247,7 @@ class RemoteDshBackend:
             "COMPONENT_DSH_ALLOWED_CWDS": json.dumps([request.container_cwd]),
             "COMPONENT_DSH_DEFAULT_CWD": request.container_cwd,
             "COMPONENT_DSH_REMOTE_CWD": self.remote_dsh_root,
+            "COMPONENT_DSH_AGENT_USER": str(self.config.get("agent_user") or ""),
             "COMPONENT_DSH_COMMAND_TIMEOUT": str(request.command_timeout_seconds),
             "COMPONENT_DSH_SUBMISSION_MODE": request.submission_mode,
             "COMPONENT_DSH_SUBMISSION_ROLE": request.submission_role or request.role,
@@ -316,6 +317,23 @@ class RemoteDshBackend:
         )
         if rc != 0:
             raise RuntimeError(f"cannot create remote directory {directory}: {out[-500:]}")
+
+    def _prepare_agent_ownership(self, remote_output_dir: str) -> None:
+        """Give the dropped agent user its home/tmp while keeping task roots root-owned."""
+        user = str(self.config.get("agent_user") or "").strip()
+        if not user:
+            return
+        quoted = _quote(user)
+        command = (
+            f"chown -R root:root {_quote(self.remote_repo)} && "
+            f"chmod -R a+rX {_quote(self.remote_repo)} && "
+            f"chown -R {quoted}:{quoted} {_quote(remote_output_dir)} && "
+            f"chmod -R u+rwX,g+rX,o-rwx {_quote(remote_output_dir)} && "
+            f"chmod 711 /root"
+        )
+        rc, out = rs._ssh(self.config, command, timeout=600)
+        if rc != 0:
+            raise RuntimeError(f"cannot prepare agent ownership: {out[-800:]}")
 
     def _ensure_profile(self, remote_dsh_home: str, remote_home: str, profile: str) -> None:
         """Create the profile in the attempt's DSH_HOME and link the plugins.
@@ -496,6 +514,7 @@ done
                 str(remote_output / "agent_home"),
                 profile,
             )
+            self._prepare_agent_ownership(str(remote_output))
             env_path = request.output_dir / "remote_env.json"
             env_path.write_text(
                 json.dumps(environment, ensure_ascii=False), encoding="utf-8"

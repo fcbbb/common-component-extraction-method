@@ -1,0 +1,12 @@
+{
+  "task_id": "h12_grouped_conv2d_dilated",
+  "materialized": true,
+  "gold_kind": "none",
+  "repo": "local://cuda-to-musa-hard-task",
+  "commit": "local",
+  "license": "MIT",
+  "gold_files": [],
+  "remove": [
+    "submission/grouped_conv2d_dilated_submission.py"
+  ]
+}

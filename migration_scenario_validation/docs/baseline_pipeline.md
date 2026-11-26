@@ -212,7 +212,7 @@ reports/baseline/<label>/
 | MUSA `--musa-transport local` 工具路径自检（fake model） | SKIP，agent=Submitted，4.0s（只验证 shim 工具名，不是链路证据） |
 | 三题 dry-run | 选择正确，退出 0 |
 | MUSA 远端链路（SSH + askpass + 远端 pinned DSH + 远端判分） | **PASS**；`dsh 0.2.2-rc.1` / Node 24.9.0 / profile `component-method-host-operator`，工作区只有远端一份副本 |
-| MUSA 方法臂 host 阶段平面（fake model） | 适配器 `active (remote)`（`--workspace` 指向尝试工作区），会话环境含 `COMPONENT_DSH_STAGE_RUNTIME=host`，无 Docker 报错；fixture 不产出提交，按约定以 `NoValidatedSubmission` 结束 |
+| MUSA 方法臂 host 阶段平面（fake model） | 适配器 `active (remote)`（`--workspace` 指向尝试工作区），会话环境含 `COMPONENT_DSH_STAGE_RUNTIME=host`，无 Docker 报错；fixture 不产出提交；host profile 无 validated file，按约定以 `Submitted` 结束（judge 负责 workspace 判分） |
 | MUSA 远端 58 包抽取（host 平面，fake model） | 58/58 包走 host 阶段 agent；`agent_task.txt` 无 `/testbed`、`/component-output`、`controlled_bash`；`workspace_integrity.json` unchanged（572 文件） |
 | 远端 job 状态持久化 | `source_scan --job`（kernel CLI，starter 退出后轮询）→ `succeeded`，58 包 summary 可读；修复了监控线程随 kernel 退出导致的永久 `running` |
 | 远端 gold 泄漏检查 | repo 内 `gold`/`gold_authored`/`work` 目录 0 个、`musa_new_model_*` 0 个；workspace 0 个 |

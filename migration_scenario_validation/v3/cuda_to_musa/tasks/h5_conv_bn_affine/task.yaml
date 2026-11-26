@@ -1,0 +1,66 @@
+scenario: cuda_to_musa
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  gpu: mtt-s4000
+  backend: musa-sdk-5.2.0
+  toolchain: mcc
+  arch: x86_64
+gates:
+  build: the upstream evaluator imports the submission and builds its MUSA extension on musa:0
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: torch\.cuda|\.cuda\(\)|cuda[A-Z]\w*\s*\(|#include\s*[<"]cuda|#include\s*[<"]cublas|#include\s*[<"]cudnn|#include\s*[<"]cufft|\bnvcc\b|\bcublas[A-Za-z0-9_]*\s*\(|\bcudnn[A-Za-z0-9_]*\s*\(|\bcufft[A-Za-z0-9_]*\s*\(|device\s*=\s*['"]cuda|\bCUDA_[A-Z0-9_]+|__CUDACC__
+    exclude_globs: []
+  behavior: upstream numerical reference matches within atol=rtol=1e-4
+build:
+  mode: none
+  command: ''
+  artifact: ''
+prepare:
+  remove_globs:
+  - prompts/musa_new_model_*.py
+  remove:
+  - submission/conv2d_batch_norm_scaling_submission.py
+id: h5_conv_bn_affine
+level: L3
+domain: convolution
+difficulty: hard
+op_name: conv2d_batch_norm_scaling
+title: 'Held-out: conv2d + training BatchNorm + scale with non-identity affine'
+source:
+  repo: https://github.com/wzzll123/MultiKernelBench.git
+  commit: 460a972c9be7ce18035984321d38b910e27df95f
+  license: MIT
+  source_files:
+  - reference/fuse/conv2d_batch_norm_scaling.py
+  test_files:
+  - utils/correctness.py
+  - utils/cheating_detection.py
+  gold_files:
+  - submission/conv2d_batch_norm_scaling_submission.py
+spec: '`reference/fuse/conv2d_batch_norm_scaling.py` is the upstream operator contract: `nn.Conv2d(8,
+  64, 3)` on a (128, 8, 128, 128) float32 input, then `nn.BatchNorm2d(64)` in training mode, then multiply
+  by 2.0.
+
+
+  The hidden check loads non-identity affine `bn.weight` / `bn.bias` values into both the reference and
+  the rebuilt model, and also checks a non-contiguous NCHW input view.  The rebuilt forward must consequently
+  read the normalization scale and shift from the module parameter containers rather than assuming identity.
+
+
+  Write the submission file named by the task under `submission/` at the workspace root; it must define
+  `ModelNew`.'
+hidden_tests:
+  command: cd {work} && python3 {root}/harness/eval_affine.py --input {work}/submission/conv2d_batch_norm_scaling_submission.py
+    --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled
+    --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/conv2d_batch_norm_scaling_submission.py
+task_id: h5_conv_bn_affine
+task_family: v2
+role: held_out
+library_manifest: v3/cuda_to_musa/library/manifest.json

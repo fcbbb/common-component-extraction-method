@@ -1,0 +1,65 @@
+scenario: cuda_to_musa
+fit: B
+counted: true
+layout: repo
+gold_kind: benchmark-judge
+source_kind: upstream-kernel-benchmark
+tolerances: {}
+target:
+  gpu: mtt-s4000
+  backend: musa-sdk-5.2.0
+  toolchain: mcc
+  arch: x86_64
+gates:
+  build: the upstream evaluator imports the submission and builds its MUSA extension on musa:0
+  api_removal:
+    source_dirs:
+    - submission
+    source_regex: torch\.cuda|\.cuda\(\)|cuda[A-Z]\w*\s*\(|#include\s*[<"]cuda|#include\s*[<"]cublas|#include\s*[<"]cudnn|#include\s*[<"]cufft|\bnvcc\b|\bcublas[A-Za-z0-9_]*\s*\(|\bcudnn[A-Za-z0-9_]*\s*\(|\bcufft[A-Za-z0-9_]*\s*\(|device\s*=\s*['"]cuda|\bCUDA_[A-Z0-9_]+|__CUDACC__
+    exclude_globs: []
+  behavior: upstream numerical reference matches within atol=rtol=1e-4
+build:
+  mode: none
+  command: ''
+  artifact: ''
+prepare:
+  remove_globs:
+  - prompts/musa_new_model_*.py
+  remove:
+  - submission/kv_cached_attention_inference_submission.py
+id: h7_kv_cache_noncontig
+level: L3
+domain: attention
+difficulty: hard
+op_name: kv_cached_attention_inference
+title: 'Held-out: decode attention over a non-contiguous KV cache'
+source:
+  repo: https://github.com/wzzll123/MultiKernelBench.git
+  commit: 460a972c9be7ce18035984321d38b910e27df95f
+  license: MIT
+  source_files:
+  - reference/attention/kv_cached_attention_inference.py
+  test_files:
+  - utils/correctness.py
+  - utils/cheating_detection.py
+  gold_files:
+  - submission/kv_cached_attention_inference_submission.py
+spec: '`reference/attention/kv_cached_attention_inference.py` is the upstream operator contract: rank-3
+  float32 Q/K/V, batch one, one query position, a KV cache of arbitrary length, default scale and no mask.
+
+
+  The hidden check passes K and V as transposed non-contiguous views and uses a key length of 257, so
+  the cache must be normalized (or indexed with explicit strides) before the score, normalization and
+  weighted-sum stages. The returned tensor must match the framework attention result within atol=rtol=1e-4.
+
+
+  Write the submission file named by the task under `submission/` at the workspace root; it must define
+  `ModelNew`.'
+hidden_tests:
+  command: cd {work} && python3 {root}/harness/eval_kv.py --input {work}/submission/kv_cached_attention_inference_submission.py
+    --result {build}/result.json && python3 {root}/harness/check_result.py {build}/result.json --require-compiled
+    --require-correct --forbid-cheating && python3 {root}/harness/check_musa_submission.py {work}/submission/kv_cached_attention_inference_submission.py
+task_id: h7_kv_cache_noncontig
+task_family: v2
+role: held_out
+library_manifest: v3/cuda_to_musa/library/manifest.json

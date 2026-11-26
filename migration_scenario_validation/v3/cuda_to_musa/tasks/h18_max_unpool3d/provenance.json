@@ -1,0 +1,12 @@
+{
+  "task_id": "h18_max_unpool3d",
+  "materialized": true,
+  "gold_kind": "none",
+  "repo": "local://cuda-to-musa-hard-task",
+  "commit": "local",
+  "license": "MIT",
+  "gold_files": [],
+  "remove": [
+    "submission/max_unpool3d_submission.py"
+  ]
+}

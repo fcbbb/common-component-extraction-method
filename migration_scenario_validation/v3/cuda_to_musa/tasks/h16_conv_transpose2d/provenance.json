@@ -1,0 +1,12 @@
+{
+  "task_id": "h16_conv_transpose2d",
+  "materialized": true,
+  "gold_kind": "none",
+  "repo": "local://cuda-to-musa-hard-task",
+  "commit": "local",
+  "license": "MIT",
+  "gold_files": [],
+  "remove": [
+    "submission/conv_transpose2d_submission.py"
+  ]
+}

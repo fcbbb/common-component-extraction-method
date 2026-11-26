@@ -171,6 +171,35 @@ def test_dsh_events_accept_mechanically_validated_patch_submission(tmp_path):
     assert result.completion_validated is True
 
 
+def test_dsh_none_mode_completion_is_not_a_missing_submission(tmp_path):
+    events = tmp_path / "dsh_events.jsonl"
+    _write_jsonl(
+        events,
+        [
+            {"type": "session", "sessionId": "session-none-ok"},
+            {
+                "type": "final",
+                "sessionId": "session-none-ok",
+                "reason": {"kind": "completed"},
+                "text": "done",
+            },
+        ],
+    )
+
+    result = result_from_dsh_events(
+        events,
+        return_code=0,
+        validated_submission_path=tmp_path / "missing.json",
+        submission_mode="none",
+        expected_role="task",
+        expected_container="task-container",
+    )
+
+    assert result.status == "Submitted"
+    assert result.completion_validated is False
+    assert result.error is None
+
+
 def test_dsh_none_mode_cannot_be_promoted_by_a_validation_record(tmp_path):
     events = tmp_path / "dsh_events.jsonl"
     validated = tmp_path / "validated_submission.json"

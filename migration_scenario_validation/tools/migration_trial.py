@@ -501,6 +501,143 @@ print(json.dumps(info, sort_keys=True))
         return {"error": f"cannot parse remote runtime identity: {exc}", "output": out[-1500:]}
 
 
+def _clear_remote_attempt_state(cfg: Dict[str, Any]) -> Tuple[int, str]:
+    """Remove all prior attempt material before an agent starts.
+
+    ``runs/*`` contains complete prior workspaces (including submissions),
+    task roots and method bundles.  ``torch_extensions`` caches the source of
+    compiled controls, and the judge leaves temporary work trees in ``/tmp``;
+    all three are readable by a root agent on this host.
+    """
+    root = str(cfg.get("remote_root") or "/root/migration-bench")
+    agent_user = str(cfg.get("agent_user") or "").strip()
+    kill_agent = (
+        f"pkill -u {shlex.quote(agent_user)} 2>/dev/null || true; "
+        if agent_user else ""
+    )
+    command = (
+        kill_agent +
+        f"mkdir -p {shlex.quote(root + '/runs')} && "
+        f"find {shlex.quote(root + '/runs')} -mindepth 1 -maxdepth 1 "
+        f"-exec rm -rf {{}} + 2>/dev/null || true; "
+        f"rm -rf {shlex.quote(root + '/repo/migration_scenario_validation/v1')} "
+        f"{shlex.quote(root + '/repo/migration_scenario_validation/v2')} "
+        f"{shlex.quote(root + '/repo/migration_scenario_validation/docs')}; "
+        f"find {shlex.quote(root + '/repo/migration_scenario_validation')} -type f "
+        f"\\( -name README.md -o -name SPLIT.md -o -name slate.yaml \\) -delete 2>/dev/null || true; "
+        f"find {shlex.quote(root + '/repo/migration_scenario_validation')} -type d "
+        f"\\( -name history -o -name library -o -name library_generated "
+        f"-o -name gold -o -name gold_authored -o -name work -o -name reports "
+        f"-o -name runs \\) -prune -exec rm -rf {{}} + 2>/dev/null || true; "
+        "find /root/.cache/torch_extensions -mindepth 1 -maxdepth 1 "
+        "-exec rm -rf {} + 2>/dev/null || true; "
+        "rm -rf /tmp/migration-judge-* /tmp/judge-build-* /tmp/evalsim"
+    )
+    return _ssh_run(cfg, command, timeout=600)
+
+
+def _sanitize_remote_task(cfg: Dict[str, Any], remote_dir: str) -> Tuple[int, str]:
+    """Hide evaluator-only task-root material while the agent is running.
+
+    The agent still needs nothing from ``harness/``; its workspace is the
+    source tree.  ``task.yaml`` is reduced to the contract used by the method
+    adapter, with the hidden-test command removed.  The full task root is
+    restored only after the agent has exited, immediately before judging.
+    """
+    code = (
+        "import pathlib, sys, yaml; "
+        "p=pathlib.Path(sys.argv[1]); "
+        "d=yaml.safe_load(p.read_text()); "
+        "d.pop('hidden_tests', None); "
+        "d.pop('gates', None); "
+        "s=d.get('source') or {}; "
+        "s.pop('gold_files', None); s.pop('test_files', None); "
+        "d['source']=s; "
+        "p.write_text(yaml.safe_dump(d, sort_keys=False, allow_unicode=True, width=100))"
+    )
+    return _ssh_run(
+        cfg,
+        f"find {shlex.quote(remote_dir)} -mindepth 1 -maxdepth 1 "
+        f"! -name task.yaml -exec rm -rf {{}} + && "
+        f"python3 -c {shlex.quote(code)} {shlex.quote(remote_dir + '/task.yaml')}",
+        timeout=120,
+    )
+
+
+def _stage_remote_task(cfg: Dict[str, Any], task_root: Path, remote_dir: str,
+                       *, shared_dir: str = "", remote_bench: str = "",
+                       sanitize: bool = False) -> Tuple[int, str]:
+    """Stage only the current task package on the remote execution plane.
+
+    The repository mirror deliberately excludes every ``tasks/`` directory.
+    The judge and the method adapter only need this attempt's task root, so
+    copy it outside the repository.  ``work/`` and ``gold/`` stay out of the
+    agent-visible tree; the judge receives ``work`` through its separate
+    ``base_work`` staging step.
+    """
+    rc, out = _ssh_run(cfg, f"mkdir -p {shlex.quote(remote_dir)}")
+    if rc != 0:
+        return rc, out
+    if remote_bench:
+        # rsync --delete does not remove source-excluded task directories.
+        # Prune the entire remote task catalogue before staging this attempt's
+        # package, otherwise an agent can still read other held-out YAMLs.
+        rc, out = _ssh_run(
+            cfg,
+            f"find {shlex.quote(remote_bench)} -type d -name tasks -prune "
+            f"-exec rm -rf {{}} + 2>/dev/null || true",
+        )
+        if rc != 0:
+            return rc, out
+    rc, out = _rsync(
+        cfg,
+        task_root,
+        remote_dir,
+        excludes=["work", "gold", "gold_authored", ".git", "__pycache__"],
+    )
+    if rc == 0:
+        agent_user = str(cfg.get("agent_user") or "").strip()
+        if not sanitize and agent_user:
+            # A background DSH child must not survive while the full judge
+            # task root (with hidden harness) is restored.
+            rc, out = _ssh_run(
+                cfg,
+                f"pkill -u {shlex.quote(agent_user)} 2>/dev/null || true",
+                timeout=60,
+            )
+        # rsync preserves the local uid; remote uid 1000 is exactly the agent
+        # user, so a naive copy would make the task root agent-owned.  The
+        # staged task must be root-owned, readable only as intended.
+        rc, out = _ssh_run(
+            cfg,
+            f"chown -R root:root {shlex.quote(remote_dir)}",
+            timeout=120,
+        )
+    if rc == 0 and sanitize:
+        rc, out = _sanitize_remote_task(cfg, remote_dir)
+    elif rc == 0:
+        # The full task root is only used by the root judge, after the agent
+        # has exited.  Keep any lingering agent process from reading harness.
+        rc, out = _ssh_run(
+            cfg,
+            f"chmod -R go-rwx {shlex.quote(remote_dir)}",
+            timeout=120,
+        )
+    if rc == 0 and shared_dir and not sanitize:
+        # The package-local check_* wrappers locate shared/harness by walking
+        # parents.  A task root staged outside the repository has no such
+        # parent, so expose the judge's shared harness as a read-only link.
+        # The package-local wrappers start at parents[2], which for a staged
+        # task root is the attempt directory, not the task root itself.
+        parent = str(Path(remote_dir).parent)
+        rc, out = _ssh_run(
+            cfg,
+            f"ln -sfn {shlex.quote(shared_dir)} {shlex.quote(parent + '/shared')} && "
+            f"ln -sfn {shlex.quote(shared_dir)} {shlex.quote(remote_dir + '/shared')}",
+        )
+    return rc, out
+
+
 def _remote_method_view(
     cfg: Dict[str, Any],
     *,
@@ -1277,6 +1414,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                 continue
 
             started = time.time()
+            if scenario == "cuda_to_musa" and musa_transport == "ssh" and remote_cfg:
+                rc, out = _clear_remote_attempt_state(remote_cfg)
+                if rc != 0:
+                    record["detail"] = f"remote attempt cleanup failed: {out[-800:]}"
+                    results.append(record)
+                    print(f"ERROR {tag}: remote attempt cleanup failed")
+                    continue
             if scenario == "cuda_to_musa":
                 if workspace.exists():
                     shutil.rmtree(workspace, ignore_errors=True)
@@ -1394,6 +1538,22 @@ def main(argv: Optional[List[str]] = None) -> int:
                 and musa_transport == "ssh"
                 and remote_cfg is not None
             )
+            remote_task_root = ""
+            if remote_host and remote_cfg is not None:
+                remote_task_root = f"{remote_base}/task_root"
+                rc, out = _stage_remote_task(
+                    remote_cfg,
+                    root,
+                    remote_task_root,
+                    shared_dir=f"{remote_cfg['remote_root']}/repo/{BENCH_DIR}/shared",
+                    remote_bench=f"{remote_cfg['remote_root']}/repo/{BENCH_DIR}",
+                    sanitize=True,
+                )
+                if rc != 0:
+                    record["detail"] = f"remote task staging failed: {out[-800:]}"
+                    results.append(record)
+                    print(f"ERROR {tag}: remote task staging failed")
+                    continue
             activation = (
                 ""
                 if remote_host
@@ -1426,10 +1586,6 @@ def main(argv: Optional[List[str]] = None) -> int:
                 if remote_host:
                     # Adapt on the execution plane so every path in the
                     # registry points at files that exist there.
-                    remote_task_root = (
-                        f"{remote_cfg['remote_root']}/repo/{BENCH_DIR}/"
-                        f"{root.resolve().relative_to(ROOT).as_posix()}"
-                    )
                     try:
                         method_view = _remote_method_view(
                             remote_cfg,
@@ -1444,6 +1600,16 @@ def main(argv: Optional[List[str]] = None) -> int:
                             image=image,
                         )
                         method_adapter_note = "active (remote)"
+                        if agent_user:
+                            rc, out = _ssh_run(
+                                remote_cfg,
+                                f"chown -R {agent_user}:{agent_user} "
+                                f"{shlex.quote(remote_base + '/method')}",
+                            )
+                            if rc != 0:
+                                raise RuntimeError(
+                                    f"cannot hand method workspace to agent: {out[-500:]}"
+                                )
                     except Exception as exc:  # noqa: BLE001
                         method_adapter_note = f"failed: {exc}"
                         print(f"ERROR {tag}: remote method adapter failed: {exc}",
@@ -1780,6 +1946,22 @@ def main(argv: Optional[List[str]] = None) -> int:
             except OSError as exc:
                 record["diff_error"] = str(exc)
 
+            if remote_host and remote_task_root:
+                rc, out = _stage_remote_task(
+                    remote_cfg,
+                    root,
+                    remote_task_root,
+                    shared_dir=f"{remote_cfg['remote_root']}/repo/{BENCH_DIR}/shared",
+                    remote_bench=f"{remote_cfg['remote_root']}/repo/{BENCH_DIR}",
+                    sanitize=False,
+                )
+                if rc != 0:
+                    record["detail"] = f"remote judge task staging failed: {out[-800:]}"
+                    record["status"] = "error"
+                    results.append(record)
+                    print(f"ERROR {tag}: remote judge task staging failed")
+                    continue
+
             if scenario == "cuda_to_musa" and musa_transport == "local":
                 record["judge"] = {
                     "rc": None,
@@ -1816,6 +1998,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                     remote_base_work = f"{remote_base}/base_work"
                     if (root / "work").is_dir():
                         rc, out = _rsync(remote_cfg, root / "work", remote_base_work)
+                        if rc == 0:
+                            rc, out = _ssh_run(
+                                remote_cfg,
+                                f"chown -R root:root {shlex.quote(remote_base_work)} && "
+                                f"chmod -R go-rwx {shlex.quote(remote_base_work)}",
+                                timeout=120,
+                            )
                         if rc != 0:
                             judge = {
                                 "rc": 1,
@@ -1832,7 +2021,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                         remote_base_work = f"{remote_bench}/{rel}/work"
                     command = (
                         f"cd {shlex.quote(remote_bench)} && python3 shared/harness/runner.py "
-                        f"--task-root {shlex.quote(remote_bench + '/' + rel)} "
+                        f"--task-root {shlex.quote(remote_task_root)} "
                         f"--work-dir {shlex.quote(remote_ws)} "
                         f"--base-work-dir {shlex.quote(remote_base_work)} "
                         f"--build-dir {shlex.quote('/tmp/judge-build-' + tag)} "

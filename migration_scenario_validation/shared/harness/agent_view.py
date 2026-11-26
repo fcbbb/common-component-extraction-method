@@ -355,6 +355,13 @@ def is_hidden_path(task: Dict[str, Any], rel: str) -> bool:
     scenario = task_scenario(task)
     if not rel:
         return False
+    configured = task.get("agent_hidden") or []
+    if isinstance(configured, str):
+        configured = [configured]
+    for pattern in configured:
+        pattern = str(pattern).replace("\\", "/").lstrip("./")
+        if pattern and (fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, pattern.rstrip("/") + "/*")):
+            return True
     if parts[-1] in GENERAL_IGNORED_FILES:
         return True
     if scenario == "windows_to_kylin":

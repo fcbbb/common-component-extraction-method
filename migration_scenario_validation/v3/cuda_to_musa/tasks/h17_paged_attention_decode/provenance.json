@@ -1,0 +1,12 @@
+{
+  "task_id": "h17_paged_attention_decode",
+  "materialized": true,
+  "gold_kind": "none",
+  "repo": "local://cuda-to-musa-hard-task",
+  "commit": "local",
+  "license": "MIT",
+  "gold_files": [],
+  "remove": [
+    "submission/paged_attention_decode_submission.py"
+  ]
+}

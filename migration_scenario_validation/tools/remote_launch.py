@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import pwd
 import sys
 
 
@@ -26,11 +27,28 @@ def main() -> int:
         print("env document must be a JSON object", file=sys.stderr)
         return 2
     environment = {str(k): str(v) for k, v in payload.items()}
+    agent_user = environment.pop("COMPONENT_DSH_AGENT_USER", "").strip()
     os.environ.clear()
     os.environ.update(environment)
     cwd = environment.get("COMPONENT_DSH_REMOTE_CWD") or ""
     if cwd:
         os.chdir(cwd)
+    # The host profile is not a container.  Drop the launcher/DSH to the
+    # dedicated benchmark user so the judge's task root and prior attempts
+    # cannot be read by the agent even though the SSH login is root.
+    if agent_user and os.geteuid() == 0:
+        try:
+            entry = pwd.getpwnam(agent_user)
+        except KeyError:
+            print(f"unknown agent user: {agent_user}", file=sys.stderr)
+            return 2
+        try:
+            os.setgroups([])
+            os.setgid(entry.pw_gid)
+            os.setuid(entry.pw_uid)
+        except OSError as exc:
+            print(f"cannot drop to {agent_user}: {exc}", file=sys.stderr)
+            return 2
     try:
         os.execv(sys.argv[2], sys.argv[2:])
     except OSError as exc:

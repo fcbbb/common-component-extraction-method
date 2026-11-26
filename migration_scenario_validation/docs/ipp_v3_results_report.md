@@ -66,7 +66,7 @@ direct fail / method fail = 2
 完整调用数、token 和逐任务报告位于：
 
 ```text
-reports/bench/held_out_20_summary.md
+reports/bench/ipp_to_vsipl_v3/held_out_20_summary.md
 ```
 
 ## 4. 敏感任务

@@ -399,6 +399,12 @@ def result_from_dsh_events(
         )
     if validation_error:
         stream_errors.append(validation_error)
+    # ``submission_mode=none`` is used by host-plane runs whose profile has
+    # stock bash and therefore no controlled-shell completion record.  The
+    # stage/judge validates the actual files instead.  A clean final event is
+    # a successful completion, not a missing submission.
+    completion_not_required = submission_mode == "none"
+    reason_kind = final_reason.get("kind") if isinstance(final_reason, dict) else None
 
     stream_error_message = "; ".join(stream_errors) or None
     if timed_out:
@@ -416,6 +422,9 @@ def result_from_dsh_events(
     elif completion_validated:
         status = SUBMITTED
         error_message = None
+    elif completion_not_required and reason_kind in (None, "completed"):
+        status = SUBMITTED
+        error_message = None
     elif step_limited:
         status = LIMITS_EXCEEDED
         error_message = fallback_error
@@ -426,7 +435,6 @@ def result_from_dsh_events(
         status = NO_VALIDATED_SUBMISSION
         error_message = None
 
-    reason_kind = final_reason.get("kind") if isinstance(final_reason, dict) else None
     if status == NO_VALIDATED_SUBMISSION and reason_kind in {"aborted", "interrupted"}:
         status = STOPPED_BY_USER
     elif status == NO_VALIDATED_SUBMISSION and reason_kind == "max-tokens":

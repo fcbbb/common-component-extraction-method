@@ -61,6 +61,19 @@ REPO_EXCLUDES = [
     "**/ipp_vsipl_tasks",
     "**/work",
     "**/gold",
+    # Task packages are staged one at a time for an attempt.  Keeping the
+    # whole task catalogue in the remote repository lets an agent read the
+    # definitions of other held-out tasks, which contaminates the run.
+    "migration_scenario_validation/**/tasks",
+    "migration_scenario_validation/v1",
+    "migration_scenario_validation/v2",
+    "migration_scenario_validation/docs",
+    "migration_scenario_validation/README.md",
+    "migration_scenario_validation/v*/README.md",
+    "migration_scenario_validation/v*/SPLIT.md",
+    "migration_scenario_validation/**/README.md",
+    "migration_scenario_validation/**/SPLIT.md",
+    "migration_scenario_validation/**/slate.yaml",
     "**/gold_authored",
     "**/upstream_nonconforming",
     # V3 history corpora contain `after` target implementations, and the
@@ -176,6 +189,22 @@ def _rsync_put(
     return _retry(cmd, cfg, timeout=timeout)
 
 
+def _ensure_agent_user(cfg: Dict) -> Tuple[int, str]:
+    """Create the benchmark agent user and make the shared toolchain readable."""
+    user = str(cfg.get("agent_user") or "").strip()
+    if not user:
+        return 0, ""
+    root = str(cfg.get("remote_root") or "/root/migration-bench")
+    command = (
+        f"if ! id -u {shlex.quote(user)} >/dev/null 2>&1; then "
+        f"useradd -m -s /bin/bash {shlex.quote(user)}; fi; "
+        "chmod 711 /root; "
+        f"mkdir -p {shlex.quote(root + '/runs')}; "
+        f"chmod 755 {shlex.quote(root)} {shlex.quote(root + '/runs')}"
+    )
+    return _ssh(cfg, command, timeout=300)
+
+
 def sync_repo(cfg: Dict, *, build: bool = True, timeout: int = 3600) -> Tuple[int, str]:
     """Mirror the repository to the remote host and rebuild the DSH plugins.
 
@@ -202,7 +231,24 @@ def sync_repo(cfg: Dict, *, build: bool = True, timeout: int = 3600) -> Tuple[in
     if rc != 0:
         return rc, out
     rc, out = _rsync(cfg, ROOT, repo_dir, timeout=timeout)
-    if rc != 0 or not build:
+    if rc != 0:
+        return rc, out
+    user = str(cfg.get("agent_user") or "").strip()
+    if user:
+        # rsync preserves the local uid; on the remote host uid 1000 is the
+        # benchmark agent, so the shared checkout must be re-owned by root
+        # before making it readable.  Otherwise the agent can modify DSH and
+        # the staging tools it is supposed to consume read-only.
+        rc, out = _ssh(
+            cfg,
+            f"chown -R root:root {shlex.quote(repo_dir)} && "
+            f"chmod -R a+rX {shlex.quote(repo_dir)} && "
+            f"chmod 711 /root && chmod 755 {shlex.quote(root)}",
+            timeout=600,
+        )
+        if rc != 0:
+            return rc, out
+    if not build:
         return rc, out
     path = f"{root}/toolchain/node/bin:/usr/local/bin:/usr/bin:/bin"
     command = (
@@ -222,6 +268,10 @@ def bootstrap(args: argparse.Namespace) -> int:
     rc, out = _ssh(cfg, f"mkdir -p {shlex.quote(root + '/toolchain')} {shlex.quote(repo_dir)}")
     if rc != 0:
         print(f"ERROR cannot create remote directories: {out[-800:]}", file=sys.stderr)
+        return 2
+    rc, out = _ensure_agent_user(cfg)
+    if rc != 0:
+        print(f"ERROR cannot prepare agent user: {out[-800:]}", file=sys.stderr)
         return 2
 
     if not args.skip_node:
