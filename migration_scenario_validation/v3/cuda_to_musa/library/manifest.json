@@ -1,0 +1,37 @@
+{
+  "schema_version": "methodology-1",
+  "kind": "methodology",
+  "library_id": "cuda-to-musa-v3-self-built",
+  "version": 1,
+  "generated_by": "component_method.component_build.methodology.publish",
+  "generated_at": "2026-11-24T11:02:33.505632+00:00",
+  "component_count": 3,
+  "components_file": "INDEX.md",
+  "selection_file": "SELECTION.md",
+  "components": [
+    {
+      "bundle_id": "decode-step-cached-key-attention-rebuilt-as-custom-01481b2e",
+      "title": "Decode-step cached-key attention rebuilt as custom device kernels",
+      "capability": "other",
+      "library": "components/decode-step-cached-key-attention-rebuilt-as-custom-01481b2e/README.md",
+      "readme": "components/decode-step-cached-key-attention-rebuilt-as-custom-01481b2e/README.md",
+      "metadata": "components/decode-step-cached-key-attention-rebuilt-as-custom-01481b2e/component.json"
+    },
+    {
+      "bundle_id": "fused-affine-projection-exact-activation-row-11f387ee",
+      "title": "Fused affine projection + exact activation + row normalization rebuilt as MUSA extension kernels",
+      "capability": "other",
+      "library": "components/fused-affine-projection-exact-activation-row-11f387ee/README.md",
+      "readme": "components/fused-affine-projection-exact-activation-row-11f387ee/README.md",
+      "metadata": "components/fused-affine-projection-exact-activation-row-11f387ee/component.json"
+    },
+    {
+      "bundle_id": "fused-convolution-training-mode-batch-normalization-1f26f93f",
+      "title": "Fused convolution, training-mode batch normalization and scalar scale as custom accelerator kernels",
+      "capability": "other",
+      "library": "components/fused-convolution-training-mode-batch-normalization-1f26f93f/README.md",
+      "readme": "components/fused-convolution-training-mode-batch-normalization-1f26f93f/README.md",
+      "metadata": "components/fused-convolution-training-mode-batch-normalization-1f26f93f/component.json"
+    }
+  ]
+}

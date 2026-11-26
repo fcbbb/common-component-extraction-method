@@ -9,7 +9,7 @@
 - 上游任务来源：MultiKernelBench，固定 commit `460a972c9be7ce18035984321d38b910e27df95f`
 - 任务目录：`v3/cuda_to_musa/tasks/`
 - 任务清单：`v3/cuda_to_musa/slate.yaml`
-- 冻结组件库：`v3/cuda_to_musa/library_generated/`
+- 冻结组件库：`v3/cuda_to_musa/library/`
 - 最终 held-out：`h1`–`h20`
 
 V3 的 library source（`s1`–`s3`）与 held-out（`h1`–`h20`）严格分离。held-out 不参与组件扫描、抽取、review 或 publish；method 臂只做 retrieval。

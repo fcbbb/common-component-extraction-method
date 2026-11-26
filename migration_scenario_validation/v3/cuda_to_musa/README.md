@@ -19,8 +19,8 @@ context，因此抽取语料不含目标/NPU/backends 材料。
 ## 组件库
 
 ```text
-v3/cuda_to_musa/library_generated/
-v3/cuda_to_musa/library -> library_generated
+v3/cuda_to_musa/library/
+v3/cuda_to_musa/library_generated/  # publisher output
 ```
 
 当前 3 个组件：

@@ -1,0 +1,81 @@
+# Fused convolution, training-mode batch normalization and scalar scale as custom accelerator kernels
+
+- Kind: transformation
+- Capability: `other`
+- Derived from: `s1_conv2d_batch_norm`
+- Applies to: x86_64
+
+## When to use
+
+Use when an eager tensor-graph layer (a 2-D convolution, then training-mode per-channel batch normalization, then a scalar multiply) must be rebuilt as hand-written kernels on a different vendor accelerator runtime while the framework stays in place to hold parameters. The conventions that must match are: normalization is in training mode, so per-channel mean and biased variance come from the current batch over all batch and spatial positions, the affine scale and shift plus the eps term come from the layer configuration, and the comparison tolerance is of order 1e-4 abs/rel. The target must expose a C++-level extension path compiled by the vendor toolchain, allocate tensors through the framework allocator, and order kernel launches on a device stream. Applies when the caller does not need the layer to maintain running statistics, or reproduces those updates separately.
+
+## Procedure
+
+1. Fix the numeric policy first: decide that the whole comparison runs in full working precision and disable any vendor fast-math or reduced-mantissa default at module import, because the reference path executes in the same process and would otherwise disagree with the kernels.
+2. Decide the fusion boundary before writing kernels: one element-wise convolution, one global per-channel reduction, one element-wise epilogue; fold only stages that do not need a reduction over positions owned by other blocks.
+3. Keep the source module tree as parameter storage: construct the same convolution and normalization containers so seeded construction yields identical parameters, and read their tensors at call time instead of re-initializing them in the rebuilt path.
+4. Order the work so dtype, rank, channel agreement and output extent are validated and contiguity is established before any allocation, then allocate per-channel and output buffers, then launch the stages in dependency order on one stream.
+5. Choose accumulation width per stage deliberately (working precision for element-wise stages, wide precision for the reduction) and keep the epilogue's operation order identical to the source formula: normalize, apply affine scale and shift, then multiply by the scalar.
+6. Expose a single entry point that takes raw parameter tensors plus host scalars and returns the finished tensor, and build the compiled extension once at construction time rather than on every call.
+
+## Mapping rules
+
+- General: eager convolution layer -> one kernel that writes each output element from the weight and bias tensors, seeding the accumulator with the bias; fallback: keep the vendor convolution library and fuse only the later stages when the convolution reduction is too large for a naive per-output-element kernel, but then the vendor math mode must still be pinned (see the precision rules).
+- General: training-mode batch normalization -> two stages, a per-channel reduction over all batch and spatial positions that produces mean and inverse standard deviation, then an element-wise normalization; one kernel cannot own both because a channel spans every batch item and every block, so fallback for frozen or precomputed statistics is to fold normalization into the element-wise epilogue and drop the reduction.
+- General (variance denominator): normalize with the biased variance (sum of squared deviations divided by the element count), because the source operator normalizes with the biased estimate even where it maintains running statistics with the unbiased one; fallback: when the framework only exposes the unbiased estimator, convert it before use instead of changing the normalization denominator.
+- General (reduction shape): reduce per channel with one cooperative block per channel and a power-of-two tree over the block, or with segmented partial sums combined in a second step; fallback: for channel counts far below the device's parallel capacity, use a strided kernel that serves several channels per block so the reduction does not leave the device mostly idle.
+- General: scalar multiply after normalization -> fold the multiplier into the same element-wise epilogue as the affine transform and apply it last; fallback: a separate element-wise pass is numerically equivalent but reads and writes the full output an extra time.
+- General (configuration, not constants): per-channel affine scale and shift and the eps term -> kernel arguments read from the layer configuration at call time, never values baked into the kernel; fallback: baking them is acceptable only for a fixed model instance, and then the rebuilt path must reject any configuration that differs.
+- Source convention (ownership): when the target extension receives framework tensors by handle and returns a new tensor, allocate every kernel-written buffer with the framework allocator inside the entry point, let the returned tensor own it, and hold inputs as borrowed read-only pointers; fallback: when the target API requires caller-provided output storage, the caller allocates and owns that storage and the callee never frees it.
+- Source convention (layout): when the kernel indexes raw channel-major planes, force a contiguous copy of input and weights before launch and derive the channel index from the channel-major stride; the copy is skipped when the tensor is already contiguous, and the caller's tensor is never mutated in place.
+- Source convention (error reporting): when the target extension validates through throwing checks, reject wrong dtype, wrong rank, channel mismatch and non-positive output extent at the entry point and let the exception reach the caller unchanged; fallback: when the target returns status codes instead, translate them into the same exception type at the boundary so the caller sees the source failure mode.
+- Source convention (blocking): when the target enqueues kernels asynchronously on the current device stream, launch the dependent stages on that same stream and return without synchronizing; fallback: when the target gives no implicit stream ordering, insert an explicit device synchronize or event between the reduction and the epilogue, and between the epilogue and any host read.
+- General (accumulation width): perform the per-channel reduction in a wider accumulation type than the working dtype, because the sum spans millions of elements per channel and the naive working-precision form drifts to the edge of the comparison tolerance; fallback: when wide accumulation is unavailable or prohibitively slow, use pairwise or compensated summation in the working dtype.
+- General (variance stability): form the variance from a centred second moment, or clamp it at zero after the difference-of-moments form, because a near-constant channel can yield a slightly negative variance and a non-finite inverse standard deviation.
+- Source convention (scalar passing): when the target entry point takes element-wise scalars as host values rather than tensors, pass the multiplier and eps as host scalars and narrow each once to the working dtype; fallback: keep them wide inside the kernel when the value is not exactly representable in the working dtype.
+- General (extent and limits): derive launch extents from the incoming tensor's element count and reject shapes whose block count overflows the target's grid dimension limit; fallback: switch to a multi-dimensional grid or a fixed-grid strided loop when the limit is exceeded.
+
+## Semantic deltas to expect
+
+- Precision: a direct convolution kernel sums its reduction dimension in a fixed order in working precision, while a vendor library may reorder terms or use fused multiply-add, so per-element differences of a few units in the last place remain; conversely the wide-accumulation statistics are more accurate than a working-precision reduction of the source operator.
+- Math mode: with reduced-mantissa math left at its vendor default, the reference convolution deviates by roughly five times an accepted 1e-4 tolerance from a full-precision kernel; the gap disappears only when the reference path is pinned to full working precision.
+- Running statistics: training-mode normalization updates running mean, running variance and a batch counter in place, and the fused kernels do not touch them, so forward values match while later evaluation-mode use or state inspection diverges unless the caller reproduces those updates.
+- Memory: the fused form still materializes the full convolution output once, so peak device memory is input plus convolution output plus normalized output; fusion removes intermediate bookkeeping, not the largest buffer, and the caller must budget for roughly three activation-sized buffers.
+- Ordering and visibility: the three stages are only correct in program order on one stream; a channel's statistics are global across batch and spatial positions, so any split of the reduction must be combined before the epilogue reads it, whereas the source operator hides this dependency inside one library call.
+- Not a delta (scalar narrowing): the source multiplies a working-dtype tensor by a host double scalar that the framework casts to the working dtype before the element-wise multiply, so narrowing the multiplier once to the working dtype in the rebuilt entry point reproduces the source operation. The narrowing is exact for the value used here (a power of two), is only observable for scalars not representable in the working dtype, and even then stays far below the comparison tolerance.
+- Failure surface: the fused entry point rejects layouts, dtypes and channel counts that the eager layer would have handled by dispatching or casting, so unsupported combinations now fail loudly instead of converting silently.
+
+## Pitfalls observed in successful migrations
+
+- Leaving the vendor library's fast-math or reduced-mantissa path enabled makes the reference convolution differ by more than the comparison tolerance, so a numerically correct kernel looks wrong; it occurs whenever both sides run in the same process with vendor defaults in effect.
+- Using the unbiased variance denominator, or the difference-of-moments form evaluated in working precision, shifts every channel's output; it occurs as soon as the per-channel element count is large and the channel mean is far from zero.
+- Fusing normalization into the convolution kernel without first completing the per-channel reduction yields per-block statistics; it occurs whenever a channel's elements span more than one block, which is the normal case for image-shaped outputs.
+- Deriving the channel index from a flat element index while the tensor is permuted or is a non-contiguous view applies the wrong per-channel parameters; it occurs whenever the input is not laid out channel-major and the wrapper skips the contiguity step.
+- Omitting the affine scale and shift, or the eps term, still produces a plausible-looking normalized output; it occurs when the epilogue is written from the textbook standardization formula alone.
+- Keeping framework compute operators or tensor arithmetic in the rebuilt forward path violates the kernel-only rule enforced by the automated tests even when the numerics are right; it occurs when the module tree is reused as a compute path instead of a parameter container.
+- Launching more blocks than the target grid dimension accepts, or computing extents from the configured batch size instead of the incoming tensor, truncates or skips output; it occurs for shapes larger than the configured one or when the batch size differs from the recorded configuration.
+- Rounding-up the flat launch extent while omitting the per-thread bounds guard reads and writes past the end of the output buffer; it occurs whenever the element count is not an exact multiple of the block size, which is the normal case for image-shaped outputs.
+
+## Verification strategy
+
+- Build both models from the same seed in one process, feed identical inputs, and require exact shape agreement plus allclose at the accepted absolute and relative tolerance over the whole output; repeat for more than one input draw so an accidentally constant result cannot pass.
+- Inspect parameter equality right after construction (convolution weight and bias, affine scale and shift, any running buffers) to prove the fused path reads the source tensors instead of re-initializing them.
+- Probe the numeric policy directly: compute the reference with reduced-mantissa math enabled and show it exceeds the tolerance, then with it disabled and show it passes, which localizes any mismatch to precision rather than to kernel logic.
+- Check the standardization invariant on a slice with the affine parameters still at identity: before the final multiply, each channel's mean over batch and spatial positions is near zero and its biased variance near one. This validates the standardization form and the eps term only, not the affine transform: the harness builds both models from the same seed and leaves the normalization affine parameters at their default identity values (scale one, shift zero), so an epilogue that omits the affine scale and shift passes both the invariant and the output comparison, and a biased-versus-unbiased denominator choice differs by only about 2.5e-7 at the roughly 2.03e6 elements per channel here, far below the 1e-4 tolerance. Add a second check that exercises non-identity affine parameters, or that asserts those parameters are actually consumed, to prove the scale and shift reach the output: load the same non-identity scale and shift into both models and compare again, or perturb the rebuilt model's affine parameters and require the output to change.
+- Run a reachability check over the rebuilt forward path to confirm it contains no framework compute operators, no tensor arithmetic and no scalar loops, and that only the compiled entry point performs arithmetic.
+- Measure peak allocated device memory around a forward call and confirm the intermediate buffer is released afterwards, which separates an expected peak from a leak.
+- Record the running-statistic buffers before and after a training-mode reference call to see the delta the fused path leaves untouched, so the gap is documented rather than discovered downstream.
+
+## Boundary
+
+Covers only the forward path of one valid (no padding, unit stride) 2-D convolution followed by training-mode per-channel normalization and one scalar multiply, rebuilt as accelerator kernels while the framework retains parameter storage. It does not cover backpropagation or autograd integration, other convolution geometries (padding, stride, dilation, groups), other dtypes or blocked layouts, evaluation-mode normalization from running statistics, the running-statistic updates themselves, cross-stream dependency management, or scheduling of a multi-layer graph.
+
+Applicability constraints:
+
+- Target vendor toolkit offers a C++-level inline extension path compiled by the vendor compiler, with tensors from the framework device allocator.
+- Device code supports a wider (double-precision) accumulation type, or the reduction has a compensated float fallback.
+- Working dtype is float32 with a comparison tolerance of about 1e-4 absolute and relative.
+- The grading harness requires all arithmetic in custom kernels, so framework compute operators and tensor arithmetic may not remain reachable from the forward path.
+- Output is channel-major contiguous and the convolution is valid-only with unit stride and no padding.
+- Device memory must hold input plus two full convolution-sized buffers, roughly three times the activation footprint.
+

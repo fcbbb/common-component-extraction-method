@@ -1,0 +1,80 @@
+{
+  "schema": "methodology-library-lock-v1",
+  "library_id": "cuda-to-musa-v3-self-built",
+  "version": 1,
+  "created_at": "2026-11-24T11:02:33.506115+00:00",
+  "history_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/cuda_to_musa/history",
+  "history_digest": "edb8f59edfe73ac0c396111eb557fb78ff8718240a8b864bec21f363030fdf26",
+  "curation_sha256": "15f4f7f35bf84c718915dd87305cdd26e844259141948c6395f800dd08d62739",
+  "review_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/cuda_to_musa/history/runs/final/reviews",
+  "publication": {
+    "status": "published",
+    "generated_by": "component_method.component_build.methodology.publish"
+  },
+  "policy": {
+    "publication_gate": "review verdict == publish",
+    "held_out_projects": []
+  },
+  "components": [
+    {
+      "bundle_id": "decode-step-cached-key-attention-rebuilt-as-custom-01481b2e",
+      "transformation_id": "decode-step-cached-key-attention-rebuilt-as-custom-01481b2e",
+      "capability": "other",
+      "provenance": {
+        "projects": [
+          "MultiKernelBench"
+        ],
+        "commits": [
+          "460a972c9be7ce18035984321d38b910e27df95f"
+        ],
+        "task_ids": [
+          "s3_kv_cached_attention"
+        ],
+        "split": "dev"
+      },
+      "review_verdict": "publish",
+      "component_sha256": "a6b5e899fa4bba6ccb04733e916571ef1ef3c85af9631a65852b736c6779b876",
+      "readme_sha256": "dd2995f881831451d7d6a854a0ae3b904914ca7c658dd68c8d8afcfad41437a4"
+    },
+    {
+      "bundle_id": "fused-affine-projection-exact-activation-row-11f387ee",
+      "transformation_id": "fused-affine-projection-exact-activation-row-11f387ee",
+      "capability": "other",
+      "provenance": {
+        "projects": [
+          "MultiKernelBench"
+        ],
+        "commits": [
+          "460a972c9be7ce18035984321d38b910e27df95f"
+        ],
+        "task_ids": [
+          "s2_matmul_gelu_softmax"
+        ],
+        "split": "dev"
+      },
+      "review_verdict": "publish",
+      "component_sha256": "d9f67f69afca525837da8d69cb353ce9d7b060b950e08dd76b3b9ce5cfa052fc",
+      "readme_sha256": "64d93f165c418a187d36fa6c9680ec273d699adc795ae0170c76684119660704"
+    },
+    {
+      "bundle_id": "fused-convolution-training-mode-batch-normalization-1f26f93f",
+      "transformation_id": "fused-convolution-training-mode-batch-normalization-1f26f93f",
+      "capability": "other",
+      "provenance": {
+        "projects": [
+          "MultiKernelBench"
+        ],
+        "commits": [
+          "460a972c9be7ce18035984321d38b910e27df95f"
+        ],
+        "task_ids": [
+          "s1_conv2d_batch_norm"
+        ],
+        "split": "dev"
+      },
+      "review_verdict": "publish",
+      "component_sha256": "e57710b71546c34f54fb3385d11c013f0e381dbc881e9e2344bb917d6325bbed",
+      "readme_sha256": "7ed53f7c3427cbd329348c403303dd5c4b69e7791e7fd4c078861fc4de6765bb"
+    }
+  ]
+}

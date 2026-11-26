@@ -1,0 +1,80 @@
+{
+  "schema": "methodology-library-lock-v1",
+  "library_id": "ipp-to-vsipl-v3-self-built",
+  "version": 1,
+  "created_at": "2026-11-23T14:18:49.001430+00:00",
+  "history_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history",
+  "history_digest": "a2c12f7aacbddb6ba8a7c476cc50ffaeeea6df7cee5e3c8b58befaf85bce5de9",
+  "curation_sha256": "8f2eb2db01b241368f5db27cc2e10d1f86275c6751a6d5b9bf163a80237f7420",
+  "review_root": "/home/luoyexx/project/harness/common-component-extraction-method/migration_scenario_validation/v3/ipp_vsipl/history/runs/final/reviews",
+  "publication": {
+    "status": "published",
+    "generated_by": "component_method.component_build.methodology.publish"
+  },
+  "policy": {
+    "publication_gate": "review verdict == publish",
+    "held_out_projects": []
+  },
+  "components": [
+    {
+      "bundle_id": "real-to-complex-fft-plan-and-bin-adapter-for-a-51087706",
+      "transformation_id": "real-to-complex-fft-plan-and-bin-adapter-for-a-51087706",
+      "capability": "other",
+      "provenance": {
+        "projects": [
+          "spectral-gate-v1"
+        ],
+        "commits": [
+          "synthetic-spectral-gate-v1"
+        ],
+        "task_ids": [
+          "s2_spectral_gate"
+        ],
+        "split": "dev"
+      },
+      "review_verdict": "publish",
+      "component_sha256": "6d5f42d217dac844c5bd890d4a76c15fa9375139a8d251adeca00e8b5321f913",
+      "readme_sha256": "60c2a3129cabec1ab406f5b35cc7f23462e5a402f1287d745d70685d2846f604"
+    },
+    {
+      "bundle_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+      "transformation_id": "split-complex-fft-matched-filter-correlation-layer-d152355a",
+      "capability": "other",
+      "provenance": {
+        "projects": [
+          "radar-correlation-v1"
+        ],
+        "commits": [
+          "synthetic-radar-correlation-v1"
+        ],
+        "task_ids": [
+          "s1_radar_correlation"
+        ],
+        "split": "dev"
+      },
+      "review_verdict": "publish",
+      "component_sha256": "3bbcdb9574a2a24cd21afbe591078df8be3fba948d8d51d0c8478c1d10813661",
+      "readme_sha256": "384d78764069acd47a9b58427550675119a35cb6676d9e0e5a61ef021c926c29"
+    },
+    {
+      "bundle_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+      "transformation_id": "streaming-complex-nco-mix-and-decimate-layer-rebuilt-8b74d63b",
+      "capability": "other",
+      "provenance": {
+        "projects": [
+          "channelizer-v1"
+        ],
+        "commits": [
+          "synthetic-channelizer-v1"
+        ],
+        "task_ids": [
+          "s3_channelizer"
+        ],
+        "split": "dev"
+      },
+      "review_verdict": "publish",
+      "component_sha256": "bc29eb9ca072e9417c2c31fdcf4a76c5c759d278dbadf68551cb5a23afb7df87",
+      "readme_sha256": "4863f7706237c0f412d9521fb5945a9684f3975689c23dc21e439742cdec0cda"
+    }
+  ]
+}

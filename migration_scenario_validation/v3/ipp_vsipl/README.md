@@ -75,7 +75,8 @@ passes review.
 The current library is the reviewed extraction output, not a hand-written card set:
 
 ```text
-library -> library_generated/
+library/
+library_generated/  # publisher output
 manifest.json
 library_lock.json
 components/

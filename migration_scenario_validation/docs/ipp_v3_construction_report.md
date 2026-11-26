@@ -9,7 +9,7 @@
 - 目标工具链：gcc-13
 - 任务目录：`v3/ipp_vsipl/tasks/`
 - 任务清单：`v3/ipp_vsipl/slate.yaml`
-- 组件库：`v3/ipp_vsipl/library_generated/`
+- 组件库：`v3/ipp_vsipl/library/`
 
 V3 的 held-out 与 library source 严格分离。任务不参与组件提取、review 或 publish。
 

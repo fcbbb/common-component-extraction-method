@@ -1,0 +1,101 @@
+{
+  "bundle_id": "decode-step-cached-key-attention-rebuilt-as-custom-01481b2e",
+  "kind": "transformation",
+  "title": "Decode-step cached-key attention rebuilt as custom device kernels",
+  "capability": "other",
+  "when_to_use": "Use when a caller relies on the tensor framework's fused scaled-dot-product attention over a pre-filled key/value cache, with default scaling, no mask, no causal flag and a single implicit head, and that fused call cannot stay in the target model path: the acceptance scan parses the reachable forward code and rejects framework functional compute there, so the operator has to be re-expressed as custom device kernels whether or not the target platform also ships a fused primitive of its own. The rebuild must reproduce the primitive's default scale, its stabilized normalization over the whole key axis and its ownership model: borrowed inputs, a freshly allocated output, asynchronous launches. It fits a decode step with one query position per sequence, float32 activations, and a comparison tolerance around 1e-4 absolute and relative.",
+  "boundary": "Does not cover multi-head or grouped-query layouts, attention masks, causal or sliding-window patterns, batched or beam decode, paged caches, reduced-precision kernels, streaming or online normalization, fused single-pass tiling, backward passes, or the projection and block layers that produce the cache. It also does not cover the extension build machinery itself, performance tuning such as occupancy, shared-memory capacity or split reductions, and it does not apply where a masked, multi-query or grouped-query attention contract has to be preserved; the existence of a fused attention primitive on the target is not an exclusion, because the rebuild still applies where that primitive exists but may not be called from the model path.",
+  "verification": [
+    "Run the comparison loop: construct both sides from the same seed, move inputs to the device, synchronize, then compare output shape exactly and values within 1e-4 absolute and relative over several random input trials.",
+    "Check invariants that need no fused reference: an all-zero query must return the mean of the value rows over the key axis, constant value rows must return that constant, and jointly permuting key and value rows must leave the output unchanged within tolerance.",
+    "Stress the normalization: scale the cached keys so raw scores reach the thousands, then assert every output element is finite and the output approaches the value row of the dominant key; a naive exponential overflows here.",
+    "Check determinism: call the operator twice on identical inputs with an unchanged launch configuration and require bitwise identical outputs.",
+    "Check failure paths: a mismatched key length, a non-float32 dtype and an unsupported batch must each raise before any tensor is returned.",
+    "Check same-stream scratch reuse: issue many calls with fresh inputs over one stream while interleaving other temporaries and without synchronizing between calls, synchronize once at the end, and compare against a run that synchronizes after every call; a sporadic mismatch means some kernel reading the scratch was queued on a different stream, not that the scratch was released at the wrapper's return.",
+    "Check the model path statically: parse the module and confirm the reachable forward code holds no framework compute operator, no framework functional call such as the fused attention primitive, and no Python loop mixing tensor indexing with arithmetic; only allocation, reshaping, copying and the operator call should remain.",
+    "Compare against an independently computed float64 reference on the host from the same inputs; the maximum absolute error should sit far below the acceptance tolerance and the returned tensor must carry the input's device and float32 dtype."
+  ],
+  "mapping_rules": [
+    "General: fused framework attention call -> three explicit device stages, a score row (scaled dot of the query with every cached key), a stabilized normalization over the key axis, and a weighted sum of cached values. Applicability: the rebuild is required when the fused call must leave the model path, because the acceptance scan rejects framework functional and tensor compute in the reachable model code; keeping the fused call therefore yields a model the scan rejects, not a working alternative, and whether the target platform also exposes a fused primitive is not the trigger.",
+    "General: the primitive's default implicit scale -> a scalar computed in the host wrapper from the dimension used by the dot product, one over the square root of that width, then passed into the score stage. Applicability: the source call omitted an explicit scale; if it passed one, forward that value unchanged. Fallback when the width is not static: read it from the tensor shape at call time.",
+    "Source convention (single implicit head): when the primitive interprets a rank-3 (batch, sequence, width) input as one head, scale by the whole width and keep one score row per query position. It only splits heads when the input is rank-4 with an explicit head axis; if the source reshaped to (batch, heads, sequence, head width), scale by the head width and put the head index in the grid instead.",
+    "General: source normalization over the last axis -> two block-wide reductions in the device kernel, the maximum over all keys and then the sum of exponentials of (score minus that maximum), followed by multiplication with the reciprocal of the sum; the score row is the intermediate buffer for all three stages. Fallback when the key count exceeds one block's reduction capacity: reduce per block into a partial buffer and combine in a second pass.",
+    "General: absent mask, causal flag and stochastic dropout -> omit all masking and dropout logic. Condition: the source call passed no additive mask, no causal flag and left the dropout probability at its zero default. If any of them was passed, apply the mask to the score row after scaling and before the maximum, using a negative-infinity sentinel for excluded keys, and never to the value-weighted stage; a non-zero dropout probability has no place in an inference decode step and must be refused rather than silently dropped.",
+    "General: source shape generality -> an explicit grid mapping, one block per cached key for scores, one block for the whole normalization, one block per output width element for the weighted sum; additional batch or query positions extend the grid. If the rebuild narrows support to batch one and one query position, reject any other shape with a pre-launch check that raises, instead of computing a partial result.",
+    "General: source dtype-preserving compute -> fixed float32 device pointers plus an explicit dtype check in the wrapper. Fallback for reduced precision: template the kernels per dtype and keep float32 accumulation, because the fused primitive gives no rounding guarantee across precisions.",
+    "General: source logical layout -> host-side contiguity normalization before pointer extraction, borrowing the input tensor when it is already contiguous and owning a temporary when it is not, with the key-times-width offset computed in 64-bit arithmetic. Fallback when a copy is unacceptable: pass explicit strides into every stage.",
+    "Source convention (framework-allocated result): when the source returns a framework-allocated tensor, allocate the output inside the wrapper with the input's device and dtype, write every element in the last stage and return it by value, transferring ownership to the caller; the score row is wrapper-owned scratch on the same device with the accumulation dtype, and because allocation, the queued launches and any later reuse are ordered on one stream, that scratch needs no lifetime extension and may go out of scope when the wrapper returns, exactly as the accepted implementation does. Reserve the lifetime requirement for work scheduled on a different stream than the one the scratch was allocated on.",
+    "Source convention (asynchronous launch): when the source returns before device work completes, queue the kernels on the current stream and return without a host synchronization; the caller's existing device barrier remains the only one, and a launch or access fault surfaces at that barrier rather than at the call. If a consumer reads the result on the host immediately, add the barrier at that call site, never inside the operator.",
+    "General: a narrowed contract is a separate decision from a wrong result. Where the rebuild accepts fewer shapes than the source primitive, state the accepted set next to the checks that enforce it, so a caller sees an exception rather than a plausible tensor. Fallback if the narrowed set is too small: extend the grid, do not relax the checks."
+  ],
+  "semantic_deltas": [
+    "Rounding and summation order: the rebuild sums each dot product and each reduction with its own tree order and without a guaranteed fused multiply-add, so results differ from the fused primitive in the last bits; for unit-scale inputs the difference stays far inside a 1e-4 absolute and relative comparison.",
+    "Failure semantics: the source raises framework errors for mismatched shape, dtype or device before any work starts; the rebuild raises host-side checks whose thrown extension-language exceptions reach the caller through the same channel, so the failure mode is an exception rather than a wrong tensor, but the accepted shape set is exactly what the kernels implement.",
+    "Memory: the fused primitive exposes no score row to the caller, while the rebuild allocates one row of key length per call as scratch and copies any non-contiguous cache; peak memory therefore grows with the cache length and the copy is invisible to the caller.",
+    "Parallelism: the normalization runs in a single block, so its latency grows linearly with the key count and the device stays underused compared with a tiled fused kernel; the rebuild is a correctness replacement, not a performance one.",
+    "Intermediate values: subtracting the row maximum before exponentiating is mandatory for stability, so the intermediate exponentials differ from a naive formulation even when the final output matches; a test that inspects intermediate buffers cannot compare them against the fused primitive.",
+    "Result metadata: the returned tensor carries the input's device and float32 dtype and no autograd history, which matches a source call made under a no-grad scope but loses differentiability for a caller that expected it."
+  ],
+  "pitfalls": [
+    "Dropping the default scale. Condition: the source call omitted a scale and the rebuild uses no scale or one over the width instead of one over the square root of the width; the normalized exponential becomes too flat or too sharp and the 1e-4 comparison fails, most visibly at a wide embedding.",
+    "Unstable normalization. Condition: the rebuild exponentiates raw scores, or the scale is misapplied, and the logits are large; the exponential overflows to infinity and the output becomes NaN, while small random inputs still pass.",
+    "Broken block reduction. Condition: the shared-memory tree reduction runs with a block size that is not a power of two, with a scratch array sized from a different literal than the block size, or with a thread slot left uninitialized; partial sums are silently dropped or added and the result stays plausible.",
+    "Reading a non-contiguous cache as contiguous. Condition: the cached keys or values come from a transpose, permutation or slice, while the stages assume unit stride on the last axis and use the width as the key stride; the kernel reads plausible but wrong values and raises nothing.",
+    "Scratch read on a foreign stream. Condition: the score row or a contiguity temporary is allocated on one stream but a kernel that reads it is queued on another stream, so the block can be handed out and overwritten before those queued launches read it; results are wrong and the failure appears only when other allocations interleave. Releasing same-stream scratch at the wrapper's return is not a defect and the accepted implementation does exactly that, because allocation and reuse are ordered on the same stream.",
+    "Fixed dtype pointers behind a permissive signature. Condition: a half, bfloat16 or double tensor reaches kernels declared for float32; the buffer is reinterpreted and the output is garbage or the launch faults on misaligned access.",
+    "Narrowed shape support without a check. Condition: a caller passes more than one query position or more than one batch element to kernels written for one row; the returned tensor has the requested shape but holds values from the wrong row or from beyond the buffer.",
+    "Framework compute left in the model path. Condition: normalization, reduction or exponentiation survives in the module as a framework operator, or a Python loop mixes tensor indexing with arithmetic; the numbers may be right and the acceptance scan still rejects the model, and a leftover fused attention call is rejected the same way.",
+    "Under-covered output buffer. Condition: the grid or the per-block strided loop misses an output element, or an early return skips a region, so an empty-allocated output keeps uninitialized memory; the failure is input-dependent and can look like a small numeric error.",
+    "Build and registration timing. Condition: the extension is compiled on first import and the platform compiler, a writable build cache or the device backend package is missing; construction fails with a compiler or device message that never mentions attention, so the cause looks unrelated."
+  ],
+  "procedure": [
+    "Pin the source call's effective parameters before writing any kernel: rank and layout, scale value, presence of a mask or causal flag, dtype, and how many query rows must be supported. Each becomes an explicit wrapper or kernel parameter, because the target has no primitive defaults to inherit.",
+    "Decide the stage decomposition and where the score row lives: materialize one score row per query position when memory allows and reuse it for both the normalization and the weighted sum, otherwise recompute scores per output block or keep a running normalization and accept extra work for less scratch memory.",
+    "Fix ownership before the first launch: mark which tensors are borrowed (query, cached keys, cached values), which are wrapper-allocated scratch (the score row), and which is returned. Scratch allocated and consumed on one stream may be released when the wrapper returns; extend its lifetime only for work issued on a different stream than the one it was allocated on.",
+    "Choose the parallel mapping per stage from the actual shape rather than from literals: keys across blocks for scores, one block with a strided reduction for the normalization, output width across blocks for the weighted sum, then confirm every output element is written exactly once.",
+    "Place every precondition check before the first launch so a rejected call raises and produces no partially written output: rank, device agreement, dtype agreement, consistent widths and key lengths, and the narrowed shape set if any.",
+    "Keep the model path free of framework compute: the wrapper may allocate, make a contiguity copy, reshape and launch, but all arithmetic belongs to a kernel, because the acceptance scan rejects framework compute operators, tensor arithmetic and Python loops over tensor elements in the reachable model code. This is the reason the fused call cannot simply be kept when the target already has one.",
+    "Load the extension once at model construction rather than per call, and let a build failure surface as a construction-time error instead of silently falling back to the framework primitive that the acceptance forbids."
+  ],
+  "applicability": {
+    "os": [
+      "x86_64"
+    ],
+    "constraints": [
+      "Source platform: an accelerator platform whose tensor framework provides a fused scaled-dot-product attention primitive with default scaling, no mask and a single implicit head for rank-3 inputs.",
+      "Target platform: an accelerator platform whose only route to custom compute is compiling device source through the framework's extension loader at import time.",
+      "Model path: the acceptance scan parses the reachable model code and rejects framework functional calls, disallowed framework and tensor compute methods, and tensor arithmetic, so the fused attention call has to leave the model path even when the target ships a fused primitive.",
+      "Precision: float32 activations and float32 accumulation; the acceptance comparison uses 1e-4 absolute and relative tolerance.",
+      "Shipped configuration: batch one, one query position, key length 2048, width 4096; the single-block normalization strides over the whole key axis, so it accepts any key length but serializes that reduction.",
+      "Toolchain: a device compiler for the target platform must be installed and the extension build cache writable at model construction time."
+    ]
+  },
+  "provenance": {
+    "projects": [
+      "MultiKernelBench"
+    ],
+    "commits": [
+      "460a972c9be7ce18035984321d38b910e27df95f"
+    ],
+    "task_ids": [
+      "s3_kv_cached_attention"
+    ],
+    "split": "dev"
+  },
+  "evidence": [
+    {
+      "project": "MultiKernelBench",
+      "commit": "460a972c9be7ce18035984321d38b910e27df95f",
+      "task_id": "s3_kv_cached_attention",
+      "role": "source-migration"
+    }
+  ],
+  "generated_by": "component_method.component_build.methodology.publish",
+  "input_digest": "d822d0246dfcb49199f02095f1c56382d53e523f6820dff2c64947643cbadc1b",
+  "review": {
+    "verdict": "publish",
+    "reviewer_model": "DeepSeek-V4.1-Flash-1017",
+    "review_sha256": "d5d8d621b0ecdf6b8bb77217d6101d5ba21e537c8e8ca0370ab24eeeaf6fe669",
+    "finalized": true
+  }
+}
